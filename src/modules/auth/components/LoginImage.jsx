@@ -1,11 +1,13 @@
+import loginImage from '../../../../src/modules/auth/assets/images/login.jpg';
+
 export const LoginImage = () => {
   return (
-    <div className="d-none d-md-flex align-items-center justify-content-center bg-light">
+    <div className="w-100 h-100 d-flex align-items-center justify-content-center position-relative">
       <img
-        src="../../../assets/images/login.jpg"
+        src={loginImage}
         alt="Calaverita de Cactilia"
-        className="img-fluid"
-        style={{ maxHeight: '80%', objectFit: 'cover', borderRadius: '10px' }}
+        className="position-absolute top-0 start-0 w-100 h-100"
+        style={{ objectFit: 'cover'}}
       />
     </div>
   );

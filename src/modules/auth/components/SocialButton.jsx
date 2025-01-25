@@ -34,7 +34,7 @@ export const SocialButton = ({ type }) => {
         border: `1px solid ${borderColor}`,
         color: textColor,
         fontWeight: "normal",
-        maxWidth: "600px",
+        maxWidth: "500px",
       }}
     >
 

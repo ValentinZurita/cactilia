@@ -1,27 +1,41 @@
-import { Logo, LoginForm, Divider, SocialButton } from '../components/index.js'
+import { Logo, LoginForm, Divider, SocialButton, LoginImage } from '../components/index.js'
+import { ContentWrapper, PageLayout, PageSection } from '../components/layout/index.js'
 
 
 export const LoginPage = () => {
     return (
 
-      <div className="container d-flex flex-column align-items-center justify-content-center vh-100 text-center" style={{ maxWidth: '600px' }}>
+      // Works as a container for the page
+      <PageLayout>
 
-          {/* Logo */}
-          <Logo styles={{ maxWidth: '150px' }} />
+        {/* ContentWrapper organizes the layout in a responsive row structure */}
+        <ContentWrapper>
 
-          {/* Form */}
-          <LoginForm />
+          {/* Left Section: Image (Only visible on larger screens, hidden on smaller screens) */}
+          <PageSection className="d-none d-md-block p-0 m-0">
+            <LoginImage />
+          </PageSection>
 
-          {/* Divider */}
-          <Divider text="o ingresa con" />
+          {/* Right Section: Login form and related elements */}
+          <PageSection>
+            {/* Logo */}
+            <Logo styles={{ maxWidth: '150px' }} />
 
-          {/* Google Sing In*/}
-          <SocialButton type="google" />
+            {/* Form */}
+            <LoginForm />
 
-          {/* Apple Sing In*/}
-          <SocialButton type="apple" />
+            {/* Divider */}
+            <Divider text="o ingresa con" />
 
-      </div>
+            {/* Social login buttons */}
+            <SocialButton type="google" />
+            <SocialButton type="apple" />
+          </PageSection>
+
+      </ContentWrapper>
+
+    </PageLayout>
 
     );
+
 };
