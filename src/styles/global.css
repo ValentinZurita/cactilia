@@ -1,3 +1,5 @@
+
+
 /* global.css */
 
 /*
@@ -161,3 +163,15 @@ body {
 .text-lg {
     font-size: var(--font-size-lg) !important;
 }
+
+
+
+
+/* Font-family */
+@font-face {
+    font-family: 'Nohemi';
+    src: url('../assets/fonts/nohemi/nohemi-regular.otf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
