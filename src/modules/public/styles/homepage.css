@@ -1,0 +1,215 @@
+/*
+   🏠 HOME PAGE CSS - Cactilia
+   Author: [Your Name]
+   Last Updated: [Date]
+*/
+
+/* 🔄 Import global styles to reuse variables */
+@import url('../../../../src/styles/global.css');
+
+/*
+  🌍 1) GENERAL STYLES
+  Applies global spacing and layout adjustments.
+*/
+
+/* Section padding for uniform spacing */
+.home-section {
+    /* padding: var(--spacing-xl) 0;*/
+    padding: 0;
+    margin: 0 auto;
+    /* max-width: 1400px;*/
+    /* margin-bottom: clamp(75px, 8vw, 75px);*/
+}
+
+/* Custom section spacing */
+.home-section.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.home-section.py-5 { padding-top: 2rem; padding-bottom: 2rem; }
+.home-section.py-6 { padding-top: 3rem; padding-bottom: 3rem; }
+
+/* Custom section heights */
+.min-vh-50 { min-height: 50vh; } /* Half viewport height */
+.min-vh-60 { min-height: 60vh; }
+.min-vh-75 { min-height: 75vh; }
+
+.hero-section {
+    min-height: 10vh; /* Para que ocupe la mayor parte de la pantalla */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-section .btn-primary {
+    background-color: #34C749; /* Color verde personalizado */
+    border-color: #34C749;
+}
+
+.hero-section .btn-primary:hover {
+    background-color: #2a9e42;
+    border-color: #2a9e42;
+}
+
+/*
+  🎨 2) SECTION HEADERS
+  Styles for section titles and subtitles.
+*/
+
+/* Main section title */
+.home-title {
+    text-align: center;
+    color: var(--green-3);
+    font-weight: bold;
+    font-size: 2.5rem;
+}
+
+/* Subtitle below section titles */
+.home-subtitle {
+    text-align: center;
+    color: var(--gray-500);
+    font-size: var(--font-size-md);
+    margin-bottom: 2.5rem;
+}
+
+/*
+  🎠 3) PRODUCT SECTION (Swiper Carousel)
+  Styles for the product carousel and its elements.
+*/
+
+/* Padding for Swiper */
+.home-swiper {
+    padding-bottom: 20px;
+}
+
+/* Navigation arrows color */
+.home-swiper .swiper-button-next,
+.home-swiper .swiper-button-prev {
+    color: var(--green-3);
+}
+
+/* Ensure spacing between ProductCards */
+.home-product-slide {
+    padding: 10px; /* Prevents product overlap */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+/*
+  ⏩ 4) CUSTOM SWIPER NAVIGATION BUTTONS
+  Styling for custom left/right navigation arrows.
+*/
+
+/* Container to ensure buttons are correctly positioned */
+.product-carousel-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+
+}
+
+/* Custom navigation button style */
+.swiper-button-prev-custom,
+.swiper-button-next-custom {
+    position: absolute;
+    top: 38%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background-color: var(--green-3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border: none;
+    z-index: 10;
+}
+
+/* Adjust button position */
+.swiper-button-prev-custom {
+    left: -25px; /* Prevents overlapping with images */
+}
+
+.swiper-button-next-custom {
+    right: -25px; /* Prevents overlapping with images */
+}
+
+/* Hide arrows on small screens (less than 1020px) */
+@media (max-width: 1020px) {
+    .swiper-button-prev-custom,
+    .swiper-button-next-custom {
+        display: none !important;
+    }
+}
+
+/* Hover effect for better visibility */
+.swiper-button-prev-custom:hover,
+.swiper-button-next-custom:hover {
+    background-color: rgba(52, 199, 73, 1);
+}
+
+/* Bootstrap icon inside navigation buttons */
+.swiper-button-prev-custom i,
+.swiper-button-next-custom i {
+    font-size: 20px;
+    color: white;
+}
+
+/*
+  ⭐ 5) SECTION ICON STYLES
+  Styling for the icon above the section title.
+*/
+
+/* Icon above section title */
+.section-icon {
+    font-size: 3rem;
+    color: var(--green-3);
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* 🌿 Our Farm Section - Estilos para el carrusel */
+
+/* 🖼️ Ajusta el tamaño del carrusel */
+.farm-carousel-img {
+    max-width: 900px;
+    height: 500px;
+    object-fit: cover;
+}
+
+/* 🔘 Indicadores más visibles */
+.carousel-indicators button {
+    background-color: var(--green-3);
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+}
+
+/* 🌿 Our Farm Section */
+.our-farm-section {
+    padding: var(--spacing-xl) 0;
+}
+
+/* 🖼️ Carousel image size */
+.farm-carousel-img {
+    max-width: 900px;
+    height: 500px;
+    object-fit: cover;
+}
+
+/* 🔘 Dot indicators instead of bars */
+.carousel-indicators [data-bs-target] {
+    width: 12px;
+    height: 12px;
+    background-color: var(--green-3);
+    border-radius: 50%;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.carousel-indicators .active {
+    opacity: 1;
+}
+

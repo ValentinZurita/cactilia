@@ -1,171 +1,154 @@
-
-
-/* global.css */
+/*
+   🌍 GLOBAL CSS - Cactilia
+   Author: [Your Name]
+   Last Updated: [Date]
+*/
 
 /*
-  1) Variables CSS (Custom Properties) dentro de :root
-  para que estén disponibles en toda la app.
+  🔹 1) VARIABLES GLOBALES (Custom Properties)
+  Se definen dentro de :root para usarlas en toda la app.
 */
 
 :root {
-    /* Colores de la marca */
-    --green-1: #28A745; /* verde 1 */
-    --green-2: #2AAD46; /* verde 2 */
-    --green-3: #34C749; /* verde 3 */
+    /* 🎨 Colors */
+    --green-1: #28A745;
+    --green-2: #2AAD46;
+    --green-3: #34C749;
     --blue-gray: #497595;
     --white: #ffffff;
     --black: #000000;
 
-    /* Ejemplo de escalas de grises */
+    /* 🌗 Grayscale */
     --gray-100: #f8f9fa;
     --gray-200: #e9ecef;
     --gray-300: #dee2e6;
     --gray-400: #ced4da;
     --gray-500: #adb5bd;
 
-    /* Espaciados */
+    /* 📏 Spacing (margins, paddings, gaps) */
+    --spacing-xxs: 2px;
     --spacing-xs: 4px;
     --spacing-sm: 8px;
     --spacing-md: 16px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
+    --spacing-xxl: 40px;
 
-    /* Tamaños de fuente */
+    /* 🔠 Font sizes */
+    --font-size-xs: 0.75rem;  /* 12px */
     --font-size-sm: 0.875rem;  /* 14px */
     --font-size-md: 1rem;      /* 16px */
     --font-size-lg: 1.25rem;   /* 20px */
+    --font-size-xl: 1.5rem;    /* 24px */
+
+    /* 📦 Border radius */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+
+    /* 📌 Shadows */
+    --shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0px 4px 6px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0px 6px 10px rgba(0, 0, 0, 0.2);
 }
 
-
-
-
-
-
-
-
 /*
-  Estilos globales para la app
+  🌍 2) GLOBAL STYLES
+  Estilos generales aplicados a toda la app.
 */
 
-/* Se aplica a todas las paginas para no interferir con el navbar */
 body {
-    padding-top: 80px; /* Ajusta según la altura del navbar */
-    overflow-y: auto;  /* Asegura que el scroll esté habilitado */
+    padding-top: 80px; /* Ajustar según la altura del navbar */
+    overflow-y: auto;
+    font-family: 'Nohemi', sans-serif;
 }
 
-
-
-
-
-
 /*
-  Navbar personalizado
+  📌 NAVBAR STYLES
+  Ajustes personalizados para el navbar
 */
-/* NAVBAR */
 
-/* Ajuste del botón hamburguesa: cuadrado con bordes redondeados */
+/* General navbar styles */
+.navbar-nav .nav-link:hover,
+.navbar .nav-link i:hover {
+    color: var(--green-2) !important;
+}
+
+/* Custom hamburger menu button */
 .square-toggler {
-    border-radius: 8px !important; /* Hace que las esquinas sean redondeadas */
-    width: 45px;  /* Tamaño cuadrado */
+    border-radius: var(--border-radius-md) !important;
+    width: 45px;
     height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Corrección del alineado de las líneas del menú hamburguesa */
-.navbar-toggler-thin-green .navbar-toggler-icon {
-    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%232AAD46' stroke-linecap='round' stroke-miterlimit='10' stroke-width='1' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat;
-    background-position: center; /* Centra las líneas dentro del botón */
-    width: 100%;
-    height: 100%;
-}
-
-/* Bordes verdes finos para mantener consistencia visual */
+/* Adjusting navbar hamburger lines */
 .navbar-toggler-thin-green {
     border: 1px solid var(--green-2) !important;
     box-shadow: none !important;
 }
 
-/* Efecto hover para los enlaces del navbar */
-.navbar-nav .nav-link:hover {
-    color: var(--green-2) !important; /* Verde definido en tus variables */
+.navbar-toggler-thin-green .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%232AAD46' stroke-linecap='round' stroke-miterlimit='10' stroke-width='1' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 100%;
+    height: 100%;
 }
-
-/* Efecto hover para los íconos del navbar */
-.navbar .nav-link i:hover {
-    color: var(--green-2) !important;
-}
-
-
-
-
-
-
 
 /*
-  2) "utility classes" que aprovechen estas variables.
+  🎨 3) UTILITY CLASSES
+  Clases reutilizables basadas en variables globales.
 */
 
-/* Texto */
-.text-green-1 {
-    color: var(--green-1) !important;
-}
-.text-green-2 {
-    color: var(--green-2) !important;
-}
-.text-green-3 {
-    color: var(--green-3) !important;
-}
-.text-blue-gray {
-    color: var(--blue-gray) !important;
-}
+/* ✅ Text colors */
+.text-green-1 { color: var(--green-1) !important; }
+.text-green-2 { color: var(--green-2) !important; }
+.text-green-3 { color: var(--green-3) !important; }
+.text-blue-gray { color: var(--blue-gray) !important; }
 
-/* Background */
-.bg-green-1 {
-    background-color: var(--green-1) !important;
-}
-.bg-green-2 {
-    background-color: var(--green-2) !important;
-}
-.bg-green-3 {
-    background-color: var(--green-3) !important;
-}
-.bg-blue-gray {
-    background-color: var(--blue-gray) !important;
-}
+/* ✅ Background colors */
+.bg-green-1 { background-color: var(--green-1) !important; }
+.bg-green-2 { background-color: var(--green-2) !important; }
+.bg-green-3 { background-color: var(--green-3) !important; }
+.bg-blue-gray { background-color: var(--blue-gray) !important; }
 
-/* spacing utilities (margins/paddings) */
-.mt-xs {
-    margin-top: var(--spacing-xs) !important;
-}
-.mt-sm {
-    margin-top: var(--spacing-sm) !important;
-}
-.mt-md {
-    margin-top: var(--spacing-md) !important;
-}
-.mt-lg {
-    margin-top: var(--spacing-lg) !important;
-}
-.mt-xl {
-    margin-top: var(--spacing-xl) !important;
-}
+/* ✅ Spacing utilities (Margins & Padding) */
+.mt-xs { margin-top: var(--spacing-xs) !important; }
+.mt-sm { margin-top: var(--spacing-sm) !important; }
+.mt-md { margin-top: var(--spacing-md) !important; }
+.mt-lg { margin-top: var(--spacing-lg) !important; }
+.mt-xl { margin-top: var(--spacing-xl) !important; }
 
-/* font-size utilities */
-.text-sm {
-    font-size: var(--font-size-sm) !important;
-}
-.text-md {
-    font-size: var(--font-size-md) !important;
-}
-.text-lg {
-    font-size: var(--font-size-lg) !important;
-}
+.pt-xs { padding-top: var(--spacing-xs) !important; }
+.pt-sm { padding-top: var(--spacing-sm) !important; }
+.pt-md { padding-top: var(--spacing-md) !important; }
+.pt-lg { padding-top: var(--spacing-lg) !important; }
+.pt-xl { padding-top: var(--spacing-xl) !important; }
 
+/* ✅ Font sizes */
+.text-xs { font-size: var(--font-size-xs) !important; }
+.text-sm { font-size: var(--font-size-sm) !important; }
+.text-md { font-size: var(--font-size-md) !important; }
+.text-lg { font-size: var(--font-size-lg) !important; }
+.text-xl { font-size: var(--font-size-xl) !important; }
 
+/* ✅ Border radius utilities */
+.rounded-sm { border-radius: var(--border-radius-sm) !important; }
+.rounded-md { border-radius: var(--border-radius-md) !important; }
+.rounded-lg { border-radius: var(--border-radius-lg) !important; }
 
+/* ✅ Box shadows */
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow-md { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+
+/*
+  🔠 4) FONT IMPORTS
+  Cargamos la fuente Nohemi con mejor compatibilidad.
+*/
 
 /* Font-family */
 @font-face {
@@ -174,4 +157,3 @@ body {
     font-weight: normal;
     font-style: normal;
 }
-
