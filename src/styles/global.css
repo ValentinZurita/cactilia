@@ -60,7 +60,7 @@
 body {
     padding-top: 80px; /* Ajustar según la altura del navbar */
     overflow-y: auto;
-    font-family: 'Nohemi', sans-serif;
+    /* font-family: 'Nohemi', sans-serif;*/
 }
 
 /*

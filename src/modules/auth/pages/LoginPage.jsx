@@ -20,7 +20,6 @@ export const LoginPage = () => {
           <PageSection>
             {/* Logo */}
             <Logo styles={{ maxWidth: '150px' }} />
-
             {/* Form */}
             <LoginForm />
 

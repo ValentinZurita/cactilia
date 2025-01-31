@@ -1,4 +1,6 @@
 import React from 'react';
+import { useDispatch } from 'react-redux'
+import { startGoogleSingIn } from '../../public/store/auth/authThunks.js'
 
 export const SocialButton = ({ type }) => {
 
@@ -24,6 +26,20 @@ export const SocialButton = ({ type }) => {
   const { text, icon, backgroundColor, borderColor, textColor } =
   socialConfig[type] || socialConfig.google;
 
+  // Dispatch
+  const dispatch = useDispatch();
+
+  // Handle Google login
+  const handleGoogleLogin = () => {
+    console.log("Iniciando sesión con Google...");
+    dispatch(startGoogleSingIn())
+  }
+
+  // Handle Apple login
+  const handleAppleLogin = () => {
+    console.log("Iniciando sesión con Apple...");
+  }
+
   return (
 
     // Social button
@@ -36,6 +52,7 @@ export const SocialButton = ({ type }) => {
         fontWeight: "normal",
         maxWidth: "500px",
       }}
+      onClick={type === "google" ? handleGoogleLogin : handleAppleLogin}
     >
 
       {/* Icon */}

@@ -3,7 +3,7 @@ import { ForgotPasswordLink, InputField, SubmitButton } from '../../../shared/co
 export const LoginForm = () => {
     return (
       <form
-        className="container-fluid d-flex flex-column justify-content-center align-items-center min-vh-75 px-4 px-md-5"
+        className="container-fluid d-flex flex-column justify-content-center align-items-center px-4 px-md-5"
         style={{ maxWidth: '600px', width: '100%' }}
         onSubmit={(e) => { e.preventDefault(); }}
       >

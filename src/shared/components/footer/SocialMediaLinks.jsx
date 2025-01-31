@@ -1,4 +1,4 @@
-import { SOCIAL_MEDIA_LINKS } from '../../constants/footerLinks';
+import { SOCIAL_MEDIA_LINKS } from '../../constants/index.js';
 
 export const SocialMediaLinks = () => {
   return (
