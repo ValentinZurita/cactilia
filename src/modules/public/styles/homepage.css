@@ -100,7 +100,7 @@
   Styling for custom left/right navigation arrows.
 */
 
-/* Container to ensure buttons are correctly positioned */
+/* Container to ensure buttons-and-fields are correctly positioned */
 .product-carousel-container {
     position: relative;
     width: 100%;
@@ -150,7 +150,7 @@
     background-color: rgba(52, 199, 73, 1);
 }
 
-/* Bootstrap icon inside navigation buttons */
+/* Bootstrap icon inside navigation buttons-and-fields */
 .swiper-button-prev-custom i,
 .swiper-button-next-custom i {
     font-size: 20px;

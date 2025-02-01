@@ -10,7 +10,7 @@ import '../../styles/homepage.css';
  * ProductCarousel Component
  *
  * A responsive product carousel that displays product cards using Swiper.js.
- * It supports infinite looping, autoplay, and custom navigation buttons.
+ * It supports infinite looping, autoplay, and custom navigation buttons-and-fields.
  *
  * Features:
  * - Displays a scrollable row of product cards.

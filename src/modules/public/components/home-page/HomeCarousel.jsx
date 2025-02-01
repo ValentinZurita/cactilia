@@ -7,7 +7,7 @@
  * Features:
  * - Auto-sliding with Bootstrap's `data-bs-ride="carousel"`.
  * - Clickable indicators to navigate between images.
- * - Navigation buttons for previous/next slides.
+ * - Navigation buttons-and-fields for previous/next slides.
  * - Supports responsive images with rounded corners.
  *
  * Props:

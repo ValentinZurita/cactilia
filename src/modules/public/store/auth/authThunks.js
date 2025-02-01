@@ -17,3 +17,18 @@ export const startGoogleSingIn = () => {
 
   }
 }
+
+
+export const startRegisterWithEmailPassword = ({ email, password, displayName }) => {
+  return async (dispatch) => {
+    dispatch(checkingCredentials());
+
+    const result = await registerUserWithEmailPassword({ email, password, displayName });
+
+    if (!result.ok) {
+      return dispatch(logout(result.errorMessage));
+    }
+
+    dispatch(login(result));
+  };
+};

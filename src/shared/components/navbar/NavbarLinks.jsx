@@ -1,5 +1,5 @@
 // components/NavbarLinks.jsx
-import { NAV_LINKS } from '../../constants/navbarLinks.js'
+import { NAV_LINKS } from '../../constants/index.js'
 
 export const NavbarLinks = ({ showMenu }) => (
   <div className={`collapse navbar-collapse order-lg-1 ${showMenu ? 'show' : ''}`}>

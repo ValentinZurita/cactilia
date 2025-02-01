@@ -5,7 +5,7 @@
  *
  * Features:
  * - Automatically cycles through images when `data-bs-ride="carousel"` is enabled.
- * - Supports navigation through previous/next buttons.
+ * - Supports navigation through previous/next buttons-and-fields.
  * - Uses `carousel-item active` to ensure the first image is displayed initially.
  *
  * Props:

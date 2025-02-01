@@ -26,7 +26,7 @@ export const LoginPage = () => {
             {/* Divider */}
             <Divider text="o ingresa con" />
 
-            {/* Social login buttons */}
+            {/* Social login buttons-and-fields */}
             <SocialButton type="google" />
             <SocialButton type="apple" />
           </PageSection>

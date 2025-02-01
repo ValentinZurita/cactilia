@@ -13,7 +13,7 @@ import { ProductsHeader, ProductCarousel } from './index.js'
  * Features:
  * - Reusable section with customizable icon, title, and subtitle.
  * - Integrates a Swiper-based product carousel.
- * - Custom navigation buttons for carousel control.
+ * - Custom navigation buttons-and-fields for carousel control.
  *
  * Props:
  * @param {string} icon - Bootstrap icon class name (default: "bi-box-seam").
@@ -45,7 +45,7 @@ export const ProductsSection = ({ icon = "bi-box-seam" }) => {
           {/* Swiper-based product carousel */}
           <ProductCarousel products={products} />
 
-          {/* Custom navigation buttons for Swiper */}
+          {/* Custom navigation buttons-and-fields for Swiper */}
           <button className="swiper-button-prev-custom position-absolute">
             <i className="bi bi-chevron-left"></i>
           </button>
