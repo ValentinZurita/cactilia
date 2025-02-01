@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export const InputField = ({ label, type, id, placeholder, toggleVisibility = false }) => {
+export const InputField = ({ label, type, id, placeholder, register, errors, toggleVisibility = false }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -8,14 +8,13 @@ export const InputField = ({ label, type, id, placeholder, toggleVisibility = fa
       <label htmlFor={id} className="form-label text-muted">{label}</label>
       <div className="input-group">
         <input
+          {...register} // Aplica register aquí ✅
           type={toggleVisibility ? (showPassword ? "text" : "password") : type}
-          className="form-control shadow-sm"
+          className={`form-control shadow-sm ${errors?.message ? 'is-invalid' : ''}`}
           id={id}
           placeholder={placeholder}
           required
         />
-
-        {/* Password toggle icon */}
         {toggleVisibility && (
           <button
             type="button"
@@ -25,6 +24,7 @@ export const InputField = ({ label, type, id, placeholder, toggleVisibility = fa
             <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
           </button>
         )}
+        {errors?.message && <div className="invalid-feedback">{errors.message}</div>}
       </div>
     </div>
   );

@@ -1,39 +1,85 @@
 import { InputField, SubmitButton } from '../../../../shared/components/index.js'
 import { BirthdateField } from '../../../../shared/components/buttons-and-fields/BirthdateField.jsx'
 import { PhoneNumberField } from '../../../../shared/components/buttons-and-fields/PhoneNumberField.jsx'
-
+import { useForm } from 'react-hook-form'
+import { startRegisterWithEmailPassword } from '../../../public/store/auth/authThunks.js'
+import { useDispatch } from 'react-redux'
 
 export const RegisterForm = () => {
+  console.log("RegisterForm is rendering...");
+
+  const dispatch = useDispatch();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+
+  const onSubmit = (data) => {
+    console.log("✅ Formulario enviado:", data);
+
+    dispatch(startRegisterWithEmailPassword({
+      fullName: data.fullName,
+      email: data.email,
+      password: data.password
+    }));
+  };
+
   return (
     <form
       className="container-fluid d-flex flex-column justify-content-center align-items-center px-4 px-md-5"
-      style={{ maxWidth: '600px', width: '100%' }}
-      onSubmit={(e) => e.preventDefault()}
+      style={{ maxWidth: "600px", width: "100%" }}
+      onSubmit={handleSubmit(onSubmit)}
     >
-      {/* Title */}
-      <h2 className="fw-bold text-center my-4 text-muted" style={{ fontSize: '2.5rem' }}>Crea tu cuenta</h2>
+      <h2 className="fw-bold text-center my-4 text-muted" style={{ fontSize: "2.5rem" }}>
+        Crea tu cuenta
+      </h2>
 
-      {/* Full Name */}
-      <InputField label="Nombre" type="text" id="full-name" placeholder="Enter your full name" />
+      <InputField
+        label="Nombre"
+        type="text"
+        id="fullName"
+        placeholder="Tu nombre"
+        register={register("fullName", { required: "El nombre es obligatorio" })}
+        errors={errors.fullName}
+      />
 
-      {/* Email */}
-      <InputField label="Email" type="email" id="email" placeholder="tucorreo@ejemplo.com" />
+      <InputField
+        label="Email"
+        type="email"
+        id="email"
+        placeholder="tucorreo@ejemplo.com"
+        register={register("email", {
+          required: "El correo es obligatorio",
+          pattern: {
+            value: /^[^@]+@[^@]+\.[a-zA-Z]{2,}$/,
+            message: "Formato de correo no válido",
+          },
+        })}
+        errors={errors.email}
+      />
 
-      {/* Birthdate */}
-      <BirthdateField />
+      <BirthdateField register={register("birthdate", { required: "La fecha de nacimiento es obligatoria" })} errors={errors.birthdate} />
 
-      {/* Phone Number */}
-      <PhoneNumberField />
+      <PhoneNumberField register={register("phone", { required: "El número de teléfono es obligatorio" })} errors={errors.phone} />
 
-      {/* Password with toggle visibility */}
-      <InputField label="Password" type="password" id="password" placeholder="Enter password" toggleVisibility={true} />
+      <InputField
+        label="Password"
+        type="password"
+        id="password"
+        placeholder="Ingresa tu contraseña"
+        register={register("password", {
+          required: "La contraseña es obligatoria",
+          minLength: { value: 6, message: "Debe tener al menos 6 caracteres" },
+        })}
+        errors={errors.password}
+        toggleVisibility={true}
+      />
 
-      {/* Register Button */}
       <SubmitButton text="Registrarse" />
 
-      {/* Already have an account */}
       <p className="text-center mt-3 text-muted">
-        ¿Ya tienes cuenta? <a href="/login" className="text-primary fw-semibold">Incia Sesión</a>
+        ¿Ya tienes cuenta? <a href="/login" className="text-primary fw-semibold">Inicia Sesión</a>
       </p>
     </form>
   );

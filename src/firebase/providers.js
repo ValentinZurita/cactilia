@@ -32,35 +32,27 @@ export const signInWithGoogle = async () => {
 }
 
 
-
-/**
- * Registers a new user with email and password.
- * @param {Object} param0 - User credentials.
- * @param {string} param0.email - User's email.
- * @param {string} param0.password - User's password.
- * @param {string} param0.displayName - User's full name.
- * @returns {Promise<Object>} - User credentials or error.
- */
-export const registerUserWithEmailPassword = async ({ email, password, displayName }) => {
+export const registerWithEmailPassword = async ({ email, password, fullName }) => {
   try {
-    const resp = await createUserWithEmailAndPassword(FirebaseAuth, email, password);
-    const { uid } = resp.user;
+    // Crear usuario en Firebase
+    const userCredential = await createUserWithEmailAndPassword(FirebaseAuth, email, password);
+    const { uid } = userCredential.user;
 
-    // Update user profile with display name
-    await updateProfile(FirebaseAuth.currentUser, { displayName });
+    // Actualizar perfil con el nombre del usuario
+    await updateProfile(userCredential.user, {
+      displayName: fullName,
+    });
 
     return {
       ok: true,
       uid,
       email,
-      displayName
+      displayName: fullName,
     };
-
   } catch (error) {
-    console.log(error);
     return {
       ok: false,
-      errorMessage: error.message
+      errorMessage: error.message,
     };
   }
 };
