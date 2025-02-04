@@ -1,12 +1,17 @@
-export const NavbarIcon = ({ iconClass, label, href = "#" }) => {
+import { Link } from 'react-router-dom';
+
+export const NavbarIcon = ({ iconClass, label, href, hideLabelOnMobile = false }) => {
+
   return (
-    <a
-      className="nav-link text-dark fw-light d-flex align-items-center justify-content-center m-3"
-      href={href}
-    >
+    <Link className="nav-link d-flex align-items-center px-2 text-dark navbar-hover" to={href}>
+
       {/* Icon */}
-      <i className={`bi ${iconClass} fs-5 text-secondary`}></i>
-      {label && <span className="ms-2">{label}</span>}
-    </a>
-  );
-};
+      <i className={`${iconClass} fs-5 me-1 text-muted fw-light`}/>
+
+      {/* Label */}
+      <span className={`fw-light d-none d-lg-inline ${hideLabelOnMobile ? "d-none d-lg-inline" : ""}` }>
+        {label}
+      </span>
+
+    </Link>
+  )}

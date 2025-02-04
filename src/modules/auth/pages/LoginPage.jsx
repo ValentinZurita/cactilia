@@ -1,8 +1,24 @@
 import { Logo, LoginForm, Divider, SocialButton, LoginImage } from '../components/index.js'
 import { ContentWrapper, PageLayout, PageSection } from '../components/layout/index.js'
+import { useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { AuthLinks } from '../../../shared/components/index.js'
 
 
 export const LoginPage = () => {
+
+
+    const navigate = useNavigate();
+    const {status} = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      navigate('/profile');
+    }
+  }, [status, navigate]);
+
+
     return (
 
       // Works as a container for the page
@@ -19,7 +35,7 @@ export const LoginPage = () => {
           {/* Right Section: Login form and related elements */}
           <PageSection>
             {/* Logo */}
-            <Logo styles={{ maxWidth: '150px' }} />
+            <Logo styles={{ maxWidth: '150px'}} />
             {/* Form */}
             <LoginForm />
 
@@ -29,6 +45,10 @@ export const LoginPage = () => {
             {/* Social login buttons-and-fields */}
             <SocialButton type="google" />
             <SocialButton type="apple" />
+
+            {/* No tienes cuenta */}
+            <AuthLinks/>
+
           </PageSection>
 
       </ContentWrapper>

@@ -1,86 +1,158 @@
-import { InputField, SubmitButton } from '../../../../shared/components/index.js'
-import { BirthdateField } from '../../../../shared/components/buttons-and-fields/BirthdateField.jsx'
-import { PhoneNumberField } from '../../../../shared/components/buttons-and-fields/PhoneNumberField.jsx'
-import { useForm } from 'react-hook-form'
-import { startRegisterWithEmailPassword } from '../../../public/store/auth/authThunks.js'
-import { useDispatch } from 'react-redux'
+import { InputField, SubmitButton } from '../../../../shared/components/index.js';
+import { BirthdateField } from '../../../../shared/components/buttons-and-fields/BirthdateField.jsx';
+import { PhoneNumberField } from '../../../../shared/components/buttons-and-fields/PhoneNumberField.jsx';
+import { useForm } from 'react-hook-form';
+import { startRegisterWithEmailPassword } from '../../../public/store/auth/authThunks.js';
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react'
+import { clearRegistrationMessage } from '../../../public/store/auth/authSlice.js'
 
 export const RegisterForm = () => {
-  console.log("RegisterForm is rendering...");
 
   const dispatch = useDispatch();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+  const { register, handleSubmit, setError, formState: { errors } } = useForm();
+  const { errorMessage, registrationSuccess, emailSent } = useSelector(state => state.auth);
 
-  const onSubmit = (data) => {
-    console.log("✅ Formulario enviado:", data);
 
-    dispatch(startRegisterWithEmailPassword({
+  useEffect(() => {
+    if (emailSent || errorMessage) {
+      setTimeout(() => {
+        dispatch(clearRegistrationMessage()); // 🔥 Limpia el mensaje después de 5 segundos
+      }, 60000);
+    }
+  }, [emailSent, errorMessage, dispatch]);
+
+  const onSubmit = async (data) => {
+    console.log("✅ Registrando Usuario:", data);
+
+    const response = await dispatch(startRegisterWithEmailPassword({
       fullName: data.fullName,
       email: data.email,
-      password: data.password
+      password: data.password,
+      phoneNumber: data.phoneNumber,
+      birthdate: data.birthdate,
     }));
+
   };
+
 
   return (
     <form
       className="container-fluid d-flex flex-column justify-content-center align-items-center px-4 px-md-5"
-      style={{ maxWidth: "600px", width: "100%" }}
+      style={{ maxWidth: '600px', width: '100%' }}
       onSubmit={handleSubmit(onSubmit)}
     >
-      <h2 className="fw-bold text-center my-4 text-muted" style={{ fontSize: "2.5rem" }}>
+      <h2 className="fw-bold text-center my-4 text-muted" style={{ fontSize: '2.5rem' }}>
         Crea tu cuenta
       </h2>
 
+      {/*
+        1) Nombre
+        - Requerido
+        - Solo letras y espacios (si deseas)
+      */}
       <InputField
         label="Nombre"
         type="text"
-        id="fullName"
         placeholder="Tu nombre"
-        register={register("fullName", { required: "El nombre es obligatorio" })}
+        {...register('fullName', {
+          required: 'El nombre es obligatorio',
+          pattern: {
+            value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+            message: 'El nombre solo puede contener letras y espacios',
+          },
+        })}
         errors={errors.fullName}
       />
 
+      {/*
+        2) Email
+        - Requerido
+        - Formato de email
+      */}
       <InputField
         label="Email"
         type="email"
-        id="email"
         placeholder="tucorreo@ejemplo.com"
-        register={register("email", {
-          required: "El correo es obligatorio",
+        {...register('email', {
+          required: 'El correo es obligatorio',
           pattern: {
             value: /^[^@]+@[^@]+\.[a-zA-Z]{2,}$/,
-            message: "Formato de correo no válido",
+            message: 'Formato de correo no válido',
           },
         })}
         errors={errors.email}
       />
 
-      <BirthdateField register={register("birthdate", { required: "La fecha de nacimiento es obligatoria" })} errors={errors.birthdate} />
+      {/*
+        3) Fecha de Nacimiento
+        - Requerido
+        - Solo la parte de la fecha,
+      */}
+      <BirthdateField
+        {...register('birthdate', {
+          required: 'La fecha de nacimiento es obligatoria',
+        })}
+        errors={errors.birthdate}
+      />
 
-      <PhoneNumberField register={register("phone", { required: "El número de teléfono es obligatorio" })} errors={errors.phone} />
+      {/*
+        4) Número Telefónico
+        - Requerido
+        - 10 dígitos
+      */}
+      <PhoneNumberField
+        {...register('phoneNumber', {
+          required: 'El número de teléfono es obligatorio',
+          pattern: {
+            value: /^\d{10}$/,
+            message: 'El número debe tener exactamente 10 dígitos',
+          },
+        })}
+        errors={errors.phoneNumber}
+      />
 
+      {/*
+        5) Contraseña
+        - Requerido
+        - Mínimo 6 caracteres
+        - Al menos 1 letra y 1 número (opcional)
+      */}
       <InputField
         label="Password"
         type="password"
-        id="password"
         placeholder="Ingresa tu contraseña"
-        register={register("password", {
-          required: "La contraseña es obligatoria",
-          minLength: { value: 6, message: "Debe tener al menos 6 caracteres" },
+        toggleVisibility={true}
+        {...register('password', {
+          required: 'La contraseña es obligatoria',
+          pattern: {
+            value: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/,
+            message: 'Mínimo 6 carácteres, con al menos 1 letra y 1 número',
+          },
         })}
         errors={errors.password}
-        toggleVisibility={true}
       />
 
+      {/* Botón de Registro */}
       <SubmitButton text="Registrarse" />
 
+      {/* Link to create an account */}
       <p className="text-center mt-3 text-muted">
-        ¿Ya tienes cuenta? <a href="/login" className="text-primary fw-semibold">Inicia Sesión</a>
+        ¿Ya tienes cuenta?{' '}
+        <a href="/login" className="text-primary fw-semibold">
+          Inicia Sesión
+        </a>
       </p>
+
+
+      {/* ✅ Mostrar mensajes de éxito o error */}
+      {emailSent && (
+        <div className="alert alert-success text-center mt-3">
+          📧 Hemos enviado un email de verificación. Confirma tu correo antes de iniciar sesión.
+        </div>
+      )}
+
+
     </form>
   );
 };

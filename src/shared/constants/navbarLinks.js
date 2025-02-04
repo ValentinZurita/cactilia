@@ -1,7 +1,7 @@
-// Definition of the links that will be displayed in the navbar
+// Navbar Links Constants
 export const NAV_LINKS = [
-  { href: "#", label: "Inicio" },
-  { href: "#", label: "Tienda" },
-  { href: "#", label: "Acerca de" },
-  { href: "#", label: "Contacto" },
+  { href: "/", label: "Inicio" },
+  { href: "/tienda", label: "Tienda" },
+  { href: "/acerca", label: "Acerca de" },
+  { href: "/contacto", label: "Contacto" },
 ];

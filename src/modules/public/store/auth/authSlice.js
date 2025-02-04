@@ -8,7 +8,9 @@ export const authSlice = createSlice({
     email: null,
     displayName: null,
     photoURL: null,
-    errorMessage: null
+    errorMessage: null,
+    registrationSuccess: false,
+    emailSent: false,
   },
   reducers: {
     login: (state, {payload}) => {
@@ -25,13 +27,32 @@ export const authSlice = createSlice({
       state.email = null;
       state.displayName = null;
       state.photoURL = null;
-      state.errorMessage = payload.errorMessage;
+      state.errorMessage = payload?.errorMessage || null;
+      state.registrationSuccess = false;
+      state.emailSent = false;
     },
     checkingCredentials: (state, action) => {
       state.status = 'checking';
+    },
+    setErrorMessage: (state, { payload }) => {
+      state.errorMessage = payload;
+    },
+    setEmailSent: (state, { payload }) => {
+      state.emailSent = payload;
+    },
+    clearRegistrationMessage: (state) => {
+      state.emailSent = false;
+      state.registrationSuccess = false;
+      state.errorMessage = null;
     }
   }
 
 })
 
-export const { login, logout, checkingCredentials } = authSlice.actions
+export const { login,
+               logout,
+               checkingCredentials,
+               setEmailSent,
+               setErrorMessage,
+  clearRegistrationMessage
+             } = authSlice.actions

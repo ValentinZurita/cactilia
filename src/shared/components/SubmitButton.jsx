@@ -1,14 +1,13 @@
 export const SubmitButton = ({ text, color = 'primary', outlined = false }) => {
 
-  // Colors available for the button
+  // Available colors for the button
   const colors = {
     primary: '#2AAD46',
     green: '#34C749',
     blue: '#497595',
   };
 
-  // Define the button style
-  // You can select between an outlined or filled button
+  // Styles and classes for the button element based on the props received
   const buttonStyle = outlined
     ? {
       backgroundColor: 'transparent',
@@ -24,7 +23,7 @@ export const SubmitButton = ({ text, color = 'primary', outlined = false }) => {
   return (
     <button
       type="submit"
-      className="btn w-100 fw-bold my-2 shadow-sm"
+      className="btn w-100 fw-bold my-2 shadow-sm submit-btn"
       style={buttonStyle}
     >
       {text}

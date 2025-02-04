@@ -1,20 +1,37 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 
-export const InputField = ({ label, type, id, placeholder, register, errors, toggleVisibility = false }) => {
+export const InputField = forwardRef(({
+                                        label,
+                                        type = "text",
+                                        errors,            // Aquí errors hace referencia a UN campo de error. Ej: errors.fullName
+                                        placeholder,
+                                        toggleVisibility = false,
+                                        ...inputProps     // El resto de props (onChange, name, ref, etc.) vienen de ...register(...)
+                                      }, ref) => {
+
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="mb-3 w-100 text-start">
-      <label htmlFor={id} className="form-label text-muted">{label}</label>
+
+      {/* Label */}
+      <label className="form-label text-muted">
+        {label}
+      </label>
+
+      {/* Input Group */}
       <div className="input-group">
+
+        {/* Input */}
         <input
-          {...register} // Aplica register aquí ✅
+          {...inputProps}                          // <-- ¡Esparcimos todas las props de register!
+          ref={ref}                                // <-- forwardRef, útil si react-hook-form lo requiere
           type={toggleVisibility ? (showPassword ? "text" : "password") : type}
-          className={`form-control shadow-sm ${errors?.message ? 'is-invalid' : ''}`}
-          id={id}
           placeholder={placeholder}
-          required
+          className={`form-control shadow-sm ${errors ? "is-invalid" : ""}`}
         />
+
+        {/* Toggle Password Visibility */}
         {toggleVisibility && (
           <button
             type="button"
@@ -24,8 +41,15 @@ export const InputField = ({ label, type, id, placeholder, register, errors, tog
             <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
           </button>
         )}
-        {errors?.message && <div className="invalid-feedback">{errors.message}</div>}
+
+        {/* Error message */}
+        {errors && (
+          <div className="invalid-feedback">
+            {errors.message}
+          </div>
+        )}
+
       </div>
     </div>
   );
-};
+});

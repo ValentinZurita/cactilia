@@ -9,7 +9,7 @@ export const Logo = ({
                        captionColor = "text-white" // Opción por defecto
                      }) => {
   return (
-    <div className="text-center">
+    <div className="text-center ">
       <img
         src={logo}
         alt="Logo"
