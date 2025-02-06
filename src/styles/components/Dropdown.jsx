@@ -1,16 +1,39 @@
-
-
 import { useState, useEffect, useRef } from "react";
 
-export const Dropdown = ({ label, options = [], selectedOption, onSelect, className = "" }) => {
-  const [showDropdown, setShowDropdown] = useState(false);
+/**
+ * Dropdown component
+ * @param {string} label - Text to display in the button
+ * @param {string[]} options - Array of options to display in the dropdown
+ * @param {string} selectedOption - Selected option
+ * @param {Function} onSelect - Function to call when an option is selected
+ * @param {string} className - Additional classes for the button
+ * @returns {JSX.Element}
+ * @constructor
+ * @example
+ * <Dropdown
+ *  label="Ordenar Por"
+ *  options={["Ninguno", "Destacados", "Menor a Mayor", "Mayor a Menor"]}
+ *  selectedOption={priceOrder || "Ordenar Por"}
+ *  onSelect={(option) => setPriceOrder(option)}
+ *  className={`filter-button-right ${priceOrder ? 'active' : ''}`}
+ *  />
+ */
+
+export const Dropdown = ({
+                           label,
+                           options = [],
+                           selectedOption,
+                           onSelect,
+                           className = "",
+                         }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Cierra el dropdown si se hace clic fuera
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
+        setIsOpen(false);
       }
     };
 
@@ -20,22 +43,24 @@ export const Dropdown = ({ label, options = [], selectedOption, onSelect, classN
 
   const handleSelect = (option) => {
     onSelect(option);
-    setShowDropdown(false);
+    setIsOpen(false);
   };
 
   return (
     <div className="dropdown" ref={dropdownRef}>
+
       <button
-        className={`btn dropdown-toggle ${className}`} // 🔥 Se agrega la prop className
-        onClick={() => setShowDropdown(!showDropdown)}
-        aria-expanded={showDropdown}
+        className={`btn dropdown-toggle ${className}`}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
         aria-haspopup="true"
+        type="button"
       >
         {selectedOption || label}
       </button>
 
-      {showDropdown && (
-        <ul className="dropdown-menu show">
+      {isOpen && (
+        <ul className="dropdown-menu show" role="menu">
           {options.length > 0 ? (
             options.map((option, index) => (
               <li key={index}>
@@ -43,6 +68,7 @@ export const Dropdown = ({ label, options = [], selectedOption, onSelect, classN
                   className="dropdown-item"
                   onClick={() => handleSelect(option)}
                   tabIndex="0"
+                  role="menuitem"
                 >
                   {option}
                 </button>
@@ -53,6 +79,7 @@ export const Dropdown = ({ label, options = [], selectedOption, onSelect, classN
           )}
         </ul>
       )}
+
     </div>
   );
 };

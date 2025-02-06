@@ -1,9 +1,16 @@
-import '../../../../styles/pages/shop.css';
-import { useCallback } from 'react'
+import { useCallback } from 'react';
 
-export const SearchBar = ({ searchTerm, setSearchTerm, filters }) => {
+/**
+ * SearchBar component
+ * @param {string} searchTerm - Current search term
+ * @param {Function} setSearchTerm - Function to update the search term
+ * @returns {JSX.Element}
+ * @constructor
+ * @example
+ * <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+ */
 
-  // Memoiza la función para evitar renderizados innecesarios
+export const SearchBar = ({ searchTerm, setSearchTerm }) => {
   const handleSearch = useCallback((e) => {
     setSearchTerm(e.target.value);
   }, [setSearchTerm]);

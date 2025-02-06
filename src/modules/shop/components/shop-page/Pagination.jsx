@@ -1,5 +1,19 @@
-// src/modules/shop/components/Pagination.jsx
 import React from 'react';
+
+/**
+ * Pagination component
+ * @param {number} currentPage - Current page number
+ * @param {number} totalPages - Total number of pages
+ * @param {Function} onPageChange - Function to call when a page is selected
+ * @returns {JSX.Element}
+ * @constructor
+ * @example
+ * <Pagination
+ * currentPage={currentPage}
+ * totalPages={totalPages}
+ * onPageChange={setCurrentPage}
+ * />
+ */
 
 export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   if (totalPages <= 1) return null; // No mostrar si solo hay 1 página
