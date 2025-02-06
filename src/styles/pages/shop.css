@@ -1,0 +1,123 @@
+
+/*
+    FILTER BAR
+ */
+.filter-bar {
+    display: flex;
+    gap: 0; /* Elimina el espacio entre los botones */
+    margin-bottom: 3rem;
+}
+
+.filter-button-left {
+    background-color: var(--green-3);
+    color: white;
+    border: 2px solid var(--green-3);
+    border-radius: var(--border-radius-md) 0 0 var(--border-radius-md);
+    padding: 10px 15px;
+    transform: none !important;
+}
+
+.filter-button-right {
+    background-color: var(--green-3);
+    color: white;
+    border: 2px solid var(--green-3);
+    border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+    padding: 10px 15px;
+    transform: none !important;
+}
+
+.filter-button-left:hover,
+.filter-button-right:hover,
+.filter-button-left.active,
+.filter-button-right.active,
+.filter-button-left:checked,
+.filter-button-right:checked,
+.filter-button-left:focus,
+.filter-button-right:focus,
+.filter-button-left:active,
+.filter-button-right:active {
+    background-color: var(--green-1) !important;  /* Ensure it stays Green 1 */
+    color: white !important;  /* Ensure text stays white */
+    border: 2px solid var(--green-1) !important; /* Ensure border stays Green 1 */
+}
+
+
+/*
+    1) GALLERY
+ */
+
+.cart-icon {
+    color: var(--green-1);
+    transition: color 0.3s ease-in-out;
+}
+
+.cart-btn:hover {
+    background-color: var(--green-1);
+    color: white;
+}
+
+.cart-btn:hover .cart-icon {
+    color: white;
+}
+
+
+/*
+    2) SEARCH BAR
+ */
+
+.search-bar-bg {
+    background-color: var(--green-3) !important;
+    margin-bottom: 3rem;
+}
+
+.btn-green {
+    color: white !important;
+    background-color: var(--green-1) !important;
+    border: 2px solid var(--green-1) !important;
+    transition: all 0.2s ease-in-out;
+}
+
+
+.btn-green:hover{
+    background-color: var(--green-1) !important;
+    border-color: var(--green-1) !important;
+    color: white !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/*
+    6) PAGINATION
+ */
+
+.pagination {
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+    display: flex;
+}
+
+.page-link {
+    background-color: var(--green-3);
+    color: white;
+    border: 2px solid var(--green-3);
+    transition: background 0.3s ease-in-out;
+}
+
+.page-link:hover {
+    background-color: var(--green-1);
+    border-color: var(--green-1);
+    color: white;
+}
+
+.page-item.active .page-link {
+    background-color: var(--green-1);
+    border-color: var(--green-1);
+    color: white;
+}
+
+.page-item.disabled .page-link {
+    background-color: var(--gray-200);
+    border-color: var(--gray-300);
+    color: var(--gray-500);
+    cursor: not-allowed;
+}

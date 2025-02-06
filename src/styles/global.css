@@ -17,6 +17,7 @@
     --blue-gray: #497595;
     --white: #ffffff;
     --black: #000000;
+    --soft-black: #333333;
 
     /* 🌗 Grayscale */
     --gray-100: #f8f9fa;
@@ -187,12 +188,15 @@ body {
 .text-green-2 { color: var(--green-2) !important; }
 .text-green-3 { color: var(--green-3) !important; }
 .text-blue-gray { color: var(--blue-gray) !important; }
+.text-soft-black {color: var(--soft-black) !important;}
 
 /* ✅ Background colors */
 .bg-green-1 { background-color: var(--green-1) !important; }
 .bg-green-2 { background-color: var(--green-2) !important; }
 .bg-green-3 { background-color: var(--green-3) !important; }
 .bg-blue-gray { background-color: var(--blue-gray) !important; }
+.bg-white { background-color: var(--white) !important; }
+.bg-black { background-color: var(--black) !important; }
 
 /* ✅ Spacing utilities (Margins & Padding) */
 .mt-xs { margin-top: var(--spacing-xs) !important; }
@@ -200,6 +204,12 @@ body {
 .mt-md { margin-top: var(--spacing-md) !important; }
 .mt-lg { margin-top: var(--spacing-lg) !important; }
 .mt-xl { margin-top: var(--spacing-xl) !important; }
+
+.mb-xs { margin-bottom: var(--spacing-xs) !important; }
+.mb-sm { margin-bottom: var(--spacing-sm) !important; }
+.mb-md { margin-bottom: var(--spacing-md) !important; }
+.mb-lg { margin-bottom: var(--spacing-lg) !important; }
+.mb-xl { margin-bottom: var(--spacing-xl) !important; }
 
 .pt-xs { padding-top: var(--spacing-xs) !important; }
 .pt-sm { padding-top: var(--spacing-sm) !important; }
@@ -232,7 +242,16 @@ body {
 /* Font-family */
 @font-face {
     font-family: 'Nohemi';
-    src: url('../assets/fonts/nohemi/nohemi-regular.otf') format('truetype');
+    src: url('../shared/assets/fonts/nohemi/nohemi-regular.otf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
+
+/* Botón de carrito con el color text-green-1 */
+.cart-btn {
+    border: 1px solid var(--green-1);
+    color: var(--green-1);
+    background-color: transparent;
+    transition: all 0.3s ease-in-out;
+}
+

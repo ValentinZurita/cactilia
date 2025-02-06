@@ -1,4 +1,4 @@
-import logo from '../../../assets/images/logo.png';
+import logo from '../../assets/images/logo.png';
 import '../../../styles/global.css';
 
 export const Logo = ({

@@ -5,46 +5,58 @@ import { Logo } from '../../../../shared/components/logo/Logo.jsx'
 import '../../../../styles/global.css'
 
 
-export const HeroSection = () => {
-  // State to track the current image index for automatic carousel effect
+export const HeroSection = ({
+                              images, // 🔥 Ahora puede ser una imagen estática o un array de imágenes
+                              title,
+                              subtitle,
+                              showLogo = true,
+                              showSubtitle = true,
+                              showButton = true,
+                              height = "100vh",
+                              autoRotate = false, // 🔥 Si es true, rota imágenes automáticamente
+                              interval = 5000, // 🔥 Tiempo entre imágenes en milisegundos
+                            }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Effect to change images every 5 seconds
+  // 🔥 Si autoRotate está activado, cambia la imagen cada X segundos
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % heroImages.length);
-    }, 5000);
+    if (autoRotate && images.length > 1) {
+      const imageInterval = setInterval(() => {
+        setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+      }, interval);
 
-    return () => clearInterval(interval); // Cleanup the interval when the component unmounts
-  }, []);
+      return () => clearInterval(imageInterval); // Cleanup interval
+    }
+  }, [autoRotate, images, interval]);
 
   return (
-    // Hero section that takes full viewport height
-    <section className="hero-section position-relative text-white text-center vh-100 d-flex flex-column justify-content-center align-items-center">
-
-      {/* Background image carousel */}
+    <section
+      className="hero-section position-relative text-white text-center d-flex flex-column justify-content-center align-items-center"
+      style={{ height }}
+    >
+      {/* 🔥 Si hay más de una imagen y autoRotate está activado, rota las imágenes */}
       <ImageGallery
-        images={[heroImages[currentImageIndex]]}
+        images={autoRotate && images.length > 1 ? [images[currentImageIndex]] : [images[0]]}
         className="position-absolute top-0 start-0 w-100 h-100"
       />
 
-      {/* Dark overlay to improve text readability */}
+      {/* Overlay oscuro */}
       <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"></div>
 
-      {/* Hero content: Logo, title, subtitle, and button */}
+      {/* Contenido del Hero */}
       <div className="position-relative z-1">
-        {/* Display the logo in white */}
-        <Logo color="white" />
+        {showLogo && <Logo color="white" />}
+        <h1 className="display-6 fw-bold">{title}</h1>
+        {showSubtitle && <p className="lead text-xs">{subtitle}</p>}
 
-        {/* Main title */}
-        <h1 className="display-4 fw-bold">Bienvenido a Cactilia</h1>
-
-        {/* Subtitle */}
-        <p className="lead text-xs">Productos frescos y naturales para una vida mejor</p>
-
-        {/* Call-to-action button */}
-        <button className="btn btn-lg text-white btn-success text-xs" style={{ backgroundColor: "var(--green-1)",
-        }}>Conoce Más</button>
+        {showButton && (
+          <button
+            className="btn btn-lg text-white btn-success text-xs"
+            style={{ backgroundColor: "var(--green-1)" }}
+          >
+            Conoce Más
+          </button>
+        )}
       </div>
     </section>
   );

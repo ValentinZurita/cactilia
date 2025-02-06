@@ -139,7 +139,7 @@ export const RegisterForm = () => {
       {/* Link to create an account */}
       <p className="text-center mt-3 text-muted">
         ¿Ya tienes cuenta?{' '}
-        <a href="/login" className="text-primary fw-semibold">
+        <a href="/auth/login" className="text-primary text-decoration-none fw-light">
           Inicia Sesión
         </a>
       </p>

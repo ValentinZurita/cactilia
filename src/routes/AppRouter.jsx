@@ -11,7 +11,7 @@ export const AppRouter = () => {
       <Route path="/auth/*" element={<AuthRoutes />} />
 
       {/* Public module */}
-      <Route path="/" element={<PublicRoutes />} />
+      <Route path="*" element={<PublicRoutes />} />
 
       {/* Private route for authenticated users */}
       <Route path="/profile/*" element={<PrivateRoute />}>
