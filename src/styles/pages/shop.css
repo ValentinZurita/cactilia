@@ -1,12 +1,16 @@
 
+
 /*
     FILTER BAR
  */
+
+
 .filter-bar {
     display: flex;
     gap: 0; /* Elimina el espacio entre los botones */
     margin-bottom: 3rem;
 }
+
 
 .filter-button-left {
     background-color: var(--green-3);
@@ -17,6 +21,7 @@
     transform: none !important;
 }
 
+
 .filter-button-right {
     background-color: var(--green-3);
     color: white;
@@ -25,6 +30,7 @@
     padding: 10px 15px;
     transform: none !important;
 }
+
 
 .filter-button-left:hover,
 .filter-button-right:hover,
@@ -42,33 +48,18 @@
 }
 
 
-/*
-    1) GALLERY
- */
-
-.cart-icon {
-    color: var(--green-1);
-    transition: color 0.3s ease-in-out;
-}
-
-.cart-btn:hover {
-    background-color: var(--green-1);
-    color: white;
-}
-
-.cart-btn:hover .cart-icon {
-    color: white;
-}
 
 
 /*
     2) SEARCH BAR
  */
 
+
 .search-bar-bg {
     background-color: var(--green-3) !important;
     margin-bottom: 3rem;
 }
+
 
 .btn-green {
     color: white !important;
@@ -86,15 +77,44 @@
     box-shadow: none !important;
 }
 
+
+
+
 /*
-    6) PAGINATION
+    1) GALLERY
  */
+
+
+.cart-icon {
+    color: var(--green-1);
+    transition: color 0.3s ease-in-out;
+}
+
+
+.cart-btn:hover {
+    background-color: var(--green-1);
+    color: white;
+}
+
+
+.cart-btn:hover .cart-icon {
+    color: white;
+}
+
+
+
+
+/*
+    PAGINATION
+ */
+
 
 .pagination {
     margin-top: 3rem;
     margin-bottom: 3rem;
     display: flex;
 }
+
 
 .page-link {
     background-color: var(--green-3);
@@ -103,11 +123,13 @@
     transition: background 0.3s ease-in-out;
 }
 
+
 .page-link:hover {
     background-color: var(--green-1);
     border-color: var(--green-1);
     color: white;
 }
+
 
 .page-item.active .page-link {
     background-color: var(--green-1);
@@ -115,9 +137,271 @@
     color: white;
 }
 
+
 .page-item.disabled .page-link {
     background-color: var(--gray-200);
     border-color: var(--gray-300);
     color: var(--gray-500);
     cursor: not-allowed;
+}
+
+
+
+/*
+    MODAL
+ */
+
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+
+.modal-container {
+    background-color: rgba(255, 255, 255, 0.95);
+    width: 90%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: row;
+    border-radius: 12px;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    overflow: visible;
+}
+
+
+.modal-img-container {
+    width: 50%;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 12px 0 0 12px;
+}
+
+
+.modal-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+.modal-content {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 0 12px 12px 0;
+}
+
+
+.modal-details {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 12px 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+}
+
+
+.modal-close {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--green-3);
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: white;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+}
+
+
+.modal-close:hover {
+    background: var(--green-1);
+}
+
+
+.modal-title {
+    font-weight: normal;
+    font-size: 1.5rem;
+    color: var(--green-1);
+    margin-bottom: 1px;
+}
+
+
+.modal-category {
+    display: inline-block;
+    width: fit-content; /* Se ajusta al contenido */
+    background-color: var(--green-3);
+    color: white;
+    font-size: 0.60rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-bottom: 1px;
+}
+
+
+.modal-price {
+    color: #777;
+    font-weight: normal;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+
+.modal-desc {
+    font-size: 0.95rem;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+
+.modal-quantity {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+
+.quantity-btn {
+    background: var(--green-3);
+    color: white;
+    border: none;
+    width: 26px;
+    height: 26px;
+    font-size: 1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: all 0.2s ease-in-out;
+}
+
+
+.quantity-btn:hover {
+    background: var(--green-1);
+    opacity: 1;
+}
+
+
+.quantity-number {
+    font-size: 1rem;
+    font-weight: bold;
+    min-width: 30px;
+    text-align: center;
+}
+
+
+.modal-quantity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin-bottom: 1rem ;
+}
+
+
+.modal-total {
+    color: var(--green-1);
+    font-weight: normal;
+    font-size: 1.2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+
+.btn-green-lg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    background-color: var(--green-3);
+    color: white;
+    border: none;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: normal;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+
+.btn-green-lg:hover,
+.btn-green-lg:focus,
+.btn-green-lg:active {
+    background-color: var(--green-1) !important;
+    color: white !important;
+}
+
+
+.btn-green-lg:hover {
+    background-color: var(--green-1);
+}
+
+
+.btn-green-lg.btn-added {
+    background-color: var(--green-1);
+    transform: scale(1.015);
+}
+
+
+.btn-green-lg:disabled {
+    background-color: var(--green-1) !important;
+    color: white !important;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+
+.cart-icon-btn {
+    font-size: 1.2rem;
+}
+
+
+@media (max-width: 768px) {
+    .modal-container {
+        flex-direction: column;
+        max-width: 80%;
+    }
+
+    .modal-img-container {
+        width: 100%;
+        height: 300px;
+    }
+
+    .modal-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-content {
+        width: 100%;
+    }
 }

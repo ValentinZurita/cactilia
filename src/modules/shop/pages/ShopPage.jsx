@@ -1,12 +1,11 @@
 import { HeroSection } from '../../public/components/home-page';
-import { SearchBar } from '../components/shop-page/SearchBar';
-import { FilterBar } from '../components/shop-page/FilterBar';
-import { ProductList } from '../components/shop-page/ProductList';
-import { Pagination } from '../components/shop-page/Pagination';
-import { useShopData } from '../hooks/useShopData';
+import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMessage} from '../components/shop-page/index.js';
+import { useProducts, useModal, useCart } from '../hooks/index.js';
 import { heroImages } from '../../../shared/constants';
 
 export const ShopPage = () => {
+
+  // Data fetching logic
   const {
     loading,
     error,
@@ -21,30 +20,17 @@ export const ShopPage = () => {
     currentPage,
     setCurrentPage,
     categories,
-  } = useShopData(); // <-- Custom Hook
+  } = useProducts();
 
-  // Función para manejar mensajes de error o carga
-  const renderStatusMessage = () => {
-    if (loading) {
-      return (
-        <div className="text-center my-4">
-          <p>Cargando productos...</p>
-        </div>
-      );
-    }
-    if (error) {
-      return (
-        <div className="text-center my-4 text-danger">
-          <p>Error al cargar productos: {error}</p>
-        </div>
-      );
-    }
-    return null;
-  };
+  // Modal logic
+  const { isOpen, selectedProduct, openModal, closeModal } = useModal();
+
+  // Cart logic
+  const { handleAddToCart } = useCart();
 
   return (
     <>
-      {/* Sección de Hero */}
+      {/* Hero Banner */}
       <HeroSection
         images={heroImages}
         title="Tienda de Cactilia"
@@ -54,7 +40,7 @@ export const ShopPage = () => {
         autoRotate={false}
       />
 
-      {/* Barra de búsqueda */}
+      {/* Barra de Búsqueda */}
       <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
       {/* Filtros */}
@@ -66,13 +52,13 @@ export const ShopPage = () => {
         categories={categories}
       />
 
-      {/* Mensajes de carga / error */}
-      {renderStatusMessage()}
+      {/* Mensajes de Estado (loading / error) */}
+      <StatusMessage loading={loading} error={error} />
 
-      {/* Paginación */}
+      {/* Listado de productos y paginación (solo si no hay error y se han cargado los datos) */}
       {!loading && !error && (
         <>
-          <ProductList products={products} />
+          <ProductList products={products} onProductClick={openModal} />
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -80,6 +66,14 @@ export const ShopPage = () => {
           />
         </>
       )}
+
+      {/* Modal del producto */}
+      <ProductModal
+        product={selectedProduct}
+        isOpen={isOpen}
+        onClose={closeModal}
+        onAddToCart={handleAddToCart}
+      />
     </>
   );
 };

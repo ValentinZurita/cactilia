@@ -10,59 +10,54 @@ import { INITIAL_PRODUCTS } from "../data/mockProducts";
  * @returns {{loading: boolean, error: unknown, searchTerm: string, setSearchTerm: (value: (((prevState: string) => string) | string)) => void, selectedCategory: string, setSelectedCategory: (value: (((prevState: string) => string) | string)) => void, priceOrder: string, setPriceOrder: (value: (((prevState: string) => string) | string)) => void, products: T[], totalPages: number, currentPage: number, setCurrentPage: (value: (((prevState: number) => number) | number)) => void, categories: any[]}}
  */
 
-export const useShopData = () => {
-
-  // Estados
+export const useProducts = () => {
+  // 1. Estados para datos
   const [originalProducts, setOriginalProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filtros
+  // 2. Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [priceOrder, setPriceOrder] = useState(""); // "Ninguno", "Destacados", "Menor a Mayor", "Mayor a Menor"
+  const [priceOrder, setPriceOrder] = useState(""); // Ej: "Menor a Mayor", "Mayor a Menor", "Destacados", "Ninguno"
 
-  // Paginación
+  // 3. Estado para paginación
   const [currentPage, setCurrentPage] = useState(1);
   const PRODUCTS_PER_PAGE = 12;
 
-  /**
-   * 1) Mock data:
-   *    En un futuro, este setTimeout se reemplaza por una llamada real a Firebase.
-   */
+  // 4. Carga de datos simulada (Se implementara con Firebase)
   useEffect(() => {
     setLoading(true);
     setTimeout(() => {
-      setOriginalProducts(INITIAL_PRODUCTS);
-      setLoading(false);
+      try {
+        setOriginalProducts(INITIAL_PRODUCTS);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
     }, 1000);
   }, []);
 
-
-  /**
-   * 2) Lista de productos filtrada.
-   *    - Búsqueda (title)
-   *    - Categoría
-   *    - Orden (price asc/desc) o Destacados
-   */
+  // 5. Filtrado y ordenamiento
   const filteredProducts = useMemo(() => {
     if (loading || error) return [];
 
     let result = [...originalProducts];
 
-    // Filtro por búsqueda
+    // Filtrado por búsqueda (título)
     if (searchTerm.trim() !== "") {
       result = result.filter((prod) =>
         prod.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Filtro por categoría
+    // Filtrado por categoría
     if (selectedCategory) {
       result = result.filter((prod) => prod.category === selectedCategory);
     }
 
-    // Ordenamiento
+    // Ordenamiento o filtrado por "Destacados"
     switch (priceOrder) {
       case "Menor a Mayor":
         result.sort((a, b) => a.price - b.price);
@@ -75,16 +70,14 @@ export const useShopData = () => {
         break;
       case "Ninguno":
       default:
-        // No hacemos nada
+        // Sin cambios
         break;
     }
 
     return result;
   }, [originalProducts, loading, error, searchTerm, selectedCategory, priceOrder]);
 
-  /**
-   * 3) Paginación
-   */
+  // 6. Paginación
   const totalPages = useMemo(() => {
     return Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
   }, [filteredProducts]);
@@ -94,17 +87,13 @@ export const useShopData = () => {
     return filteredProducts.slice(start, start + PRODUCTS_PER_PAGE);
   }, [filteredProducts, currentPage]);
 
-  /**
-   * 4) Lista de categorías únicas (para el FilterBar)
-   */
+  // 7. Extracción de categorías únicas (para el FilterBar)
   const categories = useMemo(() => {
-    const uniqueCats = originalProducts.map((p) => p.category);
-    return [...new Set(uniqueCats)];
+    const allCategories = originalProducts.map((p) => p.category);
+    return [...new Set(allCategories)];
   }, [originalProducts]);
 
-  /**
-   * 5) Retornamos los valores necesarios para la página.
-   */
+  // 8. Retornamos lo necesario
   return {
     loading,
     error,
@@ -118,6 +107,6 @@ export const useShopData = () => {
     totalPages,
     currentPage,
     setCurrentPage,
-    categories
+    categories,
   };
 };
