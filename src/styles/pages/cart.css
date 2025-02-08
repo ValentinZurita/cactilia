@@ -1,0 +1,157 @@
+/* Ajustar la altura, bordes o el color del grupo de cantidad */
+.btn-group > .btn {
+
+}
+
+/* Ajuste para la imagen */
+.cart-item-image img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+}
+
+/* Título, subtítulo, etc., si necesitas más personalización */
+.cart-item-title {
+    /* color, font-size, etc. */
+}
+
+.cart-item-subtitle {
+    /* color, font-size, etc. */
+}
+
+/* Contenedor general de la página del carrito */
+.cart-page {
+    /* Mobile first */
+    max-width: 600px; /* ancho máximo en desktop */
+    margin: 0 auto;   /* centrar en pantallas grandes */
+}
+
+/* Botón de flecha para regresar */
+.btn-arrow-back {
+    background: none;
+    border: none;
+    color: #333;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-arrow-back:hover {
+    color: var(--green-1); /* ejemplo */
+}
+
+/* ===== Cart Items ===== */
+.cart-item-container {
+    border-bottom: 1px solid #eee;
+}
+
+.cart-item-image img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+}
+
+.cart-item-title {
+    font-size: 1rem;
+    margin-bottom: 2px;
+    /* color: #222; */
+}
+
+.cart-item-subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+}
+
+.cart-item-price-stock {
+    font-size: 0.95rem;
+}
+
+/* Acciones: cantidad y botón eliminar */
+.cart-item-actions {
+    margin-top: 8px;
+}
+
+/* Botones de + y - */
+.btn-quantity {
+    width: 32px;
+    height: 32px;
+    background-color: var(--gray-200);
+    color: #444;
+    border: none;
+    border-radius: 6px;
+    margin: 0 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-quantity:hover {
+    background-color: var(--gray-300);
+}
+
+/* Texto que muestra la cantidad */
+.quantity-number {
+    width: 28px;
+    text-align: center;
+    font-weight: 600;
+}
+
+
+/*
+    Botón de checkout
+ */
+
+
+/* Botón Checkout */
+.btn-green-checkout {
+    background-color: var(--green-1);
+    color: #fff;
+    border: none;
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.btn-green-checkout:hover {
+    background-color: #228b22;
+    transform: scale(1.02);
+}
+
+
+/*
+    🛒 Cart Total
+    Estilos para el contenedor del total del carrito.
+ */
+
+
+.cart-total {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.cart-total h4 {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.cart-total .d-flex {
+    margin-bottom: 0.75rem;
+}
+
+.cart-total hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 1rem 0;
+}
+
+.cart-total span,
+.cart-total strong {
+    font-size: 1rem;
+}
