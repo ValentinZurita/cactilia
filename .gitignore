@@ -54,3 +54,5 @@ yarn-error.log*
 
 # Archivos de macOS
 .DS_Store
+
+serviceAccountKey.json
