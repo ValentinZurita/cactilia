@@ -1,103 +1,179 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { createCategory, updateCategory } from "../../services/categoryService";
+import { useImageUpload } from "../../hooks/useImageUpload";
+import { uploadFile, deleteFile } from '../../../../firebase/firebaseStorage.js'
+import { ImageUploader, ImagePreview, SelectField, InputField } from './index.js'
 
 
-/*
-  *
-  * Form that allows the admin to add or edit a category.
-  *
-  * @param {Object} props
-  * @param {Function} props.onCategorySaved - Function to call when the category is saved.
-  * @param {Object} [props.editingCategory] - The category to edit, if any.
-  *
-  * @returns {JSX.Element}
-  *
-  * @example
-  * <CategoryForm onCategorySaved={handleCategorySaved} editingCategory={category} />
-  *
+/**
+ * CategoryForm
+ * Form to create or edit a category.
+ * @param {Function} onCategorySaved The function to call when the category is saved.
+ * @param {Object} editingCategory The category to edit, if any.
+ *
+ * @returns {JSX.Element}
+ *
+ * @constructor
+ * @example
+ * <CategoryForm onCategorySaved={handleCategorySaved} editingCategory={category} />
  */
 
 
 export const CategoryForm = ({ onCategorySaved, editingCategory }) => {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm();
 
-  // Load the category data into the form if we're editing
+  // Form methods and properties from react-hook-form
+  const methods = useForm();
+  const { handleSubmit, reset, setValue, control, formState: { isSubmitting } } = methods;
+
+  // Image hook: max 3 images, 2 MB each
+  const {
+    images,         // [{ file, previewUrl }]
+    mainImage,      // previewUrl
+    addLocalImages,
+    removeLocalImage,
+    setPrimaryImage,
+    setInitialImages, // 🆕 Allows setting initial images when editing
+    getImagesToDelete // 🆕 Retrieve images to delete
+  } = useImageUpload(3, 2); // Max 3 images, 2MB each
+
+  // Load category data into the form
   useEffect(() => {
-    if (editingCategory) {
+    if (editingCategory && images.length === 0) {
+      // Set form values
       Object.entries(editingCategory).forEach(([key, value]) => {
         setValue(key, value);
       });
-    }
-  }, [editingCategory, setValue]);
 
-  // Handle the form submission
+      // Prepare existing images
+      if (editingCategory.images && Array.isArray(editingCategory.images)) {
+        const existingImages = editingCategory.images.map((url) => ({
+          file: null,
+          previewUrl: url,
+        }));
+
+        setInitialImages(existingImages);
+        if (editingCategory.mainImage) {
+          setPrimaryImage(editingCategory.mainImage);
+        }
+      }
+    }
+  }, [editingCategory, setValue, images.length, setInitialImages, setPrimaryImage]);
+
+
+  /**
+   * Handle form submission.
+   * Uploads new images, removes deleted ones, and saves the category.
+   *
+   * @param {Object} data - Form data
+   */
+
   const onSubmit = async (data) => {
+    // 1️⃣ Prepare folder path
+    const categoryName = data.name?.trim() || "unknown";
+    const folderPath = `category-images/${categoryName.replace(/\s+/g, '-')}`;
+
+    // 2️⃣ Upload new images to Firebase
+    const uploadedURLs = [];
+    for (const img of images) {
+      if (img.file) {
+        const url = await uploadFile(img.file, folderPath);
+        if (url) uploadedURLs.push(url);
+      } else {
+        uploadedURLs.push(img.previewUrl);
+      }
+    }
+
+    // 3️⃣ Determine the main image URL
+    let mainUrl = uploadedURLs[0] || null;
+    const found = uploadedURLs.find((u) => u === mainImage);
+    if (found) mainUrl = found;
+
+    // 4️⃣ Remove images marked for deletion
+    const imagesToDelete = getImagesToDelete();
+    for (const imageUrl of imagesToDelete) {
+      await deleteFile(imageUrl);
+    }
+
+    // 5️⃣ Prepare category data
     const categoryData = {
-      nombre: data.nombre,
-      descripcion: data.descripcion || "",
-      activa: data.activa === "true",
-      imagenUrl: data.imagenUrl || null,
+      name: data.name,
+      description: data.description || "",
+      active: data.active === "true",
+      images: uploadedURLs,
+      mainImage: mainUrl,
     };
 
+    // 6️⃣ Create or update the category
     const response = editingCategory
       ? await updateCategory(editingCategory.id, categoryData)
       : await createCategory(categoryData);
 
+    // 6.1) Handle errors
     if (!response.ok) {
       alert(`Error al ${editingCategory ? "actualizar" : "crear"} la categoría: ${response.error}`);
       return;
     }
 
+    // 7️⃣ Reset form and notify success
     alert(`Categoría ${editingCategory ? "actualizada" : "creada"} exitosamente`);
     reset();
     onCategorySaved();
   };
 
-  // Render a reusable input field
-  const renderInputField = (label, name, type = "text", options = {}) => (
-    <div className="mb-3">
-      <label className="form-label">{label}</label>
-      <input className="form-control" type={type} {...register(name, options)} />
-      {errors[name] && <div className="text-danger">{errors[name].message}</div>}
-    </div>
-  );
-
-  // Render a reusable select field
-  const renderSelectField = (label, name, options) => (
-    <div className="mb-3">
-      <label className="form-label">{label}</label>
-      <select className="form-select" {...register(name)}>
-        {options.map(([value, text]) => (
-          <option key={value} value={value}>{text}</option>
-        ))}
-      </select>
-    </div>
-  );
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="mb-4">
-      <h3>{editingCategory ? "Editar Categoría" : "Agregar Categoría"}</h3>
 
-      {/* Render the input fields */}
-      {renderInputField("Nombre", "nombre", "text", { required: "El nombre es obligatorio" })}
-      {renderInputField("Descripción", "descripcion", "textarea")}
-      {renderInputField("Imagen URL", "imagenUrl", "text")}
+    <FormProvider {...methods}>
 
-      {/* Render the select field */}
-      {renderSelectField("Activa", "activa", [["true", "Sí"], ["false", "No"]])}
+      {/* Form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="mb-4">
 
-      {/* Submit button */}
-      <button type="submit" className="btn btn-primary">
-        {editingCategory ? "Actualizar Categoría" : "Guardar Categoría"}
-      </button>
+        {/* Form title */}
+        <h3>{editingCategory ? "Editar Categoría" : "Agregar Categoría"}</h3>
 
-    </form>
+        {/* Name */}
+        <InputField
+          name="name"
+          label="Nombre"
+          control={control}
+          rules={{ required: "El nombre es obligatorio" }}
+        />
+
+        {/* Description */}
+        <InputField
+          name="description"
+          label="Descripción"
+          control={control}
+          type="textarea"
+        />
+
+        {/* Image uploader */}
+        <ImageUploader onUpload={addLocalImages} />
+
+        {/* Image preview */}
+        <ImagePreview
+          images={images}
+          mainImage={mainImage}
+          onRemove={removeLocalImage}
+          onSetMain={setPrimaryImage}
+        />
+
+        {/* Active */}
+        <SelectField
+          name="active"
+          label="Activa"
+          control={control}
+          options={[["true", "Sí"], ["false", "No"]]}
+        />
+
+        {/* Submit button */}
+        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+          {editingCategory ? "Actualizar Categoría" : "Guardar Categoría"}
+        </button>
+
+      </form>
+
+    </FormProvider>
   );
 };

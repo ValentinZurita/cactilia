@@ -54,7 +54,7 @@ export const Sidebar = ({ onLinkClick }) => {
 
 
   return (
-    <div className="sidebar-container d-flex flex-column bg-dark text-light shadow-lg vh-100 p-3">
+    <div className="sidebar-container d-flex flex-column bg-dark text-light min-vh-100 p-3">
 
       {/* Sidebar Header */}
       <h5 className="mb-4 fw-medium">Panel de Administración</h5>

@@ -39,7 +39,7 @@ export const MobileNavbar = ({ navigate }) => (
 
 
 export const DesktopSidebar = () => (
-  <aside className="col-md-3 col-lg-2 bg-dark vh-100 d-none d-md-flex flex-column p-0">
+  <aside className="col-md-3 col-lg-2 bg-dark d-none d-md-flex flex-column p-0">
     <Sidebar />
   </aside>
 );

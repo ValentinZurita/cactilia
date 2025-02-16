@@ -1,105 +1,175 @@
-import { useForm } from 'react-hook-form';
-import { addProduct, updateProduct } from '../../services/productService'
-import { useEffect } from 'react'
+import React, { useEffect } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
+import { addProduct, updateProduct } from '../../services/productService';
+import { getCategories } from '../../services/categoryService';
+import { uploadFile, deleteFile } from '../../../../firebase/firebaseStorage.js';
+import { useImageUpload } from '../../hooks/useImageUpload';
+import { ImageUploader } from './ImageUploader';
+import { ImagePreview } from './ImagePreview';
+import { DynamicDropdown } from './DynamicDropdown';
+import { InputField } from './InputField';
+import { SelectField } from './SelectField';
 
 
-/*
-  Form that allows the admin to add a product.
+/**
+ * ProductForm component for adding and editing products.
+ *
+ * @param {Object} props - Component props
+ * @param {Function} props.onProductSaved - Callback when the product is saved successfully
+ * @param {Object} [props.editingProduct] - Product being edited (optional)
+ *
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <ProductForm onProductSaved={handleSave} uploadFolder="product-images" />
  */
 
-
 export const ProductForm = ({ onProductSaved, editingProduct }) => {
+  const methods = useForm();
+  const { handleSubmit, reset, setValue, control, formState: { isSubmitting } } = methods;
+
+  // Image upload hook for local image management
   const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm();
+    images,       // [{ file, previewUrl }]
+    mainImage,    // previewUrl of the main image
+    addLocalImages,
+    removeLocalImage,
+    setPrimaryImage,
+    setInitialImages,
+    getImagesToDelete // 🆕 Retrieve images marked for deletion
+  } = useImageUpload();
 
-  // Load the product data into the form if we're editing
+  /**
+   * Load product data if editing.
+   * It sets form values and existing images for editing.
+   */
   useEffect(() => {
-    if (editingProduct) {
+    if (editingProduct && images.length === 0) { // ✅ Prevent infinite re-renders
+      // Set form values
       Object.entries(editingProduct).forEach(([key, value]) => {
-        setValue(key, Array.isArray(value) ? value.join(", ") : value);
+        setValue(key, Array.isArray(value) ? value.join(', ') : value);
       });
-    }
-  }, [editingProduct, setValue]);
 
-  // Handle the form submission
-  const onSubmit = async (data) => {
+      // Prepare initial images
+      const existingImages = editingProduct.images?.map((url) => ({
+        file: null,
+        previewUrl: url
+      })) || [];
+
+      setInitialImages(existingImages);
+
+      if (editingProduct.mainImage) {
+        setPrimaryImage(editingProduct.mainImage);
+      }
+    }
+  }, [editingProduct, setValue, images.length, setInitialImages, setPrimaryImage]);
+
+  /**
+   * Handle form submission.
+   * Uploads images, removes marked images, and saves the product.
+   *
+   * @param {Object} data - Form data submitted
+   */
+  const handleSubmitForm = async (data) => {
+    // 1️⃣ Create folder path using product name
+    const productName = data.name?.trim() || 'unknown';
+    const folderPath = `product-images/${productName.replace(/\s+/g, '-')}`;
+
+    // 2️⃣ Upload images to Firebase
+    const uploadedUrls = [];
+    for (const img of images) {
+      if (img.file) {
+        const url = await uploadFile(img.file, folderPath);
+        if (url) uploadedUrls.push(url);
+      } else {
+        uploadedUrls.push(img.previewUrl);
+      }
+    }
+
+    // 3️⃣ Determine main image URL
+    let mainUrl = uploadedUrls[0] || 'https://via.placeholder.com/300';
+    const found = uploadedUrls.find((u) => u === mainImage);
+    if (found) mainUrl = found;
+
+    // 4️⃣ Remove images marked for deletion
+    const imagesToDelete = getImagesToDelete();
+    for (const imageUrl of imagesToDelete) {
+      await deleteFile(imageUrl);
+    }
+
+    // 5️⃣ Create product object
     const productData = {
       ...data,
       price: parseFloat(data.price),
       stock: parseInt(data.stock, 10),
-      images: data.images.split(",").map((img) => img.trim()).filter(Boolean),
+      images: uploadedUrls,
+      mainImage: mainUrl,
       active: data.active === "true",
       featured: data.featured === "true",
     };
 
+    // 6️⃣ Save or update product
     const response = editingProduct
       ? await updateProduct(editingProduct.id, productData)
       : await addProduct(productData);
 
     if (!response.ok) {
-      alert(`Error al ${editingProduct ? "actualizar" : "crear"} producto: ${response.error}`);
+      alert(`Error ${editingProduct ? "updating" : "creating"} product: ${response.error}`);
       return;
     }
 
-    alert(`Producto ${editingProduct ? "actualizado" : "creado"} exitosamente`);
+    // ✅ Success feedback
+    alert(`Product ${editingProduct ? "updated" : "created"} successfully`);
     reset();
     onProductSaved();
   };
 
-  // Render a reusable input field
-  const renderInputField = (label, name, type = "text", options = {}) => {
-    return (
-      <div className="mb-3">
-        <label className="form-label">{label}</label>
-        {type === "textarea" ? (
-          <textarea className="form-control" rows={3} {...register(name, options)} />
-        ) : (
-          <input className="form-control" type={type} {...register(name, options)} />
-        )}
-        {errors[name] && <div className="text-danger">{errors[name].message}</div>}
-      </div>
-    );
-  };
-
-  // Render a reusable select field
-  const renderSelectField = (label, name, options) => (
-    <div className="mb-3">
-      <label className="form-label">{label}</label>
-      <select className="form-select" {...register(name)}>
-        {options.map(([value, text]) => (
-          <option key={value} value={value}>{text}</option>
-        ))}
-      </select>
-    </div>
-  );
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
-      <h3>{editingProduct ? "Editar Producto" : "Agregar Producto"}</h3>
+    <FormProvider {...methods}>
+      <form onSubmit={handleSubmit(handleSubmitForm)} className="mt-4">
+        <h3>{editingProduct ? "Edit Product" : "Add Product"}</h3>
 
-      {/* Form fields */}
-      {renderInputField("Category ID", "categoryId", "text", { required: "La categoría es requerida" })}
-      {renderInputField("Nombre", "name", "text", { required: "El nombre es requerido" })}
-      {renderInputField("Descripción", "description", "textarea", { required: "La descripción es requerida" })}
-      {renderInputField("Precio", "price", "number", { required: "El precio es requerido", min: { value: 0.01, message: "El precio debe ser mayor que 0" } })}
-      {renderInputField("Stock", "stock", "number", { required: "El stock es requerido", min: { value: 0, message: "El stock no puede ser negativo" } })}
-      {renderInputField("Imágenes (separadas por coma)", "images", "text", { required: "Se requiere al menos una imagen" })}
-      {renderInputField("SKU", "sku", "text", { required: "El SKU es requerido" })}
+        {/* 🧩 Category selection dropdown */}
+        <DynamicDropdown
+          name="categoryId"
+          label="Category"
+          control={control}
+          fetchFunction={getCategories}
+        />
 
-      {/* Select fields */}
-      {renderSelectField("¿Activo?", "active", [["true", "Sí"], ["false", "No"]])}
-      {renderSelectField("¿Destacado?", "featured", [["false", "No"], ["true", "Sí"]])}
+        {/* 🖋️ Basic product info */}
+        <InputField name="name" label="Name" control={control} required />
+        <InputField name="description" label="Description" control={control} type="textarea" required />
+        <InputField name="price" label="Price" control={control} type="number" required />
+        <InputField name="stock" label="Stock" control={control} type="number" required />
+        <InputField name="sku" label="SKU" control={control} required />
 
-      {/* Submit button */}
-      <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-        {isSubmitting ? (editingProduct ? "Actualizando..." : "Creando...") : (editingProduct ? "Actualizar Producto" : "Crear Producto")}
-      </button>
+        {/* 🖼️ Image upload with local preview */}
+        <ImageUploader onUpload={(files) => addLocalImages(files)} />
 
-    </form>
+        {/* 🔍 Image preview and management */}
+        <ImagePreview
+          images={images}
+          mainImage={mainImage}
+          onRemove={removeLocalImage}
+          onSetMain={setPrimaryImage}
+        />
+
+        {/* ⚙️ Product settings */}
+        <SelectField name="active" label="Active?" control={control} options={[["true", "Yes"], ["false", "No"]]} />
+        <SelectField name="featured" label="Featured?" control={control} options={[["false", "No"], ["true", "Yes"]]} />
+
+        {/* 🚀 Submit button */}
+        <button
+          type="submit"
+          className="btn btn-primary w-100 mt-3"
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? (editingProduct ? "Updating..." : "Creating...")
+            : (editingProduct ? "Update Product" : "Create Product")}
+        </button>
+      </form>
+    </FormProvider>
   );
 };
