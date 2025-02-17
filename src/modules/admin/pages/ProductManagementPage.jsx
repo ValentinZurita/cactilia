@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getProducts, deleteProduct } from "../services/productService";
 import { ProductForm } from '../components/dashboard/index.js'
 import placeholder from '../../../shared/assets/images/placeholder.jpg'
+import { TableView } from '../components/dashboard/TableView.jsx'
 
 
 /**
@@ -91,64 +92,79 @@ export const ProductManagementPage = () => {
   const renderViewMode = () => {
     if (loading) return <p>Cargando productos...</p>;
 
+    // Def
+    const columns = [
+      {
+        key: 'image',
+        header: 'Imagen',
+        renderCell: (prod) => (
+          <img
+            src={prod.mainImage || placeholder}
+            alt={prod.name}
+            className="img-thumbnail"
+            style={{
+              width: "60px",
+              height: "60px",
+              objectFit: "cover",
+            }}
+          />
+        )
+      },
+      {
+        key: 'name',
+        header: 'Nombre',
+        renderCell: (prod) => prod.name
+      },
+      {
+        key: 'price',
+        header: 'Precio',
+        renderCell: (prod) => `\$${prod.price.toFixed(2)}`
+      },
+      {
+        key: 'stock',
+        header: 'Stock',
+        renderCell: (prod) => prod.stock
+      },
+      {
+        key: 'active',
+        header: 'Activo',
+        renderCell: (prod) => prod.active ? "Sí" : "No"
+      },
+      {
+        key: 'actions',
+        header: 'Acciones',
+        renderCell: (prod) => (
+          <>
+            <button
+              className="btn btn-outline-primary btn-sm me-2"
+              onClick={() => navigate(`/admin/products/edit/${prod.id}`)}
+              title="Editar producto"
+            >
+              <i className="bi bi-pencil"></i>
+            </button>
+
+            <button
+              className="btn btn-outline-danger btn-sm"
+              onClick={() => handleDeleteProduct(prod.id)}
+              title="Eliminar producto"
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+          </>
+        )
+      }
+    ];
+
+    // Usamos nuestro componente TableView
     return (
-      <div className="table-responsive">
-        <table className="table table-striped table-hover border shadow-sm" style={{ borderRadius: "12px", overflow: "hidden" }}>
-          <thead className="table-dark">
-          <tr>
-            <th className="py-3 px-2">Imagen</th>
-            <th className="py-3 px-2">Nombre</th>
-            <th className="py-3 px-2">Precio</th>
-            <th className="py-3 px-2">Stock</th>
-            <th className="py-3 px-2">Activo</th>
-            <th className="py-3 px-2">Acciones</th>
-          </tr>
-          </thead>
-          <tbody>
-          {products.map((prod) => (
-            <tr key={prod.id}>
-              {/* 🖼️ Imagen principal */}
-              <td className="align-middle">
-                <img
-                  src={prod.mainImage || placeholder}
-                  alt={prod.name}
-                  className="img-thumbnail"
-                  style={{
-                    width: "60px",
-                    height: "60px",
-                    objectFit: "cover",
-                  }}
-                />
-              </td>
-              {/* 🆎 Datos del producto */}
-              <td className="align-middle">{prod.name}</td>
-              <td className="align-middle">${prod.price.toFixed(2)}</td>
-              <td className="align-middle">{prod.stock}</td>
-              <td className="align-middle">{prod.active ? "Sí" : "No"}</td>
-
-              {/* 🛠️ Acciones */}
-              <td className="align-middle">
-                <button
-                  className="btn btn-outline-primary btn-sm me-2"
-                  onClick={() => navigate(`/admin/products/edit/${prod.id}`)}
-                  title="Editar producto"
-                >
-                  <i className="bi bi-pencil"></i>
-                </button>
-
-                <button
-                  className="btn btn-outline-danger btn-sm"
-                  onClick={() => handleDeleteProduct(prod.id)}
-                  title="Eliminar producto"
-                >
-                  <i className="bi bi-trash"></i>
-                </button>
-              </td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
-      </div>
+      <TableView
+        data={products}
+        columns={columns}
+        loading={loading}
+        tableClass="table-striped table-hover border shadow-sm"
+        theadClass="table-dark"
+        style={{ borderRadius: "12px", overflow: "hidden" }}
+      />
     );
   };
 

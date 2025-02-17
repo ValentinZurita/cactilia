@@ -4,8 +4,7 @@ import { authSlice } from './auth/authSlice.js'
 import { registerSlice } from '../../auth/store/registerSlice.js'
 import { persistReducer, persistStore } from 'redux-persist'
 import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'
-import cartReducer from '../../../store/slices/cartSlice'
-import uiReducer from '../../../store/slices/uiSlice'
+
 
 
 // Config persistence
@@ -23,8 +22,6 @@ export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer, // Add the persisted auth slice to the store
     register: registerSlice.reducer, // Add the register slice to the store
-    cart: cartReducer,
-    ui: uiReducer
   },
 
   // Add the middleware to ignore some actions for the persistence

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getCategories, deleteCategory } from "../services/categoryService";
 import { CategoryForm } from '../components/dashboard/index.js'
 import placeholder from '../../../shared/assets/images/placeholder.jpg'
+import { TableView } from '../components/dashboard/TableView.jsx'
 
 
 /**
@@ -102,54 +103,69 @@ export const CategoryManagementPage = () => {
   const renderViewMode = () => {
     if (loading) return <p>Cargando categorías...</p>;
 
+    // 🆕 Definimos las columnas que mostrará la tabla
+    const columns = [
+      {
+        key: 'image',
+        header: 'Imagen',
+        renderCell: (cat) => (
+          <img
+            src={cat.mainImage || placeholder}
+            alt={cat.name}
+            className="img-thumbnail"
+            style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px" }}
+          />
+        )
+      },
+      {
+        key: 'name',
+        header: 'Nombre',
+        renderCell: (cat) => cat.name
+      },
+      {
+        key: 'description',
+        header: 'Descripción',
+        renderCell: (cat) => cat.description
+      },
+      {
+        key: 'active',
+        header: 'Activa',
+        renderCell: (cat) => (cat.active ? "Sí" : "No")
+      },
+      {
+        key: 'actions',
+        header: 'Acciones',
+        renderCell: (cat) => (
+          <>
+            {/* Edit mode -> /admin/categories/edit/:id */}
+            <button
+              className="btn btn-outline-primary btn-sm me-3"
+              onClick={() => navigate(`/admin/categories/edit/${cat.id}`)}
+            >
+              <i className="bi bi-pencil"></i>
+            </button>
+            {/* Delete mode -> /admin/categories/delete/:id */}
+            <button
+              className="btn btn-outline-danger btn-sm"
+              onClick={() => handleDeleteCategory(cat.id)}
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+          </>
+        )
+      }
+    ];
+
+    // 🆕 Retornamos el TableView con la data de categorías
     return (
-      <div className="table-responsive">
-        <table className="table table-striped table-hover border shadow-sm" style={{ borderRadius: "12px", overflow: "hidden" }}>
-          <thead className="table-dark">
-          <tr>
-            <th className="py-3 px-2">Imagen</th>
-            <th className="py-3 px-2">Nombre</th>
-            <th className="py-3 px-2">Descripción</th>
-            <th className="py-3 px-2">Activa</th>
-            <th className="py-3 px-2">Acciones</th>
-          </tr>
-          </thead>
-          <tbody>
-          {categories.map((cat) => (
-            <tr key={cat.id}>
-              {/* Miniatura de la imagen principal */}
-              <td className="align-middle">
-                <img
-                  src={cat.mainImage || placeholder}
-                  alt={cat.name}
-                  className="img-thumbnail"
-                  style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px" }}
-                />
-              </td>
-              <td className="align-middle">{cat.name}</td>
-              <td className="align-middle">{cat.description}</td>
-              <td className="align-middle">{cat.active ? "Sí" : "No"}</td>
-              <td className="align-middle">
-                {/* Edit mode -> /admin/categories/edit/:id */}
-                <button
-                  className="btn btn-outline-dark btn-sm me-3"
-                  onClick={() => navigate(`/admin/categories/edit/${cat.id}`)}
-                >
-                  <i className="bi bi-pencil"></i>
-                </button>
-                {/* Delete mode -> /admin/categories/delete/:id */}
-                <button
-                  className="btn btn-outline-danger btn-sm"
-                  onClick={() => handleDeleteCategory(cat.id)}
-                >
-                  <i className="bi bi-trash"></i>
-                </button>
-              </td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
-      </div>
+      <TableView
+        data={categories}
+        columns={columns}
+        loading={loading}
+        tableClass="table-striped table-hover border shadow-sm"
+        theadClass="table-dark"
+        style={{ borderRadius: "12px", overflow: "hidden" }}
+      />
     );
   };
 

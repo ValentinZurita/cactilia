@@ -168,7 +168,7 @@ export const CategoryForm = ({ onCategorySaved, editingCategory }) => {
         />
 
         {/* Submit button */}
-        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+        <button type="submit" className="btn btn-primary w-100 mt-3" disabled={isSubmitting}>
           {editingCategory ? "Actualizar Categoría" : "Guardar Categoría"}
         </button>
 

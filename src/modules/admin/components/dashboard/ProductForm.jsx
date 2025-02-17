@@ -167,7 +167,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         >
           {isSubmitting
             ? (editingProduct ? "Updating..." : "Creating...")
-            : (editingProduct ? "Update Product" : "Create Product")}
+            : (editingProduct ? "Update Product" : "Crear Producto")}
         </button>
       </form>
     </FormProvider>
