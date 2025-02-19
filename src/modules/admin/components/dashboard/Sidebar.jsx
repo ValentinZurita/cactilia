@@ -1,6 +1,10 @@
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { signOut } from 'firebase/auth'
+import { FirebaseAuth } from '../../../../firebase/firebaseConfig.js'
+import { logout } from '../../../public/store/auth/authSlice.js'
 
 
 /*
@@ -28,7 +32,11 @@ import { useState } from 'react'
 
 
 export const Sidebar = ({ onLinkClick }) => {
+
   const [openMenus, setOpenMenus] = useState({ categories: false, products: false });
+  const dispatch = useDispatch();
+  const { isAdmin } = useSelector(state => state.auth)
+  const navigate =useNavigate();
 
 
   // Toggles the visibility of a sidebar menu section.
@@ -49,6 +57,21 @@ export const Sidebar = ({ onLinkClick }) => {
         document.querySelector(".offcanvas-backdrop")?.remove();
         document.body.classList.remove("offcanvas-backdrop");
       }, 300);
+    }
+  };
+
+
+  // Handles the logout process.
+  const handleLogout = () => {
+    if (window.confirm("¿Quieres cerrar sesión?")) {
+      signOut(FirebaseAuth)
+        .then(() => {
+          dispatch(logout());
+          navigate("/admin/login");
+        })
+        .catch((error) => {
+          alert("Error al cerrar sesión: " + error.message);
+        });
     }
   };
 
@@ -76,6 +99,13 @@ export const Sidebar = ({ onLinkClick }) => {
           <SidebarItem to="/admin/products/view" label="Ver Productos" onClick={handleNavClick} />
           <SidebarItem to="/admin/products/create" label="Agregar Productos" onClick={handleNavClick} />
         </SidebarDropdown>
+
+        {/* Sidebar Logout */}
+        <li className="nav-item">
+          <button className="nav-link text-light" onClick={handleLogout}>
+            <i className="bi bi-box-arrow-right me-2" /> Cerrar Sesión
+          </button>
+        </li>
 
       </ul>
     </div>

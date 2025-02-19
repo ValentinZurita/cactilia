@@ -11,7 +11,7 @@ export const Navbar = () => {
     <nav className="navbar navbar-expand-lg bg-white shadow-sm fixed-top container-fluid px-3 d-flex align-items-center">
       <NavbarToggler showMenu={showMenu} setShowMenu={setShowMenu}/>
       <NavbarBrand />
-      <NavbarIcons status={status} displayName={displayName} />
+      <NavbarIcons />
       <NavbarLinks showMenu={showMenu} />
     </nav>
   );

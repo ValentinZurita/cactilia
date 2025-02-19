@@ -28,6 +28,7 @@ export const CategoryManagementPage = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
 
   // Load the categories when the page loads
@@ -88,6 +89,14 @@ export const CategoryManagementPage = () => {
       navigate("/admin/categories/view");
     }
   };
+
+
+ // 🆕 Filtered categories based on search term
+  const filteredCategories = categories.filter(cat =>
+    cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+
 
 
 
@@ -158,14 +167,34 @@ export const CategoryManagementPage = () => {
 
     // 🆕 Retornamos el TableView con la data de categorías
     return (
-      <TableView
-        data={categories}
-        columns={columns}
-        loading={loading}
-        tableClass="table-striped table-hover border shadow-sm"
-        theadClass="table-dark"
-        style={{ borderRadius: "12px", overflow: "hidden" }}
-      />
+      <>
+        {/* 🆕 Search Bar */}
+        <div className="mb-4">
+          <input
+            type="text"
+            className="form-control form-control-lg border shadow-sm rounded-3"
+            style={{ width: '100%' }}
+            placeholder="🔍 Buscar categorías..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setSearchTerm('');
+              }
+            }}
+          />
+        </div>
+
+        {/* TableView */}
+        <TableView
+          data={filteredCategories}
+          columns={columns}
+          loading={loading}
+          tableClass="table-striped table-hover border shadow-sm"
+          theadClass="table-dark"
+          style={{ borderRadius: "12px", overflow: "hidden" }}
+        />
+      </>
     );
   };
 

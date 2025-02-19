@@ -7,7 +7,7 @@ export const PageLayout = ({ children }) => {
   return (
 
     // Main container with Bootstrap's full-height and no padding/margin for a clean layout.
-    <div className="container-fluid vh-100 d-flex p-0">
+    <div className="container-fluid vh-100 d-flex p-0 " style={{ marginTop: '55px' }}>
       {children}
     </div>
   );

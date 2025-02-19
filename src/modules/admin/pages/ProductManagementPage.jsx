@@ -28,6 +28,7 @@ export const ProductManagementPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
 
   // Load the products when the page loads
@@ -92,7 +93,12 @@ export const ProductManagementPage = () => {
   const renderViewMode = () => {
     if (loading) return <p>Cargando productos...</p>;
 
-    // Def
+    // Filtrar productos según el término de búsqueda
+    const filteredProducts = products.filter((prod) =>
+      prod.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Definir columnas para la tabla
     const columns = [
       {
         key: 'image',
@@ -155,18 +161,41 @@ export const ProductManagementPage = () => {
       }
     ];
 
-    // Usamos nuestro componente TableView
+    // Renderizar barra de búsqueda y tabla
     return (
-      <TableView
-        data={products}
-        columns={columns}
-        loading={loading}
-        tableClass="table-striped table-hover border shadow-sm"
-        theadClass="table-dark"
-        style={{ borderRadius: "12px", overflow: "hidden" }}
-      />
+      <div className="mb-4">
+        {/* 🆕 Barra de búsqueda a pantalla completa con estilos de Bootstrap */}
+        <div className="container-fluid px-0 my-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault(); // Evitar el envío del formulario
+              setSearchTerm(""); // Limpiar el campo después de presionar Enter
+            }}
+          >
+            <input
+              type="text"
+              className="form-control form-control-lg border shadow-sm rounded-3"
+              placeholder="🔍 Buscar productos por nombre..."
+              name="productSearch"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </form>
+        </div>
+
+        {/* Tabla de productos */}
+        <TableView
+          data={filteredProducts}
+          columns={columns}
+          loading={loading}
+          tableClass="table-striped table-hover border shadow-sm"
+          theadClass="table-dark"
+          style={{ borderRadius: "12px", overflow: "hidden" }}
+        />
+      </div>
     );
   };
+
 
 
   /*

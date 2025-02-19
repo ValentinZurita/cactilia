@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import '../../../../styles/pages/shop.css'
+import '../../../../styles/pages/shop.css';
+import { ProductImageCarousel } from './ProductModalCarousel.jsx'
 
 /**
  * ProductModal component
@@ -8,76 +9,80 @@ import '../../../../styles/pages/shop.css'
  * @param {Function} onClose - Function to close the modal
  * @param {Function} onAddToCart - Function to add the product to cart
  */
-
 export const ProductModal = ({ product, isOpen, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [currentImage, setCurrentImage] = useState(product?.mainImage);
 
+  // Reset quantity when modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && product) {
       setQuantity(1);
       setAdded(false);
+      setCurrentImage(product.mainImage);
     }
-  }, [isOpen]);
+  }, [isOpen, product]);
 
   if (!isOpen || !product) return null;
 
+  // Handle clicking outside of modal
   const handleBackdropClick = (e) => {
     if (e.target.classList.contains('modal-backdrop')) {
       onClose();
     }
   };
 
+  // Handlers for increment/decrement
   const handleIncrement = () => setQuantity((q) => q + 1);
   const handleDecrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
+  // Add to cart handler
   const handleAddToCartClick = () => {
-    // Agrega el producto al carrito
     onAddToCart(product, quantity);
-    // Cambia el estado para actualizar el texto y animar el botón
     setAdded(true);
-    // Opcional: Cierra el modal después de 2 segundos
-    setTimeout(() => {
-      onClose();
-    }, 2000);
+    setTimeout(onClose, 2000);
   };
 
-  // Cálculo del total
+  // Calculate total
   const totalPrice = (product.price * quantity).toFixed(2);
 
   return (
     <div className="modal-backdrop" onClick={handleBackdropClick}>
       <div className="modal-container">
 
+        {/* Close button */}
+        <button className="modal-close" onClick={onClose}>✕</button>
 
-        {/* Botón de cerrar */}
-        <button className="modal-close" onClick={onClose}>
-          ✕
-        </button>
-
-
-        {/* Imagen del producto (100% visible) */}
-        <div className="modal-img-container">
-          <img src={product.image} alt={product.title} className="modal-img" />
+        {/* Product image */}
+        <div className="modal-img-container fixed-size">
+          <img src={currentImage} alt={product.name} className="modal-img" />
         </div>
 
-
-        {/* Contenido del modal con transparencia leve en el área de detalles */}
+        {/* Modal content */}
         <div className="modal-content">
           <div className="modal-details">
-            {/* Título del producto */}
-            <h3 className="modal-title">{product.title}</h3>
-            {/* Categoría (con estilo ya definido previamente) */}
-            <p className="modal-category">{product.category}</p>
-            {/* Precio */}
+
+            {/* Product name */}
+            <h3 className="modal-title">{product.name}</h3>
+
+            {/* Category */}
+            <div className="modal-category-container">
+              <p className="modal-category">{product.category || 'Sin categoría'}</p>
+              {product.stock === 0 && (
+                <span className="stock-label">Sin Stock</span>
+              )}
+            </div>
+
+            {/* Price */}
             <p className="modal-price">${product.price.toFixed(2)}</p>
-            {/* Descripción */}
-            <p className="modal-desc">
-              {product.desc || 'Sin descripción disponible'}
-            </p>
 
+            {/* Description */}
+            <p className="modal-desc">{product.description || 'Sin descripción disponible'}</p>
 
-            {/* Fila para controles de cantidad y total */}
+            {/* Image carousel */}
+            <ProductImageCarousel images={product.images} onSelectImage={(img) => setCurrentImage(img)} />
+
+            {/* Quantity controls */}
             <div className="modal-quantity-row">
               <div className="modal-quantity">
                 <button className="quantity-btn" onClick={handleDecrement}>
@@ -91,17 +96,15 @@ export const ProductModal = ({ product, isOpen, onClose, onAddToCart }) => {
               <p className="modal-total">Total: ${totalPrice}</p>
             </div>
 
-
-            {/* Botón Agregar al Carrito */}
+            {/* Add to cart button */}
             <button
               className={`btn btn-green-lg d-flex align-items-center ${added ? "btn-added" : ""}`}
               onClick={handleAddToCartClick}
-              disabled={added}  // Opcional: evita múltiples clics mientras se muestra el feedback
+              disabled={added || product.stock === 0}
             >
               <i className="bi bi-cart me-2"></i>
-              {added ? "Producto agregado" : "Agregar al Carrito"}
+              {product.stock === 0 ? "Sin stock" : added ? "Producto agregado" : "Agregar al Carrito"}
             </button>
-
 
           </div>
         </div>

@@ -1,7 +1,7 @@
 import '../../../../styles/pages/shop.css';
 
 export const ProductCard = ({ product, onProductClick }) => {
-  const { title, image, price, category } = product;
+  const { name, mainImage, price, category } = product;
 
   /**
    * This prevents the "Add to Cart" button
@@ -9,7 +9,7 @@ export const ProductCard = ({ product, onProductClick }) => {
    */
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    alert(`Agregado al carrito: ${title}`);
+    alert(`Agregado al carrito: ${name}`);
   };
 
   /**
@@ -27,28 +27,42 @@ export const ProductCard = ({ product, onProductClick }) => {
       style={{ cursor: 'pointer' }}
       onClick={handleCardClick} // The entire card is clickable
     >
+
+      {/* Product image */}
       <img
-        src={image}
+        src={mainImage}
         className="card-img-top"
-        alt={title}
+        alt={name}
         style={{ objectFit: 'cover', height: '200px' }}
       />
 
+      {/* Product name, price, category */}
       <div className="card-body d-flex flex-column">
-        <h5 className="text-md mb-xs">{title}</h5>
 
+        {/* Product name */}
+        <h5 className="text-md mb-xs">{name}</h5>
+
+        {/* Price and category */}
         <div className="d-flex justify-content-between align-items-center">
           <div>
-            <p className="text-green-1 text-xs mb-xs">{category}</p>
+            <div className="d-flex gap-2">
+              <p className="category-label">{category}</p>
+              {product.stock === 0 && (
+                <p className="stock-label">Sin Stock</p>
+              )}
+            </div>
             <p className="text-soft-black text-xs mb-xs">${price.toFixed(2)}</p>
           </div>
 
+          {/* Add to Cart button */}
           <button
-            className="btn cart-btn"
+            className={`btn cart-btn` }
+            disabled={product.stock === 0}
             onClick={handleAddToCart}
           >
-            <i className="bi bi-cart cart-icon"></i>
+            <i className="bi bi-cart cart-icon" disabled={product.stock === 0} ></i>
           </button>
+
         </div>
       </div>
     </div>

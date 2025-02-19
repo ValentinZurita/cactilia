@@ -1,16 +1,46 @@
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, getDoc} from "firebase/firestore";
 import { FirebaseDB } from "../../../firebase/firebaseConfig";
 
+
+/*
+  *
+  * Get category name by ID.
+  * This helper function retrieves the category name based on the provided categoryId.
+  *
+  * @param {string} categoryId - The ID of the category to retrieve the name for.
+  *
+  * @returns {string} - The name of the category, or a default string if not found.
+  *
+  * @example
+  * const categoryName = await getCategoryNameById("abc123");
+  * console.log("Category name:", categoryName);
+  *
+ */
+
+
+const getCategoryNameById = async (categoryId) => {
+  if (!categoryId) return "Sin categoría";
+
+  try {
+    const categoryRef = doc(FirebaseDB, "categories", categoryId);
+    const categorySnap = await getDoc(categoryRef);
+    return categorySnap.exists() ? categorySnap.data().name : "Categoría desconocida";
+  } catch (error) {
+    console.error("Error fetching category:", error);
+    return "Error de categoría";
+  }
+};
 
 
 
 /*
   *
   * Get all products from the database.
+  * This function retrieves all products, adding the category name based on the categoryId.
   *
   * @returns {Object} - The result of the operation.
   * @returns {boolean} ok - Indicates if the operation was successful.
-  * @returns {Array} [data] - The products data.
+  * @returns {Array} [data] - The products data with category names included.
   * @returns {Object} [error] - The error object in case of failure.
   *
   * @example
@@ -28,18 +58,21 @@ import { FirebaseDB } from "../../../firebase/firebaseConfig";
 export const getProducts = async () => {
   try {
     const querySnapshot = await getDocs(collection(FirebaseDB, "products"));
-    const products = querySnapshot.docs.map((docItem) => ({
-      id: docItem.id,
-      ...docItem.data(),
-    }));
+    const products = await Promise.all(
+      querySnapshot.docs.map(async (docItem) => {
+        const product = { id: docItem.id, ...docItem.data() };
+        product.category = await getCategoryNameById(product.categoryId);
+        return product;
+      })
+    );
 
+    console.log("Products fetched with category names:", products);
     return { ok: true, data: products };
   } catch (error) {
     console.error("Error fetching products:", error);
     return { ok: false, error };
   }
 };
-
 
 
 

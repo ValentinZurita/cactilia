@@ -14,27 +14,27 @@ import {
 } from 'firebase/auth'
 import { FirebaseAuth } from '../../../../firebase/firebaseConfig.js'
 import { signInWithGoogle } from '../../../../firebase/providers.js'
+import { getUserFromFirestore, saveUserToFirestore } from '../../../auth/services/userService.js'
+
 
 /**
  * Iniciar sesión con Google
  */
+
 export const startGoogleSignIn = () => {
   return async (dispatch) => {
     dispatch(checkingCredentials());
 
     const result = await signInWithGoogle();
-
     if (!result.ok) {
       dispatch(logout(result.errorMessage));
       return { ok: false, errorMessage: result.errorMessage };
     }
 
-    // Si ok: true, despacha login y retorna
     dispatch(login(result));
     return { ok: true, ...result };
   };
 };
-
 
 /**
  *
