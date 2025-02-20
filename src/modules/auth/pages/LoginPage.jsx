@@ -44,7 +44,7 @@ export const LoginPage = () => {
 
             {/* Social login buttons-and-fields */}
             <SocialButton type="google" />
-            <SocialButton type="apple" />
+          {/*  <SocialButton type="apple" />*/}
 
             {/* No tienes cuenta */}
             <AuthLinks/>

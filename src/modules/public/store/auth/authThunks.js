@@ -13,28 +13,48 @@ import {
   getAuth,
 } from 'firebase/auth'
 import { FirebaseAuth } from '../../../../firebase/firebaseConfig.js'
-import { signInWithGoogle } from '../../../../firebase/providers.js'
+import { signInWithApple, signInWithGoogle } from '../../../../firebase/providers.js'
 import { getUserFromFirestore, saveUserToFirestore } from '../../../auth/services/userService.js'
+import { getFunctions, httpsCallable } from "firebase/functions";
 
-
-/**
- * Iniciar sesión con Google
- */
 
 export const startGoogleSignIn = () => {
   return async (dispatch) => {
     dispatch(checkingCredentials());
 
+    // Llamamos a la función que creamos/ajustamos arriba
     const result = await signInWithGoogle();
+
     if (!result.ok) {
+      // Si falló, despachamos logout con el error
       dispatch(logout(result.errorMessage));
       return { ok: false, errorMessage: result.errorMessage };
     }
 
+    // Si salió ok, despachamos login con todos los datos, incluido role
     dispatch(login(result));
+
     return { ok: true, ...result };
   };
 };
+
+
+export const startAppleSignIn = () => {
+  return async (dispatch) => {
+    dispatch(checkingCredentials());
+
+    const result = await signInWithApple();
+    if (!result.ok) {
+      dispatch(logout({ errorMessage: result.errorMessage }));
+      return { ok: false, errorMessage: result.errorMessage };
+    }
+
+    dispatch(login(result)); // { uid, email, role, etc. }
+    return { ok: true };
+  };
+};
+
+
 
 /**
  *
@@ -62,67 +82,85 @@ export const startRegisterWithEmailPassword = ({
                                                }) => {
   return async (dispatch) => {
 
-    // 0) Dispatch checkingCredentials
+    // 0) Dispatch checkingCredentials to indicate authentication process has started
     dispatch(checkingCredentials());
 
     try {
-      // 1 ) Create user with email and password in Firebase Auth
+      // 1) Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         FirebaseAuth,
         email,
         password
       );
 
-      if (userCredential.user){
+      if (userCredential.user) {
+        const { uid } = userCredential.user;
 
         // 2) Send email verification
         await sendEmailVerification(userCredential.user);
 
-        // 2.1) Optional displayName
-        await updateProfile(FirebaseAuth.currentUser, {
+        // 3) Update Firebase Auth profile with full name
+        await updateProfile(userCredential.user, { displayName: fullName });
+
+        // 4) Save user data in Firestore
+        const userData = {
+          uid,
           displayName: fullName,
-        })
+          email,
+          phoneNumber: phoneNumber || "", // If no phone number is provided, store an empty string
+          role: "user", // Default role is "user"
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
 
-        // 3) Store user data in Redux state
-        dispatch(setEmailSent(true))
-        dispatch(setErrorMessage("Hemos enviado un email de verificación. Confirma tu correo antes de iniciar sesión."));
+        try {
+          await saveUserToFirestore(userData);
+          console.log("✅ User successfully saved to Firestore:", userData);
+        } catch (error) {
+          console.error("❌ Error saving user to Firestore:", error);
+        }
 
+        // 5) Update Redux state with success message
+        dispatch(setEmailSent(true));
+        dispatch(
+          setErrorMessage(
+            "We have sent a verification email. Please confirm your email before logging in."
+          )
+        );
+
+        // 6) Return success response
+        return { ok: true, emailSent: true };
       }
-
-      // 4) Return ok: true and email sent true
-      return { ok: true, emailSent: true };
-
     } catch (error) {
+      console.error("Error creating the account:", error.code, error.message);
 
-      console.error('Error al crear la cuenta:', error.code, error.message);
+      // 🔥 Error handling: Default error field is "email"
+      let errorField = "email";
+      let errorMessage = "Account creation failed. Please try again later.";
 
-      // By default, we'll show an error on the email field
-      let errorField = 'email';
-      let errorMessage = 'No se pudo crear la cuenta. Inténtalo más tarde.';
-
-      // Handle specific errors
       switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorField = 'email';
-          errorMessage = 'Ese correo ya está registrado.';
+        case "auth/email-already-in-use":
+          errorField = "email";
+          errorMessage = "This email is already registered.";
           break;
-        case 'auth/invalid-email':
-          errorField = 'email';
-          errorMessage = 'El email ingresado no es válido.';
+        case "auth/invalid-email":
+          errorField = "email";
+          errorMessage = "The provided email is invalid.";
           break;
-        case 'auth/weak-password':
-          errorField = 'password';
-          errorMessage = 'La contraseña es demasiado débil (mínimo 6 carácteres).';
+        case "auth/weak-password":
+          errorField = "password";
+          errorMessage = "The password is too weak (minimum 6 characters).";
           break;
-        case 'auth/operation-not-allowed':
-          errorMessage = 'Registro con email/password deshabilitado.';
+        case "auth/operation-not-allowed":
+          errorMessage = "Email/password registration is disabled.";
           break;
         default:
           break;
       }
 
-      // Let the form know that there was an error
+      // 7) Dispatch error in Redux state
       dispatch(logout({ errorMessage }));
+
       return {
         ok: false,
         errorField,

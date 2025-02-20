@@ -136,6 +136,7 @@ export const RegisterForm = () => {
       {/* Botón de Registro */}
       <SubmitButton text="Registrarse" />
 
+
       {/* Link to create an account */}
       <p className="text-center mt-3 text-muted">
         ¿Ya tienes cuenta?{' '}

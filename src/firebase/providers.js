@@ -1,62 +1,79 @@
-import {GoogleAuthProvider, signInWithPopup} from 'firebase/auth';
+import {GoogleAuthProvider, signInWithPopup, OAuthProvider} from 'firebase/auth';
 import { FirebaseAuth, FirebaseDB } from './firebaseConfig.js'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { getUserDoc, saveUserDoc } from '../modules/auth/services/userService.js';
 
-// Proveedor de autenticación con Google
+
 const googleProvider = new GoogleAuthProvider();
 
+/**
+ * Inicia sesión con Google y guarda/actualiza el usuario en Firestore.
+ * Retorna { ok, uid, displayName, email, photoURL, role } si todo va bien.
+ */
 export const signInWithGoogle = async () => {
   try {
-    // Iniciar sesión con Google
+    // 1) Popup de Google
     const result = await signInWithPopup(FirebaseAuth, googleProvider);
     const { displayName, email, photoURL, uid } = result.user;
 
-    // Obtener Custom Claims (para seguridad en roles)
-    const idTokenResult = await result.user.getIdTokenResult();
-    const role = idTokenResult.claims.role || "user"; // Asigna "user" si no tiene rol
+    // 2) Opcional: Forzar refresh token (por si usas Custom Claims)
+    await result.user.getIdToken(true);
 
-    console.log("✅ Usuario autenticado:", { uid, displayName, email, role });
-
-    // 📌 Referencia al documento del usuario en Firestore
-    const userRef = doc(FirebaseDB, "users", uid);
-    const userSnap = await getDoc(userRef);
-
-    // 📌 Si el usuario no existe en Firestore, lo creamos
-    if (!userSnap.exists()) {
-      console.log("🟡 Usuario nuevo. Guardando en Firestore...");
-
-      await setDoc(userRef, {
-        uid,
-        displayName,
-        email,
-        photoURL,
-        role, // Guardamos el rol como referencia
-        createdAt: new Date(),
-      });
-
-      console.log("✅ Usuario guardado en Firestore.");
-    } else {
-      console.log("⚪ Usuario ya registrado en Firestore.");
-    }
-
-    return {
-      ok: true,
+    // 3) Guardar o actualizar en Firestore. Asignar role='user' si es nuevo.
+    await saveUserDoc({
       uid,
       displayName,
       email,
       photoURL,
-      role,
-    };
+      role: 'user', // Por defecto se lo damos a cualquiera que entre por Google
+    });
+
+    // 4) Volver a leer el doc final, para obtener el role exacto (por si existía)
+    const finalUserData = await getUserDoc(uid);
+    const finalRole = finalUserData?.role || 'user';
+
+    // 5) Retornamos para que el thunk de Redux haga dispatch(login(...))
+    return { ok: true, uid, displayName, email, photoURL, role: finalRole };
 
   } catch (error) {
     console.error("❌ Error en signInWithGoogle:", error);
-    return {
-      ok: false,
-      errorMessage: error.message,
-    };
+    return { ok: false, errorMessage: error.message };
   }
 };
+
+
+const appleProvider = new OAuthProvider('apple.com');
+
+
+export const signInWithApple = async () => {
+  try {
+    const result = await signInWithPopup(FirebaseAuth, appleProvider);
+    const { uid, displayName, email, photoURL } = result.user;
+
+    // Forzar refresh token si usas Custom Claims (opcional)
+    await result.user.getIdToken(true);
+
+    // Guardar/actualizar en Firestore
+    await saveUserDoc({
+      uid,
+      email,
+      displayName: displayName || '',  // Apple a veces no provee name
+      photoURL: photoURL || '',
+      role: 'user',
+    });
+
+    // Leer doc final para obtener role o lo que necesites
+    const finalUserData = await getUserDoc(uid);
+    const finalRole = finalUserData?.role || 'user';
+
+    return { ok: true, uid, email, displayName, photoURL, role: finalRole };
+  } catch (error) {
+    console.error("❌ Error en signInWithApple:", error);
+    return { ok: false, errorMessage: error.message };
+  }
+};
+
+
 
 
 // Login with email and password

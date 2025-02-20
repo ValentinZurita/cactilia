@@ -10,17 +10,12 @@ export const LogoutButton = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    // ✅ Confirm logout
-    const confirmLogout = window.confirm("¿Estás seguro de que quieres cerrar sesión?");
 
-    // ❌ If user cancels, return
-    if (!confirmLogout) return;
-
-    // 🚪 Close session
+    // Close session
     try {
-      await signOut(FirebaseAuth); // 🔥 Close session in Firebase Auth
-      dispatch(logout()); // 🔥 Update Redux state
-      navigate("/"); // 🔄 Redirect to home page
+      await signOut(FirebaseAuth);
+      dispatch(logout());
+      navigate("/");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }

@@ -1,17 +1,16 @@
-// src/firebase/authUtils.js
-
 import { FirebaseAuth } from "./firebaseConfig";
 
-// Get the user's role from Firebase Auth
+// ✅ Obtener el rol del usuario autenticado
 export const getUserRole = async () => {
   const user = FirebaseAuth.currentUser;
   if (!user) return "visitor";
 
   try {
-    const idTokenResult = await user.getIdTokenResult();
+    const idTokenResult = await user.getIdTokenResult(true);
     return idTokenResult.claims.role || "visitor";
   } catch (error) {
     console.error("Error obteniendo el rol:", error);
     return "visitor";
   }
 };
+

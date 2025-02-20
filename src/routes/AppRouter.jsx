@@ -44,6 +44,8 @@ import { CartPage } from '../modules/user/pages/CartPage.jsx'
 import { AuthRoutes } from '../modules/auth/router/AuthRoutes.jsx'
 import { CategoryManagementPage } from '../modules/admin/pages/CategoryManagementPage.jsx'
 import { AdminRoutes } from '../modules/admin/routes/AdminRoutes.jsx'
+import { UserProfilePage } from '../modules/user/pages/UserProfilePage.jsx'
+import { PublicRoutes } from '../modules/public/router/PublicRoutes.jsx'
 
 export const AppRouter = () => {
   return (
@@ -51,14 +53,8 @@ export const AppRouter = () => {
 
       {/* Rutas de autenticación */}
 
-
-      {/* Public Layout (con Navbar y Footer) */}
-      <Route element={<PublicLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/shop" element={<ShopPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/auth/*" element={<AuthRoutes />} />
-      </Route>
+      {/* Rutas públicas */}
+      <Route path="/*" element={<PublicRoutes />} />
 
       {/* Admin Login (sin layout) */}
       <Route path="/admin/login" element={<AdminLoginPage />} />

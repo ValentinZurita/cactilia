@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDispatch } from 'react-redux'
-import { startGoogleSignIn } from '../../public/store/auth/authThunks.js'
+import { startAppleSignIn, startGoogleSignIn } from '../../public/store/auth/authThunks.js'
 
 export const SocialButton = ({ type }) => {
 
@@ -38,6 +38,7 @@ export const SocialButton = ({ type }) => {
   // Handle Apple login
   const handleAppleLogin = () => {
     console.log("Iniciando sesión con Apple...");
+    dispatch(startAppleSignIn())
   }
 
   return (
