@@ -1,9 +1,13 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { RequireAdminAuth } from '../components/admin-login-page/index.js'
-import { AdminHomePage, AdminLoginPage, ProductManagementPage } from '../pages/index.js'
-import { CategoryManagementPage } from '../pages/CategoryManagementPage.jsx'
 import { AdminLayout } from '../../../layout/AdminLayout.jsx'
-import { UserManagementPage } from '../pages/UserManagementPage.jsx'
+import {
+  AdminHomePage,
+  AdminLoginPage,
+  CategoryManagementPage,
+  ProductManagementPage,
+  UserManagementPage,
+} from '../pages/index.js'
+import { RequireAdminAuth } from '../components/admin-login-page/index.js'
 
 
 
@@ -43,9 +47,15 @@ export const AdminRoutes = () => {
           <Route path="products" element={<Navigate to="products/view" />} />
           <Route path="products/:mode/:id?" element={<ProductManagementPage />} />
 
-          {/* Users */}
-          <Route path="users" element={<Navigate to="users/view" />} />
-          <Route path="users/:mode/:id?" element={<UserManagementPage />} />
+          {/* NUEVAS RUTAS: Gestión de Usuarios */}
+          <Route path="users" element={<Navigate to="users/customers" />} />
+          <Route path="users/:type" element={<UserManagementPage />} />
+          <Route path="users/:type/:mode/:id?" element={<UserManagementPage />} />
+
+          {/* Rutas solo para superadmin */}
+          <Route element={<RequireAdminAuth superadminOnly={true} />}>
+            <Route path="superadmin/roles" element={<UserManagementPage />} />
+          </Route>
 
         </Route>
       </Route>

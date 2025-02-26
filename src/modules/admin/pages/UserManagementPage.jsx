@@ -1,251 +1,364 @@
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  getUsersByRole,
+  updateUserRole,
+  deleteUserDoc,
+  getUserDoc
+} from "../services/userService";
+import { getUserRole } from "../../../firebase/authUtils";
+import { UserDetailsCard } from "../components/dashboard/UserDetailsCard";
+import { TableView } from "../components/dashboard/TableView";
+import { UserRoleModal } from "../components/dashboard/UserRoleModal.jsx";
+import { Spinner } from "../../../shared/components/spinner/Spinner";
+
+
+
+
 /**
- * UserManagementPage.jsx
- * -------------------------------------------------
- * Página para gestionar usuarios:
- *  - Ver lista de usuarios
- *  - Editar roles de usuario (setCustomClaims + Firestore)
- *  - Eliminar usuarios (deleteUserByUID Cloud Function)
- *  - Ver detalles del usuario en un modal responsive
+ * Componente principal para la gestión de usuarios
+ * Maneja las operaciones CRUD para usuarios normales y administradores
  */
 
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { getApp } from "firebase/app";
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { getAuth } from "firebase/auth";
-
-// Componentes UI
-import { TableView } from "../components/dashboard/TableView.jsx";
-import { UserDetailsModal } from "../components/dashboard/UserDetalisModal.jsx";
-
-// Servicios
-import { getAllUsers, updateUserRoleInFirestore } from "../../auth/services/userService.js";
-
-// Inicializar Firebase Functions
-const firebaseApp = getApp();
-const functions = getFunctions(firebaseApp, "us-central1");
-
 export const UserManagementPage = () => {
-  const { role: currentUserRole } = useSelector((state) => state.auth);
+
+  // Obtener modo y tipo de la URL
+  const { mode, type = "customers", id } = useParams();
+  const navigate = useNavigate();
+
+  // Estados
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState("user");
 
-  const auth = getAuth();
+  // Determinar qué tipos de usuarios mostrar según el tipo en la URL
+  const rolesToFetch = type === "admins" ? ["admin", "superadmin"] : ["user"];
 
+  // Obtener el rol del usuario actual
   useEffect(() => {
-    loadUsers();
+    const checkCurrentUserRole = async () => {
+      const role = await getUserRole();
+      setCurrentUserRole(role);
+    };
+
+    checkCurrentUserRole();
   }, []);
 
-  /**
-   * Cargar usuarios desde Firestore
-   */
+  // Cargar usuario cuando estamos en modo de detalle
+  useEffect(() => {
+    if (mode === "view" && id) {
+      const loadUserDetail = async () => {
+        setLoading(true);
+        try {
+          const userData = await getUserDoc(id);
+          if (userData) {
+            setCurrentUser(userData);
+          } else {
+            alert("Usuario no encontrado");
+            navigate(`/admin/users/${type}`);
+          }
+        } catch (error) {
+          console.error("Error cargando detalles del usuario:", error);
+          alert("Error cargando datos del usuario");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadUserDetail();
+    } else if (mode !== "view") {
+      // Cargar lista de usuarios cuando no estamos en modo detalle
+      loadUsers();
+    }
+  }, [mode, type, id, navigate]);
+
+  // Función para cargar usuarios
   const loadUsers = async () => {
     setLoading(true);
-    const { ok, data, error } = await getAllUsers();
-    if (!ok) {
-      alert("Error cargando usuarios: " + error);
-      setLoading(false);
-      return;
-    }
-    setUsers(data);
-    setLoading(false);
-  };
-
-  /**
-   * Mostrar detalles del usuario llamando a la Cloud Function `getUserDetailsByUID`
-   */
-  const handleShowDetails = async (usr) => {
-    setSelectedUser(null);
-
-    if (!auth.currentUser) {
-      alert("Debes iniciar sesión para ver los detalles.");
-      return;
-    }
 
     try {
-      await auth.currentUser.getIdToken(true);
+      const { ok, data, error } = await getUsersByRole(rolesToFetch);
 
-      const getUserDetailsByUID = httpsCallable(functions, "getUserDetailsByUID");
-      // Usamos usr.uid, pero si no existe, se muestra un aviso
-      const uidToSend = usr.uid || usr.id;
-      if (!uidToSend) {
-        console.error("El objeto usuario no tiene uid ni id:", usr);
-        alert("Error: El usuario no tiene un identificador válido.");
-        return;
-      }
-      console.log("Enviando UID:", uidToSend);
-      const res = await getUserDetailsByUID({ uid: uidToSend });
-      if (!res.data?.ok) {
-        console.error("Error obteniendo detalles del usuario:", res.data.error);
-        alert("Error obteniendo detalles del usuario: " + (res.data.error || "desconocido"));
-        return;
-      }
-      // Fusionar datos locales de Firestore con los de Auth
-      setSelectedUser({
-        ...usr,
-        ...res.data.user,
-      });
-    } catch (error) {
-      console.error("Error obteniendo detalles avanzados:", error);
-      alert("Error obteniendo detalles avanzados: " + error.message);
-    }
-  };
-
-  /**
-   * Editar el rol de un usuario en Firebase Authentication
-   */
-  const handleEditRole = async (usr, newRole) => {
-    if (currentUserRole !== "superadmin") {
-      alert("No tienes permiso para cambiar roles.");
-      return;
-    }
-
-    if (!window.confirm(`¿Cambiar el rol de ${usr.displayName || "este usuario"} a '${newRole}'?`)) {
-      return;
-    }
-
-    if (!auth.currentUser) {
-      alert("Debes iniciar sesión para cambiar el rol.");
-      return;
-    }
-
-    try {
-      // Determinar el UID correcto
-      const uidToSend = usr.uid || usr.id;
-      if (!uidToSend) {
-        console.error("El objeto usuario no tiene uid ni id:", usr);
-        alert("Error: El usuario no tiene un identificador válido.");
-        return;
-      }
-      console.log("Enviando UID para setCustomClaims:", uidToSend);
-
-      // Asignar nuevo rol con la Cloud Function `setCustomClaims`
-      const setCustomClaims = httpsCallable(functions, "setCustomClaims");
-      const cfRes = await setCustomClaims({ uid: uidToSend, role: newRole });
-      if (!cfRes.data?.ok) {
-        console.error("Error en setCustomClaims:", cfRes.data);
-        alert("Error asignando rol: " + (cfRes.data?.message || "desconocido"));
-        return;
-      }
-
-      // También actualizar Firestore
-      const { ok, error } = await updateUserRoleInFirestore(uidToSend, newRole);
       if (!ok) {
-        console.error("Error actualizando rol en Firestore:", error);
-        alert("Error actualizando rol en Firestore: " + error);
-        return;
+        throw new Error(error || "Error desconocido");
       }
 
-      // Actualizar UI: aquí comparamos usando uidToSend
-      setUsers((prev) => prev.map((u) => ((u.uid || u.id) === uidToSend ? { ...u, role: newRole } : u)));
-      alert(`Rol cambiado a '${newRole}'. El usuario debe cerrar y volver a iniciar sesión.`);
+      setUsers(data);
     } catch (error) {
-      console.error("Error en handleEditRole:", error);
-      alert("Error cambiando rol: " + error.message);
+      console.error("Error obteniendo usuarios por rol:", error);
+      alert(`Error cargando usuarios: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  /**
-   * Eliminar un usuario de Firebase Authentication y Firestore
-   */
-  const handleDeleteUser = async (usr) => {
-    if (!window.confirm(`¿Seguro que quieres eliminar a ${usr.displayName || "este usuario"}?`)) {
-      return;
-    }
+  // Función para manejar el cambio de rol
+  const handleRoleChange = async (uid, newRole) => {
+    if (window.confirm(`¿Estás seguro de cambiar el rol del usuario a ${newRole}?`)) {
+      try {
+        setLoading(true);
+        const { ok, error } = await updateUserRole(uid, newRole);
 
-    if (!auth.currentUser) {
-      alert("Debes iniciar sesión para eliminar un usuario.");
-      return;
-    }
+        if (!ok) {
+          throw new Error(error || "Error desconocido");
+        }
 
-    try {
-      const uidToSend = usr.uid || usr.id;
-      if (!uidToSend) {
-        console.error("El objeto usuario no tiene uid ni id:", usr);
-        alert("Error: El usuario no tiene un identificador válido.");
-        return;
+        alert("Rol actualizado correctamente");
+        if (mode === "view") {
+          // Si estamos en vista de detalle, actualizar el usuario actual
+          const updatedUser = await getUserDoc(uid);
+          setCurrentUser(updatedUser);
+        } else {
+          // Si estamos en vista de lista, recargar la lista
+          await loadUsers();
+        }
+      } catch (error) {
+        console.error("Error actualizando rol:", error);
+        alert(`Error actualizando rol: ${error.message}`);
+      } finally {
+        setLoading(false);
       }
-      console.log("Enviando UID para deleteUser:", uidToSend);
-
-      const deleteUser = httpsCallable(functions, "deleteUserByUID");
-      const res = await deleteUser({ uid: uidToSend });
-      if (!res.data?.ok) {
-        console.error("Error eliminando usuario:", res.data);
-        alert("Error eliminando usuario: " + (res.data?.message || "desconocido"));
-        return;
-      }
-      setUsers((prev) => prev.filter((u) => (u.uid || u.id) !== uidToSend));
-      alert("Usuario eliminado correctamente.");
-    } catch (error) {
-      console.error("Error en handleDeleteUser:", error);
-      alert("Error eliminando usuario: " + error.message);
     }
   };
 
-  /**
-   * Dropdown para cambiar el rol del usuario
-   */
-  const RoleDropdown = ({ usr }) => {
-    const roles = ["user", "admin", "superadmin"];
+  // Función para eliminar usuario
+  const handleDeleteUser = async (uid) => {
+    if (window.confirm("¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.")) {
+      try {
+        setLoading(true);
+        const { ok, error } = await deleteUserDoc(uid);
+
+        if (!ok) {
+          throw new Error(error || "Error desconocido");
+        }
+
+        alert("Usuario eliminado correctamente");
+        if (mode === "view") {
+          // Si estamos en vista de detalle, volver a la lista
+          navigate(`/admin/users/${type}`);
+        } else {
+          // Si estamos en vista de lista, recargar la lista
+          await loadUsers();
+        }
+      } catch (error) {
+        console.error("Error eliminando usuario:", error);
+        alert(`Error eliminando usuario: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Función para abrir el modal de cambio de rol
+  const openRoleModal = (user) => {
+    setSelectedUser(user);
+    setShowRoleModal(true);
+  };
+
+  // Filtrar usuarios según término de búsqueda
+  const filteredUsers = users.filter(user =>
+    user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Renderizar tabla de usuarios
+  const renderUsersTable = () => {
+    if (loading) return <Spinner />;
+
+    const columns = [
+      {
+        key: 'avatar',
+        header: 'Avatar',
+        renderCell: (user) => (
+          <img
+            src={user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || user.email || 'User')}
+            alt={user.displayName}
+            className="rounded-circle"
+            style={{ width: "40px", height: "40px", objectFit: "cover" }}
+          />
+        )
+      },
+      {
+        key: 'name',
+        header: 'Nombre',
+        renderCell: (user) => user.displayName || 'Sin nombre'
+      },
+      {
+        key: 'email',
+        header: 'Email',
+        renderCell: (user) => user.email
+      },
+      {
+        key: 'role',
+        header: 'Rol',
+        renderCell: (user) => (
+          <span className={`badge ${getRoleBadgeColor(user.role)}`}>
+            {user.role || 'user'}
+          </span>
+        )
+      },
+      {
+        key: 'actions',
+        header: 'Acciones',
+        renderCell: (user) => (
+          <div className="d-flex gap-2">
+            {/* Ver detalles */}
+            <button
+              className="btn btn-sm btn-outline-info"
+              onClick={() => navigate(`/admin/users/${type}/view/${user.id}`)}
+              title="Ver detalles"
+            >
+              <i className="bi bi-eye"></i>
+            </button>
+
+            {/* Cambiar rol (solo para superadmin) */}
+            {currentUserRole === "superadmin" && (
+              <button
+                className="btn btn-sm btn-outline-warning"
+                onClick={() => openRoleModal(user)}
+                title="Cambiar rol"
+              >
+                <i className="bi bi-person-gear"></i>
+              </button>
+            )}
+
+            {/* Eliminar (solo para superadmin) */}
+            {currentUserRole === "superadmin" && (
+              <button
+                className="btn btn-sm btn-outline-danger"
+                onClick={() => handleDeleteUser(user.id)}
+                title="Eliminar usuario"
+              >
+                <i className="bi bi-trash"></i>
+              </button>
+            )}
+          </div>
+        )
+      }
+    ];
+
     return (
-      <select
-        className="form-select"
-        value={usr.role}
-        onChange={(e) => handleEditRole(usr, e.target.value)}
-        disabled={currentUserRole !== "superadmin"}
-      >
-        {roles.map((role) => (
-          <option key={role} value={role}>
-            {role.charAt(0).toUpperCase() + role.slice(1)}
-          </option>
-        ))}
-      </select>
+      <>
+        {/* Barra de búsqueda */}
+        <div className="mb-4">
+          <input
+            type="text"
+            className="form-control form-control-lg border shadow-sm rounded-3"
+            placeholder={`🔍 Buscar ${type === "admins" ? "administradores" : "clientes"}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Selector de tipo de usuario */}
+        <div className="mb-4">
+          <ul className="nav nav-pills">
+            <li className="nav-item">
+              <button
+                className={`nav-link ${type === "customers" ? "active" : ""}`}
+                onClick={() => navigate("/admin/users/customers")}
+              >
+                <i className="bi bi-people me-2"></i>
+                Clientes
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${type === "admins" ? "active" : ""}`}
+                onClick={() => navigate("/admin/users/admins")}
+              >
+                <i className="bi bi-shield-lock me-2"></i>
+                Administradores
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <TableView
+          data={filteredUsers}
+          columns={columns}
+          loading={loading}
+          tableClass="table-striped table-hover border shadow-sm"
+          theadClass="table-dark"
+          style={{ borderRadius: "12px", overflow: "hidden" }}
+        />
+
+        {/* Modal para cambiar rol - renderizado condicionalmente */}
+        {showRoleModal && selectedUser && (
+          <UserRoleModal
+            user={selectedUser}
+            onClose={() => setShowRoleModal(false)}
+            onSave={(uid, newRole) => {
+              handleRoleChange(uid, newRole);
+            }}
+          />
+        )}
+      </>
     );
   };
 
-  /**
-   * Columnas para la tabla de usuarios
-   */
-  const columns = [
-    { key: "displayName", header: "Nombre", renderCell: (usr) => usr.displayName || "(sin nombre)" },
-    { key: "email", header: "Correo", renderCell: (usr) => usr.email },
-    { key: "role", header: "Rol", renderCell: (usr) => <RoleDropdown usr={usr} /> },
-    {
-      key: "actions",
-      header: "Acciones",
-      renderCell: (usr) => (
-        <div className="d-flex gap-2">
-          <button className="btn btn-outline-info btn-sm" onClick={() => handleShowDetails(usr)}>
-            <i className="bi bi-eye"></i>
-          </button>
-          <button className="btn btn-outline-danger btn-sm" onClick={() => handleDeleteUser(usr)}>
-            <i className="bi bi-trash"></i>
-          </button>
+  // Renderizar vista de detalle de usuario
+  const renderUserDetail = () => {
+    if (loading) return <Spinner />;
+
+    if (!currentUser) {
+      return (
+        <div className="alert alert-warning">
+          No se encontró información del usuario
         </div>
-      ),
-    },
-  ];
+      );
+    }
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    return (
+      <>
+        <UserDetailsCard
+          user={currentUser}
+          onBack={() => navigate(`/admin/users/${type}`)}
+          onChangeRole={currentUserRole === "superadmin" ? openRoleModal : undefined}
+          onDelete={currentUserRole === "superadmin" ? handleDeleteUser : undefined}
+        />
 
+        {/* Modal para cambiar rol - renderizado condicionalmente */}
+        {showRoleModal && (
+          <UserRoleModal
+            user={selectedUser || currentUser}
+            onClose={() => setShowRoleModal(false)}
+            onSave={(uid, newRole) => {
+              handleRoleChange(uid, newRole);
+            }}
+          />
+        )}
+      </>
+    );
+  };
+
+  // Renderizar según el modo
   return (
-    <div>
-      <h2>Gestión de Usuarios</h2>
-      <input
-        type="text"
-        className="form-control form-control-lg mb-3"
-        placeholder="🔍 Buscar usuario..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      <TableView data={filteredUsers} columns={columns} loading={loading} />
-      <UserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} />
+    <div className="container-fluid px-0">
+      <h2 className="mb-4">
+        {type === "admins" ? "Gestión de Administradores" : "Gestión de Clientes"}
+        {mode === "view" && " - Detalles"}
+      </h2>
+
+      {mode === "view" ? renderUserDetail() : renderUsersTable()}
     </div>
   );
+};
+
+// Utilidad para determinar el color del badge según el rol
+const getRoleBadgeColor = (role) => {
+  switch (role) {
+    case "superadmin":
+      return "bg-danger";
+    case "admin":
+      return "bg-warning text-dark";
+    case "user":
+      return "bg-success";
+    default:
+      return "bg-secondary";
+  }
 };

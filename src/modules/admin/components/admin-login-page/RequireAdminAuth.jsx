@@ -30,8 +30,8 @@ export const RequireAdminAuth = () => {
 
     // Get the user role
     getUserRole().then((userRole) => {
-        setRole(userRole);
-      })
+      setRole(userRole);
+    })
       .catch((error) => {
         console.error("Error obteniendo el rol:", error);
         setRole("visitor");

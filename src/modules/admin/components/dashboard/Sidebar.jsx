@@ -1,11 +1,10 @@
-
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from 'firebase/auth'
 import { FirebaseAuth } from '../../../../firebase/firebaseConfig.js'
 import { logout } from '../../../public/store/auth/authSlice.js'
-
+import { getUserRole } from '../../../../firebase/authUtils.js'
 
 /*
  * ++++++++++++++++++++++++++++++++++++++++++++++
@@ -33,10 +32,24 @@ import { logout } from '../../../public/store/auth/authSlice.js'
 
 export const Sidebar = ({ onLinkClick }) => {
 
-  const [openMenus, setOpenMenus] = useState({ categories: false, products: false, users:false });
+  const [openMenus, setOpenMenus] = useState({
+    categories: false,
+    products: false,
+    users: false
+  });
+  const [userRole, setUserRole] = useState("admin");
   const dispatch = useDispatch();
   const { isAdmin } = useSelector(state => state.auth)
-  const navigate =useNavigate();
+  const navigate = useNavigate();
+
+  // Obtener el rol del usuario actual
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const role = await getUserRole();
+      setUserRole(role);
+    };
+    fetchUserRole();
+  }, []);
 
 
   // Toggles the visibility of a sidebar menu section.
@@ -49,14 +62,21 @@ export const Sidebar = ({ onLinkClick }) => {
   const handleNavClick = () => {
     if (window.innerWidth < 768) {
       const sidebarOffcanvas = document.getElementById("offcanvasAdminSidebar");
-      const bsOffcanvas = bootstrap.Offcanvas.getInstance(sidebarOffcanvas);
-      bsOffcanvas?.hide();
+      if (sidebarOffcanvas) {
+        const bsOffcanvas = bootstrap.Offcanvas.getInstance(sidebarOffcanvas);
+        bsOffcanvas?.hide();
 
-      // Remove residual backdrop
-      setTimeout(() => {
-        document.querySelector(".offcanvas-backdrop")?.remove();
-        document.body.classList.remove("offcanvas-backdrop");
-      }, 300);
+        // Remove residual backdrop
+        setTimeout(() => {
+          document.querySelector(".offcanvas-backdrop")?.remove();
+          document.body.classList.remove("offcanvas-backdrop");
+        }, 300);
+      }
+    }
+
+    // Llamar a la función de onclick proporcionada
+    if (onLinkClick) {
+      onLinkClick();
     }
   };
 
@@ -89,21 +109,40 @@ export const Sidebar = ({ onLinkClick }) => {
         <SidebarItem to="/admin/home" icon="bi-house" label="Home" onClick={handleNavClick} />
 
         {/* Sidebar Categories */}
-        <SidebarDropdown label="Categorias" icon="bi-tags" isOpen={openMenus.categories} toggle={() => toggleMenu("categories")}>
+        <SidebarDropdown
+          label="Categorias"
+          icon="bi-tags"
+          isOpen={openMenus.categories}
+          toggle={() => toggleMenu("categories")}
+        >
           <SidebarItem to="/admin/categories/view" label="Ver Categorias" onClick={handleNavClick} />
           <SidebarItem to="/admin/categories/create" label="Agregar Categorias" onClick={handleNavClick} />
         </SidebarDropdown>
 
         {/* Sidebar Products */}
-        <SidebarDropdown label="Productos" icon="bi-box-seam" isOpen={openMenus.products} toggle={() => toggleMenu("products")}>
+        <SidebarDropdown
+          label="Productos"
+          icon="bi-box-seam"
+          isOpen={openMenus.products}
+          toggle={() => toggleMenu("products")}
+        >
           <SidebarItem to="/admin/products/view" label="Ver Productos" onClick={handleNavClick} />
           <SidebarItem to="/admin/products/create" label="Agregar Productos" onClick={handleNavClick} />
         </SidebarDropdown>
 
-        {/* Sidebar Users */}
-        <SidebarDropdown label="Usuarios" icon="bi-people" isOpen={openMenus.users} toggle={() => toggleMenu("users")}>
-          <SidebarItem to="/admin/users/view" label="Ver Usuarios" onClick={handleNavClick} />
-          <SidebarItem to="/admin/users/create" label="Crear Usuario" onClick={handleNavClick} />
+        {/* NUEVA SECCIÓN: Usuarios (visible para todos los admins) */}
+        <SidebarDropdown
+          label="Usuarios"
+          icon="bi-people"
+          isOpen={openMenus.users}
+          toggle={() => toggleMenu("users")}
+        >
+          <SidebarItem to="/admin/users/customers" label="Clientes" onClick={handleNavClick} />
+
+          {/* Opción de Administradores solo visible para superadmin */}
+          {userRole === "superadmin" && (
+            <SidebarItem to="/admin/users/admins" label="Administradores" onClick={handleNavClick} />
+          )}
         </SidebarDropdown>
 
         {/* Sidebar Logout */}
@@ -187,7 +226,3 @@ const SidebarItem = ({ to, icon, label, onClick }) => (
     </NavLink>
   </li>
 );
-
-
-
-
