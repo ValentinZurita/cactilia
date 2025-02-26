@@ -3,6 +3,7 @@ import { FirebaseDB } from '../../../firebase/firebaseConfig.js'
 
 
 
+
 /**
  * Saves or updates a user in Firestore.
  * If the user already exists, updates only the necessary fields.
@@ -118,18 +119,25 @@ export const checkUserExists = async (uid) => {
 };
 
 
+
+
 /**
- * Elimina un usuario de Firestore (Opcional).
+ * Elimina el documento de un usuario en Firestore.
+ * (Esto NO elimina la cuenta de Firebase Auth;
+ * para eliminar totalmente se recomienda la Cloud Function deleteUserByUID).
  *
- * @param {string} uid - UID del usuario a eliminar.
- * @returns {Promise<void>}
+ * @param {string} uid - UID del usuario
+ * @returns {Promise<{ok: boolean, error?: any}>}
  */
-
 export const deleteUserFromFirestore = async (uid) => {
-  if (!uid) throw new Error("UID inválido");
-
-  const userRef = doc(FirebaseDB, 'users', uid);
-  await deleteDoc(userRef);
+  try {
+    const userRef = doc(FirebaseDB, "users", uid);
+    await deleteDoc(userRef);
+    return { ok: true };
+  } catch (error) {
+    console.error("Error deleteUserFromFirestore:", error);
+    return { ok: false, error };
+  }
 };
 
 
@@ -206,4 +214,50 @@ export const saveUserDoc = async (userData) => {
     await setDoc(userRef, finalData);
     console.log("✅ Usuario creado en Firestore.");
   }
+
+
 };
+
+
+
+
+/**
+ * Get all users from Firestore
+ * @returns {Promise<{ok: boolean, data?: Array, error?: string}>}
+ * @example
+ */
+export const getAllUsers = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(FirebaseDB, 'users'));
+    const usersList = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    return { ok: true, data: usersList };
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return { ok: false, error: error.message };
+  }
+};
+
+
+
+
+/**
+ * Actualiza el rol de un usuario en Firestore
+ * @param {string} uid - UID del usuario
+ * @param {string} newRole - Nuevo rol a asignar (p.ej. "admin", "superadmin")
+ * @returns {Promise<{ok: boolean, error?: any}>}
+ */
+export const updateUserRoleInFirestore = async (uid, newRole) => {
+  try {
+    const userRef = doc(FirebaseDB, "users", uid);
+    await updateDoc(userRef, { role: newRole });
+    return { ok: true };
+  } catch (error) {
+    console.error("Error updateUserRoleInFirestore:", error);
+    return { ok: false, error };
+  }
+};
+
+

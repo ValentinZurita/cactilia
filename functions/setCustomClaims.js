@@ -1,66 +1,104 @@
+/**
+ * setCustomClaims.js
+ * --------------------------------------------
+ * Cloud Functions para la gestión de usuarios en Firebase:
+ *  - Asignar custom claims (roles)
+ *  - Eliminar un usuario por UID
+ *  - Obtener detalles de un usuario con Admin SDK
+ */
+
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 
-// ✅ Evitar inicialización duplicada
+// Evitar inicialización duplicada
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-// ✅ Lista de roles permitidos
 const VALID_ROLES = ["user", "admin", "superadmin"];
 
 /**
- * Cloud Function para asignar Custom Claims (Roles de Usuario)
- * Se ejecuta cuando se llama desde el cliente con Firebase Callable Functions.
+ * Asignar Custom Claims (Roles de Usuario)
  */
-exports.setCustomClaims = functions.https.onCall(async (data, context) => {
-  const { uid, role } = data;
+exports.setCustomClaims = functions
+  .region("us-central1")
+  .https.onCall(async (data, context) => {
+    // Verificar permisos: solo superadmin puede asignar roles
+    if (!context.auth || !context.auth.token || context.auth.token.role !== "superadmin") {
+      return { ok: false, error: "No tienes permisos para asignar roles." };
+    }
+    const { uid, role } = data;
+    if (!uid || !role) {
+      return { ok: false, error: "Faltan parámetros: uid y role son requeridos." };
+    }
+    if (!VALID_ROLES.includes(role)) {
+      return { ok: false, error: `Rol inválido: '${role}'.` };
+    }
+    try {
+      await admin.auth().getUser(uid);
+      await admin.auth().setCustomUserClaims(uid, { role });
+      return { ok: true, message: `Rol '${role}' asignado al usuario ${uid}.` };
+    } catch (error) {
+      console.error("Error asignando custom claim:", error);
+      return { ok: false, error: error.message };
+    }
+  });
 
-  // ✅ Verificar si el usuario está autenticado
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "El usuario debe estar autenticado para asignar roles."
-    );
-  }
+/**
+ * Eliminar un usuario completamente (solo superadmin)
+ */
+exports.deleteUserByUID = functions
+  .region("us-central1")
+  .https.onCall(async (data, context) => {
+    if (!context.auth || !context.auth.token || context.auth.token.role !== "superadmin") {
+      return { ok: false, error: "No tienes permisos para eliminar usuarios." };
+    }
+    const { uid } = data;
+    if (!uid) {
+      return { ok: false, error: "Falta el UID del usuario." };
+    }
+    try {
+      await admin.auth().deleteUser(uid);
+      await admin.firestore().collection("users").doc(uid).delete();
+      return { ok: true, message: "Usuario eliminado correctamente." };
+    } catch (error) {
+      console.error("Error eliminando usuario:", error);
+      return { ok: false, error: error.message };
+    }
+  });
 
-  // ✅ Verificar que el usuario tiene permisos de Super Admin
-  if (!context.auth.token || context.auth.token.role !== "superadmin") {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Solo los superadmins pueden asignar roles."
-    );
-  }
-
-  // ✅ Validar que se envió UID y rol
-  if (!uid || !role) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Se requiere un UID y un rol válido."
-    );
-  }
-
-  // ✅ Validar que el rol sea permitido
-  if (!VALID_ROLES.includes(role)) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      `El rol "${role}" no es válido. Roles permitidos: ${VALID_ROLES.join(", ")}.`
-    );
-  }
-
-  try {
-    // ✅ Asignar los Custom Claims al usuario en Firebase Authentication
-    await admin.auth().setCustomUserClaims(uid, { role });
-
-    console.log(`✅ Rol "${role}" asignado a UID: ${uid}`);
-
-    // ✅ Refrescar el token del usuario para que los cambios sean inmediatos
-    const user = await admin.auth().getUser(uid);
-    await admin.auth().revokeRefreshTokens(user.uid);
-
-    return { success: true, message: `✅ Rol "${role}" asignado a ${uid} y tokens revocados.` };
-  } catch (error) {
-    console.error("❌ Error asignando Custom Claims:", error);
-    throw new functions.https.HttpsError("internal", "Error al asignar el rol.");
-  }
-});
+/**
+ * Obtener detalles de un usuario desde Admin SDK
+ */
+exports.getUserDetailsByUID = functions
+  .region("us-central1")
+  .https.onCall(async (data, context) => {
+    if (
+      !context.auth ||
+      !context.auth.token ||
+      !["admin", "superadmin"].includes(context.auth.token.role)
+    ) {
+      return { ok: false, error: "No autorizado para ver detalles de usuarios." };
+    }
+    const { uid } = data;
+    if (!uid) {
+      return { ok: false, error: "Falta el UID del usuario." };
+    }
+    try {
+      const userRecord = await admin.auth().getUser(uid);
+      return {
+        ok: true,
+        user: {
+          uid: userRecord.uid,
+          email: userRecord.email,
+          displayName: userRecord.displayName || "Sin nombre",
+          role: userRecord.customClaims?.role || "user",
+          lastSignInTime: userRecord.metadata.lastSignInTime,
+          creationTime: userRecord.metadata.creationTime,
+        },
+      };
+    } catch (error) {
+      console.error("Error getUserDetailsByUID:", error);
+      return { ok: false, error: "Error al obtener detalles: " + error.message };
+    }
+  });

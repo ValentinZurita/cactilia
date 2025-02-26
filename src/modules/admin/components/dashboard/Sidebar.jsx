@@ -33,7 +33,7 @@ import { logout } from '../../../public/store/auth/authSlice.js'
 
 export const Sidebar = ({ onLinkClick }) => {
 
-  const [openMenus, setOpenMenus] = useState({ categories: false, products: false });
+  const [openMenus, setOpenMenus] = useState({ categories: false, products: false, users:false });
   const dispatch = useDispatch();
   const { isAdmin } = useSelector(state => state.auth)
   const navigate =useNavigate();
@@ -98,6 +98,12 @@ export const Sidebar = ({ onLinkClick }) => {
         <SidebarDropdown label="Productos" icon="bi-box-seam" isOpen={openMenus.products} toggle={() => toggleMenu("products")}>
           <SidebarItem to="/admin/products/view" label="Ver Productos" onClick={handleNavClick} />
           <SidebarItem to="/admin/products/create" label="Agregar Productos" onClick={handleNavClick} />
+        </SidebarDropdown>
+
+        {/* Sidebar Users */}
+        <SidebarDropdown label="Usuarios" icon="bi-people" isOpen={openMenus.users} toggle={() => toggleMenu("users")}>
+          <SidebarItem to="/admin/users/view" label="Ver Usuarios" onClick={handleNavClick} />
+          <SidebarItem to="/admin/users/create" label="Crear Usuario" onClick={handleNavClick} />
         </SidebarDropdown>
 
         {/* Sidebar Logout */}

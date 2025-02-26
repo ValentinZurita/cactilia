@@ -3,6 +3,7 @@ import { RequireAdminAuth } from '../components/admin-login-page/index.js'
 import { AdminHomePage, AdminLoginPage, ProductManagementPage } from '../pages/index.js'
 import { CategoryManagementPage } from '../pages/CategoryManagementPage.jsx'
 import { AdminLayout } from '../../../layout/AdminLayout.jsx'
+import { UserManagementPage } from '../pages/UserManagementPage.jsx'
 
 
 
@@ -41,6 +42,10 @@ export const AdminRoutes = () => {
           {/* Products */}
           <Route path="products" element={<Navigate to="products/view" />} />
           <Route path="products/:mode/:id?" element={<ProductManagementPage />} />
+
+          {/* Users */}
+          <Route path="users" element={<Navigate to="users/view" />} />
+          <Route path="users/:mode/:id?" element={<UserManagementPage />} />
 
         </Route>
       </Route>
