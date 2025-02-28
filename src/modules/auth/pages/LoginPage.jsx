@@ -8,7 +8,6 @@ import { AuthLinks } from '../../../shared/components/index.js'
 
 export const LoginPage = () => {
 
-
     const navigate = useNavigate();
     const {status} = useSelector((state) => state.auth);
 

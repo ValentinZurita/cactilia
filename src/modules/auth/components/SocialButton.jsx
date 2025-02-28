@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDispatch } from 'react-redux'
-import { startAppleSignIn, startGoogleSignIn } from '../../public/store/auth/authThunks.js'
+import { startAppleSignIn, startGoogleSignIn } from '../../../store/auth/authThunks.js'
 
 export const SocialButton = ({ type }) => {
 

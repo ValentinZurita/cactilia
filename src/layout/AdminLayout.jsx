@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import { useRef } from "react";
 import { DesktopSidebar, MobileNavbar, MobileSidebar } from '../modules/admin/components/dashboard/index.js'
-
+import '/src/styles/adminLayout.css';
 
 /**
  *
@@ -27,7 +27,7 @@ export const AdminLayout = () => {
 
 
   return (
-    <div className="container-fluid">
+    <div className="container-fluid admin-layout">
       <div className="row">
 
         {/* Mobile Navbar */}

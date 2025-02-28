@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from 'firebase/auth'
 import { FirebaseAuth } from '../../../../firebase/firebaseConfig.js'
-import { logout } from '../../../public/store/auth/authSlice.js'
+import { logout } from '../../../../store/auth/authSlice.js'
 import { getUserRole } from '../../../../firebase/authUtils.js'
 
 /*

@@ -1,16 +1,11 @@
 import '../../../../styles/pages/shop.css';
+import { CartButton } from './CartButton';
+import { ProductStatus } from './ProductStatus';
 
 export const ProductCard = ({ product, onProductClick }) => {
-  const { name, mainImage, price, category } = product;
 
-  /**
-   * This prevents the "Add to Cart" button
-   * from also triggering the modal open when the entire card is clickable.
-   */
-  const handleAddToCart = (e) => {
-    e.stopPropagation();
-    alert(`Agregado al carrito: ${name}`);
-  };
+  // Destructure product data
+  const { id, name, mainImage, price, category } = product;
 
   /**
    * Handle the entire card click => open modal
@@ -25,20 +20,32 @@ export const ProductCard = ({ product, onProductClick }) => {
     <div
       className="card shadow-sm h-100"
       style={{ cursor: 'pointer' }}
-      onClick={handleCardClick} // The entire card is clickable
+      onClick={handleCardClick}
     >
+      {/* Product image container with status badge */}
+      <div className="position-relative">
+        <img
+          src={mainImage}
+          className="card-img-top"
+          alt={name}
+          style={{ objectFit: 'cover', height: '200px' }}
+        />
 
-      {/* Product image */}
-      <img
-        src={mainImage}
-        className="card-img-top"
-        alt={name}
-        style={{ objectFit: 'cover', height: '200px' }}
-      />
+        {/* Status badge - top right */}
+        <div className="position-absolute top-0 end-0 m-2">
+          <ProductStatus productId={id} />
+        </div>
+
+        {/* Stock badge - top left */}
+        {product.stock === 0 && (
+          <span className="position-absolute top-0 start-0 m-2 badge bg-danger">
+            Sin Stock
+          </span>
+        )}
+      </div>
 
       {/* Product name, price, category */}
       <div className="card-body d-flex flex-column">
-
         {/* Product name */}
         <h5 className="text-md mb-xs">{name}</h5>
 
@@ -47,22 +54,16 @@ export const ProductCard = ({ product, onProductClick }) => {
           <div>
             <div className="d-flex gap-2">
               <p className="category-label">{category}</p>
-              {product.stock === 0 && (
-                <p className="stock-label">Sin Stock</p>
-              )}
             </div>
             <p className="text-soft-black text-xs mb-xs">${price.toFixed(2)}</p>
           </div>
 
           {/* Add to Cart button */}
-          <button
-            className={`btn cart-btn` }
+          <CartButton
+            product={product}
+            variant="icon"
             disabled={product.stock === 0}
-            onClick={handleAddToCart}
-          >
-            <i className="bi bi-cart cart-icon" disabled={product.stock === 0} ></i>
-          </button>
-
+          />
         </div>
       </div>
     </div>

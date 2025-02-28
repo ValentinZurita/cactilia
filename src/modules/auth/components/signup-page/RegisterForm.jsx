@@ -2,10 +2,10 @@ import { InputField, SubmitButton } from '../../../../shared/components/index.js
 import { BirthdateField } from '../../../../shared/components/buttons-and-fields/BirthdateField.jsx';
 import { PhoneNumberField } from '../../../../shared/components/buttons-and-fields/PhoneNumberField.jsx';
 import { useForm } from 'react-hook-form';
-import { startRegisterWithEmailPassword } from '../../../public/store/auth/authThunks.js';
+import { startRegisterWithEmailPassword } from '../../../../store/auth/authThunks.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react'
-import { clearRegistrationMessage } from '../../../public/store/auth/authSlice.js'
+import { clearRegistrationMessage } from '../../../../store/auth/authSlice.js'
 
 export const RegisterForm = () => {
 

@@ -1,18 +1,23 @@
 import { useState, useEffect } from "react";
 import '../../../../styles/pages/shop.css';
-import { ProductImageCarousel } from './ProductModalCarousel.jsx'
+import { ProductImageCarousel } from './ProductModalCarousel.jsx';
+import { useCart } from '../../../user/hooks/useCart.js';
 
 /**
  * ProductModal component
  * @param {Object} product - The currently selected product
  * @param {boolean} isOpen - Whether the modal is open
  * @param {Function} onClose - Function to close the modal
- * @param {Function} onAddToCart - Function to add the product to cart
  */
-export const ProductModal = ({ product, isOpen, onClose, onAddToCart }) => {
+export const ProductModal = ({ product, isOpen, onClose }) => {
+
+  // Local state
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [currentImage, setCurrentImage] = useState(product?.mainImage);
+
+  // Use our cart hook
+  const { addToCart } = useCart();
 
   // Reset quantity when modal opens
   useEffect(() => {
@@ -23,6 +28,7 @@ export const ProductModal = ({ product, isOpen, onClose, onAddToCart }) => {
     }
   }, [isOpen, product]);
 
+  // If modal is not open or product is not set, return null
   if (!isOpen || !product) return null;
 
   // Handle clicking outside of modal
@@ -38,7 +44,7 @@ export const ProductModal = ({ product, isOpen, onClose, onAddToCart }) => {
 
   // Add to cart handler
   const handleAddToCartClick = () => {
-    onAddToCart(product, quantity);
+    addToCart(product, quantity);
     setAdded(true);
     setTimeout(onClose, 2000);
   };
@@ -46,8 +52,12 @@ export const ProductModal = ({ product, isOpen, onClose, onAddToCart }) => {
   // Calculate total
   const totalPrice = (product.price * quantity).toFixed(2);
 
+
   return (
+
     <div className="modal-backdrop" onClick={handleBackdropClick}>
+
+      {/* Modal container */}
       <div className="modal-container">
 
         {/* Close button */}
@@ -85,11 +95,11 @@ export const ProductModal = ({ product, isOpen, onClose, onAddToCart }) => {
             {/* Quantity controls */}
             <div className="modal-quantity-row">
               <div className="modal-quantity">
-                <button className="quantity-btn" onClick={handleDecrement}>
+                <button className="quantity-btn" onClick={handleDecrement} disabled={product.stock === 0}>
                   <i className="bi bi-dash"></i>
                 </button>
                 <span className="quantity-number">{quantity}</span>
-                <button className="quantity-btn" onClick={handleIncrement}>
+                <button className="quantity-btn" onClick={handleIncrement} disabled={product.stock === 0}>
                   <i className="bi bi-plus"></i>
                 </button>
               </div>

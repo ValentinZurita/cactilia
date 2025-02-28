@@ -5,7 +5,7 @@ import { UserAddress } from "../components/UserAddress";
 import { UserPayment } from "../components/UserPayment";
 import { LogoutButton } from "../components/LogoutButton";
 import { useNavigate } from 'react-router-dom'
-import { logout } from '../../public/store/auth/authSlice.js'
+import { logout } from '../../../store/auth/authSlice.js'
 
 export const UserProfilePage = () => {
   const { displayName, email, photoURL } = useSelector((state) => state.auth);

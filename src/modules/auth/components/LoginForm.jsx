@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { AuthLinks, InputField, SubmitButton } from "../../../shared/components/index.js";
-import { startEmailSignIn } from '../../public/store/auth/authThunks.js'
+import { startEmailSignIn } from '../../../store/auth/authThunks.js'
 import { useNavigate } from 'react-router-dom'
 
 export const LoginForm = () => {

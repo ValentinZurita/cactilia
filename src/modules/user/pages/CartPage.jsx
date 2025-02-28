@@ -1,120 +1,97 @@
-
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CartItem } from '../components/CartItem';
-import { CartTotal } from '../components/CartTotal';
 import '../../../styles/pages/cart.css';
+import { useCart } from '../hooks/useCart.js'
+import { CartItem, CartTotal, EmptyCart } from '../components/cart-page/index.js'
 
 export const CartPage = () => {
-
-  // Mock data
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      title: 'Metal Earrings',
-      subtitle: 'Special Design',
-      price: 12,
-      image: '../images/placeholder.jpg',
-      quantity: 1,
-      inStock: true,
-    },
-    {
-      id: 2,
-      title: 'Metal Earrings',
-      subtitle: 'Special Design',
-      price: 12,
-      image: '../images/placeholder.jpg',
-      quantity: 1,
-      inStock: true,
-    },
-    {
-      id: 3,
-      title: 'Metal Earrings',
-      subtitle: 'Special Design',
-      price: 12,
-      image: '../images/placeholder.jpg',
-      quantity: 1,
-      inStock: true,
-    },
-  ]);
-
   const navigate = useNavigate();
+  const {
+    items: cartItems,
+    itemsCount,
+    increaseQuantity,
+    decreaseQuantity,
+    removeFromCart,
+  } = useCart();
 
   const handleGoBack = () => {
     navigate(-1);
   };
 
   const handleCheckout = () => {
-    console.log('Ir al checkout...');
+    // Para implementación posterior
+    alert('Procesando checkout... Esta funcionalidad se implementará pronto.');
   };
 
-  // Update quantity
-  const handleIncrement = (id) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
-  };
-
-  const handleDecrement = (id) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item
-      )
-    );
-  };
-
-  const handleRemove = (id) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-  };
-
-  // Total del carrito
-  const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const totalItems = cartItems.length;
+  // Si el carrito está vacío, mostrar componente EmptyCart
+  if (cartItems.length === 0) {
+    return <EmptyCart onContinueShopping={() => navigate('/shop')} />;
+  }
 
   return (
-    <div className="container cart-page pt-3">
-      {/* Encabezado */}
-      <div className="d-flex align-items-center mb-3">
-        <button className="btn-arrow-back me-3" onClick={handleGoBack} aria-label="Regresar">
-          <span className="fs-5">&#8592;</span>
+    <div className="container cart-page pt-5 mt-5">
+
+      {/* Encabezado y botón de regreso */}
+      <div className="d-flex align-items-center mb-4">
+
+        {/* Botón de regreso */}
+        <button
+          className="btn-arrow-back me-3"
+          onClick={handleGoBack}
+          aria-label="Regresar"
+        >
+          <i className="bi bi-arrow-left"></i>
         </button>
+
+        {/* Título y cantidad de artículos */}
         <div>
-          <h2 className="mb-0 fw-bold">Carrito</h2>
-          <p className="text-muted mb-0">{totalItems} artículos</p>
+          <h2 className="mb-0 fw-bold">Tu Carrito</h2>
+          <p className="text-muted mb-0">
+            {itemsCount} {itemsCount === 1 ? 'artículo' : 'artículos'}
+          </p>
+        </div>
+
+      </div>
+
+      {/* Layout con dos columnas en desktop */}
+      <div className="row">
+
+        {/* Columna izquierda: Lista de productos */}
+        <div className="cart-items-column">
+          <div className="card border-0 shadow-sm mb-4">
+            <div className="card-body p-0">
+              <div className="cart-items">
+                {cartItems.map(item => (
+                  <CartItem
+                    key={item.id}
+                    product={item}
+                    onIncrement={() => increaseQuantity(item.id)}
+                    onDecrement={() => decreaseQuantity(item.id)}
+                    onRemove={() => removeFromCart(item.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Columna derecha: Resumen y acciones */}
+        <div className="cart-summary-column">
+          {/* Resumen del carrito */}
+          <CartTotal items={cartItems} />
+
+          {/* Botón de checkout */}
+          <div className="d-grid mb-4">
+            <button
+              className="btn btn-green-checkout w-100"
+              onClick={handleCheckout}
+            >
+              <i className="bi bi-credit-card me-2"></i>
+              Proceder al pago
+            </button>
+
+          </div>
         </div>
       </div>
-
-      {/* Lista de productos */}
-      <div className="cart-items">
-        {cartItems.map(item => (
-          <CartItem
-            key={item.id}
-            product={item}
-            onIncrement={handleIncrement}
-            onDecrement={handleDecrement}
-            onRemove={handleRemove}
-          />
-        ))}
-      </div>
-
-      {/* Resumen/Desglose total */}
-      <div className="mt-4">
-        <CartTotal total={total} />
-      </div>
-
-      {/* Checkout */}
-      <div className="mt-4 d-flex justify-content-center mb-4">
-        <button className="btn btn-green-checkout fw-bold" onClick={handleCheckout}>
-          Continuar
-        </button>
-      </div>
-
-
-
     </div>
-
-
   );
 };

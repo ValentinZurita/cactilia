@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { logout } from '../../public/store/auth/authSlice.js'
+import { logout } from '../../../store/auth/authSlice.js'
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { FirebaseAuth } from '../../../firebase/firebaseConfig.js'
