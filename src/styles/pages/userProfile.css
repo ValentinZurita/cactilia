@@ -1,0 +1,97 @@
+/*
+   User Profile Panel CSS
+   These styles define the appearance of the user profile panel and its components
+*/
+
+/* General container styles */
+.user-profile-container {
+    min-height: calc(100vh - 150px);
+    padding-top: 20px;
+}
+
+/* Section titles with green underline */
+.section-title {
+    color: var(--green-3);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+/* Sidebar navigation styling */
+.profile-sidebar {
+    position: sticky;
+    top: 120px;
+}
+
+/* Navigation item hover and active states */
+.profile-nav-item {
+    padding: 12px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+}
+
+.profile-nav-item:hover {
+    background-color: rgba(52, 199, 73, 0.1);
+}
+
+.profile-nav-item.active {
+    background-color: var(--green-3);
+    color: white;
+}
+
+/* User avatar sizing */
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+}
+
+/* Green outline button style */
+.btn-outline-green {
+    color: var(--green-3);
+    border-color: var(--green-3);
+    background-color: transparent;
+    transition: all 0.2s;
+}
+
+.btn-outline-green:hover {
+    background-color: var(--green-3);
+    color: white;
+}
+
+/* Card hover effects */
+.profile-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 10px;
+    border: none;
+}
+
+.profile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Status badge colors */
+.badge-delivered {
+    background-color: var(--green-3);
+    color: white;
+}
+
+.badge-processing {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-cancelled {
+    background-color: #dc3545;
+    color: white;
+}

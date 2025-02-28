@@ -30,9 +30,6 @@ export const AppRouter = () => {
   );
 };
 */
-
-
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { PublicLayout } from "../layout/PublicLayout.jsx";
 import { AdminLayout } from "../layout/AdminLayout.jsx";
@@ -42,7 +39,6 @@ import { HomePage } from "../modules/public/pages/HomePage.jsx";
 import { ShopPage } from '../modules/shop/pages/ShopPage.jsx'
 import { CartPage } from '../modules/user/pages/CartPage.jsx'
 import { AuthRoutes } from '../modules/auth/router/AuthRoutes.jsx'
-import { CategoryManagementPage } from '../modules/admin/pages/CategoryManagementPage.jsx'
 import { AdminRoutes } from '../modules/admin/routes/AdminRoutes.jsx'
 import { UserProfilePage } from '../modules/user/pages/UserProfilePage.jsx'
 import { PublicRoutes } from '../modules/public/router/PublicRoutes.jsx'

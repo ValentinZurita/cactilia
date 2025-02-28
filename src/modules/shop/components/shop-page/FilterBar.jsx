@@ -1,4 +1,4 @@
-import { Dropdown } from '../../../../styles/components/Dropdown';
+import { Dropdown } from '../../../../shared/components/Dropdown.jsx';
 
 /**
   * FilterBar Component
