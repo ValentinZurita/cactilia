@@ -1,34 +1,35 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { ProfileCard, SectionTitle } from '../components/shared/index.js'
+import { ProfileCard, SectionTitle } from '../components/shared/index.js';
 import '../../../../src/styles/pages/userProfile.css';
 
 /**
- * SettingsPage
- *
- * Allows user to update profile settings and password
+ * SettingsPage - Página refinada para gestionar configuración del perfil
+ * Con estilo consistente con el resto de páginas del perfil
  */
 export const SettingsPage = () => {
-  // Get user data from Redux store
+  // Obtener datos del usuario desde Redux store
   const { displayName, email, photoURL } = useSelector((state) => state.auth);
 
-  // Profile form state
+  // Estados para los formularios
   const [profileData, setProfileData] = useState({
     displayName: displayName || '',
     email: email || '',
     phoneNumber: ''
   });
 
-  // Password form state
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
+  // Estado para mensajes de éxito/error
+  const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
+  const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
   /**
-   * Handle profile form changes
-   * @param {Object} e - Event object
+   * Manejar cambios en el formulario de perfil
    */
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -39,8 +40,7 @@ export const SettingsPage = () => {
   };
 
   /**
-   * Handle password form changes
-   * @param {Object} e - Event object
+   * Manejar cambios en el formulario de contraseña
    */
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
@@ -51,66 +51,101 @@ export const SettingsPage = () => {
   };
 
   /**
-   * Handle profile form submission
-   * @param {Object} e - Event object
+   * Manejar envío del formulario de perfil
    */
   const handleProfileSubmit = (e) => {
     e.preventDefault();
-    // Would update profile in Firebase in real implementation
-    alert('Perfil actualizado (simulado)');
+    // En implementación real, aquí se actualizaría el perfil en Firebase
+    setProfileMessage({
+      type: 'success',
+      text: 'Perfil actualizado correctamente'
+    });
+
+    // Ocultar mensaje después de 3 segundos
+    setTimeout(() => {
+      setProfileMessage({ type: '', text: '' });
+    }, 3000);
   };
 
   /**
-   * Handle password form submission
-   * @param {Object} e - Event object
+   * Manejar envío del formulario de contraseña
    */
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
 
-    // Basic validation
+    // Validación básica
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('Las contraseñas no coinciden');
+      setPasswordMessage({
+        type: 'error',
+        text: 'Las contraseñas no coinciden'
+      });
       return;
     }
 
-    // Would update password in Firebase Auth in real implementation
-    alert('Contraseña actualizada (simulado)');
+    if (passwordData.newPassword.length < 6) {
+      setPasswordMessage({
+        type: 'error',
+        text: 'La contraseña debe tener al menos 6 caracteres'
+      });
+      return;
+    }
+
+    // En implementación real, aquí se actualizaría la contraseña en Firebase
+    setPasswordMessage({
+      type: 'success',
+      text: 'Contraseña actualizada correctamente'
+    });
+
+    // Limpiar formulario
     setPasswordData({
       currentPassword: '',
       newPassword: '',
       confirmPassword: ''
     });
+
+    // Ocultar mensaje después de 3 segundos
+    setTimeout(() => {
+      setPasswordMessage({ type: '', text: '' });
+    }, 3000);
   };
 
   return (
     <div>
-      {/* Section title */}
-      <SectionTitle title="Configuración" />
+      {/* Título de sección */}
+      <SectionTitle title="Configuración de Cuenta" />
 
-      {/* Profile form */}
+      {/* Perfil de usuario */}
       <ProfileCard title="Información Personal">
         <div className="row">
-          {/* User avatar */}
-          <div className="col-md-4 text-center mb-4 mb-md-0">
-            <img
-              src={photoURL || 'https://via.placeholder.com/100'}
-              alt={displayName}
-              className="rounded-circle mb-3 user-avatar"
-            />
-            <div>
-              <button className="btn btn-sm btn-outline-green">
-                <i className="bi bi-camera me-2"></i>
-                Cambiar foto
+          {/* Avatar del usuario */}
+          <div className="col-lg-4 mb-4 mb-lg-0 text-center">
+            <div className="settings-avatar-container">
+              <img
+                src={photoURL || 'https://via.placeholder.com/100'}
+                alt={displayName || 'Usuario'}
+                className="rounded-circle user-avatar-lg"
+              />
+              <button className="btn-change-photo">
+                <i className="bi bi-camera"></i>
               </button>
             </div>
+            <p className="mt-2 text-muted small">Haz clic para cambiar tu foto</p>
           </div>
 
-          {/* Profile form */}
-          <div className="col-md-8">
+          {/* Formulario de perfil */}
+          <div className="col-lg-8">
             <form onSubmit={handleProfileSubmit}>
-              {/* Name field */}
-              <div className="mb-3">
-                <label className="form-label">Nombre</label>
+              {/* Mensaje de éxito/error */}
+              {profileMessage.text && (
+                <div className={`alert ${profileMessage.type === 'success' ? 'alert-success' : 'alert-danger'} py-2`}>
+                  <i className={`bi ${profileMessage.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-2`}></i>
+                  {profileMessage.text}
+                </div>
+              )}
+
+              {/* Nombre */}
+              <div className="settings-form-group">
+                <label className="settings-label">Nombre</label>
                 <input
                   type="text"
                   className="form-control"
@@ -121,95 +156,148 @@ export const SettingsPage = () => {
                 />
               </div>
 
-              {/* Email field (disabled) */}
-              <div className="mb-3">
-                <label className="form-label">Email</label>
+              {/* Email (deshabilitado) */}
+              <div className="settings-form-group">
+                <label className="settings-label">Email</label>
                 <input
                   type="email"
-                  className="form-control"
+                  className="form-control bg-light"
                   name="email"
                   value={profileData.email}
                   disabled
                 />
                 <div className="form-text">
-                  El email no se puede cambiar.
+                  El email no se puede cambiar
                 </div>
               </div>
 
-              {/* Phone field */}
-              <div className="mb-3">
-                <label className="form-label">Teléfono</label>
-                <input
-                  type="tel"
-                  className="form-control"
-                  name="phoneNumber"
-                  value={profileData.phoneNumber}
-                  onChange={handleProfileChange}
-                  placeholder="(Opcional)"
-                />
+              {/* Teléfono */}
+              <div className="settings-form-group">
+                <label className="settings-label">Teléfono</label>
+                <div className="input-group">
+                  <span className="input-group-text bg-white">
+                    <i className="bi bi-telephone"></i>
+                  </span>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    name="phoneNumber"
+                    value={profileData.phoneNumber}
+                    onChange={handleProfileChange}
+                    placeholder="(Opcional)"
+                  />
+                </div>
               </div>
 
-              {/* Submit button */}
+              {/* Botón guardar */}
               <button type="submit" className="btn btn-green-3 text-white">
-                Guardar cambios
+                Guardar Cambios
               </button>
             </form>
           </div>
         </div>
       </ProfileCard>
 
-      {/* Password form */}
+      {/* Cambio de contraseña */}
       <ProfileCard title="Cambiar Contraseña">
         <form onSubmit={handlePasswordSubmit}>
-          {/* Current password field */}
-          <div className="mb-3">
-            <label className="form-label">Contraseña actual</label>
-            <input
-              type="password"
-              className="form-control"
-              name="currentPassword"
-              value={passwordData.currentPassword}
-              onChange={handlePasswordChange}
-              required
-            />
+          {/* Mensaje de éxito/error */}
+          {passwordMessage.text && (
+            <div className={`alert ${passwordMessage.type === 'success' ? 'alert-success' : 'alert-danger'} py-2`}>
+              <i className={`bi ${passwordMessage.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-2`}></i>
+              {passwordMessage.text}
+            </div>
+          )}
+
+          {/* Contraseña actual */}
+          <div className="settings-form-group">
+            <label className="settings-label">Contraseña actual</label>
+            <div className="input-group">
+              <span className="input-group-text bg-white">
+                <i className="bi bi-lock"></i>
+              </span>
+              <input
+                type="password"
+                className="form-control"
+                name="currentPassword"
+                value={passwordData.currentPassword}
+                onChange={handlePasswordChange}
+                required
+              />
+            </div>
           </div>
 
-          {/* New password field */}
-          <div className="mb-3">
-            <label className="form-label">Nueva contraseña</label>
-            <input
-              type="password"
-              className="form-control"
-              name="newPassword"
-              value={passwordData.newPassword}
-              onChange={handlePasswordChange}
-              required
-              minLength={6}
-            />
+          {/* Nueva contraseña */}
+          <div className="settings-form-group">
+            <label className="settings-label">Nueva contraseña</label>
+            <div className="input-group">
+              <span className="input-group-text bg-white">
+                <i className="bi bi-key"></i>
+              </span>
+              <input
+                type="password"
+                className="form-control"
+                name="newPassword"
+                value={passwordData.newPassword}
+                onChange={handlePasswordChange}
+                required
+                minLength={6}
+              />
+            </div>
             <div className="form-text">
               Mínimo 6 caracteres
             </div>
           </div>
 
-          {/* Confirm password field */}
-          <div className="mb-3">
-            <label className="form-label">Confirmar nueva contraseña</label>
-            <input
-              type="password"
-              className="form-control"
-              name="confirmPassword"
-              value={passwordData.confirmPassword}
-              onChange={handlePasswordChange}
-              required
-              minLength={6}
-            />
+          {/* Confirmar contraseña */}
+          <div className="settings-form-group">
+            <label className="settings-label">Confirmar nueva contraseña</label>
+            <div className="input-group">
+              <span className="input-group-text bg-white">
+                <i className="bi bi-check-lg"></i>
+              </span>
+              <input
+                type="password"
+                className="form-control"
+                name="confirmPassword"
+                value={passwordData.confirmPassword}
+                onChange={handlePasswordChange}
+                required
+                minLength={6}
+              />
+            </div>
           </div>
 
-          {/* Submit button */}
+          {/* Botón actualizar */}
           <button type="submit" className="btn btn-green-3 text-white">
-            Actualizar contraseña
+            Actualizar Contraseña
           </button>
         </form>
+      </ProfileCard>
+
+      {/* Preferencias de privacidad */}
+      <ProfileCard title="Preferencias">
+        <div className="privacy-options">
+          <div className="privacy-option d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h6 className="mb-1">Notificaciones por email</h6>
+              <p className="text-muted small mb-0">Recibir emails sobre ofertas y nuevos productos</p>
+            </div>
+            <div className="form-check form-switch">
+              <input className="form-check-input" type="checkbox" id="emailNotifs" defaultChecked />
+            </div>
+          </div>
+
+          <div className="privacy-option d-flex justify-content-between align-items-center">
+            <div>
+              <h6 className="mb-1">Historial de compras</h6>
+              <p className="text-muted small mb-0">Mantener historial de productos visitados</p>
+            </div>
+            <div className="form-check form-switch">
+              <input className="form-check-input" type="checkbox" id="browsingHistory" defaultChecked />
+            </div>
+          </div>
+        </div>
       </ProfileCard>
     </div>
   );
