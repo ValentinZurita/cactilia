@@ -1,66 +1,18 @@
-/*
-import { Navigate, Route, Routes } from 'react-router-dom'
-import { AuthRoutes } from '../modules/auth/router/AuthRoutes'
-import { PublicRoutes } from '../modules/public/router/PublicRoutes.jsx'
-import { AdminRoutes } from '../modules/admin/routes/AdminRoutes.jsx'
-
-
-
-export const AppRouter = () => {
-  return (
-    <Routes>
-      {/!* Auth module *!/}
-      <Route path="/auth/!*" element={<AuthRoutes />} />
-
-      {/!* Public module *!/}
-      <Route path="/!*" element={<PublicRoutes />} />
-
-      {/!* Private route for authenticated users *!/}
-      {/!*<Route path="/profile/!*" element={<PrivateRoute />}>
-        <Route index element={<UserProfilePage />} />
-      </Route>*!/}
-
-      {/!* Admin module *!/}
-      <Route path="admin/!*" element={<AdminRoutes />} />
-
-      {/!* Any other route *!/}
-      <Route path="*" element={<Navigate to = "/" />} />
-
-    </Routes>
-  );
-};
-*/
 import { Routes, Route, Navigate } from "react-router-dom";
-import { PublicLayout } from "../layout/PublicLayout.jsx";
-import { AdminLayout } from "../layout/AdminLayout.jsx";
-import { RequireAdminAuth } from "../modules/admin/components/admin-login-page/index.js";
-import { AdminHomePage, AdminLoginPage, ProductManagementPage } from "../modules/admin/pages/index.js";
-import { HomePage } from "../modules/public/pages/HomePage.jsx";
-import { ShopPage } from '../modules/shop/pages/ShopPage.jsx'
-import { CartPage } from '../modules/user/pages/CartPage.jsx'
 import { AuthRoutes } from '../modules/auth/router/AuthRoutes.jsx'
 import { AdminRoutes } from '../modules/admin/routes/AdminRoutes.jsx'
-import { UserProfilePage } from '../modules/user/pages/UserProfilePage.jsx'
 import { PublicRoutes } from '../modules/public/router/PublicRoutes.jsx'
 
 export const AppRouter = () => {
   return (
     <Routes>
-
-      {/* Rutas de autenticación */}
-
-      {/* Rutas públicas */}
+      {/* Módulo público (contiene HOME, SHOP, CART y el outlet para AUTH) */}
       <Route path="/*" element={<PublicRoutes />} />
 
-      {/* Admin Login (sin layout) */}
-      <Route path="/admin/login" element={<AdminLoginPage />} />
-
-      {/* Admin Panel (protegido y con AdminLayout) */}
-
-      {/* Rutas de administrador */}
+      {/* Módulo admin (rutas separadas) */}
       <Route path="/admin/*" element={<AdminRoutes />} />
 
-      {/* Redirección si la ruta no existe */}
+      {/* Redirección por defecto */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

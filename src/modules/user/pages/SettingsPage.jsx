@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { ProfileCard, SectionTitle } from '../components/shared/index.js'
+import '../../../../src/styles/pages/userProfile.css';
 
 /**
  * SettingsPage

@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { EmptyState, ProfileCard, SectionTitle } from '../components/shared/index.js'
+import { EmptyState, SectionTitle } from '../components/shared/index.js'
+import '../../../../src/styles/pages/userProfile.css';
 
 
 /**
- * PaymentsPage
- *
- * Manages user payment methods
+ * PaymentsPage - Página rediseñada de métodos de pago
+ * Con estilo minimalista y elegante coherente con las otras secciones
  */
 export const PaymentsPage = () => {
-  // Mock data - would come from Firebase in real implementation
+  // Datos de ejemplo - vendrían de Firebase en implementación real
   const [paymentMethods, setPaymentMethods] = useState([
     {
       id: '1',
@@ -29,9 +29,9 @@ export const PaymentsPage = () => {
   ]);
 
   /**
-   * Get icon for card type
-   * @param {string} type - Card type
-   * @returns {string} - Icon class
+   * Obtener icono para tipo de tarjeta
+   * @param {string} type - Tipo de tarjeta
+   * @returns {string} - Clase de icono
    */
   const getCardIcon = (type) => {
     switch(type.toLowerCase()) {
@@ -43,17 +43,17 @@ export const PaymentsPage = () => {
   };
 
   /**
-   * Format card type display name
-   * @param {string} type - Card type
-   * @returns {string} - Formatted name
+   * Formatear tipo de tarjeta
+   * @param {string} type - Tipo de tarjeta
+   * @returns {string} - Nombre formateado
    */
   const formatCardType = (type) => {
     return type.charAt(0).toUpperCase() + type.slice(1);
   };
 
   /**
-   * Set a payment method as default
-   * @param {string} id - Payment method ID
+   * Establecer método de pago como predeterminado
+   * @param {string} id - ID del método de pago
    */
   const handleSetDefault = (id) => {
     setPaymentMethods(paymentMethods.map(method => ({
@@ -63,8 +63,8 @@ export const PaymentsPage = () => {
   };
 
   /**
-   * Delete a payment method
-   * @param {string} id - Payment method ID
+   * Eliminar método de pago
+   * @param {string} id - ID del método de pago
    */
   const handleDelete = (id) => {
     if (window.confirm('¿Estás seguro de eliminar este método de pago?')) {
@@ -74,61 +74,66 @@ export const PaymentsPage = () => {
 
   return (
     <div>
-      {/* Section title */}
+      {/* Título de sección */}
       <SectionTitle title="Métodos de Pago" />
 
-      {/* Add new payment method button */}
-      <button className="btn btn-green-3 text-white mb-4">
-        <i className="bi bi-plus-circle me-2"></i>
-        Agregar método de pago
-      </button>
-
-      {/* Payment methods list */}
+      {/* Lista de métodos de pago */}
       {paymentMethods.length > 0 ? (
-        <div className="row">
+        <ul className="payment-list">
           {paymentMethods.map(method => (
-            <div key={method.id} className="col-md-6 mb-3">
-              <ProfileCard>
-                <div className="d-flex align-items-center mb-3">
-                  <i className={`${getCardIcon(method.type)} fs-1 me-3 text-green-3`}></i>
-                  <div>
-                    <div className="d-flex align-items-center">
-                      <h5 className="mb-0">{formatCardType(method.type)}</h5>
-                      {method.isDefault && (
-                        <span className="badge bg-green-3 ms-2">Predeterminada</span>
-                      )}
-                    </div>
-                    <p className="text-muted mb-0">{method.cardNumber}</p>
-                    <p className="text-muted mb-0">Vence: {method.expiryDate}</p>
+            <li key={method.id} className="payment-item">
+              <div className="payment-header">
+                <div className="payment-left">
+                  <i className={`bi ${getCardIcon(method.type)} card-icon`}></i>
+                  <div className="payment-info">
+                    <h5 className="card-type">{formatCardType(method.type)}</h5>
+                    <div className="card-number">{method.cardNumber}</div>
+                    <div className="expiry-date">Vence: {method.expiryDate}</div>
                   </div>
                 </div>
 
-                <div className="d-flex flex-wrap gap-2">
-                  <button className="btn btn-sm btn-outline-green">
-                    Editar
-                  </button>
+                {method.isDefault && (
+                  <span className="payment-default-tag">
+                    <i className="bi bi-check-circle-fill"></i>
+                    Predeterminada
+                  </span>
+                )}
+              </div>
 
-                  {!method.isDefault && (
-                    <>
-                      <button
-                        className="btn btn-sm btn-outline-green"
-                        onClick={() => handleSetDefault(method.id)}
-                      >
-                        Predeterminada
-                      </button>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => handleDelete(method.id)}
-                      >
-                        Eliminar
-                      </button>
-                    </>
-                  )}
-                </div>
-              </ProfileCard>
-            </div>
+              <div className="payment-actions">
+                {/* Botón Editar */}
+                <button
+                  className="payment-action-btn edit"
+                  title="Editar método de pago"
+                >
+                  <i className="bi bi-pencil"></i>
+                </button>
+
+                {/* Botón Predeterminada (solo si no es la predeterminada) */}
+                {!method.isDefault && (
+                  <button
+                    className="payment-action-btn default"
+                    title="Establecer como predeterminada"
+                    onClick={() => handleSetDefault(method.id)}
+                  >
+                    <i className="bi bi-star"></i>
+                  </button>
+                )}
+
+                {/* Botón Eliminar (solo si no es la predeterminada) */}
+                {!method.isDefault && (
+                  <button
+                    className="payment-action-btn delete"
+                    title="Eliminar método de pago"
+                    onClick={() => handleDelete(method.id)}
+                  >
+                    <i className="bi bi-trash"></i>
+                  </button>
+                )}
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
         <EmptyState
           icon="credit-card"
@@ -137,10 +142,18 @@ export const PaymentsPage = () => {
         />
       )}
 
-      {/* Security note */}
-      <div className="alert alert-info mt-3">
-        <i className="bi bi-shield-lock me-2"></i>
-        <small>
+      {/* Botón para agregar método de pago - ahora dentro del contenido */}
+      <div className="add-payment-container">
+        <button className="add-payment-btn" title="Agregar método de pago">
+          <i className="bi bi-plus"></i>
+        </button>
+        <small className="text-muted mt-2">Agregar método de pago</small>
+      </div>
+
+      {/* Nota de seguridad */}
+      <div className="alert alert-light mt-3 d-flex align-items-center gap-2">
+        <i className="bi bi-shield-lock text-muted"></i>
+        <small className="text-muted">
           Tu información de pago se almacena de forma segura.
           Nunca compartiremos tus datos con terceros.
         </small>

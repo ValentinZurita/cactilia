@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { EmptyState, ProfileCard, SectionTitle } from '../components/shared/index.js'
+import { EmptyState, SectionTitle } from '../components/shared/index.js'
+import '../../../../src/styles/pages/userProfile.css';
 
 
 /**
- * AddressesPage
- *
- * Manages user shipping addresses
+ * AddressesPage - Página para gestionar las direcciones del usuario
+ * Versión rediseñada con estilo minimalista y elegante
  */
 export const AddressesPage = () => {
-  // Mock data - would come from Firebase in real implementation
+  // Datos de ejemplo - en una implementación real vendrían de Firebase
   const [addresses, setAddresses] = useState([
     {
       id: '1',
@@ -31,11 +31,11 @@ export const AddressesPage = () => {
   ]);
 
   /**
-   * Set an address as default
-   * @param {string} id - Address ID
+   * Establecer una dirección como predeterminada
+   * @param {string} id - ID de la dirección
    */
   const handleSetDefault = (id) => {
-    // Update addresses, setting only one as default
+    // Actualizar direcciones, estableciendo solo una como predeterminada
     setAddresses(addresses.map(addr => ({
       ...addr,
       isDefault: addr.id === id
@@ -43,8 +43,8 @@ export const AddressesPage = () => {
   };
 
   /**
-   * Delete an address
-   * @param {string} id - Address ID
+   * Eliminar una dirección
+   * @param {string} id - ID de la dirección
    */
   const handleDelete = (id) => {
     if (window.confirm('¿Estás seguro de eliminar esta dirección?')) {
@@ -54,57 +54,63 @@ export const AddressesPage = () => {
 
   return (
     <div>
-      {/* Section title */}
+      {/* Título de sección */}
       <SectionTitle title="Mis Direcciones" />
 
-      {/* Add new address button */}
-      <button className="btn btn-green-3 text-white mb-4">
-        <i className="bi bi-plus-circle me-2"></i>
-        Agregar dirección
-      </button>
-
-      {/* Addresses list */}
+      {/* Lista de direcciones */}
       {addresses.length > 0 ? (
-        <div className="row">
+        <ul className="address-list">
           {addresses.map(address => (
-            <div key={address.id} className="col-md-6 mb-3">
-              <ProfileCard>
-                <div className="d-flex justify-content-between mb-2">
-                  <h5 className="mb-0">{address.name}</h5>
-                  {address.isDefault && (
-                    <span className="badge bg-green-3">Predeterminada</span>
-                  )}
-                </div>
+            <li key={address.id} className="address-item">
+              <div className="address-item-header">
+                <h5 className="address-name">{address.name}</h5>
+                {address.isDefault && (
+                  <span className="address-default-tag">
+                    <i className="bi bi-check-circle-fill"></i>
+                    Predeterminada
+                  </span>
+                )}
+              </div>
 
-                <p className="mb-1">{address.street}</p>
-                <p className="mb-3">{address.city}, {address.state} {address.zip}</p>
+              <div className="address-details">
+                {address.street}<br />
+                {address.city}, {address.state} {address.zip}
+              </div>
 
-                <div className="d-flex flex-wrap gap-2">
-                  <button className="btn btn-sm btn-outline-green">
-                    Editar
+              <div className="address-actions">
+                {/* Botón Editar */}
+                <button
+                  className="address-action-btn edit"
+                  title="Editar dirección"
+                >
+                  <i className="bi bi-pencil"></i>
+                </button>
+
+                {/* Botón Predeterminada (solo si no es la predeterminada) */}
+                {!address.isDefault && (
+                  <button
+                    className="address-action-btn default"
+                    title="Establecer como predeterminada"
+                    onClick={() => handleSetDefault(address.id)}
+                  >
+                    <i className="bi bi-star"></i>
                   </button>
+                )}
 
-                  {!address.isDefault && (
-                    <>
-                      <button
-                        className="btn btn-sm btn-outline-green"
-                        onClick={() => handleSetDefault(address.id)}
-                      >
-                        Predeterminada
-                      </button>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => handleDelete(address.id)}
-                      >
-                        Eliminar
-                      </button>
-                    </>
-                  )}
-                </div>
-              </ProfileCard>
-            </div>
+                {/* Botón Eliminar (solo si no es la predeterminada) */}
+                {!address.isDefault && (
+                  <button
+                    className="address-action-btn delete"
+                    title="Eliminar dirección"
+                    onClick={() => handleDelete(address.id)}
+                  >
+                    <i className="bi bi-trash"></i>
+                  </button>
+                )}
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
         <EmptyState
           icon="geo-alt"
@@ -112,6 +118,14 @@ export const AddressesPage = () => {
           message="Aún no has agregado ninguna dirección de envío"
         />
       )}
+
+      {/* Botón para agregar dirección - ahora dentro del contenido */}
+      <div className="add-address-container">
+        <button className="add-address-btn" title="Agregar dirección">
+          <i className="bi bi-plus"></i>
+        </button>
+        <small className="text-muted mt-2">Agregar dirección</small>
+      </div>
     </div>
   );
 };

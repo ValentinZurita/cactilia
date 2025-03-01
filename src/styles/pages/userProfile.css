@@ -1,33 +1,608 @@
-/*
-   User Profile Panel CSS
-   These styles define the appearance of the user profile panel and its components
+/* Estilos específicos para la vista principal del perfil */
+.profile-overview-section {
+    margin-bottom: 20px;
+}
+
+.profile-welcome {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.profile-welcome-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    border: 2px solid #f0f0f0;
+}
+
+.profile-welcome-text h6 {
+    margin-bottom: 2px;
+    font-size: 1rem;
+    color: #333;
+}
+
+.profile-welcome-text p {
+    margin-bottom: 0;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.profile-stat-card {
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.profile-stat-card i {
+    font-size: 1.5rem;
+    color: #777;
+    margin-bottom: 5px;
+}
+
+.profile-stat-card .stat-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.profile-stat-card .stat-label {
+    font-size: 0.75rem;
+    color: #666;
+}
+
+/* Efecto sutil al hacer hover sobre cards en el perfil */
+.profile-card.stat-card:hover {
+    background-color: #f5f5f5;
+}
+
+/* Mejoras generales de tarjetas para UserProfilePage */
+.user-profile-container .card {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Adaptaciones móviles para el perfil */
+@media (max-width: 767px) {
+    .user-profile-container .card {
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .profile-welcome {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile-welcome-avatar {
+        margin-right: 0;
+        margin-bottom: 10px;
+        width: 60px;
+        height: 60px;
+    }
+
+    .profile-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}/* Estilos para la sección de métodos de pago */
+.payment-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.payment-item {
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.payment-item:last-child {
+    border-bottom: none;
+}
+
+.payment-item:hover {
+    background-color: #f9f9f9;
+}
+
+.payment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.payment-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.card-icon {
+    font-size: 1.6rem;
+    color: #666;
+}
+
+.payment-info {
+    padding-top: 3px;
+}
+
+.card-type {
+    font-weight: 500;
+    margin: 0 0 2px 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.card-number {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.expiry-date {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.payment-default-tag {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #f0f0f0;
+    color: #666;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.payment-default-tag i {
+    color: var(--green-3);
+    font-size: 0.7rem;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.payment-action-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #777;
+    border: none;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+}
+
+.payment-action-btn:hover {
+    background-color: #e3e3e3;
+}
+
+.payment-action-btn.edit:hover {
+    color: var(--green-3);
+}
+
+.payment-action-btn.default:hover {
+    color: #ffc107;
+}
+
+.payment-action-btn.delete:hover {
+    color: #dc3545;
+}
+
+/* Botón para agregar método de pago - reposicionado */
+.add-payment-btn {
+    position: relative; /* Cambiado de 'fixed' a 'relative' */
+    margin: 20px auto;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--green-3);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.add-payment-btn:hover {
+    transform: scale(1.05);
+    background-color: var(--green-1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Contenedor para el botón y texto */
+.add-payment-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}/* Estilos para la sección de pedidos */
+.order-filter-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.filter-chip {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background-color: #f0f0f0;
+    color: #666;
+    border: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.filter-chip.active {
+    background-color: #e0e0e0;
+    color: #333;
+    font-weight: 500;
+}
+
+.filter-chip.active i {
+    color: var(--green-3);
+}
+
+.filter-chip i {
+    margin-right: 5px;
+    font-size: 0.8rem;
+}
+
+.order-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.order-item {
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.order-item:hover {
+    background-color: #f9f9f9;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.order-id {
+    font-weight: 500;
+    margin: 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.order-date {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.order-status {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    line-height: 1;
+    gap: 4px;
+}
+
+.order-status.delivered {
+    background-color: #f0f9f0;
+    color: #3c763d;
+}
+
+.order-status.delivered i {
+    color: #28a745;
+}
+
+.order-status.processing {
+    background-color: #fcf8e3;
+    color: #8a6d3b;
+}
+
+.order-status.processing i {
+    color: #ffc107;
+}
+
+.order-status.cancelled {
+    background-color: #f9f0f0;
+    color: #a94442;
+}
+
+.order-status.cancelled i {
+    color: #dc3545;
+}
+
+.order-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.order-meta {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.order-price {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #333;
+}
+
+.order-actions {
+    text-align: right;
+}
+
+.view-order-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 15px;
+    background-color: #f0f0f0;
+    color: #666;
+    border: none;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.view-order-btn:hover {
+    background-color: #e3e3e3;
+    color: var(--green-3);
+}
+
+.view-order-btn i {
+    font-size: 0.8rem;
+}/* Estilos para la sección de direcciones */
+.address-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.address-item {
+    padding: 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.address-item:last-child {
+    border-bottom: none;
+}
+
+.address-item:hover {
+    background-color: #f9f9f9;
+}
+
+.address-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.address-name {
+    font-weight: 500;
+    margin: 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.address-default-tag {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #f0f0f0;
+    color: #666;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.address-default-tag i {
+    color: var(--green-3);
+    font-size: 0.7rem;
+}
+
+.address-details {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.address-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.address-action-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #777;
+    border: none;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+}
+
+.address-action-btn:hover {
+    background-color: #e3e3e3;
+}
+
+.address-action-btn.edit:hover {
+    color: var(--green-3);
+}
+
+.address-action-btn.default:hover {
+    color: #ffc107;
+}
+
+.address-action-btn.delete:hover {
+    color: #dc3545;
+}
+
+/* Botón para agregar dirección - reposicionado */
+.add-address-btn {
+    position: relative; /* Cambiado de 'fixed' a 'relative' */
+    margin: 20px auto;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--green-3);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.add-address-btn:hover {
+    transform: scale(1.05);
+    background-color: var(--green-1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Contenedor para el botón y texto */
+.add-address-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}/*
+   User Profile Panel CSS - Mobile-First y Minimalista
+   Optimizado para dispositivos móviles con paleta de colores reducida
 */
 
-/* General container styles */
+/* Contenedor principal con mejor espaciado */
 .user-profile-container {
-    min-height: calc(100vh - 150px);
-    padding-top: 20px;
+    min-height: calc(100vh - 200px);
+    padding: 20px 0 40px;
+    margin-bottom: 20px;
 }
 
-/* Section titles with green underline */
+/* Títulos de sección con estilo minimalista */
 .section-title {
-    color: var(--green-3);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    padding-bottom: 10px;
-    margin-bottom: 25px;
+    color: #333;
+    font-size: 1.25rem;
     font-weight: 600;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding-bottom: 10px;
 }
 
-/* Sidebar navigation styling */
+/* Menú móvil fijo en la parte inferior */
+.mobile-profile-menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+}
+
+.mobile-menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.7rem;
+    color: #666;
+    text-decoration: none;
+    padding: 8px 0;
+}
+
+.mobile-menu-item.active {
+    color: var(--green-3);
+}
+
+.mobile-menu-item i {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+}
+
+/* Sidebar solo visible en desktop */
 .profile-sidebar {
-    position: sticky;
-    top: 120px;
+    display: none; /* Oculto en móvil por defecto */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-/* Navigation item hover and active states */
+/* Perfil del usuario en el sidebar */
+.user-avatar {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Items de navegación en sidebar */
 .profile-nav-item {
-    padding: 12px 16px;
-    border-radius: 8px;
+    padding: 12px;
+    border-radius: 6px;
     transition: all 0.2s ease;
     margin-bottom: 5px;
     display: flex;
@@ -37,61 +612,255 @@
     background: transparent;
     width: 100%;
     text-align: left;
+    color: #555;
 }
 
 .profile-nav-item:hover {
-    background-color: rgba(52, 199, 73, 0.1);
+    background-color: #f5f5f5;
 }
 
 .profile-nav-item.active {
-    background-color: var(--green-3);
-    color: white;
+    background-color: #f0f0f0;
+    color: #222;
+    font-weight: 500;
 }
 
-/* User avatar sizing */
-.user-avatar {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-}
-
-/* Green outline button style */
-.btn-outline-green {
+.profile-nav-item.active i {
     color: var(--green-3);
-    border-color: var(--green-3);
-    background-color: transparent;
-    transition: all 0.2s;
 }
 
-.btn-outline-green:hover {
-    background-color: var(--green-3);
-    color: white;
-}
-
-/* Card hover effects */
+/* Tarjetas con estilo minimalista */
 .profile-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-radius: 10px;
-    border: none;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden;
 }
 
-.profile-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+/* Aplicamos hover SOLO a tarjetas que sean enlaces o contengan acciones */
+.profile-card.clickable {
+    transition: all 0.2s ease;
 }
 
-/* Status badge colors */
+.profile-card.clickable:hover,
+.profile-card.clickable:active {
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Cabecera de tarjeta */
+.profile-card .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 12px 15px;
+}
+
+/* Etiquetas de estado con diseño sutil y minimalista */
 .badge-delivered {
-    background-color: var(--green-3);
-    color: white;
+    background-color: #f0f9f0 !important;
+    color: #3c763d !important;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 0.7rem;
 }
 
 .badge-processing {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: #fcf8e3 !important;
+    color: #8a6d3b !important;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 0.7rem;
 }
 
 .badge-cancelled {
-    background-color: #dc3545;
+    background-color: #f9f0f0 !important;
+    color: #a94442 !important;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+}
+
+/* Botones con estilo minimalista */
+.btn-green-3 {
+    background-color: var(--green-3);
     color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-green-3:hover,
+.btn-green-3:active {
+    background-color: var(--green-1);
+}
+
+.btn-outline-green {
+    color: var(--green-3);
+    border: 1px solid var(--green-3);
+    background-color: transparent;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-green:hover,
+.btn-outline-green:active {
+    background-color: var(--green-3);
+    color: white;
+}
+
+/* Botón ver todos (icono) */
+.btn-view-all {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #666;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-view-all:hover {
+    background-color: #e3e3e3;
+    color: var(--green-3);
+    transform: translateY(-2px);
+}
+
+.btn-light-gray {
+    background-color: #f5f5f5;
+    color: #555;
+    border: 1px solid #e9e9e9;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+.btn-light-gray.active {
+    background-color: #e3e3e3;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Cards para pedidos */
+.order-card {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-bottom: 10px;
+}
+
+.order-card:hover,
+.order-card:active {
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Cards de acceso rápido optimizadas para móvil */
+.quick-access-card {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.quick-access-card i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: #777; /* Gris como en el sidebar */
+    transition: color 0.2s ease;
+}
+
+.quick-access-card h5 {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    color: #666; /* Gris como en el sidebar */
+    transition: color 0.2s ease;
+}
+
+.quick-access-card p {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+    color: #777;
+}
+
+/* Hover para los cards de acceso rápido */
+.quick-access-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.quick-access-card:hover i {
+    color: var(--green-3); /* Verde al hacer hover, como en sidebar */
+}
+
+.quick-access-card:hover h5 {
+    color: #333; /* Texto más oscuro al hacer hover, como en sidebar */
+}
+
+/* Optimización para mobile */
+@media (max-width: 767px) {
+    .section-title {
+        font-size: 1.2rem;
+    }
+
+    .container.user-profile-container {
+        padding-bottom: 70px; /* Espacio para el menú móvil fijo */
+    }
+
+    .quick-access-card {
+        padding: 10px;
+    }
+
+    .quick-access-card i {
+        font-size: 1.5rem;
+    }
+
+    .quick-access-card h5 {
+        font-size: 0.9rem;
+    }
+
+    /* Ajustes para tarjetas en mobile */
+    .card-body {
+        padding: 12px;
+    }
+
+    .profile-card .card-header {
+        padding: 10px 12px;
+    }
+}
+
+/* Ajustes para desktop */
+@media (min-width: 768px) {
+    .profile-sidebar {
+        display: block; /* Mostrar en desktop */
+        position: sticky;
+        top: 100px;
+    }
+
+    .mobile-profile-menu {
+        display: none; /* Ocultar en desktop */
+    }
+
+    .user-profile-container {
+        padding: 30px 0 50px;
+    }
+
+    .section-title {
+        font-size: 1.4rem;
+    }
 }

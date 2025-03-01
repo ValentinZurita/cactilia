@@ -1,16 +1,15 @@
 import { useState } from 'react';
-import { EmptyState, ProfileCard, SectionTitle } from '../components/shared/index.js'
-
+import { EmptyState, SectionTitle } from '../components/shared/index.js'
+import '../../../../src/styles/pages/userProfile.css';
 /**
- * OrdersPage
- *
- * Displays user's order history with filtering options
+ * OrdersPage - Página rediseñada de historial de pedidos
+ * Con estilo minimalista y elegante similar a la sección de direcciones
  */
 export const OrdersPage = () => {
-  // Filter state
+  // Estado del filtro
   const [filter, setFilter] = useState('all');
 
-  // Mock data - would come from Firebase in real implementation
+  // Datos de ejemplo - vendrían de Firebase en implementación real
   const orders = [
     {
       id: 'ORD-1234',
@@ -36,8 +35,8 @@ export const OrdersPage = () => {
   ];
 
   /**
-   * Filter orders based on selected filter
-   * @returns {Array} - Filtered orders
+   * Filtrar pedidos según el filtro seleccionado
+   * @returns {Array} - Pedidos filtrados
    */
   const getFilteredOrders = () => {
     if (filter === 'all') return orders;
@@ -45,96 +44,101 @@ export const OrdersPage = () => {
   };
 
   /**
-   * Get CSS class for status badge
-   * @param {string} status - Order status
-   * @returns {string} - CSS class
+   * Obtener etiqueta e icono para cada estado
+   * @param {string} status - Estado del pedido
+   * @returns {Object} - Texto e icono para el estado
    */
-  const getStatusBadgeClass = (status) => {
+  const getStatusInfo = (status) => {
     switch(status) {
-      case 'delivered': return 'badge-delivered';
-      case 'processing': return 'badge-processing';
-      case 'cancelled': return 'badge-cancelled';
-      default: return 'bg-secondary';
+      case 'delivered':
+        return { text: 'Entregado', icon: 'bi-check-circle-fill' };
+      case 'processing':
+        return { text: 'En proceso', icon: 'bi-clock-fill' };
+      case 'cancelled':
+        return { text: 'Cancelado', icon: 'bi-x-circle-fill' };
+      default:
+        return { text: status, icon: 'bi-circle-fill' };
     }
   };
 
-  /**
-   * Get display text for status
-   * @param {string} status - Order status
-   * @returns {string} - Formatted text
-   */
-  const getStatusText = (status) => {
-    switch(status) {
-      case 'delivered': return 'Entregado';
-      case 'processing': return 'En proceso';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
-    }
-  };
-
-  // Get filtered orders
+  // Obtener pedidos filtrados
   const filteredOrders = getFilteredOrders();
 
   return (
     <div>
-      {/* Section title */}
+      {/* Título de sección */}
       <SectionTitle title="Mis Pedidos" />
 
-      {/* Filter buttons */}
-      <div className="mb-4">
+      {/* Filtros tipo chip */}
+      <div className="order-filter-bar">
         <button
-          className={`btn me-2 ${filter === 'all' ? 'btn-green-3 text-white' : 'btn-outline-secondary'}`}
+          className={`filter-chip ${filter === 'all' ? 'active' : ''}`}
           onClick={() => setFilter('all')}
         >
+          <i className="bi bi-grid-fill"></i>
           Todos
         </button>
         <button
-          className={`btn me-2 ${filter === 'processing' ? 'btn-warning' : 'btn-outline-secondary'}`}
+          className={`filter-chip ${filter === 'processing' ? 'active' : ''}`}
           onClick={() => setFilter('processing')}
         >
+          <i className="bi bi-clock-fill"></i>
           En proceso
         </button>
         <button
-          className={`btn me-2 ${filter === 'delivered' ? 'btn-success' : 'btn-outline-secondary'}`}
+          className={`filter-chip ${filter === 'delivered' ? 'active' : ''}`}
           onClick={() => setFilter('delivered')}
         >
+          <i className="bi bi-check-circle-fill"></i>
           Entregados
         </button>
         <button
-          className={`btn ${filter === 'cancelled' ? 'btn-danger' : 'btn-outline-secondary'}`}
+          className={`filter-chip ${filter === 'cancelled' ? 'active' : ''}`}
           onClick={() => setFilter('cancelled')}
         >
+          <i className="bi bi-x-circle-fill"></i>
           Cancelados
         </button>
       </div>
 
-      {/* Orders list */}
+      {/* Lista de pedidos */}
       {filteredOrders.length > 0 ? (
-        filteredOrders.map(order => (
-          <ProfileCard key={order.id} className="mb-3">
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <h5 className="mb-1">{order.id}</h5>
-                <p className="text-muted mb-0 small">{order.date}</p>
-              </div>
-              <div className="text-end">
-                <span className={`badge ${getStatusBadgeClass(order.status)}`}>
-                  {getStatusText(order.status)}
-                </span>
-                <p className="fw-bold mt-1">${order.total.toFixed(2)}</p>
-              </div>
-            </div>
-            <hr />
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <p className="mb-0">{order.items} {order.items === 1 ? 'producto' : 'productos'}</p>
-              </div>
-              <button className="btn btn-sm btn-outline-green">
-                Ver detalles
-              </button>
-            </div>
-          </ProfileCard>
-        ))
+        <ul className="order-list">
+          {filteredOrders.map(order => {
+            const { text: statusText, icon: statusIcon } = getStatusInfo(order.status);
+
+            return (
+              <li key={order.id} className="order-item">
+                <div className="order-header">
+                  <div>
+                    <div className="order-id">{order.id}</div>
+                    <div className="order-date">{order.date}</div>
+                  </div>
+                  <span className={`order-status ${order.status}`}>
+                    <i className={`bi ${statusIcon}`}></i>
+                    {statusText}
+                  </span>
+                </div>
+
+                <div className="order-details">
+                  <div className="order-meta">
+                    {order.items} {order.items === 1 ? 'producto' : 'productos'}
+                  </div>
+                  <div className="order-price">
+                    ${order.total.toFixed(2)}
+                  </div>
+                </div>
+
+                <div className="order-actions">
+                  <button className="view-order-btn">
+                    <i className="bi bi-eye"></i>
+                    Ver detalles
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       ) : (
         <EmptyState
           icon="bag-x"
