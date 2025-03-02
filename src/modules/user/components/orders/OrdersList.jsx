@@ -1,5 +1,5 @@
 import { OrderItem } from './OrderItem';
-import { EmptyState } from '../shared/EmptyState';
+import { EmptyState } from '../shared/index.js'
 
 /**
  * Componente que muestra la lista de pedidos

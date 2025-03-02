@@ -1,5 +1,5 @@
 import { PaymentItem } from './PaymentItem';
-import { EmptyState } from '../../components/shared/EmptyState';
+import { EmptyState } from '../shared/index.js'
 
 /**
  * Componente que muestra la lista de métodos de pago

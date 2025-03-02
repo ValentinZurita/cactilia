@@ -1,10 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 import storage from 'redux-persist/lib/storage'
-import { registerSlice } from '../../auth/store/registerSlice.js'
+import { registerSlice } from '../modules/auth/store/registerSlice.js'
 import { persistReducer, persistStore } from 'redux-persist'
 import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'
-import { authSlice } from '../../../store/auth/authSlice.js'
-import { cartSlice } from '../../../store/cart/cartSlice.js'
+import { authSlice } from './auth/authSlice.js'
+import { cartSlice } from './cart/cartSlice.js'
+import messagesReducer from './messages/messageSlice.js'
 
 
 // Config persistence for auth
@@ -33,7 +34,8 @@ export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     register: registerSlice.reducer,
-    cart: persistedCartReducer, // Add this line
+    cart: persistedCartReducer,
+    messages: messagesReducer,
   },
 
 

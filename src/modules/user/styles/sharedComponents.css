@@ -1,0 +1,176 @@
+/* Estilos para componentes compartidos */
+
+/* Elementos genéricos */
+.generic-item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* ActionItemCard */
+.action-item {
+    padding: 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.action-item:last-child {
+    border-bottom: none;
+}
+
+.action-item:hover {
+    background-color: #f9f9f9;
+}
+
+.action-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.action-item-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.action-item-icon {
+    font-size: 1.6rem;
+    color: #666;
+}
+
+.action-item-info {
+    padding-top: 3px;
+}
+
+.action-item-title {
+    font-weight: 500;
+    margin: 0 0 2px 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.action-item-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.action-item-default-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #f0f0f0;
+    color: #666;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.action-item-default-badge i {
+    color: var(--green-3);
+    font-size: 0.7rem;
+}
+
+.action-item-content {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.action-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-item-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #777;
+    border: none;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+}
+
+.action-item-btn:hover {
+    background-color: #e3e3e3;
+}
+
+.action-item-btn.edit:hover {
+    color: var(--green-3);
+}
+
+.action-item-btn.default:hover {
+    color: #ffc107;
+}
+
+.action-item-btn.delete:hover {
+    color: #dc3545;
+}
+
+/* AddItemButton */
+.add-item-btn {
+    position: relative;
+    margin: 20px auto;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--green-3);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.add-item-btn:hover {
+    transform: scale(1.05);
+    background-color: var(--green-1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.add-item-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+/* FeedbackForm */
+.feedback-form {
+    width: 100%;
+}
+
+.feedback-form-content {
+    margin-bottom: 20px;
+}
+
+/* Animaciones para mensajes de retroalimentación */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert {
+    animation: fadeInDown 0.3s ease;
+}

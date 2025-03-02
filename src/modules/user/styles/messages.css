@@ -1,0 +1,74 @@
+/* Estilos para el sistema de mensajes */
+
+.global-message-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 350px;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.global-message {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    margin: 0;
+    animation: slideInRight 0.3s ease-out;
+    transform-origin: right center;
+}
+
+.global-message.alert-success {
+    background-color: #f0f9f0;
+    border-left: 4px solid var(--green-3);
+    color: #3c763d;
+}
+
+.global-message.alert-danger {
+    background-color: #f9f0f0;
+    border-left: 4px solid #dc3545;
+    color: #a94442;
+}
+
+.global-message.alert-info {
+    background-color: #f0f7fa;
+    border-left: 4px solid #17a2b8;
+    color: #0c5460;
+}
+
+.global-message.alert-warning {
+    background-color: #fcf8e3;
+    border-left: 4px solid #ffc107;
+    color: #8a6d3b;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.global-message.removing {
+    animation: slideOutRight 0.3s ease-out forwards;
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}

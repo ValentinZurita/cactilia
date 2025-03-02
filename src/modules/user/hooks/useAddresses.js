@@ -1,14 +1,29 @@
-import { useState } from 'react'
+import { useCallback } from 'react';
+import { useItemsCollection } from './useItemsCollection';
+
 
 /**
- * Hook personalizado para manejar la lógica de direcciones
+ * Hook refactorizado para manejar direcciones utilizando el hook genérico
  *
  * @returns {Object} - Métodos y estado para manejar direcciones
  */
 export const useAddresses = () => {
+  // Usar el sistema de mensajes centralizado
+  const { addMessage } = useMessages();
 
-  // Datos de ejemplo - en una implementación real vendrían de Firebase
-  const [addresses, setAddresses] = useState([
+  // Validación específica para direcciones
+  const validateAddress = useCallback((address) => {
+    if (!address.name || !address.street || !address.city || !address.state || !address.zip) {
+      return {
+        valid: false,
+        error: 'Todos los campos son obligatorios'
+      };
+    }
+    return { valid: true };
+  }, []);
+
+  // Datos iniciales (en una implementación real vendrían de Firebase)
+  const initialAddresses = [
     {
       id: '1',
       name: 'Casa',
@@ -27,49 +42,69 @@ export const useAddresses = () => {
       zip: '06600',
       isDefault: false
     }
-  ]);
+  ];
 
-  /**
-   * Establece una dirección como predeterminada
-   * @param {string} id - ID de la dirección
-   */
-  const setDefaultAddress = (id) => {
-    // Actualizar direcciones, estableciendo solo una como predeterminada
-    setAddresses(addresses.map(addr => ({
-      ...addr,
-      isDefault: addr.id === id
-    })));
-  };
+  // Usar el hook genérico con la configuración para direcciones
+  const addressCollection = useItemsCollection({
+    initialItems: initialAddresses,
+    itemType: 'dirección',
+    validateItem: validateAddress
+  });
 
-  /**
-   * Elimina una dirección
-   * @param {string} id - ID de la dirección
-   */
-  const deleteAddress = (id) => {
-    if (window.confirm('¿Estás seguro de eliminar esta dirección?')) {
-      setAddresses(addresses.filter(addr => addr.id !== id));
+  // Métodos específicos o personalizados para direcciones
+  const setDefaultAddress = useCallback((addressId) => {
+    const result = addressCollection.setDefaultItem(addressId);
+    if (result) {
+      addMessage({
+        type: 'success',
+        text: 'Dirección establecida como predeterminada'
+      });
     }
-  };
+    return result;
+  }, [addressCollection.setDefaultItem, addMessage]);
 
-  /**
-   * Edita una dirección existente
-   * @param {Object} address - Dirección a editar
-   */
-  const editAddress = (address) => {
-    //TODO aqui iría la lógica para mostrar un modal o formulario de edición
+  const deleteAddress = useCallback((addressId) => {
+    const result = addressCollection.deleteItem(addressId);
+    if (result) {
+      addMessage({
+        type: 'success',
+        text: 'Dirección eliminada correctamente'
+      });
+    }
+    return result;
+  }, [addressCollection.deleteItem, addMessage]);
+
+  const editAddress = useCallback((address) => {
+    // En una implementación real, aquí se mostraría un modal o se navegaría a un formulario
     console.log('Editando dirección:', address);
-  };
 
-  /**
-   * Añade una nueva dirección
-   */
-  const addAddress = () => {
-    // TODO aquí iría la lógica para mostrar un modal o formulario de nueva dirección
+    // Simulación de edición
+    setTimeout(() => {
+      addMessage({
+        type: 'info',
+        text: 'Funcionalidad de edición en desarrollo'
+      });
+    }, 500);
+  }, [addMessage]);
+
+  const addAddress = useCallback(() => {
+    // En una implementación real, aquí se mostraría un modal o se navegaría a un formulario
     console.log('Añadiendo nueva dirección');
-  };
 
+    // Simulación de adición
+    setTimeout(() => {
+      addMessage({
+        type: 'info',
+        text: 'Funcionalidad de añadir dirección en desarrollo'
+      });
+    }, 500);
+  }, [addMessage]);
+
+  // Retornar la combinación del hook genérico con funcionalidades específicas
   return {
-    addresses,
+    addresses: addressCollection.items,
+    loading: addressCollection.loading,
+    error: addressCollection.error,
     setDefaultAddress,
     deleteAddress,
     editAddress,
