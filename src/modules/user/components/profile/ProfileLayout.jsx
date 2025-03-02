@@ -1,8 +1,8 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { ProfileSidebar } from './ProfileSidebar';
 import { MobileProfileMenu } from './MobileProfileMenu';
-import '../../../../styles/pages/userProfile.css';
+import '../../styles/profileBase.css';
 
 /**
  * ProfileLayout - Layout principal para el perfil de usuario
@@ -11,6 +11,12 @@ import '../../../../styles/pages/userProfile.css';
 export const ProfileLayout = () => {
   // Obtener datos del usuario desde Redux
   const { displayName, email, photoURL } = useSelector((state) => state.auth);
+  const location = useLocation();
+
+  // Si estamos en la ruta exacta /profile, redirigir a /profile/orders
+  if (location.pathname === '/profile') {
+    return <Navigate to="/profile/orders" replace />;
+  }
 
   return (
     <>

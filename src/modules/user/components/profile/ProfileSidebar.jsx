@@ -4,8 +4,7 @@ import { useDispatch } from 'react-redux';
 import { signOut } from 'firebase/auth';
 import { FirebaseAuth } from '../../../../firebase/firebaseConfig';
 import { logout } from '../../../../store/auth/authSlice';
-import '../../../../styles/pages/userProfile.css';
-
+import '../../styles/profileNavigation.css';
 
 /**
  * ProfileSidebar - Navegación lateral del perfil (solo desktop)
@@ -16,7 +15,7 @@ export const ProfileSidebar = ({ displayName, email, photoURL }) => {
   const dispatch = useDispatch();
 
   // Estado para la sección activa
-  const [activeSection, setActiveSection] = useState('overview');
+  const [activeSection, setActiveSection] = useState('orders');
 
   // Actualiza la sección activa basada en la URL
   useEffect(() => {
@@ -25,17 +24,17 @@ export const ProfileSidebar = ({ displayName, email, photoURL }) => {
     else if (path.includes('/addresses')) setActiveSection('addresses');
     else if (path.includes('/payments')) setActiveSection('payments');
     else if (path.includes('/settings')) setActiveSection('settings');
-    else setActiveSection('overview');
+    else setActiveSection('orders'); // Default to orders instead of overview
   }, [window.location.pathname]);
 
-  // Items del menú de navegación
+  // Items del menú de navegación - removed 'overview'
   const menuItems = [
-    { id: 'overview', label: 'Mi Cuenta', icon: 'house' },
     { id: 'orders', label: 'Mis Pedidos', icon: 'bag' },
     { id: 'addresses', label: 'Direcciones', icon: 'geo-alt' },
     { id: 'payments', label: 'Métodos de Pago', icon: 'credit-card' },
     { id: 'settings', label: 'Configuración', icon: 'gear' }
   ];
+
 
   /**
    * Manejar clic en item de navegación
@@ -45,6 +44,7 @@ export const ProfileSidebar = ({ displayName, email, photoURL }) => {
     setActiveSection(sectionId);
     navigate(`/profile/${sectionId}`);
   };
+
 
   /**
    * Manejar el cierre de sesión
@@ -58,6 +58,7 @@ export const ProfileSidebar = ({ displayName, email, photoURL }) => {
       console.error('Error al cerrar sesión:', error);
     }
   };
+
 
   return (
     <div className="profile-sidebar">

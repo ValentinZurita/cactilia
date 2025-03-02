@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { ProfileCard, SectionTitle } from '../components/shared/index.js';
-import '../../../../src/styles/pages/userProfile.css';
+import '../styles/profileSettings.css';
 
 /**
  * SettingsPage - Página refinada para gestionar configuración del perfil
@@ -143,6 +143,7 @@ export const SettingsPage = () => {
                 </div>
               )}
 
+              {/* Campos del formulario ... */}
               {/* Nombre */}
               <div className="settings-form-group">
                 <label className="settings-label">Nombre</label>

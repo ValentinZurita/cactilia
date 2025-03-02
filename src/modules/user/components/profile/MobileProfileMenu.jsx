@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import '../../styles/profileNavigation.css';
 
 /**
  * Menú de navegación para perfil en dispositivos móviles
@@ -9,7 +10,7 @@ export const MobileProfileMenu = () => {
   const navigate = useNavigate();
 
   // Determina qué sección está activa basada en la URL actual
-  const [activeSection, setActiveSection] = useState('overview');
+  const [activeSection, setActiveSection] = useState('orders');
 
   useEffect(() => {
     // Actualiza la sección activa cuando cambia la URL
@@ -18,7 +19,7 @@ export const MobileProfileMenu = () => {
     else if (path.includes('/addresses')) setActiveSection('addresses');
     else if (path.includes('/payments')) setActiveSection('payments');
     else if (path.includes('/settings')) setActiveSection('settings');
-    else setActiveSection('overview');
+    else setActiveSection('orders'); // Default to orders instead of overview
   }, [window.location.pathname]);
 
   // Función para navegar a una sección
@@ -29,16 +30,7 @@ export const MobileProfileMenu = () => {
 
   return (
     <div className="mobile-profile-menu">
-      {/* Inicio/Resumen */}
-      <div
-        className={`mobile-menu-item ${activeSection === 'overview' ? 'active' : ''}`}
-        onClick={() => navigateTo('overview')}
-      >
-        <i className="bi bi-house"></i>
-        <span>Inicio</span>
-      </div>
-
-      {/* Pedidos */}
+      {/* Pedidos (ahora es el primer item) */}
       <div
         className={`mobile-menu-item ${activeSection === 'orders' ? 'active' : ''}`}
         onClick={() => navigateTo('orders')}

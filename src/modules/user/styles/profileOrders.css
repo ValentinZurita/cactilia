@@ -1,0 +1,117 @@
+/* Estructura del item de pedido */
+.order-item {
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.order-item:hover {
+    background-color: #f9f9f9;
+}
+
+/* Header de cada pedido */
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+/* ID de pedido */
+.order-id {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+/* Fecha de pedido */
+.order-date {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* Badge de estado */
+.order-status {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    line-height: 1;
+    gap: 4px;
+}
+
+/* Variantes de color para el badge de estado */
+.order-status.delivered {
+    background-color: #f0f9f0;
+    color: #3c763d;
+}
+
+.order-status.delivered i {
+    color: #28a745;
+}
+
+.order-status.processing {
+    background-color: #fcf8e3;
+    color: #8a6d3b;
+}
+
+.order-status.processing i {
+    color: #ffc107;
+}
+
+.order-status.cancelled {
+    background-color: #f9f0f0;
+    color: #a94442;
+}
+
+.order-status.cancelled i {
+    color: #dc3545;
+}
+
+/* Precio del pedido */
+.order-price {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #333;
+    text-align: right;
+}
+
+/* Badge de productos */
+.badge {
+    font-weight: normal;
+}
+
+.badge i {
+    font-size: 0.8rem;
+}
+
+/* Botón detalles simplificado */
+.btn-details {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    color: #666;
+    border: none;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-details:hover {
+    background-color: #e0e0e0;
+    color: var(--green-3);
+}
+
+.btn-details i {
+    font-size: 0.9rem;
+}

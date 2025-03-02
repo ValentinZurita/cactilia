@@ -1,0 +1,99 @@
+/*
+   Estilos de navegación para el panel de usuario
+   Incluye el menú móvil y la barra lateral
+*/
+
+/* Menú móvil fijo en la parte inferior */
+.mobile-profile-menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+}
+
+.mobile-menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.7rem;
+    color: #666;
+    text-decoration: none;
+    padding: 8px 0;
+}
+
+.mobile-menu-item.active {
+    color: var(--green-3);
+}
+
+.mobile-menu-item i {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+}
+
+/* Sidebar solo visible en desktop */
+.profile-sidebar {
+    display: none; /* Oculto en móvil por defecto */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Perfil del usuario en el sidebar */
+.user-avatar {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Items de navegación en sidebar */
+.profile-nav-item {
+    padding: 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    color: #555;
+}
+
+.profile-nav-item:hover {
+    background-color: #f5f5f5;
+}
+
+.profile-nav-item.active {
+    background-color: #f0f0f0;
+    color: #222;
+    font-weight: 500;
+}
+
+.profile-nav-item.active i {
+    color: var(--green-3);
+}
+
+/* Ajustes para desktop */
+@media (min-width: 768px) {
+    .profile-sidebar {
+        display: block; /* Mostrar en desktop */
+        position: sticky;
+        top: 100px;
+    }
+
+    .mobile-profile-menu {
+        display: none; /* Ocultar en desktop */
+    }
+}

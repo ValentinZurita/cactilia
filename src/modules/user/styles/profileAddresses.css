@@ -1,0 +1,131 @@
+/*
+   Estilos para la sección de direcciones
+*/
+
+.address-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.address-item {
+    padding: 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.address-item:last-child {
+    border-bottom: none;
+}
+
+.address-item:hover {
+    background-color: #f9f9f9;
+}
+
+.address-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.address-name {
+    font-weight: 500;
+    margin: 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.address-default-tag {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #f0f0f0;
+    color: #666;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.address-default-tag i {
+    color: var(--green-3);
+    font-size: 0.7rem;
+}
+
+.address-details {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.address-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.address-action-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #777;
+    border: none;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+}
+
+.address-action-btn:hover {
+    background-color: #e3e3e3;
+}
+
+.address-action-btn.edit:hover {
+    color: var(--green-3);
+}
+
+.address-action-btn.default:hover {
+    color: #ffc107;
+}
+
+.address-action-btn.delete:hover {
+    color: #dc3545;
+}
+
+/* Botón para agregar dirección */
+.add-address-btn {
+    position: relative;
+    margin: 20px auto;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--green-3);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.add-address-btn:hover {
+    transform: scale(1.05);
+    background-color: var(--green-1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Contenedor para el botón y texto */
+.add-address-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}

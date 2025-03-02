@@ -1,0 +1,119 @@
+/* src/modules/user/styles/profileSettings.css */
+/*
+   Estilos específicos para la página de configuración
+*/
+
+.user-avatar-lg {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border: 3px solid white;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.settings-avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-change-photo {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--green-3);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-change-photo:hover {
+    background-color: var(--green-1);
+    transform: scale(1.1);
+}
+
+.settings-form-group {
+    margin-bottom: 20px;
+}
+
+.settings-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+}
+
+/* Diseño específico para las opciones de privacidad */
+.privacy-options {
+    padding: 5px 0;
+}
+
+.privacy-option {
+    padding: 10px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.privacy-option:hover {
+    background-color: #f9f9f9;
+}
+
+/* Switch de bootstrap personalizado */
+.form-check-input {
+    width: 3em !important;
+    height: 1.5em !important;
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: var(--green-3) !important;
+    border-color: var(--green-3) !important;
+}
+
+.form-check-input:focus {
+    border-color: rgba(52, 199, 73, 0.4) !important;
+    box-shadow: 0 0 0 0.25rem rgba(52, 199, 73, 0.25) !important;
+}
+
+/* Alertas personalizadas con animación */
+.alert {
+    border-radius: 8px;
+    border-left: 4px solid;
+    animation: fadeInDown 0.5s ease;
+}
+
+.alert-success {
+    border-left-color: var(--green-3);
+    background-color: #f0f9f0;
+    color: #3c763d;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+    background-color: #f9f0f0;
+    color: #a94442;
+}
+
+/* Media queries para adaptar en móviles */
+@media (max-width: 767px) {
+    .user-avatar-lg {
+        width: 80px;
+        height: 80px;
+    }
+
+    .btn-change-photo {
+        width: 28px;
+        height: 28px;
+    }
+
+    .settings-form-group {
+        margin-bottom: 15px;
+    }
+}

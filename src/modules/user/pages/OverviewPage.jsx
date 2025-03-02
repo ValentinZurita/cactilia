@@ -8,7 +8,9 @@ import '../../../../src/styles/pages/userProfile.css';
  * OverviewPage - Página principal del perfil
  * Versión refinada con mejor estructura visual y más elementos informativos
  */
+
 export const OverviewPage = () => {
+
   // Obtener datos del usuario desde Redux
   const { displayName, email, photoURL } = useSelector((state) => state.auth);
 
@@ -17,6 +19,7 @@ export const OverviewPage = () => {
     { id: 'ORD-1234', date: '25 Feb 2025', status: 'delivered', total: 129.99, items: 3 },
     { id: 'ORD-1233', date: '18 Feb 2025', status: 'processing', total: 59.99, items: 1 },
   ];
+
 
   /**
    * Obtener clase CSS para la etiqueta de estado
@@ -32,6 +35,7 @@ export const OverviewPage = () => {
     }
   };
 
+
   /**
    * Obtener texto para el estado
    * @param {string} status - Estado del pedido
@@ -45,6 +49,7 @@ export const OverviewPage = () => {
       default: return status;
     }
   };
+
 
   /**
    * Obtener icono para el estado
@@ -60,8 +65,10 @@ export const OverviewPage = () => {
     }
   };
 
+
   return (
     <div>
+
       {/* Título de sección */}
       <SectionTitle title="Mi Cuenta" />
 
@@ -69,6 +76,7 @@ export const OverviewPage = () => {
       <ProfileCard>
         <div className="overview-profile">
           <div className="d-flex align-items-center gap-3">
+
             {/* Avatar */}
             <div className="overview-avatar-container">
               <img
@@ -89,6 +97,7 @@ export const OverviewPage = () => {
                 <span>Cuenta activa</span>
               </div>
             </div>
+
           </div>
 
           {/* Resumen de actividad */}
@@ -100,18 +109,23 @@ export const OverviewPage = () => {
                   <span className="activity-label">Pedidos</span>
                 </div>
               </div>
+
+              {/* Nuevos datos */}
               <div className="col-4">
                 <div className="activity-stat">
                   <span className="activity-value">1</span>
                   <span className="activity-label">Direcciones</span>
                 </div>
               </div>
+
+              {/* Nuevos datos */}
               <div className="col-4">
                 <div className="activity-stat">
                   <span className="activity-value">1</span>
                   <span className="activity-label">Pagos</span>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
@@ -125,6 +139,7 @@ export const OverviewPage = () => {
         </Link>
       </div>
 
+      {/* Lista de pedidos recientes */}
       {recentOrders.length > 0 ? (
         <div className="recent-orders">
           {recentOrders.map(order => (

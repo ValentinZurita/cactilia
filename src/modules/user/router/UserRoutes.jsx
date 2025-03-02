@@ -1,7 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { RequireAuth } from '../../auth/components/RequireAuth';
 import { ProfileLayout } from '../components/profile/ProfileLayout';
-import { AddressesPage, OrdersPage, OverviewPage, PaymentsPage, SettingsPage } from '../pages/index.js'
+import {
+  AddressesPage,
+  OrdersPage,
+  PaymentsPage,
+  SettingsPage
+} from '../pages/index.js'
 
 /**
  * UserRoutes
@@ -12,10 +17,11 @@ import { AddressesPage, OrdersPage, OverviewPage, PaymentsPage, SettingsPage } f
 export const UserRoutes = () => {
   return (
     <Routes>
-      {/* Default route - redirect to overview */}
+
+      {/* Default route - redirect to orders */}
       <Route
         path="/"
-        element={<RequireAuth><Navigate to="/profile/overview" /></RequireAuth>}
+        element={<RequireAuth><Navigate to="/profile/orders" replace /></RequireAuth>}
       />
 
       {/* Profile routes */}
@@ -23,15 +29,17 @@ export const UserRoutes = () => {
         path="/profile"
         element={<RequireAuth><ProfileLayout /></RequireAuth>}
       >
-        {/* Default profile route - redirect to overview */}
-        <Route index element={<Navigate to="overview" />} />
+        {/* Default profile route - redirect to orders with 'replace' */}
+        <Route index element={<Navigate to="orders" replace />} />
 
         {/* Individual profile sections */}
-        <Route path="overview" element={<OverviewPage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="addresses" element={<AddressesPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+
+        {/* Redirect all other paths to orders */}
+        <Route path="*" element={<Navigate to="orders" replace />} />
       </Route>
     </Routes>
   );

@@ -1,4 +1,5 @@
 import '../../../../styles/pages/userProfile.css';
+
 /**
  * SectionTitle Component
  *
