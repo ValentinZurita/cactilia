@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 /**
  * Hook genérico para manejar colecciones de elementos (direcciones, métodos de pago, etc.)
@@ -21,13 +21,6 @@ export const useItemsCollection = ({
   const [loading, setLoading] = useState(!!fetchItems);
   const [error, setError] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-
-  // Cargar elementos si se proporciona una función para ello
-  useEffect(() => {
-    if (fetchItems) {
-      loadItems();
-    }
-  }, []);
 
   // Cargar elementos desde la fuente de datos
   const loadItems = useCallback(async () => {
@@ -53,7 +46,7 @@ export const useItemsCollection = ({
 
   // Establecer un elemento como predeterminado
   const setDefaultItem = useCallback((itemId) => {
-    if (window.confirm(`¿Establecer este ${itemType} como predeterminado?`)) {
+    try {
       setItems(prevItems =>
         prevItems.map(item => ({
           ...item,
@@ -61,17 +54,23 @@ export const useItemsCollection = ({
         }))
       );
       return true;
+    } catch (err) {
+      console.error(`Error estableciendo ${itemType} predeterminado:`, err);
+      setError(err.message);
+      return false;
     }
-    return false;
   }, [itemType]);
 
   // Eliminar un elemento
   const deleteItem = useCallback((itemId) => {
-    if (window.confirm(`¿Estás seguro de eliminar este ${itemType}?`)) {
+    try {
       setItems(prevItems => prevItems.filter(item => item.id !== itemId));
       return true;
+    } catch (err) {
+      console.error(`Error eliminando ${itemType}:`, err);
+      setError(err.message);
+      return false;
     }
-    return false;
   }, [itemType]);
 
   // Editar un elemento existente
@@ -81,13 +80,19 @@ export const useItemsCollection = ({
       return { ok: false, error: validation.error };
     }
 
-    setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === itemId ? { ...item, ...newData } : item
-      )
-    );
-    return { ok: true };
-  }, [validateItem]);
+    try {
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === itemId ? { ...item, ...newData } : item
+        )
+      );
+      return { ok: true };
+    } catch (err) {
+      console.error(`Error editando ${itemType}:`, err);
+      setError(err.message);
+      return { ok: false, error: err.message };
+    }
+  }, [validateItem, itemType]);
 
   // Agregar un nuevo elemento
   const addItem = useCallback((newItem) => {
@@ -96,15 +101,21 @@ export const useItemsCollection = ({
       return { ok: false, error: validation.error };
     }
 
-    // Generar un ID único si no se proporciona
-    const itemWithId = {
-      ...newItem,
-      id: newItem.id || `item-${Date.now()}`
-    };
+    try {
+      // Generar un ID único si no se proporciona
+      const itemWithId = {
+        ...newItem,
+        id: newItem.id || `item-${Date.now()}`
+      };
 
-    setItems(prevItems => [...prevItems, itemWithId]);
-    return { ok: true, id: itemWithId.id };
-  }, [validateItem]);
+      setItems(prevItems => [...prevItems, itemWithId]);
+      return { ok: true, id: itemWithId.id };
+    } catch (err) {
+      console.error(`Error agregando ${itemType}:`, err);
+      setError(err.message);
+      return { ok: false, error: err.message };
+    }
+  }, [validateItem, itemType]);
 
   // Seleccionar un elemento para editar
   const selectItem = useCallback((itemId) => {

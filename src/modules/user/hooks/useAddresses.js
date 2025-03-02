@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useItemsCollection } from './useItemsCollection';
-
+import { useDispatch } from 'react-redux';
+import { addMessage } from '../../../store/messages/messageSlice';
 
 /**
  * Hook refactorizado para manejar direcciones utilizando el hook genérico
@@ -8,8 +9,8 @@ import { useItemsCollection } from './useItemsCollection';
  * @returns {Object} - Métodos y estado para manejar direcciones
  */
 export const useAddresses = () => {
-  // Usar el sistema de mensajes centralizado
-  const { addMessage } = useMessages();
+  // Usar Redux para enviar mensajes globales (reemplazando useMessages)
+  const dispatch = useDispatch();
 
   // Validación específica para direcciones
   const validateAddress = useCallback((address) => {
@@ -55,24 +56,24 @@ export const useAddresses = () => {
   const setDefaultAddress = useCallback((addressId) => {
     const result = addressCollection.setDefaultItem(addressId);
     if (result) {
-      addMessage({
+      dispatch(addMessage({
         type: 'success',
         text: 'Dirección establecida como predeterminada'
-      });
+      }));
     }
     return result;
-  }, [addressCollection.setDefaultItem, addMessage]);
+  }, [addressCollection.setDefaultItem, dispatch]);
 
   const deleteAddress = useCallback((addressId) => {
     const result = addressCollection.deleteItem(addressId);
     if (result) {
-      addMessage({
+      dispatch(addMessage({
         type: 'success',
         text: 'Dirección eliminada correctamente'
-      });
+      }));
     }
     return result;
-  }, [addressCollection.deleteItem, addMessage]);
+  }, [addressCollection.deleteItem, dispatch]);
 
   const editAddress = useCallback((address) => {
     // En una implementación real, aquí se mostraría un modal o se navegaría a un formulario
@@ -80,12 +81,12 @@ export const useAddresses = () => {
 
     // Simulación de edición
     setTimeout(() => {
-      addMessage({
+      dispatch(addMessage({
         type: 'info',
         text: 'Funcionalidad de edición en desarrollo'
-      });
+      }));
     }, 500);
-  }, [addMessage]);
+  }, [dispatch]);
 
   const addAddress = useCallback(() => {
     // En una implementación real, aquí se mostraría un modal o se navegaría a un formulario
@@ -93,12 +94,12 @@ export const useAddresses = () => {
 
     // Simulación de adición
     setTimeout(() => {
-      addMessage({
+      dispatch(addMessage({
         type: 'info',
         text: 'Funcionalidad de añadir dirección en desarrollo'
-      });
+      }));
     }, 500);
-  }, [addMessage]);
+  }, [dispatch]);
 
   // Retornar la combinación del hook genérico con funcionalidades específicas
   return {

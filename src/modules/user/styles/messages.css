@@ -1,52 +1,56 @@
-/* Estilos para el sistema de mensajes */
-
-.global-message-container {
+/* Contenedor principal de mensajes */
+.global-messages-container {
     position: fixed;
-    top: 20px;
+    top: 70px; /* Para que aparezca debajo del navbar */
     right: 20px;
     max-width: 350px;
     z-index: 1050;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    pointer-events: none; /* Permite que los clicks pasen a través del contenedor */
 }
 
-.global-message {
+/* El mensaje individual sí debe capturar clicks para el botón cerrar */
+.global-messages-container .alert {
+    pointer-events: auto;
+    margin-bottom: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 15px;
-    border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-    margin: 0;
     animation: slideInRight 0.3s ease-out;
     transform-origin: right center;
 }
 
-.global-message.alert-success {
+/* Estilos para diferentes tipos de alertas */
+.global-messages-container .alert-success {
     background-color: #f0f9f0;
     border-left: 4px solid var(--green-3);
     color: #3c763d;
 }
 
-.global-message.alert-danger {
+.global-messages-container .alert-danger {
     background-color: #f9f0f0;
     border-left: 4px solid #dc3545;
     color: #a94442;
 }
 
-.global-message.alert-info {
+.global-messages-container .alert-info {
     background-color: #f0f7fa;
     border-left: 4px solid #17a2b8;
     color: #0c5460;
 }
 
-.global-message.alert-warning {
+.global-messages-container .alert-warning {
     background-color: #fcf8e3;
     border-left: 4px solid #ffc107;
     color: #8a6d3b;
 }
 
+/* Animación de entrada para mensajes */
 @keyframes slideInRight {
     from {
         transform: translateX(100%);
@@ -58,7 +62,8 @@
     }
 }
 
-.global-message.removing {
+/* Animación de salida para mensajes */
+.global-messages-container .alert.removing {
     animation: slideOutRight 0.3s ease-out forwards;
 }
 
@@ -70,5 +75,25 @@
     to {
         transform: translateX(100%);
         opacity: 0;
+    }
+}
+
+/* Botón para cerrar */
+.global-messages-container .btn-close {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.global-messages-container .btn-close:hover {
+    opacity: 1;
+}
+
+/* Ajustes para dispositivos móviles */
+@media (max-width: 576px) {
+    .global-messages-container {
+        left: 20px;
+        right: 20px;
+        max-width: none;
     }
 }
