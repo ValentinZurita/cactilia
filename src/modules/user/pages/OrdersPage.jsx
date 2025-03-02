@@ -1,7 +1,7 @@
 import { SectionTitle } from '../components/shared/index.js';
 import '../styles/profileOrders.css';
 import { OrderFilterBar, OrdersList } from '../components/orders/index.js'
-import { useOrders } from '../hooks/userOrders.jsx'
+import { useOrders } from '../hooks/userOrders.js'
 
 /**
  * OrdersPage - Página rediseñada de historial de pedidos

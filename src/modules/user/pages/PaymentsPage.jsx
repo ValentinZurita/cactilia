@@ -2,7 +2,7 @@ import { SectionTitle } from '../components/shared/index.js';
 import { PaymentsList } from '../components/payments/PaymentsList';
 import { AddPaymentButton } from '../components/payments/AddPaymentButton';
 import { SecurityNote } from '../components/payments/SecurityNote';
-import { usePayments } from '../hooks/usePayments';
+import { usePayments } from '../hooks/usePayments.js';
 import '../styles/profilePayments.css';
 
 /**
