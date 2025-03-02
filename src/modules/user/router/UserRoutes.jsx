@@ -1,12 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { RequireAuth } from '../../auth/components/RequireAuth';
-import { ProfileLayout } from '../components/profile/ProfileLayout';
 import {
   AddressesPage,
   OrdersPage,
   PaymentsPage,
   SettingsPage
 } from '../pages/index.js'
+import { ProfileLayout } from '../components/profile/index.js'
 
 /**
  * UserRoutes

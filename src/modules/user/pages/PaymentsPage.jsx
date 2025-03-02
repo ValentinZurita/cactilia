@@ -1,7 +1,8 @@
-import { SectionTitle } from '../components/shared/index.js';
+import { SectionTitle, AddItemButton } from '../components/shared/index.js';
 import { usePayments } from '../hooks/usePayments.js';
 import '../styles/profilePayments.css';
-import { AddPaymentButton, PaymentsList, SecurityNote } from '../components/payments/index.js'
+import '../styles/sharedComponents.css';
+import { PaymentsList, SecurityNote } from '../components/payments/index.js'
 
 /**
  * PaymentsPage - Página rediseñada de métodos de pago
@@ -31,7 +32,11 @@ export const PaymentsPage = () => {
       />
 
       {/* Botón para agregar método de pago */}
-      <AddPaymentButton onClick={addPayment} />
+      <AddItemButton
+        onClick={addPayment}
+        label="Agregar método de pago"
+        icon="plus"
+      />
 
       {/* Nota de seguridad */}
       <SecurityNote />

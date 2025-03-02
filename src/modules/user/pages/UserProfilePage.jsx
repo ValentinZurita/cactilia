@@ -1,9 +1,8 @@
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import { ProfileSidebar } from '../components/profile/ProfileSidebar';
-import { MobileProfileMenu } from '../components/profile/MobileProfileMenu';
 import { OverviewPage } from './OverviewPage.jsx';
 import '../../../styles/pages/userProfile.css';
+import { MobileProfileMenu, ProfileSidebar } from '../components/profile/index.js'
 
 /**
  * UserProfilePage
