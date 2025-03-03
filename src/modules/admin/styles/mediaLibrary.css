@@ -1,43 +1,44 @@
 /*
    MEDIA LIBRARY STYLES
-   Un conjunto de estilos sobrios, minimalistas y elegantes para
-   la biblioteca de medios del panel de administración.
+   Elegant, minimalist styles for the admin media library
 */
 
-/* ---------- CONTENEDORES PRINCIPALES ---------- */
+/* ---------- MAIN CONTAINERS ---------- */
 .media-library-container,
 .media-upload-container {
     background-color: white;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
 .page-title {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     color: #333;
     margin-bottom: 0;
     font-weight: 500;
 }
 
-/* ---------- MEDIA ITEM CARD ---------- */
+/* ---------- MEDIA ITEM CARDS ---------- */
 .media-item-card {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     background-color: #fff;
     height: 100%;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .media-item-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* Contenedor para la imagen con overlay de acciones */
+/* Image preview container with overlay */
 .media-item-preview {
     height: 150px;
     position: relative;
@@ -54,10 +55,10 @@
 }
 
 .media-item-preview:hover img {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
-/* Acciones que aparecen al hacer hover sobre la imagen */
+/* Action overlay on hover */
 .media-item-actions {
     position: absolute;
     top: 0;
@@ -77,7 +78,7 @@
     opacity: 1;
 }
 
-/* Información del elemento multimedia */
+/* Media item info section */
 .media-item-info {
     padding: 12px;
     flex-grow: 1;
@@ -92,38 +93,41 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 500;
 }
 
 /* ---------- UPLOADER AREA ---------- */
 .upload-area {
     border: 2px dashed #ccc;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 20px;
     transition: all 0.3s ease;
     background-color: #f8f9fa;
+    padding: 30px;
 }
 
 .upload-area.drag-active {
-    border-color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.05);
+    border-color: var(--green-3);
+    background-color: rgba(52, 199, 73, 0.05);
 }
 
 .upload-prompt {
-    padding: 50px 20px;
+    padding: 40px 20px;
     text-align: center;
 }
 
-/* Contenedor del archivo seleccionado */
+/* Selected file form and preview */
 .selected-file-form {
     padding: 20px 0;
 }
 
 .selected-file-preview {
     border: 1px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     padding: 10px;
     background-color: #f8f9fa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .selected-file-preview img {
@@ -150,8 +154,8 @@
 
 .modal-content {
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     width: 90%;
     max-width: 1000px;
     max-height: 90vh;
@@ -167,6 +171,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: #f8f9fa;
 }
 
 .modal-title {
@@ -187,9 +192,10 @@
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    background-color: #f8f9fa;
 }
 
-/* Animación de entrada/salida de modal */
+/* Modal animations */
 .modal-backdrop.visible {
     opacity: 1;
 }
@@ -207,33 +213,36 @@
     transform: translateY(-30px);
 }
 
-/* ---------- FILTROS ---------- */
+/* ---------- FILTERS ---------- */
 .media-filters {
-    padding: 16px;
+    padding: 20px;
     background-color: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+/* ---------- EMPTY STATES ---------- */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    margin: 20px 0;
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* ---------- ESTADOS VACÍOS ---------- */
-.empty-state {
-    text-align: center;
-    padding: 50px 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    margin: 20px 0;
-}
-
 .empty-state i {
-    font-size: 3rem;
+    font-size: 3.5rem;
     color: #ccc;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .empty-state h5 {
     color: #555;
     margin-bottom: 10px;
+    font-weight: 500;
 }
 
 .empty-state p {
@@ -242,23 +251,42 @@
     margin: 0 auto 15px;
 }
 
-/* ---------- UTILIDADES ---------- */
+/* ---------- UTILITIES ---------- */
 .media-preview-modal img {
     max-height: 400px;
     object-fit: contain;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
 }
 
-/* Tabla de metadatos */
+/* Metadata table in details modal */
 .metadata-table th {
     width: 35%;
     color: #666;
     font-weight: 500;
     padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
 .metadata-table td {
     word-break: break-word;
     padding: 8px 12px;
+}
+
+/* Button hover effects */
+.btn-primary {
+    background-color: var(--green-3);
+    border-color: var(--green-3);
+}
+
+.btn-primary:hover {
+    background-color: var(--green-1);
+    border-color: var(--green-1);
+}
+
+.btn-primary:active {
+    background-color: var(--green-1);
+    border-color: var(--green-1);
 }
 
 /* ---------- RESPONSIVE DESIGN ---------- */
@@ -278,6 +306,10 @@
     }
 
     .page-title {
-        font-size: 1.25rem;
+        font-size: 1.3rem;
+    }
+
+    .upload-prompt {
+        padding: 20px 10px;
     }
 }

@@ -1,20 +1,28 @@
 import { MediaItem } from './MediaItem';
 
 /**
- * MediaGrid - Componente para mostrar los elementos multimedia en una cuadrícula
+ * MediaGrid - Component for displaying a collection of media items in a grid layout
  *
- * Presenta una colección de archivos multimedia de manera organizada
- * con soporte para estados de carga y mensajes cuando no hay contenido.
+ * Renders a responsive grid of media items with support for loading states
+ * and empty state messaging
  *
- * @param {Object} props - Propiedades del componente
- * @param {Array} props.items - Elementos multimedia a mostrar
- * @param {Function} props.onSelectItem - Manejador para la selección de elementos
- * @param {Function} props.onDeleteItem - Manejador para la eliminación de elementos
- * @param {boolean} props.loading - Estado de carga
+ * @param {Object} props - Component props
+ * @param {Array} props.items - Media items to display
+ * @param {Function} props.onSelectItem - Handler for item selection
+ * @param {Function} props.onDeleteItem - Handler for item deletion
+ * @param {boolean} props.loading - Loading state indicator
  * @returns {JSX.Element}
+ *
+ * @example
+ * <MediaGrid
+ *   items={mediaItems}
+ *   loading={loading}
+ *   onSelectItem={handleSelectItem}
+ *   onDeleteItem={handleDeleteItem}
+ * />
  */
 export const MediaGrid = ({ items = [], onSelectItem, onDeleteItem, loading = false }) => {
-  // Mostrar esqueleto de carga cuando está cargando
+  // Show loading skeleton when items are being fetched
   if (loading) {
     return (
       <div className="row g-3">
@@ -42,20 +50,20 @@ export const MediaGrid = ({ items = [], onSelectItem, onDeleteItem, loading = fa
     );
   }
 
-  // Mostrar mensaje cuando no hay elementos
+  // Show empty state message when no items are available
   if (items.length === 0) {
     return (
       <div className="empty-state">
         <i className="bi bi-images"></i>
-        <h5>No se encontraron archivos</h5>
+        <h5>No media files found</h5>
         <p className="text-muted">
-          Sube nuevos archivos o ajusta los filtros para ver más resultados.
+          Upload new files or adjust your filters to see more results.
         </p>
       </div>
     );
   }
 
-  // Renderizar la cuadrícula con los elementos
+  // Render the grid of media items
   return (
     <div className="row g-3">
       {items.map((item) => (

@@ -1,22 +1,30 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMediaLibrary } from '../hooks/useMediaLibrary';
 import { MediaGrid, MediaFilters, MediaDetailsModal } from '../components/media';
 import '../styles/mediaLibrary.css';
 
 /**
- * MediaLibraryPage - Página principal para la gestión de la biblioteca de medios
+ * MediaLibraryPage - Main component for the media management page
  *
- * Esta página permite visualizar, filtrar y administrar los archivos multimedia
- * del sistema con una interfaz minimalista y elegante.
+ * This page provides an interface to browse, filter, and manage media assets
+ * with a clean, minimalist design
  *
  * @returns {JSX.Element}
  */
 export const MediaLibraryPage = () => {
-  // Lista predefinida de categorías disponibles para filtrar
-  const [categories, setCategories] = useState(['hero', 'product', 'background', 'banner', 'icon', 'other']);
+  // Navigation hook
+  const navigate = useNavigate();
+
+  // Available categories for filter dropdown
+  const [categories, setCategories] = useState([
+    'hero', 'product', 'background', 'banner', 'icon', 'other'
+  ]);
+
+  // Controls the details modal visibility
   const [showDetails, setShowDetails] = useState(false);
 
-  // Obtener datos y métodos del hook personalizado
+  // Get data and methods from the media library hook
   const {
     mediaItems,
     loading,
@@ -29,46 +37,52 @@ export const MediaLibraryPage = () => {
     setFilters
   } = useMediaLibrary();
 
-  // Extraer categorías únicas de los elementos cargados
+  // Extract unique categories from loaded media items
   useEffect(() => {
     if (mediaItems.length > 0) {
-      const uniqueCategories = [...new Set(mediaItems
-        .map(item => item.category)
-        .filter(Boolean))];
+      const uniqueCategories = [...new Set(
+        mediaItems
+          .map(item => item.category)
+          .filter(Boolean)
+      )];
 
       if (uniqueCategories.length > 0) {
-        setCategories(uniqueCategories);
+        setCategories(prevCategories => {
+          // Combine default categories with those found in media items
+          const allCategories = [...new Set([...prevCategories, ...uniqueCategories])];
+          return allCategories;
+        });
       }
     }
   }, [mediaItems]);
 
-  // Manejador para seleccionar un elemento y mostrar detalles
+  // Handler for selecting an item to view/edit details
   const handleSelectItem = (item) => {
     setSelectedItem(item);
     setShowDetails(true);
   };
 
-  // Manejador para cerrar el modal de detalles
+  // Handler for closing the details modal
   const handleCloseDetails = () => {
     setShowDetails(false);
   };
 
   return (
     <div className="media-library-container">
-      {/* Encabezado con título y botón de subida */}
+      {/* Header with title and upload button */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="page-title">Biblioteca de Medios</h2>
+        <h2 className="page-title">Media Library</h2>
 
-        <a
-          href="/admin/media/upload"
+        <button
           className="btn btn-primary"
+          onClick={() => navigate('/admin/media/upload')}
         >
           <i className="bi bi-upload me-2"></i>
-          Subir Nuevo Archivo
-        </a>
+          Upload New File
+        </button>
       </div>
 
-      {/* Mensaje de error si existe */}
+      {/* Error message if applicable */}
       {error && (
         <div className="alert alert-danger" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -76,14 +90,14 @@ export const MediaLibraryPage = () => {
         </div>
       )}
 
-      {/* Componente de filtros */}
+      {/* Filters component */}
       <MediaFilters
         filters={filters}
         onFilterChange={setFilters}
         categories={categories}
       />
 
-      {/* Cuadrícula de elementos multimedia */}
+      {/* Media grid with items */}
       <MediaGrid
         items={mediaItems}
         loading={loading}
@@ -91,7 +105,7 @@ export const MediaLibraryPage = () => {
         onDeleteItem={handleDelete}
       />
 
-      {/* Modal de detalles del elemento */}
+      {/* Details modal (shown when an item is selected) */}
       <MediaDetailsModal
         media={selectedItem}
         isOpen={showDetails}

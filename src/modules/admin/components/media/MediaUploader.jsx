@@ -1,15 +1,17 @@
 import { useState, useRef } from 'react';
 
 /**
- * MediaUploader - Componente para subir archivos multimedia con arrastrar y soltar
+ * MediaUploader - Component for uploading media files with drag and drop
  *
- * Proporciona una interfaz intuitiva para subir archivos con previsualización,
- * soporte para arrastrar y soltar, y campos para metadatos.
+ * Provides an intuitive interface for file upload with preview and metadata
  *
- * @param {Object} props - Propiedades del componente
- * @param {Function} props.onUpload - Manejador para la subida de archivos
- * @param {boolean} props.loading - Estado de carga durante la subida
+ * @param {Object} props - Component props
+ * @param {Function} props.onUpload - Handler for file upload
+ * @param {boolean} props.loading - Loading state indicator
  * @returns {JSX.Element}
+ *
+ * @example
+ * <MediaUploader onUpload={handleUpload} loading={isUploading} />
  */
 export const MediaUploader = ({ onUpload, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -22,8 +24,8 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   const fileInputRef = useRef(null);
 
   /**
-   * Maneja eventos de arrastrar
-   * @param {Event} e - Evento de arrastrar
+   * Handle drag events
+   * @param {Event} e - Drag event
    */
   const handleDrag = (e) => {
     e.preventDefault();
@@ -37,8 +39,8 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   };
 
   /**
-   * Maneja el evento de soltar archivo
-   * @param {Event} e - Evento de soltar
+   * Handle drop event
+   * @param {Event} e - Drop event
    */
   const handleDrop = (e) => {
     e.preventDefault();
@@ -46,14 +48,13 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
     setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      // Al menos se ha soltado un archivo
       handleFiles(e.dataTransfer.files[0]);
     }
   };
 
   /**
-   * Maneja la selección de archivo desde el input
-   * @param {Event} e - Evento de cambio
+   * Handle file selection from input
+   * @param {Event} e - Change event
    */
   const handleChange = (e) => {
     e.preventDefault();
@@ -64,27 +65,35 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   };
 
   /**
-   * Procesa el archivo seleccionado
-   * @param {File} file - Archivo seleccionado
+   * Process selected file
+   * @param {File} file - The selected file
    */
   const handleFiles = (file) => {
-    // Comprobar si el archivo es una imagen
+    // Validate file type
     if (!file.type.match('image.*')) {
-      alert('Solo se permiten archivos de imagen');
+      alert('Only image files are allowed');
       return;
     }
 
-    // Establecer el archivo seleccionado y generar texto alternativo por defecto
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    // Set the selected file
     setSelectedFile(file);
+
+    // Generate alt text from filename (removing extension)
     setMetadata(prev => ({
       ...prev,
-      alt: file.name.replace(/\.[^/.]+$/, '') // Eliminar extensión para texto alternativo
+      alt: file.name.replace(/\.[^/.]+$/, '') // Remove extension
     }));
   };
 
   /**
-   * Maneja cambios en los campos del formulario
-   * @param {Event} e - Evento de cambio
+   * Handle metadata field changes
+   * @param {Event} e - Input change event
    */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -95,27 +104,27 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   };
 
   /**
-   * Maneja el clic en el botón de subida
+   * Handle upload button click
    */
   const handleUploadClick = async () => {
     if (!selectedFile) {
-      alert('Por favor selecciona un archivo para subir');
+      alert('Please select a file to upload');
       return;
     }
 
-    // Convertir etiquetas en array
+    // Convert tags string to array
     const tagsArray = metadata.tags
       .split(',')
       .map(tag => tag.trim())
       .filter(tag => tag !== '');
 
-    // Llamar a la función onUpload con el archivo y metadatos
+    // Call the onUpload function with file and metadata
     await onUpload(selectedFile, {
       ...metadata,
       tags: tagsArray
     });
 
-    // Reiniciar formulario después de la subida
+    // Reset form after upload
     setSelectedFile(null);
     setMetadata({
       alt: '',
@@ -125,7 +134,7 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   };
 
   /**
-   * Activa el diálogo de selección de archivo
+   * Trigger file input click
    */
   const onButtonClick = () => {
     fileInputRef.current.click();
@@ -134,6 +143,7 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   return (
     <div className="media-uploader">
       {!selectedFile ? (
+        // Upload area for drag & drop or file selection
         <div
           className={`upload-area ${dragActive ? 'drag-active' : ''}`}
           onDragEnter={handleDrag}
@@ -153,29 +163,30 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
 
           <div className="upload-prompt">
             <i className="bi bi-cloud-arrow-up fs-1 text-muted"></i>
-            <h5 className="mt-3">Arrastra y suelta una imagen aquí</h5>
-            <p className="text-muted">o</p>
+            <h5 className="mt-3">Drag and drop an image here</h5>
+            <p className="text-muted">or</p>
             <button
               type="button"
               className="btn btn-primary"
               onClick={onButtonClick}
             >
-              Explorar archivos
+              Browse Files
             </button>
             <p className="mt-3 text-muted small">
-              Formatos soportados: JPG, PNG, GIF, SVG, WebP (Máx. 5MB)
+              Supported formats: JPG, PNG, GIF, SVG, WebP (Max. 5MB)
             </p>
           </div>
         </div>
       ) : (
+        // Form for metadata and upload confirmation
         <div className="selected-file-form">
           <div className="row">
             <div className="col-md-4 mb-3">
-              {/* Previsualización del archivo */}
+              {/* File preview */}
               <div className="selected-file-preview">
                 <img
                   src={URL.createObjectURL(selectedFile)}
-                  alt="Vista previa"
+                  alt="Preview"
                   className="img-fluid rounded"
                 />
                 <div className="selected-file-info mt-2">
@@ -190,11 +201,11 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
             </div>
 
             <div className="col-md-8">
-              {/* Formulario de metadatos */}
+              {/* Metadata form */}
               <form>
-                {/* Texto alternativo */}
+                {/* Alt text field */}
                 <div className="mb-3">
-                  <label htmlFor="alt" className="form-label">Texto alternativo</label>
+                  <label htmlFor="alt" className="form-label">Alt Text</label>
                   <input
                     type="text"
                     className="form-control"
@@ -202,16 +213,16 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     name="alt"
                     value={metadata.alt}
                     onChange={handleInputChange}
-                    placeholder="Descripción para accesibilidad"
+                    placeholder="Description for accessibility"
                   />
                   <div className="form-text">
-                    Describe la imagen para lectores de pantalla
+                    Describes the image for screen readers
                   </div>
                 </div>
 
-                {/* Categoría */}
+                {/* Category field */}
                 <div className="mb-3">
-                  <label htmlFor="category" className="form-label">Categoría</label>
+                  <label htmlFor="category" className="form-label">Category</label>
                   <select
                     className="form-select"
                     id="category"
@@ -219,19 +230,19 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     value={metadata.category}
                     onChange={handleInputChange}
                   >
-                    <option value="">Seleccionar categoría</option>
+                    <option value="">Select category</option>
                     <option value="hero">Hero</option>
-                    <option value="product">Producto</option>
-                    <option value="background">Fondo</option>
+                    <option value="product">Product</option>
+                    <option value="background">Background</option>
                     <option value="banner">Banner</option>
-                    <option value="icon">Icono</option>
-                    <option value="other">Otro</option>
+                    <option value="icon">Icon</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
 
-                {/* Etiquetas */}
+                {/* Tags field */}
                 <div className="mb-3">
-                  <label htmlFor="tags" className="form-label">Etiquetas</label>
+                  <label htmlFor="tags" className="form-label">Tags</label>
                   <input
                     type="text"
                     className="form-control"
@@ -239,14 +250,14 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     name="tags"
                     value={metadata.tags}
                     onChange={handleInputChange}
-                    placeholder="etiqueta1, etiqueta2, etiqueta3"
+                    placeholder="tag1, tag2, tag3"
                   />
                   <div className="form-text">
-                    Etiquetas separadas por comas para búsqueda
+                    Comma-separated tags for search
                   </div>
                 </div>
 
-                {/* Botones */}
+                {/* Action buttons */}
                 <div className="d-flex">
                   <button
                     type="button"
@@ -254,7 +265,7 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     onClick={() => setSelectedFile(null)}
                     disabled={loading}
                   >
-                    Cancelar
+                    Cancel
                   </button>
 
                   <button
@@ -266,10 +277,10 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Subiendo...
+                        Uploading...
                       </>
                     ) : (
-                      'Subir imagen'
+                      'Upload Image'
                     )}
                   </button>
                 </div>

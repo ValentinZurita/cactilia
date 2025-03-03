@@ -5,16 +5,22 @@ import { MediaFilters } from './MediaFilters';
 import { getMediaItems } from '../../services/mediaService';
 
 /**
- * MediaSelector - Modal para seleccionar archivos multimedia de la biblioteca
+ * MediaSelector - Modal component for selecting media from the library
  *
- * Proporciona una interfaz para elegir archivos existentes de la biblioteca
- * de medios para su uso en otras partes de la aplicación.
+ * Provides an interface to browse and select existing media files
  *
- * @param {Object} props - Propiedades del componente
- * @param {boolean} props.isOpen - Indicador si el modal está abierto
- * @param {Function} props.onClose - Manejador para cerrar el modal
- * @param {Function} props.onSelect - Manejador para seleccionar un archivo
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Controls modal visibility
+ * @param {Function} props.onClose - Handler for modal close
+ * @param {Function} props.onSelect - Handler for media selection
  * @returns {JSX.Element|null}
+ *
+ * @example
+ * <MediaSelector
+ *   isOpen={showSelector}
+ *   onClose={handleCloseSelector}
+ *   onSelect={handleSelectMedia}
+ * />
  */
 export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
   const [mediaItems, setMediaItems] = useState([]);
@@ -25,8 +31,9 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
   });
   const [categories, setCategories] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Animación para entrada/salida del modal
+  // Handle modal animation
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -45,28 +52,34 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
     };
   }, [isOpen]);
 
-  // Cargar elementos multimedia y extraer categorías
+  // Load media items and extract categories
   useEffect(() => {
     if (!isOpen) return;
 
     const loadMedia = async () => {
       setLoading(true);
+      setError(null);
 
       try {
         const { ok, data, error } = await getMediaItems(filters);
 
         if (!ok) {
-          throw new Error(error || "No se pudieron cargar los archivos");
+          throw new Error(error || "Failed to load media files");
         }
 
         setMediaItems(data);
 
-        // Extraer categorías únicas
-        const uniqueCategories = [...new Set(data.map(item => item.category).filter(Boolean))];
+        // Extract unique categories
+        const uniqueCategories = [...new Set(
+          data
+            .map(item => item.category)
+            .filter(Boolean)
+        )];
+
         setCategories(uniqueCategories);
       } catch (err) {
-        console.error("Error cargando archivos para el selector:", err);
-        alert('Error al cargar archivos. Por favor, inténtalo de nuevo.');
+        console.error("Error loading media for selector:", err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -75,10 +88,10 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
     loadMedia();
   }, [isOpen, filters]);
 
-  // Si el modal no está abierto, no renderizar
+  // Don't render if modal is closed
   if (!isOpen) return null;
 
-  // Manejar cambios en los filtros
+  // Handle filter changes
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
@@ -98,27 +111,35 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
           transform: isVisible ? 'translateY(0)' : 'translateY(-30px)',
         }}
       >
-        {/* Cabecera del Modal */}
+        {/* Modal Header */}
         <div className="modal-header">
-          <h5 className="modal-title">Seleccionar archivo</h5>
+          <h5 className="modal-title">Select Media</h5>
           <button
             type="button"
             className="btn-close"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label="Close"
           ></button>
         </div>
 
-        {/* Cuerpo del Modal */}
+        {/* Modal Body */}
         <div className="modal-body">
-          {/* Filtros */}
+          {/* Error message if applicable */}
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              {error}
+            </div>
+          )}
+
+          {/* Filters */}
           <MediaFilters
             filters={filters}
             onFilterChange={handleFilterChange}
             categories={categories}
           />
 
-          {/* Cuadrícula de archivos */}
+          {/* Media Grid */}
           <MediaGrid
             items={mediaItems}
             loading={loading}
@@ -129,14 +150,14 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
           />
         </div>
 
-        {/* Pie del Modal */}
+        {/* Modal Footer */}
         <div className="modal-footer">
           <button
             type="button"
             className="btn btn-outline-secondary"
             onClick={onClose}
           >
-            Cancelar
+            Cancel
           </button>
         </div>
       </div>

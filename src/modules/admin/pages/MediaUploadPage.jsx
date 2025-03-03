@@ -4,47 +4,63 @@ import { MediaUploader } from '../components/media';
 import '../styles/mediaLibrary.css';
 
 /**
- * MediaUploadPage - Página para subir nuevos archivos multimedia
+ * MediaUploadPage - Component for the media upload interface
  *
- * Esta página proporciona una interfaz para subir nuevos archivos a la biblioteca
- * de medios con soporte para arrastrar y soltar, previsualización y metadatos.
+ * This page provides an interface for uploading new media files
+ * with drag-and-drop capability and metadata entry
  *
  * @returns {JSX.Element}
  */
 export const MediaUploadPage = () => {
   const navigate = useNavigate();
-  const { handleUpload, loading } = useMediaLibrary();
+  const { handleUpload, loading, error } = useMediaLibrary();
 
   /**
-   * Maneja la subida exitosa de un archivo
-   * @param {File} file - Archivo subido
-   * @param {Object} metadata - Metadatos del archivo
+   * Handles the successful upload of a file and redirects
+   * back to the media library
+   *
+   * @param {File} file - The uploaded file
+   * @param {Object} metadata - The metadata for the file
    * @returns {Promise<void>}
    */
   const handleSuccessfulUpload = async (file, metadata) => {
-    const result = await handleUpload(file, metadata);
-    if (result.ok) {
-      // Navegar de vuelta a la biblioteca después de una subida exitosa
-      navigate('/admin/media/browse');
+    try {
+      const result = await handleUpload(file, metadata);
+
+      if (result.ok) {
+        // Navigate back to the library after successful upload
+        navigate('/admin/media/browse');
+      }
+    } catch (err) {
+      console.error('Error during upload:', err);
+      // Error handling is managed by the hook
     }
   };
 
   return (
     <div className="media-upload-container">
-      {/* Encabezado con título y botón de regreso */}
+      {/* Header with title and back button */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="page-title">Subir Archivo</h2>
+        <h2 className="page-title">Upload Media</h2>
 
         <button
           className="btn btn-outline-secondary"
           onClick={() => navigate('/admin/media/browse')}
         >
           <i className="bi bi-arrow-left me-2"></i>
-          Volver a la Biblioteca
+          Back to Library
         </button>
       </div>
 
-      {/* Contenedor principal con borde y sombra suave */}
+      {/* Error message if applicable */}
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {error}
+        </div>
+      )}
+
+      {/* Main content card with uploader */}
       <div className="card shadow-sm border-0 rounded-3">
         <div className="card-body p-4">
           <MediaUploader

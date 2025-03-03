@@ -1,22 +1,28 @@
 /**
- * MediaFilters - Componente para filtrar elementos multimedia por categoría y término de búsqueda
+ * MediaFilters - Component for filtering media items
  *
- * Proporciona una interfaz limpia y minimalista para aplicar filtros
- * a la biblioteca de medios, facilitando la búsqueda de archivos.
+ * Provides a clean interface for applying filters to the media library
  *
- * @param {Object} props - Propiedades del componente
- * @param {Object} props.filters - Estado actual de los filtros
- * @param {Function} props.onFilterChange - Manejador para cambios en los filtros
- * @param {Array} props.categories - Categorías disponibles para filtrar
+ * @param {Object} props - Component props
+ * @param {Object} props.filters - Current filter state
+ * @param {Function} props.onFilterChange - Handler for filter changes
+ * @param {Array} props.categories - Available categories for filtering
  * @returns {JSX.Element}
+ *
+ * @example
+ * <MediaFilters
+ *   filters={filters}
+ *   onFilterChange={handleFilterChange}
+ *   categories={categories}
+ * />
  */
 export const MediaFilters = ({ filters, onFilterChange, categories = [] }) => {
-  // Manejador para cambio de categoría
+  // Handler for category filter changes
   const handleCategoryChange = (e) => {
     onFilterChange({ category: e.target.value || null });
   };
 
-  // Manejador para cambio en campo de búsqueda
+  // Handler for search term changes
   const handleSearchChange = (e) => {
     onFilterChange({ searchTerm: e.target.value });
   };
@@ -24,9 +30,9 @@ export const MediaFilters = ({ filters, onFilterChange, categories = [] }) => {
   return (
     <div className="media-filters mb-4">
       <div className="row g-3 align-items-end">
-        {/* Campo de búsqueda */}
+        {/* Search field */}
         <div className="col-12 col-md-6">
-          <label className="form-label text-muted small">Buscar archivos</label>
+          <label className="form-label text-muted small">Search files</label>
           <div className="input-group">
             <span className="input-group-text bg-white">
               <i className="bi bi-search"></i>
@@ -34,22 +40,22 @@ export const MediaFilters = ({ filters, onFilterChange, categories = [] }) => {
             <input
               type="text"
               className="form-control form-control-sm"
-              placeholder="Buscar por nombre, etiqueta..."
+              placeholder="Search by name, tag..."
               value={filters.searchTerm || ''}
               onChange={handleSearchChange}
             />
           </div>
         </div>
 
-        {/* Filtro por categoría */}
+        {/* Category filter */}
         <div className="col-12 col-md-4">
-          <label className="form-label text-muted small">Categoría</label>
+          <label className="form-label text-muted small">Category</label>
           <select
             className="form-select form-select-sm"
             value={filters.category || ''}
             onChange={handleCategoryChange}
           >
-            <option value="">Todas las categorías</option>
+            <option value="">All categories</option>
             {categories.map((category, index) => (
               <option key={index} value={category}>
                 {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -58,7 +64,7 @@ export const MediaFilters = ({ filters, onFilterChange, categories = [] }) => {
           </select>
         </div>
 
-        {/* Botón para restablecer filtros */}
+        {/* Reset filters button */}
         <div className="col-12 col-md-2">
           <button
             className="btn btn-outline-secondary btn-sm w-100"
@@ -69,7 +75,7 @@ export const MediaFilters = ({ filters, onFilterChange, categories = [] }) => {
             })}
           >
             <i className="bi bi-arrow-counterclockwise me-1"></i>
-            Reiniciar
+            Reset
           </button>
         </div>
       </div>
