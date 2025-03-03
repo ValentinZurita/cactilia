@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import './../../styles/mediaLibrary.css';
 
 /**
- * MediaDetailsModal - Component for viewing and editing media details
+ * MediaDetailsModal - Modal para ver y editar detalles de un elemento multimedia
  *
- * @param {Object} props
- * @param {Object} props.media - Media item to display
- * @param {boolean} props.isOpen - Whether the modal is open
- * @param {Function} props.onClose - Handler for closing the modal
- * @param {Function} props.onUpdate - Handler for updating media metadata
+ * Permite visualizar la imagen a tamaño completo y modificar sus metadatos
+ * como texto alternativo, categoría y etiquetas.
+ *
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.media - Elemento multimedia a mostrar
+ * @param {boolean} props.isOpen - Indicador si el modal está abierto
+ * @param {Function} props.onClose - Manejador para cerrar el modal
+ * @param {Function} props.onUpdate - Manejador para actualizar metadatos
  * @returns {JSX.Element|null}
  */
 export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
@@ -21,7 +23,7 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
   });
   const [isVisible, setIsVisible] = useState(false);
 
-  // Initialize form data when media changes
+  // Inicializar datos del formulario cuando cambia el elemento
   useEffect(() => {
     if (media) {
       setMediaData({
@@ -32,7 +34,7 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
     }
   }, [media]);
 
-  // Animation for modal entrance/exit
+  // Animación para entrada/salida del modal
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -51,10 +53,10 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
     };
   }, [isOpen]);
 
-  // If modal is not open or no media is provided, return null
+  // Si el modal no está abierto o no hay elemento seleccionado, no renderizar
   if (!isOpen || !media) return null;
 
-  // Handler for input changes
+  // Manejador para cambios en los campos
   const handleChange = (e) => {
     const { name, value } = e.target;
     setMediaData(prev => ({
@@ -63,7 +65,7 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
     }));
   };
 
-  // Handler for tag input (comma-separated)
+  // Manejador para campo de etiquetas (separadas por coma)
   const handleTagsChange = (e) => {
     const tagsValue = e.target.value;
     const tagsArray = tagsValue.split(',')
@@ -76,29 +78,29 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
     }));
   };
 
-  // Format tags array to comma-separated string
+  // Convertir array de etiquetas a string separado por comas
   const formatTags = (tags = []) => {
     return tags.join(', ');
   };
 
-  // Handler for form submission
+  // Manejador para envío del formulario
   const handleSubmit = (e) => {
     e.preventDefault();
     onUpdate(media.id, mediaData);
     setEditMode(false);
   };
 
-  // Format file size for display
+  // Formatear tamaño de archivo para mostrar
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
     else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     else return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
-  // Format date for display
+  // Formatear fecha para mostrar
   const formatDate = (date) => {
-    if (!date) return 'Unknown';
-    return new Date(date).toLocaleDateString('en-US', {
+    if (!date) return 'Desconocido';
+    return new Date(date).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -112,86 +114,61 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
       className={`modal-backdrop ${isVisible ? 'visible' : ''}`}
       onClick={onClose}
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1050,
         opacity: isVisible ? 1 : 0,
-        transition: 'opacity 0.3s ease'
       }}
     >
       <div
         className="modal-content"
         onClick={e => e.stopPropagation()}
         style={{
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          width: '90%',
-          maxWidth: '1000px',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
           transform: isVisible ? 'translateY(0)' : 'translateY(-30px)',
-          transition: 'transform 0.3s ease',
-          overflow: 'hidden'
         }}
       >
-        {/* Modal Header */}
+        {/* Cabecera del Modal */}
         <div className="modal-header">
           <h5 className="modal-title">
-            {editMode ? 'Edit Media Details' : 'Media Details'}
+            {editMode ? 'Editar detalles' : 'Detalles del archivo'}
           </h5>
           <button
             type="button"
             className="btn-close"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Cerrar"
           ></button>
         </div>
 
-        {/* Modal Body */}
-        <div className="modal-body" style={{ overflow: 'auto' }}>
+        {/* Cuerpo del Modal */}
+        <div className="modal-body">
           <div className="row">
-            {/* Media Preview */}
+            {/* Previsualización del archivo */}
             <div className="col-md-6 mb-3 mb-md-0">
-              <div className="media-preview-container">
+              <div className="media-preview-modal">
                 <img
                   src={media.url}
                   alt={media.alt || media.filename}
                   className="img-fluid rounded"
-                  style={{
-                    maxHeight: '400px',
-                    objectFit: 'contain',
-                    width: '100%'
-                  }}
                 />
               </div>
 
-              {/* File Details */}
+              {/* Detalles del archivo */}
               <div className="mt-3">
-                <h6>File Details</h6>
-                <table className="table table-sm">
+                <h6 className="fw-bold mb-2">Detalles del archivo</h6>
+                <table className="table table-sm metadata-table">
                   <tbody>
                   <tr>
-                    <th scope="row">Filename</th>
+                    <th scope="row">Nombre</th>
                     <td>{media.filename}</td>
                   </tr>
                   <tr>
-                    <th scope="row">Type</th>
+                    <th scope="row">Tipo</th>
                     <td>{media.type}</td>
                   </tr>
                   <tr>
-                    <th scope="row">Size</th>
+                    <th scope="row">Tamaño</th>
                     <td>{formatFileSize(media.size)}</td>
                   </tr>
                   <tr>
-                    <th scope="row">Uploaded</th>
+                    <th scope="row">Subido</th>
                     <td>{formatDate(media.uploadedAt)}</td>
                   </tr>
                   </tbody>
@@ -199,117 +176,117 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
               </div>
             </div>
 
-            {/* Media Details Form */}
+            {/* Formulario de edición o vista de detalles */}
             <div className="col-md-6">
               {editMode ? (
                 <form onSubmit={handleSubmit}>
-                  {/* Alt Text */}
+                  {/* Texto alternativo */}
                   <div className="mb-3">
-                    <label htmlFor="alt" className="form-label">Alt Text</label>
+                    <label htmlFor="alt" className="form-label">Texto alternativo</label>
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control form-control-sm"
                       id="alt"
                       name="alt"
                       value={mediaData.alt}
                       onChange={handleChange}
-                      placeholder="Description for accessibility"
+                      placeholder="Descripción para accesibilidad"
                     />
                     <div className="form-text">
-                      Describe the image for screen readers
+                      Describe la imagen para lectores de pantalla
                     </div>
                   </div>
 
-                  {/* Category */}
+                  {/* Categoría */}
                   <div className="mb-3">
-                    <label htmlFor="category" className="form-label">Category</label>
+                    <label htmlFor="category" className="form-label">Categoría</label>
                     <select
-                      className="form-select"
+                      className="form-select form-select-sm"
                       id="category"
                       name="category"
                       value={mediaData.category}
                       onChange={handleChange}
                     >
-                      <option value="">Select Category</option>
+                      <option value="">Seleccionar categoría</option>
                       <option value="hero">Hero</option>
-                      <option value="product">Product</option>
-                      <option value="background">Background</option>
+                      <option value="product">Producto</option>
+                      <option value="background">Fondo</option>
                       <option value="banner">Banner</option>
-                      <option value="icon">Icon</option>
-                      <option value="other">Other</option>
+                      <option value="icon">Icono</option>
+                      <option value="other">Otro</option>
                     </select>
                   </div>
 
-                  {/* Tags */}
+                  {/* Etiquetas */}
                   <div className="mb-3">
-                    <label htmlFor="tags" className="form-label">Tags</label>
+                    <label htmlFor="tags" className="form-label">Etiquetas</label>
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control form-control-sm"
                       id="tags"
                       name="tags"
                       value={formatTags(mediaData.tags)}
                       onChange={handleTagsChange}
-                      placeholder="tag1, tag2, tag3"
+                      placeholder="etiqueta1, etiqueta2, etiqueta3"
                     />
                     <div className="form-text">
-                      Comma-separated tags for searching
+                      Etiquetas separadas por comas para búsqueda
                     </div>
                   </div>
 
-                  {/* Submit/Cancel Buttons */}
+                  {/* Botones de guardar/cancelar */}
                   <div className="d-flex justify-content-end">
                     <button
                       type="button"
-                      className="btn btn-outline-secondary me-2"
+                      className="btn btn-outline-secondary btn-sm me-2"
                       onClick={() => setEditMode(false)}
                     >
-                      Cancel
+                      Cancelar
                     </button>
-                    <button type="submit" className="btn btn-primary">
-                      Save Changes
+                    <button type="submit" className="btn btn-primary btn-sm">
+                      Guardar cambios
                     </button>
                   </div>
                 </form>
               ) : (
                 <div>
-                  <h6>Media Information</h6>
+                  <h6 className="fw-bold mb-2">Información del archivo</h6>
                   <div className="mb-3">
-                    <h6 className="text-muted mb-1">Alt Text</h6>
-                    <p>{media.alt || 'No alt text provided'}</p>
+                    <p className="fw-semibold mb-1 small text-muted">Texto alternativo</p>
+                    <p>{media.alt || 'No se ha proporcionado texto alternativo'}</p>
                   </div>
 
                   <div className="mb-3">
-                    <h6 className="text-muted mb-1">Category</h6>
+                    <p className="fw-semibold mb-1 small text-muted">Categoría</p>
                     <p>
                       {media.category ? (
                         <span className="badge bg-primary">
                           {media.category}
                         </span>
                       ) : (
-                        'Uncategorized'
+                        'Sin categoría'
                       )}
                     </p>
                   </div>
 
                   <div className="mb-3">
-                    <h6 className="text-muted mb-1">Tags</h6>
+                    <p className="fw-semibold mb-1 small text-muted">Etiquetas</p>
                     <div>
                       {media.tags && media.tags.length > 0 ? (
                         media.tags.map((tag, index) => (
-                          <span key={index} className="badge bg-secondary me-1">
+                          <span key={index} className="badge bg-secondary me-1 mb-1">
                             {tag}
                           </span>
                         ))
                       ) : (
-                        <span className="text-muted">No tags</span>
+                        <span className="text-muted">Sin etiquetas</span>
                       )}
                     </div>
                   </div>
 
                   <div className="mb-3">
-                    <h6 className="text-muted mb-1">URL</h6>
-                    <div className="input-group">
+                    <p className="fw-semibold mb-1 small text-muted">URL</p>
+                    <div className="input-group input-group-sm">
                       <input
                         type="text"
                         className="form-control form-control-sm"
@@ -317,10 +294,10 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
                         readOnly
                       />
                       <button
-                        className="btn btn-outline-secondary btn-sm"
+                        className="btn btn-outline-secondary"
                         type="button"
                         onClick={() => navigator.clipboard.writeText(media.url)}
-                        title="Copy to clipboard"
+                        title="Copiar al portapapeles"
                       >
                         <i className="bi bi-clipboard"></i>
                       </button>
@@ -330,10 +307,10 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
                   <div className="d-flex justify-content-end">
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="btn btn-primary btn-sm"
                       onClick={() => setEditMode(true)}
                     >
-                      Edit Details
+                      Editar detalles
                     </button>
                   </div>
                 </div>
@@ -345,4 +322,4 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
     </div>,
     document.body
   );
-};
+}

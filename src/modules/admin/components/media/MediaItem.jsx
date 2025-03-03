@@ -1,24 +1,35 @@
 /**
- * MediaItem - Component for displaying a single media item in the grid
+ * MediaItem - Componente para mostrar un elemento multimedia individual en la cuadrícula
  *
- * @param {Object} props
- * @param {Object} props.item - Media item data
- * @param {Function} props.onSelect - Handler for item selection
- * @param {Function} props.onDelete - Handler for item deletion
+ * Muestra una previsualización con información básica del archivo y
+ * proporciona acciones para ver detalles o eliminar.
+ *
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.item - Datos del elemento multimedia
+ * @param {Function} props.onSelect - Manejador para la selección del elemento
+ * @param {Function} props.onDelete - Manejador para la eliminación del elemento
  * @returns {JSX.Element}
  */
 export const MediaItem = ({ item, onSelect, onDelete }) => {
-  // Format the file size to a readable string
+  /**
+   * Formatea el tamaño del archivo a una cadena legible
+   * @param {number} bytes - Tamaño en bytes
+   * @returns {string} - Tamaño formateado
+   */
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
     else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     else return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
-  // Format the date to a readable string
+  /**
+   * Formatea la fecha a una cadena legible
+   * @param {Date|string} date - Fecha a formatear
+   * @returns {string} - Fecha formateada
+   */
   const formatDate = (date) => {
-    if (!date) return 'Unknown';
-    return new Date(date).toLocaleDateString('en-US', {
+    if (!date) return 'Desconocido';
+    return new Date(date).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -27,22 +38,21 @@ export const MediaItem = ({ item, onSelect, onDelete }) => {
 
   return (
     <div className="media-item-card">
+      {/* Previsualización de la imagen */}
       <div className="media-item-preview">
-        {/* Image Preview */}
         <img
           src={item.url}
           alt={item.alt || item.filename}
-          className="img-fluid"
           onClick={() => onSelect(item)}
         />
 
-        {/* Hover overlay with actions */}
+        {/* Acciones en hover */}
         <div className="media-item-actions">
           <button
             type="button"
             className="btn btn-sm btn-light"
             onClick={() => onSelect(item)}
-            title="View details"
+            title="Ver detalles"
           >
             <i className="bi bi-eye"></i>
           </button>
@@ -50,16 +60,16 @@ export const MediaItem = ({ item, onSelect, onDelete }) => {
             type="button"
             className="btn btn-sm btn-danger"
             onClick={() => onDelete(item.id, item.url)}
-            title="Delete media"
+            title="Eliminar archivo"
           >
             <i className="bi bi-trash"></i>
           </button>
         </div>
       </div>
 
-      {/* Media Item Details */}
+      {/* Información del elemento */}
       <div className="media-item-info">
-        <h6 className="media-item-title text-truncate" title={item.filename}>
+        <h6 className="media-item-title" title={item.filename}>
           {item.filename}
         </h6>
         <div className="d-flex justify-content-between align-items-center mt-1">

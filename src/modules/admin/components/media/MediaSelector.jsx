@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { MediaGrid } from './MediaGrid';
 import { MediaFilters } from './MediaFilters';
 import { getMediaItems } from '../../services/mediaService';
 
 /**
- * MediaSelector - Modal component for selecting media from the library
+ * MediaSelector - Modal para seleccionar archivos multimedia de la biblioteca
  *
- * @param {Object} props
- * @param {boolean} props.isOpen - Whether the modal is open
- * @param {Function} props.onClose - Handler for closing the modal
- * @param {Function} props.onSelect - Handler for selecting media
+ * Proporciona una interfaz para elegir archivos existentes de la biblioteca
+ * de medios para su uso en otras partes de la aplicación.
+ *
+ * @param {Object} props - Propiedades del componente
+ * @param {boolean} props.isOpen - Indicador si el modal está abierto
+ * @param {Function} props.onClose - Manejador para cerrar el modal
+ * @param {Function} props.onSelect - Manejador para seleccionar un archivo
  * @returns {JSX.Element|null}
  */
 export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
@@ -23,7 +26,7 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
   const [categories, setCategories] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Animation for modal entrance/exit
+  // Animación para entrada/salida del modal
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -42,7 +45,7 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
     };
   }, [isOpen]);
 
-  // Load media items and extract categories
+  // Cargar elementos multimedia y extraer categorías
   useEffect(() => {
     if (!isOpen) return;
 
@@ -53,17 +56,17 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
         const { ok, data, error } = await getMediaItems(filters);
 
         if (!ok) {
-          throw new Error(error || "Failed to load media items");
+          throw new Error(error || "No se pudieron cargar los archivos");
         }
 
         setMediaItems(data);
 
-        // Extract unique categories
+        // Extraer categorías únicas
         const uniqueCategories = [...new Set(data.map(item => item.category).filter(Boolean))];
         setCategories(uniqueCategories);
       } catch (err) {
-        console.error("Error loading media for selector:", err);
-        alert('Error loading media. Please try again.');
+        console.error("Error cargando archivos para el selector:", err);
+        alert('Error al cargar archivos. Por favor, inténtalo de nuevo.');
       } finally {
         setLoading(false);
       }
@@ -72,83 +75,52 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
     loadMedia();
   }, [isOpen, filters]);
 
-  // Filter media items by search term
-  const filteredItems = mediaItems.filter(item => {
-    if (!filters.searchTerm) return true;
+  // Si el modal no está abierto, no renderizar
+  if (!isOpen) return null;
 
-    const searchLower = filters.searchTerm.toLowerCase();
-    return (
-      item.filename.toLowerCase().includes(searchLower) ||
-      (item.alt && item.alt.toLowerCase().includes(searchLower)) ||
-      (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchLower)))
-    );
-  });
-
-  // Handle filter changes
+  // Manejar cambios en los filtros
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
-
-  // If modal is not open, return null
-  if (!isOpen) return null;
 
   return ReactDOM.createPortal(
     <div
       className={`modal-backdrop ${isVisible ? 'visible' : ''}`}
       onClick={onClose}
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1050,
         opacity: isVisible ? 1 : 0,
-        transition: 'opacity 0.3s ease'
       }}
     >
       <div
         className="modal-content"
         onClick={e => e.stopPropagation()}
         style={{
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          width: '90%',
-          maxWidth: '1200px',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
           transform: isVisible ? 'translateY(0)' : 'translateY(-30px)',
-          transition: 'transform 0.3s ease'
         }}
       >
-        {/* Modal Header */}
+        {/* Cabecera del Modal */}
         <div className="modal-header">
-          <h5 className="modal-title">Select Media</h5>
+          <h5 className="modal-title">Seleccionar archivo</h5>
           <button
             type="button"
             className="btn-close"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Cerrar"
           ></button>
         </div>
 
-        {/* Modal Body */}
-        <div className="modal-body" style={{ overflow: 'auto' }}>
-          {/* Filters */}
+        {/* Cuerpo del Modal */}
+        <div className="modal-body">
+          {/* Filtros */}
           <MediaFilters
             filters={filters}
             onFilterChange={handleFilterChange}
             categories={categories}
           />
 
-          {/* Media Grid */}
+          {/* Cuadrícula de archivos */}
           <MediaGrid
-            items={filteredItems}
+            items={mediaItems}
             loading={loading}
             onSelectItem={(item) => {
               onSelect(item);
@@ -157,14 +129,14 @@ export const MediaSelector = ({ isOpen, onClose, onSelect }) => {
           />
         </div>
 
-        {/* Modal Footer */}
+        {/* Pie del Modal */}
         <div className="modal-footer">
           <button
             type="button"
             className="btn btn-outline-secondary"
             onClick={onClose}
           >
-            Cancel
+            Cancelar
           </button>
         </div>
       </div>

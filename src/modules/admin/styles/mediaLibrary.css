@@ -1,6 +1,25 @@
-/* Media Library Styles */
+/*
+   MEDIA LIBRARY STYLES
+   Un conjunto de estilos sobrios, minimalistas y elegantes para
+   la biblioteca de medios del panel de administración.
+*/
 
-/* Media Item Card */
+/* ---------- CONTENEDORES PRINCIPALES ---------- */
+.media-library-container,
+.media-upload-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+/* ---------- MEDIA ITEM CARD ---------- */
 .media-item-card {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
@@ -10,18 +29,20 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 .media-item-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* Media Item Preview */
+/* Contenedor para la imagen con overlay de acciones */
 .media-item-preview {
     height: 150px;
     position: relative;
     overflow: hidden;
+    background-color: #f8f9fa;
 }
 
 .media-item-preview img {
@@ -36,7 +57,7 @@
     transform: scale(1.05);
 }
 
-/* Media Item Actions (hover overlay) */
+/* Acciones que aparecen al hacer hover sobre la imagen */
 .media-item-actions {
     position: absolute;
     top: 0;
@@ -56,9 +77,9 @@
     opacity: 1;
 }
 
-/* Media Item Info */
+/* Información del elemento multimedia */
 .media-item-info {
-    padding: 10px;
+    padding: 12px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -68,9 +89,12 @@
     font-size: 0.9rem;
     margin-bottom: 0.25rem;
     color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Upload Area */
+/* ---------- UPLOADER AREA ---------- */
 .upload-area {
     border: 2px dashed #ccc;
     border-radius: 8px;
@@ -86,56 +110,174 @@
 
 .upload-prompt {
     padding: 50px 20px;
+    text-align: center;
 }
 
-/* Selected File Form */
+/* Contenedor del archivo seleccionado */
+.selected-file-form {
+    padding: 20px 0;
+}
+
 .selected-file-preview {
     border: 1px solid #dee2e6;
     border-radius: 8px;
     overflow: hidden;
     padding: 10px;
+    background-color: #f8f9fa;
 }
 
 .selected-file-preview img {
     width: 100%;
     max-height: 250px;
     object-fit: contain;
+    border-radius: 6px;
 }
 
-/* Media Modal Animation */
+/* ---------- MODAL STYLES ---------- */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+    transition: opacity 0.3s ease;
+}
+
+.modal-content {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    margin: 0;
+    font-weight: 500;
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow: auto;
+}
+
+.modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Animación de entrada/salida de modal */
 .modal-backdrop.visible {
     opacity: 1;
 }
 
-.modal-content {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-}
-
-/* Add this to your global styles or import in App.jsx */
-.media-selector-btn {
-    position: relative;
-    overflow: hidden;
-}
-
-.media-selector-btn input[type="file"] {
-    position: absolute;
-    top: 0;
-    right: 0;
-    min-width: 100%;
-    min-height: 100%;
-    font-size: 100px;
-    text-align: right;
-    filter: alpha(opacity=0);
+.modal-backdrop:not(.visible) {
     opacity: 0;
-    outline: none;
-    background: white;
-    cursor: pointer;
-    display: block;
+    pointer-events: none;
 }
 
-/* Responsive Grid Styles */
-@media (max-width: 576px) {
+.modal-content {
+    transform: translateY(0);
+}
+
+.modal-backdrop:not(.visible) .modal-content {
+    transform: translateY(-30px);
+}
+
+/* ---------- FILTROS ---------- */
+.media-filters {
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* ---------- ESTADOS VACÍOS ---------- */
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #ccc;
+    margin-bottom: 15px;
+}
+
+.empty-state h5 {
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #888;
+    max-width: 400px;
+    margin: 0 auto 15px;
+}
+
+/* ---------- UTILIDADES ---------- */
+.media-preview-modal img {
+    max-height: 400px;
+    object-fit: contain;
+}
+
+/* Tabla de metadatos */
+.metadata-table th {
+    width: 35%;
+    color: #666;
+    font-weight: 500;
+    padding: 8px 12px;
+}
+
+.metadata-table td {
+    word-break: break-word;
+    padding: 8px 12px;
+}
+
+/* ---------- RESPONSIVE DESIGN ---------- */
+@media (max-width: 768px) {
+    .media-library-container,
+    .media-upload-container {
+        padding: 15px;
+    }
+
     .media-item-preview {
         height: 120px;
+    }
+
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
     }
 }
