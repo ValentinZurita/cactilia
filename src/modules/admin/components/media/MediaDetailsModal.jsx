@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import './../../styles/mediaLibrary.css';
 
 /**
  * MediaDetailsModal - Component for viewing and editing media details

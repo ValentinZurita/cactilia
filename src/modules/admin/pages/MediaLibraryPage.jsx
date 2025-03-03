@@ -1,5 +1,7 @@
 import { useMediaLibrary } from '../hooks/useMediaLibrary';
 import { MediaGrid, MediaFilters, MediaDetailsModal } from '../components/media';
+import { useState } from 'react'
+import './../styles/mediaLibrary.css';
 
 /**
  * MediaLibraryPage - Main page for browsing and managing media library
