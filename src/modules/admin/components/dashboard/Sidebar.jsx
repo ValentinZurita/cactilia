@@ -35,7 +35,8 @@ export const Sidebar = ({ onLinkClick }) => {
   const [openMenus, setOpenMenus] = useState({
     categories: false,
     products: false,
-    users: false
+    users: false,
+    media: false
   });
   const [userRole, setUserRole] = useState("admin");
   const dispatch = useDispatch();
@@ -130,7 +131,7 @@ export const Sidebar = ({ onLinkClick }) => {
           <SidebarItem to="/admin/products/create" label="Agregar Productos" onClick={handleNavClick} />
         </SidebarDropdown>
 
-        {/* NUEVA SECCIÓN: Usuarios (visible para todos los admins) */}
+        {/* Usuarios */}
         <SidebarDropdown
           label="Usuarios"
           icon="bi-people"
@@ -143,6 +144,18 @@ export const Sidebar = ({ onLinkClick }) => {
           {userRole === "superadmin" && (
             <SidebarItem to="/admin/users/admins" label="Administradores" onClick={handleNavClick} />
           )}
+        </SidebarDropdown>
+
+
+        {/* Sidebar Media Library */}
+        <SidebarDropdown
+          label="Media Library"
+          icon="bi-images"
+          isOpen={openMenus.media}
+          toggle={() => toggleMenu("media")}
+        >
+          <SidebarItem to="/admin/media/browse" label="Browse Media" onClick={handleNavClick} />
+          <SidebarItem to="/admin/media/upload" label="Upload Media" onClick={handleNavClick} />
         </SidebarDropdown>
 
         {/* Sidebar Logout */}

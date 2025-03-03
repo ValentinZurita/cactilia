@@ -1,0 +1,141 @@
+/* Media Library Styles */
+
+/* Media Item Card */
+.media-item-card {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    background-color: #fff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.media-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Media Item Preview */
+.media-item-preview {
+    height: 150px;
+    position: relative;
+    overflow: hidden;
+}
+
+.media-item-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.media-item-preview:hover img {
+    transform: scale(1.05);
+}
+
+/* Media Item Actions (hover overlay) */
+.media-item-actions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.media-item-preview:hover .media-item-actions {
+    opacity: 1;
+}
+
+/* Media Item Info */
+.media-item-info {
+    padding: 10px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.media-item-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    color: #333;
+}
+
+/* Upload Area */
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.upload-area.drag-active {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.upload-prompt {
+    padding: 50px 20px;
+}
+
+/* Selected File Form */
+.selected-file-preview {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 10px;
+}
+
+.selected-file-preview img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+}
+
+/* Media Modal Animation */
+.modal-backdrop.visible {
+    opacity: 1;
+}
+
+.modal-content {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Add this to your global styles or import in App.jsx */
+.media-selector-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.media-selector-btn input[type="file"] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: pointer;
+    display: block;
+}
+
+/* Responsive Grid Styles */
+@media (max-width: 576px) {
+    .media-item-preview {
+        height: 120px;
+    }
+}

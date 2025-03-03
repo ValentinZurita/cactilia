@@ -1,4 +1,4 @@
-import { AdminLoginCard } from '../components/admin-login-page/index.js'
+import { AdminLoginCard } from '../components/login/index.js'
 
 
 /*
