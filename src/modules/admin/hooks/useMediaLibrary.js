@@ -4,11 +4,11 @@ import { useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
 
 /**
- * Custom hook for managing media library
- * Provides state and methods for retrieving, uploading, updating, and deleting media
+ * Custom hook para gestionar la biblioteca multimedia
+ * Proporciona estado y métodos para recuperar, subir, actualizar y eliminar archivos
  *
- * @param {Object} initialFilters - Initial filter options
- * @returns {Object} - Media library state and methods
+ * @param {Object} initialFilters - Opciones iniciales de filtrado
+ * @returns {Object} - Estado y métodos de la biblioteca multimedia
  *
  * @example
  * const {
@@ -16,21 +16,21 @@ import { addMessage } from '../../../store/messages/messageSlice';
  *   selectedItem, setSelectedItem,
  *   loadMediaItems, handleUpload, handleUpdate, handleDelete,
  *   setFilters
- * } = useMediaLibrary({ category: 'product' });
+ * } = useMediaLibrary({ collectionId: 'coleccion1' });
  */
 export const useMediaLibrary = (initialFilters = {}) => {
-  // State for media items and UI state
+  // Estado para elementos multimedia y UI
   const [mediaItems, setMediaItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(initialFilters);
 
-  // Redux dispatch for global messages
+  // Redux dispatch para mensajes globales
   const dispatch = useDispatch();
 
   /**
-   * Load media items with current filters
+   * Carga elementos multimedia con los filtros actuales
    * @returns {Promise<void>}
    */
   const loadMediaItems = useCallback(async () => {
@@ -41,65 +41,65 @@ export const useMediaLibrary = (initialFilters = {}) => {
       const { ok, data, error } = await getMediaItems(filters);
 
       if (!ok) {
-        throw new Error(error || "Failed to load media items");
+        throw new Error(error || "Error al cargar elementos multimedia");
       }
 
       setMediaItems(data);
     } catch (err) {
-      console.error("Error loading media:", err);
+      console.error("Error cargando multimedia:", err);
       setError(err.message);
       dispatch(addMessage({
         type: 'error',
-        text: `Error loading media: ${err.message}`
+        text: `Error cargando multimedia: ${err.message}`
       }));
     } finally {
       setLoading(false);
     }
   }, [filters, dispatch]);
 
-  // Load media on mount and when filters change
+  // Cargar multimedia al montar el componente y cuando cambien los filtros
   useEffect(() => {
     loadMediaItems();
   }, [loadMediaItems]);
 
   /**
-   * Upload new media file with metadata
-   * @param {File} file - The file to upload
-   * @param {Object} metadata - Additional metadata (alt, category, tags)
-   * @returns {Promise<Object>} - Upload result
+   * Sube un nuevo archivo multimedia con metadatos
+   * @param {File} file - El archivo a subir
+   * @param {Object} metadata - Metadatos adicionales (name, alt, collectionId, tags)
+   * @returns {Promise<Object>} - Resultado de la subida
    */
   const handleUpload = useCallback(async (file, metadata) => {
     setLoading(true);
 
     try {
-      // Validate file
+      // Validar archivo
       if (!file) {
-        throw new Error("No file selected for upload");
+        throw new Error("No se seleccionó ningún archivo para subir");
       }
 
-      // Process file upload
+      // Procesar subida de archivo
       const result = await uploadMedia(file, metadata);
 
       if (!result.ok) {
-        throw new Error(result.error || "Failed to upload media");
+        throw new Error(result.error || "Error al subir archivo");
       }
 
-      // Refresh the media items list
+      // Actualizar lista de elementos multimedia
       await loadMediaItems();
 
-      // Show success message
+      // Mostrar mensaje de éxito
       dispatch(addMessage({
         type: 'success',
-        text: 'Media uploaded successfully'
+        text: 'Archivo subido con éxito'
       }));
 
       return result;
     } catch (err) {
-      console.error("Error uploading media:", err);
+      console.error("Error subiendo archivo:", err);
       setError(err.message);
       dispatch(addMessage({
         type: 'error',
-        text: `Error uploading media: ${err.message}`
+        text: `Error subiendo archivo: ${err.message}`
       }));
       return { ok: false, error: err.message };
     } finally {
@@ -108,49 +108,49 @@ export const useMediaLibrary = (initialFilters = {}) => {
   }, [loadMediaItems, dispatch]);
 
   /**
-   * Update media metadata
-   * @param {string} mediaId - The ID of the media to update
-   * @param {Object} updatedData - Updated metadata
-   * @returns {Promise<Object>} - Update result
+   * Actualiza los metadatos de un elemento multimedia
+   * @param {string} mediaId - ID del elemento a actualizar
+   * @param {Object} updatedData - Metadatos actualizados
+   * @returns {Promise<Object>} - Resultado de la actualización
    */
   const handleUpdate = useCallback(async (mediaId, updatedData) => {
     setLoading(true);
 
     try {
-      // Validate input
+      // Validar entrada
       if (!mediaId) {
-        throw new Error("Media ID is required for updating");
+        throw new Error("Se requiere ID del medio para actualizar");
       }
 
-      // Process update
+      // Procesar actualización
       const result = await updateMediaItem(mediaId, updatedData);
 
       if (!result.ok) {
-        throw new Error(result.error || "Failed to update media");
+        throw new Error(result.error || "Error al actualizar archivo");
       }
 
-      // Refresh the media items list
+      // Actualizar lista de elementos multimedia
       await loadMediaItems();
 
-      // Update selected item if it's the one being edited
+      // Actualizar elemento seleccionado si es el que se está editando
       if (selectedItem && selectedItem.id === mediaId) {
         const updatedItem = { ...selectedItem, ...updatedData };
         setSelectedItem(updatedItem);
       }
 
-      // Show success message
+      // Mostrar mensaje de éxito
       dispatch(addMessage({
         type: 'success',
-        text: 'Media updated successfully'
+        text: 'Archivo actualizado con éxito'
       }));
 
       return result;
     } catch (err) {
-      console.error("Error updating media:", err);
+      console.error("Error actualizando archivo:", err);
       setError(err.message);
       dispatch(addMessage({
         type: 'error',
-        text: `Error updating media: ${err.message}`
+        text: `Error actualizando archivo: ${err.message}`
       }));
       return { ok: false, error: err.message };
     } finally {
@@ -159,53 +159,53 @@ export const useMediaLibrary = (initialFilters = {}) => {
   }, [loadMediaItems, selectedItem, dispatch]);
 
   /**
-   * Delete media item
-   * @param {string} mediaId - The ID of the media to delete
-   * @param {string} url - The URL of the media (for storage deletion)
-   * @returns {Promise<Object>} - Deletion result
+   * Elimina un elemento multimedia
+   * @param {string} mediaId - ID del elemento a eliminar
+   * @param {string} url - URL del archivo en Storage
+   * @returns {Promise<Object>} - Resultado de la eliminación
    */
   const handleDelete = useCallback(async (mediaId, url) => {
-    // Ask for confirmation
-    if (!window.confirm('Are you sure you want to delete this media? This action cannot be undone.')) {
+    // Pedir confirmación
+    if (!window.confirm('¿Estás seguro de eliminar este archivo? Esta acción no se puede deshacer.')) {
       return { ok: false, cancelled: true };
     }
 
     setLoading(true);
 
     try {
-      // Validate input
+      // Validar entrada
       if (!mediaId) {
-        throw new Error("Media ID is required for deletion");
+        throw new Error("Se requiere ID del medio para eliminar");
       }
 
-      // Process deletion
+      // Procesar eliminación
       const result = await deleteMediaItem(mediaId, url);
 
       if (!result.ok) {
-        throw new Error(result.error || "Failed to delete media");
+        throw new Error(result.error || "Error al eliminar archivo");
       }
 
-      // Refresh the media items list
+      // Actualizar lista de elementos multimedia
       await loadMediaItems();
 
-      // Clear selected item if it was deleted
+      // Limpiar elemento seleccionado si fue eliminado
       if (selectedItem && selectedItem.id === mediaId) {
         setSelectedItem(null);
       }
 
-      // Show success message
+      // Mostrar mensaje de éxito
       dispatch(addMessage({
         type: 'success',
-        text: 'Media deleted successfully'
+        text: 'Archivo eliminado con éxito'
       }));
 
       return result;
     } catch (err) {
-      console.error("Error deleting media:", err);
+      console.error("Error eliminando archivo:", err);
       setError(err.message);
       dispatch(addMessage({
         type: 'error',
-        text: `Error deleting media: ${err.message}`
+        text: `Error eliminando archivo: ${err.message}`
       }));
       return { ok: false, error: err.message };
     } finally {
@@ -214,15 +214,15 @@ export const useMediaLibrary = (initialFilters = {}) => {
   }, [loadMediaItems, selectedItem, dispatch]);
 
   /**
-   * Update filters and reload media
-   * @param {Object} newFilters - New filter values to apply
+   * Actualiza filtros y recarga medios
+   * @param {Object} newFilters - Nuevos valores de filtros
    */
   const setFilterAndLoad = useCallback((newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-    // loadMediaItems will be called automatically via the effect
+    // loadMediaItems se llamará automáticamente a través del efecto
   }, []);
 
-  // Return all the state and methods
+  // Retorna todos los estados y métodos
   return {
     mediaItems,
     loading,

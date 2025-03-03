@@ -1,31 +1,66 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { getCollections } from '../../services/collectionsService';
 
 /**
- * MediaUploader - Component for uploading media files with drag and drop
+ * MediaUploader - Componente para subir archivos multimedia con soporte para colecciones
  *
- * Provides an intuitive interface for file upload with preview and metadata
+ * Proporciona una interfaz intuitiva para cargar archivos con arrastrar y soltar,
+ * personalización de nombre y selección de colección.
  *
- * @param {Object} props - Component props
- * @param {Function} props.onUpload - Handler for file upload
- * @param {boolean} props.loading - Loading state indicator
+ * @param {Object} props - Propiedades del componente
+ * @param {Function} props.onUpload - Función para manejar la carga de archivos
+ * @param {boolean} props.loading - Indicador de estado de carga
  * @returns {JSX.Element}
- *
- * @example
- * <MediaUploader onUpload={handleUpload} loading={isUploading} />
  */
 export const MediaUploader = ({ onUpload, loading = false }) => {
+  // Estados para gestión de archivos
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+
+  // Estado para metadatos
   const [metadata, setMetadata] = useState({
+    name: '',
     alt: '',
-    category: '',
+    collectionId: '',
     tags: ''
   });
+
+  // Estado para opciones de colección
+  const [collections, setCollections] = useState([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+
+  // Referencias
   const fileInputRef = useRef(null);
+  const timerRef = useRef(null);
+
+  // Cargar colecciones al iniciar
+  useEffect(() => {
+    loadCollections();
+  }, []);
 
   /**
-   * Handle drag events
-   * @param {Event} e - Drag event
+   * Carga las colecciones disponibles
+   */
+  const loadCollections = async () => {
+    try {
+      setCollectionsLoading(true);
+      const result = await getCollections();
+
+      if (result.ok && Array.isArray(result.data)) {
+        setCollections(result.data);
+      } else {
+        console.error('Error cargando colecciones:', result.error);
+      }
+    } catch (error) {
+      console.error('Error cargando colecciones:', error);
+    } finally {
+      setCollectionsLoading(false);
+    }
+  };
+
+  /**
+   * Maneja eventos de arrastrar
+   * @param {Event} e - Evento de arrastrar
    */
   const handleDrag = (e) => {
     e.preventDefault();
@@ -39,8 +74,8 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   };
 
   /**
-   * Handle drop event
-   * @param {Event} e - Drop event
+   * Maneja el evento de soltar archivo
+   * @param {Event} e - Evento de soltar
    */
   const handleDrop = (e) => {
     e.preventDefault();
@@ -53,8 +88,8 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   };
 
   /**
-   * Handle file selection from input
-   * @param {Event} e - Change event
+   * Maneja la selección de archivo desde input
+   * @param {Event} e - Evento de cambio
    */
   const handleChange = (e) => {
     e.preventDefault();
@@ -65,35 +100,42 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   };
 
   /**
-   * Process selected file
-   * @param {File} file - The selected file
+   * Procesa el archivo seleccionado
+   * @param {File} file - Archivo seleccionado
    */
   const handleFiles = (file) => {
-    // Validate file type
+    // Validar tipo de archivo
     if (!file.type.match('image.*')) {
-      alert('Only image files are allowed');
+      alert('Solo se permiten archivos de imagen');
       return;
     }
 
-    // Validate file size (max 5MB)
+    // Validar tamaño de archivo (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      alert('El tamaño del archivo debe ser menor a 5MB');
       return;
     }
 
-    // Set the selected file
+    // Guardar archivo seleccionado
     setSelectedFile(file);
 
-    // Generate alt text from filename (removing extension)
+    // Generar nombre personalizado a partir del nombre original
+    // Eliminar extensión y reemplazar guiones/underscores por espacios
+    const baseName = file.name
+      .replace(/\.[^/.]+$/, '') // Eliminar extensión
+      .replace(/[_-]/g, ' '); // Reemplazar guiones y underscores con espacios
+
+    // Actualizar metadatos
     setMetadata(prev => ({
       ...prev,
-      alt: file.name.replace(/\.[^/.]+$/, '') // Remove extension
+      name: baseName, // Nombre mejorado como sugerencia
+      alt: baseName // Alt text igual al nombre por defecto
     }));
   };
 
   /**
-   * Handle metadata field changes
-   * @param {Event} e - Input change event
+   * Maneja cambios en campos de metadatos
+   * @param {Event} e - Evento de cambio
    */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -104,37 +146,43 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   };
 
   /**
-   * Handle upload button click
+   * Maneja el envío del formulario para subir la imagen
    */
   const handleUploadClick = async () => {
     if (!selectedFile) {
-      alert('Please select a file to upload');
+      alert('Por favor selecciona un archivo para subir');
       return;
     }
 
-    // Convert tags string to array
+    // Convertir tags de string a array
     const tagsArray = metadata.tags
       .split(',')
       .map(tag => tag.trim())
       .filter(tag => tag !== '');
 
-    // Call the onUpload function with file and metadata
-    await onUpload(selectedFile, {
+    // Preparar metadatos para subir
+    const metadataToUpload = {
       ...metadata,
-      tags: tagsArray
-    });
+      tags: tagsArray,
+      // Si no se seleccionó ninguna colección, enviar null
+      collectionId: metadata.collectionId || null
+    };
 
-    // Reset form after upload
+    // Llamar a la función onUpload con archivo y metadatos
+    await onUpload(selectedFile, metadataToUpload);
+
+    // Resetear formulario después de subir
     setSelectedFile(null);
     setMetadata({
+      name: '',
       alt: '',
-      category: '',
+      collectionId: '',
       tags: ''
     });
   };
 
   /**
-   * Trigger file input click
+   * Activa el selector de archivos
    */
   const onButtonClick = () => {
     fileInputRef.current.click();
@@ -143,7 +191,7 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   return (
     <div className="media-uploader">
       {!selectedFile ? (
-        // Upload area for drag & drop or file selection
+        // Área de subida para arrastrar y soltar o seleccionar archivo
         <div
           className={`upload-area ${dragActive ? 'drag-active' : ''}`}
           onDragEnter={handleDrag}
@@ -163,30 +211,30 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
 
           <div className="upload-prompt">
             <i className="bi bi-cloud-arrow-up fs-1 text-muted"></i>
-            <h5 className="mt-3">Drag and drop an image here</h5>
-            <p className="text-muted">or</p>
+            <h5 className="mt-3">Arrastra una imagen aquí</h5>
+            <p className="text-muted">o</p>
             <button
               type="button"
               className="btn btn-primary"
               onClick={onButtonClick}
             >
-              Browse Files
+              Seleccionar Archivo
             </button>
             <p className="mt-3 text-muted small">
-              Supported formats: JPG, PNG, GIF, SVG, WebP (Max. 5MB)
+              Formatos soportados: JPG, PNG, GIF, SVG, WebP (Máx. 5MB)
             </p>
           </div>
         </div>
       ) : (
-        // Form for metadata and upload confirmation
+        // Formulario para metadatos y confirmación de subida
         <div className="selected-file-form">
           <div className="row">
             <div className="col-md-4 mb-3">
-              {/* File preview */}
+              {/* Previsualización del archivo */}
               <div className="selected-file-preview">
                 <img
                   src={URL.createObjectURL(selectedFile)}
-                  alt="Preview"
+                  alt="Previsualización"
                   className="img-fluid rounded"
                 />
                 <div className="selected-file-info mt-2">
@@ -201,11 +249,28 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
             </div>
 
             <div className="col-md-8">
-              {/* Metadata form */}
+              {/* Formulario de metadatos */}
               <form>
-                {/* Alt text field */}
+                {/* Campo nombre personalizado */}
                 <div className="mb-3">
-                  <label htmlFor="alt" className="form-label">Alt Text</label>
+                  <label htmlFor="name" className="form-label">Nombre personalizado</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="name"
+                    name="name"
+                    value={metadata.name}
+                    onChange={handleInputChange}
+                    placeholder="Asigna un nombre descriptivo a la imagen"
+                  />
+                  <div className="form-text">
+                    Este nombre se usará para identificar la imagen en el sistema
+                  </div>
+                </div>
+
+                {/* Campo texto alternativo */}
+                <div className="mb-3">
+                  <label htmlFor="alt" className="form-label">Texto Alternativo</label>
                   <input
                     type="text"
                     className="form-control"
@@ -213,36 +278,39 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     name="alt"
                     value={metadata.alt}
                     onChange={handleInputChange}
-                    placeholder="Description for accessibility"
+                    placeholder="Descripción para accesibilidad"
                   />
                   <div className="form-text">
-                    Describes the image for screen readers
+                    Describe la imagen para lectores de pantalla
                   </div>
                 </div>
 
-                {/* Category field */}
+                {/* Selector de colección */}
                 <div className="mb-3">
-                  <label htmlFor="category" className="form-label">Category</label>
+                  <label htmlFor="collectionId" className="form-label">Colección</label>
                   <select
                     className="form-select"
-                    id="category"
-                    name="category"
-                    value={metadata.category}
+                    id="collectionId"
+                    name="collectionId"
+                    value={metadata.collectionId}
                     onChange={handleInputChange}
+                    disabled={collectionsLoading}
                   >
-                    <option value="">Select category</option>
-                    <option value="hero">Hero</option>
-                    <option value="product">Product</option>
-                    <option value="background">Background</option>
-                    <option value="banner">Banner</option>
-                    <option value="icon">Icon</option>
-                    <option value="other">Other</option>
+                    <option value="">Sin colección</option>
+                    {collections.map(collection => (
+                      <option key={collection.id} value={collection.id}>
+                        {collection.name}
+                      </option>
+                    ))}
                   </select>
+                  <div className="form-text">
+                    Asigna esta imagen a una colección para organizar tu biblioteca
+                  </div>
                 </div>
 
-                {/* Tags field */}
+                {/* Campo etiquetas */}
                 <div className="mb-3">
-                  <label htmlFor="tags" className="form-label">Tags</label>
+                  <label htmlFor="tags" className="form-label">Etiquetas</label>
                   <input
                     type="text"
                     className="form-control"
@@ -250,14 +318,14 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     name="tags"
                     value={metadata.tags}
                     onChange={handleInputChange}
-                    placeholder="tag1, tag2, tag3"
+                    placeholder="etiqueta1, etiqueta2, etiqueta3"
                   />
                   <div className="form-text">
-                    Comma-separated tags for search
+                    Etiquetas separadas por comas para búsqueda
                   </div>
                 </div>
 
-                {/* Action buttons */}
+                {/* Botones de acción */}
                 <div className="d-flex">
                   <button
                     type="button"
@@ -265,7 +333,7 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     onClick={() => setSelectedFile(null)}
                     disabled={loading}
                   >
-                    Cancel
+                    Cancelar
                   </button>
 
                   <button
@@ -277,10 +345,10 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Uploading...
+                        Subiendo...
                       </>
                     ) : (
-                      'Upload Image'
+                      'Subir Imagen'
                     )}
                   </button>
                 </div>

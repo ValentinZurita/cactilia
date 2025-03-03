@@ -1,30 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMediaLibrary } from '../hooks/useMediaLibrary';
-import { MediaGrid, MediaFilters, MediaDetailsModal } from '../components/media';
 import '../styles/mediaLibrary.css';
+import { CollectionsManager, MediaDetailsModal, MediaFilters, MediaGrid } from '../components/media/index.js'
+import { useMediaLibrary } from '../hooks/useMediaLibrary.js'
 
 /**
- * MediaLibraryPage - Main component for the media management page
+ * MediaLibraryPage - Página principal para la biblioteca multimedia
  *
- * This page provides an interface to browse, filter, and manage media assets
- * with a clean, minimalist design
+ * Proporciona una interfaz para explorar, filtrar y gestionar archivos multimedia
+ * con un diseño limpio y minimalista
  *
  * @returns {JSX.Element}
  */
 export const MediaLibraryPage = () => {
-  // Navigation hook
+  // Hook de navegación
   const navigate = useNavigate();
 
-  // Available categories for filter dropdown
-  const [categories, setCategories] = useState([
-    'hero', 'product', 'background', 'banner', 'icon', 'other'
-  ]);
-
-  // Controls the details modal visibility
+  // Estado para controlar visibilidad de detalles
   const [showDetails, setShowDetails] = useState(false);
 
-  // Get data and methods from the media library hook
+  // Estado para visibilidad del gestor de colecciones en móvil
+  const [showCollections, setShowCollections] = useState(false);
+
+  // Obtener datos y métodos del hook de biblioteca multimedia
   const {
     mediaItems,
     loading,
@@ -37,52 +35,55 @@ export const MediaLibraryPage = () => {
     setFilters
   } = useMediaLibrary();
 
-  // Extract unique categories from loaded media items
-  useEffect(() => {
-    if (mediaItems.length > 0) {
-      const uniqueCategories = [...new Set(
-        mediaItems
-          .map(item => item.category)
-          .filter(Boolean)
-      )];
+  // Manejador para seleccionar colección
+  const handleSelectCollection = (collectionId) => {
+    setFilters({ collectionId });
 
-      if (uniqueCategories.length > 0) {
-        setCategories(prevCategories => {
-          // Combine default categories with those found in media items
-          const allCategories = [...new Set([...prevCategories, ...uniqueCategories])];
-          return allCategories;
-        });
-      }
+    // En móvil, ocultar el gestor de colecciones después de seleccionar
+    if (window.innerWidth < 768) {
+      setShowCollections(false);
     }
-  }, [mediaItems]);
+  };
 
-  // Handler for selecting an item to view/edit details
+  // Manejador para seleccionar un elemento para ver detalles
   const handleSelectItem = (item) => {
     setSelectedItem(item);
     setShowDetails(true);
   };
 
-  // Handler for closing the details modal
+  // Manejador para cerrar el modal de detalles
   const handleCloseDetails = () => {
     setShowDetails(false);
   };
 
   return (
     <div className="media-library-container">
-      {/* Header with title and upload button */}
+      {/* Encabezado con título y botón de carga */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="page-title">Media Library</h2>
+        <h2 className="page-title">Biblioteca Multimedia</h2>
 
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate('/admin/media/upload')}
-        >
-          <i className="bi bi-upload me-2"></i>
-          Upload New File
-        </button>
+        <div className="d-flex gap-2">
+          {/* Botón para mostrar/ocultar colecciones en móvil */}
+          <button
+            className="btn btn-outline-primary d-md-none"
+            onClick={() => setShowCollections(!showCollections)}
+          >
+            <i className={`bi bi-${showCollections ? 'x-lg' : 'collection'} me-2`}></i>
+            {showCollections ? 'Cerrar colecciones' : 'Colecciones'}
+          </button>
+
+          {/* Botón de carga */}
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate('/admin/media/upload')}
+          >
+            <i className="bi bi-upload me-2"></i>
+            Subir Archivo
+          </button>
+        </div>
       </div>
 
-      {/* Error message if applicable */}
+      {/* Mensaje de error si aplica */}
       {error && (
         <div className="alert alert-danger" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -90,22 +91,34 @@ export const MediaLibraryPage = () => {
         </div>
       )}
 
-      {/* Filters component */}
-      <MediaFilters
-        filters={filters}
-        onFilterChange={setFilters}
-        categories={categories}
-      />
+      <div className="row">
+        {/* Gestor de Colecciones - Columna lateral en desktop, expansible en móvil */}
+        <div className={`col-md-3 mb-4 ${showCollections ? 'd-block' : 'd-none d-md-block'}`}>
+          <CollectionsManager
+            selectedCollectionId={filters.collectionId}
+            onSelectCollection={handleSelectCollection}
+          />
+        </div>
 
-      {/* Media grid with items */}
-      <MediaGrid
-        items={mediaItems}
-        loading={loading}
-        onSelectItem={handleSelectItem}
-        onDeleteItem={handleDelete}
-      />
+        {/* Contenido principal - Grid y filtros */}
+        <div className="col-md-9">
+          {/* Componente de filtros */}
+          <MediaFilters
+            filters={filters}
+            onFilterChange={setFilters}
+          />
 
-      {/* Details modal (shown when an item is selected) */}
+          {/* Grid de elementos multimedia */}
+          <MediaGrid
+            items={mediaItems}
+            loading={loading}
+            onSelectItem={handleSelectItem}
+            onDeleteItem={handleDelete}
+          />
+        </div>
+      </div>
+
+      {/* Modal de detalles (se muestra cuando se selecciona un elemento) */}
       <MediaDetailsModal
         media={selectedItem}
         isOpen={showDetails}

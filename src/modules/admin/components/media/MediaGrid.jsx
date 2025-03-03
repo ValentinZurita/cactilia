@@ -1,28 +1,27 @@
 import { MediaItem } from './MediaItem';
 
 /**
- * MediaGrid - Component for displaying a collection of media items in a grid layout
+ * MediaGrid - Componente para mostrar una colección de elementos multimedia en formato de cuadrícula
  *
- * Renders a responsive grid of media items with support for loading states
- * and empty state messaging
+ * Renderiza una cuadrícula responsive de elementos multimedia con soporte para estados de carga
+ * y mensajes para estado vacío, así como selección múltiple
  *
- * @param {Object} props - Component props
- * @param {Array} props.items - Media items to display
- * @param {Function} props.onSelectItem - Handler for item selection
- * @param {Function} props.onDeleteItem - Handler for item deletion
- * @param {boolean} props.loading - Loading state indicator
+ * @param {Object} props - Propiedades del componente
+ * @param {Array} props.items - Elementos multimedia a mostrar
+ * @param {Function} props.onSelectItem - Manejador para selección de elemento
+ * @param {Function} [props.onDeleteItem] - Manejador para eliminación de elemento (opcional)
+ * @param {boolean} [props.loading] - Indicador de estado de carga
+ * @param {Array} [props.selectedItems] - IDs de elementos seleccionados para modo multiselección
  * @returns {JSX.Element}
- *
- * @example
- * <MediaGrid
- *   items={mediaItems}
- *   loading={loading}
- *   onSelectItem={handleSelectItem}
- *   onDeleteItem={handleDeleteItem}
- * />
  */
-export const MediaGrid = ({ items = [], onSelectItem, onDeleteItem, loading = false }) => {
-  // Show loading skeleton when items are being fetched
+export const MediaGrid = ({
+                            items = [],
+                            onSelectItem,
+                            onDeleteItem,
+                            loading = false,
+                            selectedItems = []
+                          }) => {
+  // Mostrar skeleton de carga cuando se están cargando elementos
   if (loading) {
     return (
       <div className="row g-3">
@@ -50,20 +49,20 @@ export const MediaGrid = ({ items = [], onSelectItem, onDeleteItem, loading = fa
     );
   }
 
-  // Show empty state message when no items are available
+  // Mostrar mensaje de estado vacío cuando no hay elementos
   if (items.length === 0) {
     return (
       <div className="empty-state">
         <i className="bi bi-images"></i>
-        <h5>No media files found</h5>
+        <h5>No se encontraron archivos multimedia</h5>
         <p className="text-muted">
-          Upload new files or adjust your filters to see more results.
+          Sube nuevos archivos o ajusta tus filtros para ver más resultados.
         </p>
       </div>
     );
   }
 
-  // Render the grid of media items
+  // Renderizar la cuadrícula de elementos multimedia
   return (
     <div className="row g-3">
       {items.map((item) => (
@@ -72,6 +71,7 @@ export const MediaGrid = ({ items = [], onSelectItem, onDeleteItem, loading = fa
             item={item}
             onSelect={onSelectItem}
             onDelete={onDeleteItem}
+            isSelected={selectedItems.includes(item.id)}
           />
         </div>
       ))}

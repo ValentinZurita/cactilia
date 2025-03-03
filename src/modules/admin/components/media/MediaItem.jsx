@@ -7,10 +7,11 @@
  * @param {Object} props - Propiedades del componente
  * @param {Object} props.item - Datos del elemento multimedia
  * @param {Function} props.onSelect - Manejador para la selección del elemento
- * @param {Function} props.onDelete - Manejador para la eliminación del elemento
+ * @param {Function} [props.onDelete] - Manejador para la eliminación del elemento (opcional)
+ * @param {boolean} [props.isSelected] - Indica si el elemento está seleccionado
  * @returns {JSX.Element}
  */
-export const MediaItem = ({ item, onSelect, onDelete }) => {
+export const MediaItem = ({ item, onSelect, onDelete, isSelected = false }) => {
   /**
    * Formatea el tamaño del archivo a una cadena legible
    * @param {number} bytes - Tamaño en bytes
@@ -36,15 +37,25 @@ export const MediaItem = ({ item, onSelect, onDelete }) => {
     });
   };
 
+  // Determinar nombre a mostrar (priorizar nombre personalizado)
+  const displayName = item.name || item.filename || 'Sin nombre';
+
   return (
-    <div className="media-item-card">
+    <div className={`media-item-card ${isSelected ? 'selected-media-item' : ''}`}>
       {/* Previsualización de la imagen */}
       <div className="media-item-preview">
         <img
           src={item.url}
-          alt={item.alt || item.filename}
+          alt={item.alt || displayName}
           onClick={() => onSelect(item)}
         />
+
+        {/* Badge de selección */}
+        {isSelected && (
+          <div className="selected-badge">
+            <i className="bi bi-check-circle-fill"></i>
+          </div>
+        )}
 
         {/* Acciones en hover */}
         <div className="media-item-actions">
@@ -56,21 +67,28 @@ export const MediaItem = ({ item, onSelect, onDelete }) => {
           >
             <i className="bi bi-eye"></i>
           </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-danger"
-            onClick={() => onDelete(item.id, item.url)}
-            title="Eliminar archivo"
-          >
-            <i className="bi bi-trash"></i>
-          </button>
+
+          {/* Botón de eliminar (opcional) */}
+          {onDelete && (
+            <button
+              type="button"
+              className="btn btn-sm btn-danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(item.id, item.url);
+              }}
+              title="Eliminar archivo"
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Información del elemento */}
       <div className="media-item-info">
-        <h6 className="media-item-title" title={item.filename}>
-          {item.filename}
+        <h6 className="media-item-title" title={displayName}>
+          {displayName}
         </h6>
         <div className="d-flex justify-content-between align-items-center mt-1">
           <span className="badge bg-light text-dark">
@@ -80,10 +98,13 @@ export const MediaItem = ({ item, onSelect, onDelete }) => {
             {formatDate(item.uploadedAt)}
           </small>
         </div>
-        {item.category && (
+
+        {/* Colección (si existe) */}
+        {item.collectionId && (
           <div className="mt-1">
             <span className="badge bg-primary">
-              {item.category}
+              <i className="bi bi-collection me-1"></i>
+              En colección
             </span>
           </div>
         )}
