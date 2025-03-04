@@ -191,29 +191,28 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
           borderRadius: '0.75rem',
           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
           width: '100%',
-          maxWidth: '500px',
+          maxWidth: '480px',
           transform: isVisible ? 'translateY(0)' : 'translateY(-30px)',
           transition: 'transform 0.3s ease',
         }}
       >
         {/* Cabecera del modal */}
-        <div className="modal-header p-3 d-flex align-items-center">
+        <div className="modal-header border-bottom p-3 d-flex align-items-center">
           <h5 className="modal-title m-0 d-flex align-items-center">
             <span
               className="color-swatch me-2 rounded-circle d-inline-block"
               style={{
                 backgroundColor: formData.color,
-                width: '20px',
-                height: '20px',
-                border: '2px solid white',
-                boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
+                width: '16px',
+                height: '16px',
+                border: '1px solid rgba(0,0,0,0.1)'
               }}
             ></span>
-            {collection ? 'Editar Colección' : 'Nueva Colección'}
+            {collection ? 'Editar colección' : 'Nueva colección'}
           </h5>
           <button
             type="button"
-            className="btn-close"
+            className="btn-close ms-auto"
             onClick={handleClose}
             aria-label="Close"
             disabled={isSubmitting}
@@ -225,17 +224,17 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
           <form onSubmit={handleSubmit} id="collection-form">
             {/* Campo nombre */}
             <div className="mb-3">
-              <label htmlFor="name" className="form-label">
-                Nombre de la colección <span className="text-danger">*</span>
+              <label htmlFor="name" className="form-label small fw-medium">
+                Nombre <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
-                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                className={`form-control form-control-sm ${errors.name ? 'is-invalid' : ''}`}
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Ej. Banners, Productos Destacados..."
+                placeholder="Ej. Banners, Productos destacados..."
                 ref={nameInputRef}
                 disabled={isSubmitting}
                 autoComplete="off"
@@ -247,11 +246,11 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
 
             {/* Campo descripción */}
             <div className="mb-3">
-              <label htmlFor="description" className="form-label">
-                Descripción
+              <label htmlFor="description" className="form-label small fw-medium">
+                Descripción <span className="text-muted">(opcional)</span>
               </label>
               <textarea
-                className="form-control"
+                className="form-control form-control-sm"
                 id="description"
                 name="description"
                 value={formData.description}
@@ -260,28 +259,30 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
                 rows="2"
                 disabled={isSubmitting}
               />
-              <div className="form-text">
-                Opcional: ayuda a identificar para qué se usa esta colección
+              <div className="form-text small">
+                Ayuda a identificar para qué se usa esta colección
               </div>
             </div>
 
             {/* Selector de color */}
             <div className="mb-3">
-              <label className="form-label d-block">Color (opcional)</label>
+              <label className="form-label small fw-medium d-block">
+                Color <span className="text-muted">(opcional)</span>
+              </label>
               <div className="d-flex flex-wrap gap-2 mb-2">
                 {predefinedColors.map((color) => (
                   <button
                     key={color}
                     type="button"
-                    className={`btn p-0 collection-color-swatch ${formData.color === color ? 'active-color' : ''}`}
+                    className="btn p-0 color-picker-btn"
                     style={{
                       backgroundColor: color,
-                      width: '32px',
-                      height: '32px',
+                      width: '28px',
+                      height: '28px',
                       borderRadius: '50%',
                       border: formData.color === color ? '2px solid #000' : '1px solid rgba(0,0,0,0.1)',
                       cursor: 'pointer',
-                      boxShadow: formData.color === color ? '0 0 0 2px white, 0 0 0 4px #000' : 'none',
+                      boxShadow: formData.color === color ? '0 0 0 2px white' : 'none',
                     }}
                     onClick={() => setFormData(prev => ({ ...prev, color }))}
                     disabled={isSubmitting}
@@ -298,27 +299,26 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
                   onChange={handleInputChange}
                   title="Elegir color personalizado"
                   disabled={isSubmitting}
-                  style={{ width: '42px', height: '42px' }}
+                  style={{ width: '36px', height: '36px' }}
                 />
-                <div className="form-text">
+                <div className="form-text small">
                   El color ayuda a identificar visualmente la colección
                 </div>
               </div>
             </div>
 
             {/* Vista previa de la colección */}
-            <div className="collection-preview p-3 rounded-3 mb-3" style={{ backgroundColor: '#f8f9fa' }}>
-              <h6 className="mb-2">Vista previa:</h6>
-              <div className="d-flex align-items-center p-2 rounded border bg-white">
+            <div className="collection-preview p-3 rounded-3 mb-3 bg-light">
+              <div className="d-flex align-items-center">
                 <span
-                  className="color-dot me-2 rounded-circle d-inline-block"
+                  className="color-dot me-2"
                   style={{
                     backgroundColor: formData.color,
-                    width: '16px',
-                    height: '16px'
+                    width: '10px',
+                    height: '10px'
                   }}
                 ></span>
-                <span className="fw-medium">{formData.name || 'Nombre de la colección'}</span>
+                <span className="fw-medium">{formData.name || 'Nombre de colección'}</span>
                 {formData.description && (
                   <span className="text-muted ms-2 small">
                     - {formData.description}
@@ -333,7 +333,7 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
         <div className="modal-footer bg-light p-3">
           <button
             type="button"
-            className="btn btn-outline-secondary"
+            className="btn btn-sm btn-outline-secondary"
             onClick={handleClose}
             disabled={isSubmitting}
           >
@@ -341,7 +341,7 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
           </button>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-sm btn-primary"
             form="collection-form"
             disabled={isSubmitting}
           >

@@ -30,7 +30,7 @@ export const CollectionsManager = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mediaCount, setMediaCount] = useState({});
-  const [searchTerm, setSearchTerm] = useState(''); // Nuevo: búsqueda de colecciones
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Redux dispatch para mensajes
   const dispatch = useDispatch();
@@ -209,40 +209,29 @@ export const CollectionsManager = ({
       collection.name.toLowerCase().includes(searchTerm.toLowerCase()))
     : collections;
 
-  // Calcular el total de imágenes
-  const totalImages = Object.values(mediaCount).reduce((sum, count) => sum + count, 0);
-
   return (
     <div className="collections-manager mb-4">
-      {/* Cabecera con título y botón para nueva colección */}
+      {/* Cabecera con título */}
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5 className="mb-0">Colecciones</h5>
-        <button
-          className="btn btn-sm btn-primary"
-          onClick={handleNewCollection}
-          disabled={loading}
-        >
-          <i className="bi bi-plus-lg me-1"></i>
-          Nueva Colección
-        </button>
+        <h5 className="mb-0 fw-medium">Colecciones</h5>
       </div>
 
       {/* Campo de búsqueda para colecciones */}
       <div className="mb-3">
-        <div className="input-group input-group-sm">
-          <span className="input-group-text bg-white border">
+        <div className="input-group input-group-sm rounded-3 overflow-hidden border shadow-sm">
+          <span className="input-group-text bg-white border-0">
             <i className="bi bi-search"></i>
           </span>
           <input
             type="text"
-            className="form-control form-control-sm"
+            className="form-control form-control-sm border-0 shadow-none"
             placeholder="Buscar colecciones..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {searchTerm && (
             <button
-              className="btn btn-outline-secondary border"
+              className="btn btn-sm btn-link text-muted border-0"
               onClick={() => setSearchTerm('')}
               title="Limpiar búsqueda"
             >
@@ -254,7 +243,7 @@ export const CollectionsManager = ({
 
       {/* Mostrar error si existe */}
       {error && (
-        <div className="alert alert-danger alert-sm py-2" role="alert">
+        <div className="alert alert-danger alert-sm py-2 mb-3" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
           {error}
         </div>
@@ -265,17 +254,12 @@ export const CollectionsManager = ({
         {/* Opción "Todas" */}
         <button
           type="button"
-          className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${!selectedCollectionId ? 'active' : ''}`}
+          className={`list-group-item list-group-item-action d-flex align-items-center py-2 px-3 ${!selectedCollectionId ? 'active' : ''}`}
           onClick={() => onSelectCollection && onSelectCollection(null)}
         >
-          <span className="d-flex align-items-center">
-            <i className="bi bi-collection me-2"></i>
-            <span className="d-inline-block text-truncate" style={{ maxWidth: '150px' }}>
-              Todas las imágenes
-            </span>
-          </span>
-          <span className="badge bg-primary rounded-pill">
-            {totalImages || 0}
+          <i className="bi bi-images me-2"></i>
+          <span className="d-inline-block collection-text text-truncate">
+            Todas las imágenes
           </span>
         </button>
 
@@ -287,55 +271,39 @@ export const CollectionsManager = ({
             </div>
             <span className="ms-2">Cargando colecciones...</span>
           </div>
-        ) : filteredCollections.length === 0 ? (
+        ) : filteredCollections.length === 0 && !searchTerm ? (
           <div className="text-center py-3 text-muted">
-            {searchTerm ? (
-              <>
-                <i className="bi bi-search me-2"></i>
-                No se encontraron colecciones con "{searchTerm}".
-              </>
-            ) : (
-              <>
-                <i className="bi bi-info-circle me-2"></i>
-                No hay colecciones. Crea una para organizar tus imágenes.
-              </>
-            )}
+            <i className="bi bi-info-circle me-2"></i>
+            No hay colecciones. Añade una para organizar tus imágenes.
+          </div>
+        ) : filteredCollections.length === 0 && searchTerm ? (
+          <div className="text-center py-3 text-muted">
+            <i className="bi bi-search me-2"></i>
+            No se encontraron colecciones con "{searchTerm}".
           </div>
         ) : (
           filteredCollections.map(collection => (
             <div
               key={collection.id}
-              className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${selectedCollectionId === collection.id ? 'active' : ''}`}
+              className={`list-group-item collection-item d-flex align-items-center py-2 px-3 ${selectedCollectionId === collection.id ? 'active' : ''}`}
             >
               {/* Parte clickeable para seleccionar colección */}
               <div
-                className="collection-item-content flex-grow-1 d-flex justify-content-between align-items-center"
+                className="d-flex align-items-center flex-grow-1"
                 style={{ cursor: 'pointer' }}
                 onClick={() => onSelectCollection && onSelectCollection(collection.id)}
               >
-                <div className="d-flex flex-column">
-                  <div className="d-flex align-items-center">
-                    <i className="bi bi-images me-2"></i>
-                    <span className="d-inline-block text-truncate" style={{ maxWidth: '150px' }}>
-                      {collection.name}
-                    </span>
-                  </div>
-                  {collection.description && (
-                    <small className="text-muted d-block mt-1 text-truncate" style={{ maxWidth: '180px' }}>
-                      {collection.description}
-                    </small>
-                  )}
-                </div>
-                <span className="badge bg-primary rounded-pill ms-2">
-                  {mediaCount[collection.id] || 0}
+                <i className="bi bi-folder me-2"></i>
+                <span className="d-inline-block collection-text text-truncate">
+                  {collection.name}
                 </span>
               </div>
 
-              {/* Botones de acción (siempre visibles en móvil, visible al hover en desktop) */}
-              <div className="collection-actions ms-2 d-flex">
+              {/* Botones de acción */}
+              <div className="collection-actions">
                 <button
                   type="button"
-                  className="btn btn-sm btn-icon btn-outline-secondary me-1"
+                  className="action-btn edit-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEditCollection(collection);
@@ -346,7 +314,7 @@ export const CollectionsManager = ({
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm btn-icon btn-outline-danger"
+                  className="action-btn delete-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteCollection(collection.id);
@@ -359,6 +327,16 @@ export const CollectionsManager = ({
             </div>
           ))
         )}
+
+        {/* Botón para añadir nueva colección (como un elemento más de la lista) */}
+        <button
+          type="button"
+          className="list-group-item list-group-item-action d-flex justify-content-center align-items-center py-2 add-collection-btn"
+          onClick={handleNewCollection}
+        >
+          <i className="bi bi-plus-circle me-2"></i>
+          <span>Añadir colección</span>
+        </button>
       </div>
 
       {/* Modal para crear/editar colección */}
