@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { MediaGrid } from './MediaGrid';
 import { getMediaItems } from '../../services/mediaService';
-import { CollectionsManager } from './CollectionManager.jsx'
+import { CollectionsManager } from './CollectionsManager.jsx'
 
 /**
  * MediaSelector - Componente modal para seleccionar archivos multimedia de la biblioteca

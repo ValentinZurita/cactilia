@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 
 /**
  * Modal para crear o editar una colección de imágenes
+ * Con interfaz mejorada para móviles y mejor experiencia de usuario
  *
  * @param {Object} props - Propiedades del componente
  * @param {boolean} props.isOpen - Controla si el modal está abierto
@@ -15,39 +16,54 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
   // Estado para los datos del formulario
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    color: '#3b82f6' // Color por defecto: azul
   });
+
+  // Referencia al input de nombre para autofoco
+  const nameInputRef = useRef(null);
 
   // Estado para la animación del modal
   const [isVisible, setIsVisible] = useState(false);
 
   // Estado para validación y errores
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Inicializar datos cuando cambia la colección seleccionada
   useEffect(() => {
     if (collection) {
       setFormData({
         name: collection.name || '',
-        description: collection.description || ''
+        description: collection.description || '',
+        color: collection.color || '#3b82f6'
       });
     } else {
       setFormData({
         name: '',
-        description: ''
+        description: '',
+        color: '#3b82f6'
       });
     }
 
     // Resetear errores
     setErrors({});
+    setIsSubmitting(false);
   }, [collection]);
 
-  // Efecto para manejar la animación del modal
+  // Efecto para manejar la animación del modal y el autofoco
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+
+      // Animar entrada
       setTimeout(() => {
         setIsVisible(true);
+
+        // Auto-focus en el nombre
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+        }
       }, 50);
     } else {
       setIsVisible(false);
@@ -72,11 +88,16 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
       [name]: value
     }));
 
-    // Limpiar error específico al editar el campo
-    if (errors[name]) {
+    // Validación en tiempo real
+    if (name === 'name' && !value.trim()) {
       setErrors(prev => ({
         ...prev,
-        [name]: null
+        name: 'El nombre es obligatorio'
+      }));
+    } else if (name === 'name' && value.trim()) {
+      setErrors(prev => ({
+        ...prev,
+        name: null
       }));
     }
   };
@@ -95,21 +116,31 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
   };
 
   // Manejar envío del formulario
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validar formulario
     if (!validateForm()) return;
 
-    // Guardar colección
-    onSave(collection?.id, formData);
+    setIsSubmitting(true);
 
-    // Cerrar modal con animación
-    handleClose();
+    try {
+      // Guardar colección
+      await onSave(collection?.id, formData);
+
+      // Cerrar modal con animación
+      handleClose();
+    } catch (error) {
+      console.error('Error al guardar colección:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Cerrar el modal con animación
   const handleClose = () => {
+    if (isSubmitting) return; // No cerrar si está enviando
+
     setIsVisible(false);
     setTimeout(() => {
       onClose();
@@ -120,6 +151,17 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
   const stopPropagation = (e) => {
     e.stopPropagation();
   };
+
+  // Colores predefinidos para colecciones
+  const predefinedColors = [
+    '#3b82f6', // Azul
+    '#10b981', // Verde
+    '#ef4444', // Rojo
+    '#f59e0b', // Ámbar
+    '#8b5cf6', // Violeta
+    '#ec4899', // Rosa
+    '#6b7280'  // Gris
+  ];
 
   return ReactDOM.createPortal(
     <div
@@ -142,12 +184,12 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
       }}
     >
       <div
-        className="modal-content"
+        className="modal-content collection-modal"
         onClick={stopPropagation}
         style={{
           backgroundColor: 'white',
-          borderRadius: '0.5rem',
-          boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)',
+          borderRadius: '0.75rem',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
           width: '100%',
           maxWidth: '500px',
           transform: isVisible ? 'translateY(0)' : 'translateY(-30px)',
@@ -155,8 +197,18 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
         }}
       >
         {/* Cabecera del modal */}
-        <div className="modal-header border-bottom p-3">
-          <h5 className="modal-title m-0">
+        <div className="modal-header p-3 d-flex align-items-center">
+          <h5 className="modal-title m-0 d-flex align-items-center">
+            <span
+              className="color-swatch me-2 rounded-circle d-inline-block"
+              style={{
+                backgroundColor: formData.color,
+                width: '20px',
+                height: '20px',
+                border: '2px solid white',
+                boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
+              }}
+            ></span>
             {collection ? 'Editar Colección' : 'Nueva Colección'}
           </h5>
           <button
@@ -164,12 +216,13 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
             className="btn-close"
             onClick={handleClose}
             aria-label="Close"
+            disabled={isSubmitting}
           ></button>
         </div>
 
         {/* Cuerpo del modal con formulario */}
         <div className="modal-body p-4">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} id="collection-form">
             {/* Campo nombre */}
             <div className="mb-3">
               <label htmlFor="name" className="form-label">
@@ -182,7 +235,10 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Ej. Hero Principal, Productos Destacados..."
+                placeholder="Ej. Banners, Productos Destacados..."
+                ref={nameInputRef}
+                disabled={isSubmitting}
+                autoComplete="off"
               />
               {errors.name && (
                 <div className="invalid-feedback">{errors.name}</div>
@@ -201,10 +257,73 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
                 value={formData.description}
                 onChange={handleInputChange}
                 placeholder="Describe el propósito de esta colección..."
-                rows="3"
+                rows="2"
+                disabled={isSubmitting}
               />
               <div className="form-text">
-                Una descripción ayuda a identificar para qué se usa esta colección
+                Opcional: ayuda a identificar para qué se usa esta colección
+              </div>
+            </div>
+
+            {/* Selector de color */}
+            <div className="mb-3">
+              <label className="form-label d-block">Color (opcional)</label>
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                {predefinedColors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`btn p-0 collection-color-swatch ${formData.color === color ? 'active-color' : ''}`}
+                    style={{
+                      backgroundColor: color,
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      border: formData.color === color ? '2px solid #000' : '1px solid rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      boxShadow: formData.color === color ? '0 0 0 2px white, 0 0 0 4px #000' : 'none',
+                    }}
+                    onClick={() => setFormData(prev => ({ ...prev, color }))}
+                    disabled={isSubmitting}
+                    aria-label={`Color ${color}`}
+                  />
+                ))}
+              </div>
+              <div className="d-flex align-items-center mt-2">
+                <input
+                  type="color"
+                  className="form-control form-control-color me-2"
+                  name="color"
+                  value={formData.color}
+                  onChange={handleInputChange}
+                  title="Elegir color personalizado"
+                  disabled={isSubmitting}
+                  style={{ width: '42px', height: '42px' }}
+                />
+                <div className="form-text">
+                  El color ayuda a identificar visualmente la colección
+                </div>
+              </div>
+            </div>
+
+            {/* Vista previa de la colección */}
+            <div className="collection-preview p-3 rounded-3 mb-3" style={{ backgroundColor: '#f8f9fa' }}>
+              <h6 className="mb-2">Vista previa:</h6>
+              <div className="d-flex align-items-center p-2 rounded border bg-white">
+                <span
+                  className="color-dot me-2 rounded-circle d-inline-block"
+                  style={{
+                    backgroundColor: formData.color,
+                    width: '16px',
+                    height: '16px'
+                  }}
+                ></span>
+                <span className="fw-medium">{formData.name || 'Nombre de la colección'}</span>
+                {formData.description && (
+                  <span className="text-muted ms-2 small">
+                    - {formData.description}
+                  </span>
+                )}
               </div>
             </div>
           </form>
@@ -216,15 +335,24 @@ export const CollectionsModal = ({ isOpen, collection, onClose, onSave }) => {
             type="button"
             className="btn btn-outline-secondary"
             onClick={handleClose}
+            disabled={isSubmitting}
           >
             Cancelar
           </button>
           <button
-            type="button"
+            type="submit"
             className="btn btn-primary"
-            onClick={handleSubmit}
+            form="collection-form"
+            disabled={isSubmitting}
           >
-            {collection ? 'Actualizar' : 'Crear'}
+            {isSubmitting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {collection ? 'Actualizando...' : 'Creando...'}
+              </>
+            ) : (
+              collection ? 'Actualizar' : 'Crear'
+            )}
           </button>
         </div>
       </div>

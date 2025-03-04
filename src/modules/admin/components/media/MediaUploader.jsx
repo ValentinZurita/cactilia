@@ -1,11 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getCollections } from '../../services/collectionsService';
 
 /**
- * MediaUploader - Componente para subir archivos multimedia con soporte para colecciones
- *
- * Proporciona una interfaz intuitiva para cargar archivos con arrastrar y soltar,
- * personalización de nombre y selección de colección.
+ * MediaUploader - Componente mejorado para subir archivos multimedia con soporte para colecciones
  *
  * @param {Object} props - Propiedades del componente
  * @param {Function} props.onUpload - Función para manejar la carga de archivos
@@ -16,6 +13,7 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   // Estados para gestión de archivos
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   // Estado para metadatos
   const [metadata, setMetadata] = useState({
@@ -28,6 +26,8 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   // Estado para opciones de colección
   const [collections, setCollections] = useState([]);
   const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [showNewCollectionOption, setShowNewCollectionOption] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
 
   // Referencias
   const fileInputRef = useRef(null);
@@ -37,6 +37,15 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
   useEffect(() => {
     loadCollections();
   }, []);
+
+  // Limpiar URL de previsualización al desmontar
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   /**
    * Carga las colecciones disponibles
@@ -119,11 +128,16 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
     // Guardar archivo seleccionado
     setSelectedFile(file);
 
+    // Generar URL para previsualización
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+
     // Generar nombre personalizado a partir del nombre original
     // Eliminar extensión y reemplazar guiones/underscores por espacios
     const baseName = file.name
       .replace(/\.[^/.]+$/, '') // Eliminar extensión
-      .replace(/[_-]/g, ' '); // Reemplazar guiones y underscores con espacios
+      .replace(/[_-]/g, ' ') // Reemplazar guiones y underscores con espacios
+      .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize each word
 
     // Actualizar metadatos
     setMetadata(prev => ({
@@ -139,10 +153,62 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
    */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === 'collectionId' && value === 'new') {
+      setShowNewCollectionOption(true);
+      return;
+    }
+
     setMetadata(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  /**
+   * Maneja la creación de una nueva colección
+   */
+  const handleCreateCollection = async () => {
+    if (!newCollectionName.trim()) {
+      alert('Por favor ingresa un nombre para la colección');
+      return;
+    }
+
+    try {
+      setCollectionsLoading(true);
+
+      // Importar el servicio para crear colecciones
+      const { createCollection } = await import('../../services/collectionsService');
+
+      // Crear nueva colección
+      const result = await createCollection({
+        name: newCollectionName.trim(),
+        description: 'Creado desde carga de imágenes'
+      });
+
+      if (!result.ok) {
+        throw new Error(result.error || 'Error al crear colección');
+      }
+
+      // Recargar colecciones
+      await loadCollections();
+
+      // Seleccionar la nueva colección
+      setMetadata(prev => ({
+        ...prev,
+        collectionId: result.id
+      }));
+
+      // Resetear estado
+      setNewCollectionName('');
+      setShowNewCollectionOption(false);
+
+    } catch (error) {
+      console.error('Error creando colección:', error);
+      alert('Error al crear la colección: ' + error.message);
+    } finally {
+      setCollectionsLoading(false);
+    }
   };
 
   /**
@@ -171,6 +237,12 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
     // Llamar a la función onUpload con archivo y metadatos
     await onUpload(selectedFile, metadataToUpload);
 
+    // Limpiar previsualización
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+
     // Resetear formulario después de subir
     setSelectedFile(null);
     setMetadata({
@@ -186,6 +258,15 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
    */
   const onButtonClick = () => {
     fileInputRef.current.click();
+  };
+
+  // Cancelar la selección de archivo
+  const handleCancelSelection = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    setSelectedFile(null);
   };
 
   return (
@@ -228,12 +309,12 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
       ) : (
         // Formulario para metadatos y confirmación de subida
         <div className="selected-file-form">
-          <div className="row">
+          <div className="row g-4">
             <div className="col-md-4 mb-3">
               {/* Previsualización del archivo */}
               <div className="selected-file-preview">
                 <img
-                  src={URL.createObjectURL(selectedFile)}
+                  src={previewUrl}
                   alt="Previsualización"
                   className="img-fluid rounded"
                 />
@@ -241,7 +322,7 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                   <p className="mb-1">
                     <strong>{selectedFile.name}</strong>
                   </p>
-                  <p className="text-muted small">
+                  <p className="text-muted small mb-0">
                     {selectedFile.type} - {(selectedFile.size / 1024).toFixed(1)} KB
                   </p>
                 </div>
@@ -281,28 +362,70 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     placeholder="Descripción para accesibilidad"
                   />
                   <div className="form-text">
-                    Describe la imagen para lectores de pantalla
+                    Describe la imagen para lectores de pantalla y SEO
                   </div>
                 </div>
 
-                {/* Selector de colección */}
+                {/* Selector de colección mejorado */}
                 <div className="mb-3">
                   <label htmlFor="collectionId" className="form-label">Colección</label>
-                  <select
-                    className="form-select"
-                    id="collectionId"
-                    name="collectionId"
-                    value={metadata.collectionId}
-                    onChange={handleInputChange}
-                    disabled={collectionsLoading}
-                  >
-                    <option value="">Sin colección</option>
-                    {collections.map(collection => (
-                      <option key={collection.id} value={collection.id}>
-                        {collection.name}
-                      </option>
-                    ))}
-                  </select>
+                  {showNewCollectionOption ? (
+                    <div className="input-group mb-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Nombre de la nueva colección"
+                        value={newCollectionName}
+                        onChange={(e) => setNewCollectionName(e.target.value)}
+                        disabled={collectionsLoading}
+                      />
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        onClick={handleCreateCollection}
+                        disabled={collectionsLoading || !newCollectionName.trim()}
+                      >
+                        {collectionsLoading ? (
+                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        ) : (
+                          <i className="bi bi-plus"></i>
+                        )}
+                      </button>
+                      <button
+                        className="btn btn-outline-secondary"
+                        type="button"
+                        onClick={() => {
+                          setShowNewCollectionOption(false);
+                          setNewCollectionName('');
+                        }}
+                        disabled={collectionsLoading}
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      className="form-select"
+                      id="collectionId"
+                      name="collectionId"
+                      value={metadata.collectionId}
+                      onChange={handleInputChange}
+                      disabled={collectionsLoading}
+                    >
+                      <option value="">Sin colección</option>
+                      <option value="new" className="fw-bold text-primary">+ Crear nueva colección</option>
+                      {collections.length > 0 && (
+                        <optgroup label="Colecciones existentes">
+                          {collections.map(collection => (
+                            <option key={collection.id} value={collection.id}>
+                              {collection.name}
+                              {collection.description ? ` - ${collection.description}` : ''}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                  )}
                   <div className="form-text">
                     Asigna esta imagen a una colección para organizar tu biblioteca
                   </div>
@@ -318,19 +441,19 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                     name="tags"
                     value={metadata.tags}
                     onChange={handleInputChange}
-                    placeholder="etiqueta1, etiqueta2, etiqueta3"
+                    placeholder="verano, destacado, producto (separadas por comas)"
                   />
                   <div className="form-text">
-                    Etiquetas separadas por comas para búsqueda
+                    Etiquetas separadas por comas para facilitar búsquedas
                   </div>
                 </div>
 
                 {/* Botones de acción */}
-                <div className="d-flex">
+                <div className="d-flex mt-4">
                   <button
                     type="button"
                     className="btn btn-outline-secondary me-2"
-                    onClick={() => setSelectedFile(null)}
+                    onClick={handleCancelSelection}
                     disabled={loading}
                   >
                     Cancelar
@@ -348,7 +471,10 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
                         Subiendo...
                       </>
                     ) : (
-                      'Subir Imagen'
+                      <>
+                        <i className="bi bi-cloud-arrow-up me-2"></i>
+                        Subir Imagen
+                      </>
                     )}
                   </button>
                 </div>

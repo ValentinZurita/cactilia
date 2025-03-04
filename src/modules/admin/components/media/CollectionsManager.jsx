@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { CollectionsModal } from './CollectionsModal.jsx';
 import {
   getCollections,
   createCollection,
@@ -9,9 +8,10 @@ import {
 } from '../../services/collectionsService';
 import { addMessage } from '../../../../store/messages/messageSlice';
 import { useDispatch } from 'react-redux';
+import { CollectionsModal } from './CollectionsModal.jsx'
 
 /**
- * Componente para gestionar colecciones de imágenes
+ * Componente para gestionar colecciones de media
  * Permite crear, editar, eliminar y seleccionar colecciones
  *
  * @param {Object} props - Propiedades del componente
@@ -23,21 +23,14 @@ export const CollectionsManager = ({
                                      selectedCollectionId,
                                      onSelectCollection
                                    }) => {
-  // Estado para lista de colecciones
+  // Estado para colecciones y UI
   const [collections, setCollections] = useState([]);
-
-  // Estado para la colección seleccionada para editar
   const [editingCollection, setEditingCollection] = useState(null);
-
-  // Estado para visualización del modal
   const [showModal, setShowModal] = useState(false);
-
-  // Estado para la carga de datos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Estado para el conteo de imágenes por colección
   const [mediaCount, setMediaCount] = useState({});
+  const [searchTerm, setSearchTerm] = useState(''); // Nuevo: búsqueda de colecciones
 
   // Redux dispatch para mensajes
   const dispatch = useDispatch();
@@ -136,6 +129,7 @@ export const CollectionsManager = ({
 
       // Recargar colecciones
       await loadCollections();
+      setShowModal(false);
 
     } catch (err) {
       console.error('Error guardando colección:', err);
@@ -209,15 +203,14 @@ export const CollectionsManager = ({
     setShowModal(true);
   };
 
-  /**
-   * Seleccionar una colección como filtro
-   * @param {string} collectionId - ID de la colección a seleccionar
-   */
-  const handleSelectCollection = (collectionId) => {
-    if (onSelectCollection) {
-      onSelectCollection(collectionId);
-    }
-  };
+  // Filtrar colecciones según término de búsqueda
+  const filteredCollections = searchTerm
+    ? collections.filter(collection =>
+      collection.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : collections;
+
+  // Calcular el total de imágenes
+  const totalImages = Object.values(mediaCount).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="collections-manager mb-4">
@@ -234,9 +227,34 @@ export const CollectionsManager = ({
         </button>
       </div>
 
+      {/* Campo de búsqueda para colecciones */}
+      <div className="mb-3">
+        <div className="input-group input-group-sm">
+          <span className="input-group-text bg-white border">
+            <i className="bi bi-search"></i>
+          </span>
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            placeholder="Buscar colecciones..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button
+              className="btn btn-outline-secondary border"
+              onClick={() => setSearchTerm('')}
+              title="Limpiar búsqueda"
+            >
+              <i className="bi bi-x"></i>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Mostrar error si existe */}
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <div className="alert alert-danger alert-sm py-2" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
           {error}
         </div>
@@ -248,60 +266,76 @@ export const CollectionsManager = ({
         <button
           type="button"
           className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${!selectedCollectionId ? 'active' : ''}`}
-          onClick={() => handleSelectCollection(null)}
+          onClick={() => onSelectCollection && onSelectCollection(null)}
         >
-          <span>
+          <span className="d-flex align-items-center">
             <i className="bi bi-collection me-2"></i>
-            Todas las imágenes
+            <span className="d-inline-block text-truncate" style={{ maxWidth: '150px' }}>
+              Todas las imágenes
+            </span>
+          </span>
+          <span className="badge bg-primary rounded-pill">
+            {totalImages || 0}
           </span>
         </button>
 
         {/* Lista de colecciones cargadas */}
         {loading && collections.length === 0 ? (
-          <div className="list-group-item text-center py-3">
-            <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
+          <div className="text-center py-3">
+            <div className="spinner-border spinner-border-sm text-primary" role="status">
               <span className="visually-hidden">Cargando...</span>
             </div>
-            Cargando colecciones...
+            <span className="ms-2">Cargando colecciones...</span>
           </div>
-        ) : collections.length === 0 ? (
-          <div className="list-group-item text-center py-3 text-muted">
-            <i className="bi bi-info-circle me-2"></i>
-            No hay colecciones. Crea una para organizar tus imágenes.
+        ) : filteredCollections.length === 0 ? (
+          <div className="text-center py-3 text-muted">
+            {searchTerm ? (
+              <>
+                <i className="bi bi-search me-2"></i>
+                No se encontraron colecciones con "{searchTerm}".
+              </>
+            ) : (
+              <>
+                <i className="bi bi-info-circle me-2"></i>
+                No hay colecciones. Crea una para organizar tus imágenes.
+              </>
+            )}
           </div>
         ) : (
-          collections.map(collection => (
+          filteredCollections.map(collection => (
             <div
               key={collection.id}
               className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${selectedCollectionId === collection.id ? 'active' : ''}`}
             >
               {/* Parte clickeable para seleccionar colección */}
               <div
-                className="collection-item-content flex-grow-1"
+                className="collection-item-content flex-grow-1 d-flex justify-content-between align-items-center"
                 style={{ cursor: 'pointer' }}
-                onClick={() => handleSelectCollection(collection.id)}
+                onClick={() => onSelectCollection && onSelectCollection(collection.id)}
               >
-                <div className="d-flex justify-content-between align-items-center">
-                  <span>
+                <div className="d-flex flex-column">
+                  <div className="d-flex align-items-center">
                     <i className="bi bi-images me-2"></i>
-                    {collection.name}
-                  </span>
-                  <span className="badge bg-primary rounded-pill">
-                    {mediaCount[collection.id] || 0}
-                  </span>
+                    <span className="d-inline-block text-truncate" style={{ maxWidth: '150px' }}>
+                      {collection.name}
+                    </span>
+                  </div>
+                  {collection.description && (
+                    <small className="text-muted d-block mt-1 text-truncate" style={{ maxWidth: '180px' }}>
+                      {collection.description}
+                    </small>
+                  )}
                 </div>
-                {collection.description && (
-                  <small className="text-muted d-block mt-1">
-                    {collection.description}
-                  </small>
-                )}
+                <span className="badge bg-primary rounded-pill ms-2">
+                  {mediaCount[collection.id] || 0}
+                </span>
               </div>
 
-              {/* Botones de acción (solo visibles al hacer hover) */}
-              <div className="collection-actions ms-2">
+              {/* Botones de acción (siempre visibles en móvil, visible al hover en desktop) */}
+              <div className="collection-actions ms-2 d-flex">
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-secondary me-1"
+                  className="btn btn-sm btn-icon btn-outline-secondary me-1"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEditCollection(collection);
@@ -312,7 +346,7 @@ export const CollectionsManager = ({
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-danger"
+                  className="btn btn-sm btn-icon btn-outline-danger"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteCollection(collection.id);
