@@ -31,7 +31,6 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
 
   // Referencias
   const fileInputRef = useRef(null);
-  const timerRef = useRef(null);
 
   // Cargar colecciones al iniciar
   useEffect(() => {
@@ -56,6 +55,7 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
       const result = await getCollections();
 
       if (result.ok && Array.isArray(result.data)) {
+        console.log('Colecciones cargadas:', result.data); // Debugging
         setCollections(result.data);
       } else {
         console.error('Error cargando colecciones:', result.error);
@@ -159,6 +159,14 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
       return;
     }
 
+    // Si cambia la colección, verificar que existe
+    if (name === 'collectionId' && value) {
+      const collectionExists = collections.some(c => c.id === value);
+      if (!collectionExists && value !== 'new' && value !== '') {
+        console.warn('Se seleccionó una colección que no existe:', value);
+      }
+    }
+
     setMetadata(prev => ({
       ...prev,
       [name]: value
@@ -183,25 +191,31 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
       // Crear nueva colección
       const result = await createCollection({
         name: newCollectionName.trim(),
-        description: 'Creado desde carga de imágenes'
+        description: 'Creado desde carga de imágenes',
+        color: '#3b82f6' // Añadir un color por defecto para mejor visualización
       });
 
       if (!result.ok) {
         throw new Error(result.error || 'Error al crear colección');
       }
 
+      console.log('Colección creada:', result); // Debugging
+
       // Recargar colecciones
       await loadCollections();
 
-      // Seleccionar la nueva colección
+      // Actualizar el estado para seleccionar la nueva colección
       setMetadata(prev => ({
         ...prev,
-        collectionId: result.id
+        collectionId: result.id // Este es el ID devuelto por la operación
       }));
 
       // Resetear estado
       setNewCollectionName('');
       setShowNewCollectionOption(false);
+
+      // Mostrar confirmación al usuario
+      alert(`Colección "${newCollectionName.trim()}" creada con éxito.`);
 
     } catch (error) {
       console.error('Error creando colección:', error);
@@ -230,9 +244,12 @@ export const MediaUploader = ({ onUpload, loading = false }) => {
     const metadataToUpload = {
       ...metadata,
       tags: tagsArray,
+      name: metadata.name.trim() || selectedFile.name, // Asegurar que hay un nombre
       // Si no se seleccionó ninguna colección, enviar null
       collectionId: metadata.collectionId || null
     };
+
+    console.log('Subiendo archivo con metadatos:', metadataToUpload); // Debugging
 
     // Llamar a la función onUpload con archivo y metadatos
     await onUpload(selectedFile, metadataToUpload);

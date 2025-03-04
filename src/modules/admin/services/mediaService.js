@@ -7,36 +7,47 @@ import { uploadFile } from "../../../firebase/firebaseStorage";
  * Upload a new media item to Firebase Storage and save metadata to Firestore
  *
  * @param {File} file - The file to upload
- * @param {Object} metadata - Additional metadata for the file (category, alt, tags)
+ * @param {Object} metadata - Additional metadata for the file (collectionId, name, alt, tags)
  * @returns {Promise<Object>} - Upload result with success status and media data
  */
 export const uploadMedia = async (file, metadata = {}) => {
   try {
-    // Validate inputs
+    // Validar inputs
     if (!file) {
       throw new Error("No file provided for upload");
     }
 
-    // 1. Upload file to Firebase Storage in media folder
-    const storageRef = `media/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+    // Usar el nombre personalizado si se proporciona, o el nombre original del archivo
+    const displayName = metadata.name || file.name;
+
+    // Crear un nombre de archivo seguro para Storage
+    const safeFileName = displayName.replace(/\s+/g, '_').toLowerCase();
+
+    // 1. Upload file to Firebase Storage in media folder with custom name
+    const storageRef = `media/${Date.now()}_${safeFileName}`;
     const downloadURL = await uploadFile(file, 'media');
 
     if (!downloadURL) {
       throw new Error("Failed to upload file to storage");
     }
 
-    // 2. Add metadata to Firestore
+    // 2. Add metadata to Firestore, incluyendo todos los metadatos proporcionados
     const mediaData = {
-      filename: file.name,
-      url: downloadURL,
-      storageRef: storageRef,
-      size: file.size,
-      type: file.type,
-      uploadedAt: serverTimestamp(),
-      category: metadata.category || "uncategorized",
+      filename: file.name,         // Nombre original del archivo
+      name: displayName,           // Nombre personalizado
+      url: downloadURL,            // URL del archivo en Storage
+      storageRef: storageRef,      // Referencia en Storage
+      size: file.size,             // Tamaño en bytes
+      type: file.type,             // Tipo MIME
+      uploadedAt: serverTimestamp(), // Timestamp de subida
+
+      // Metadatos adicionales
+      collectionId: metadata.collectionId || null, // ID de colección (importante)
       tags: Array.isArray(metadata.tags) ? metadata.tags : [],
-      alt: metadata.alt || file.name,
+      alt: metadata.alt || displayName, // Texto alternativo
     };
+
+    console.log('Guardando archivo con metadatos:', mediaData); // Log para debugging
 
     const docRef = await addDoc(collection(FirebaseDB, "media"), mediaData);
 
