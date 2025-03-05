@@ -4,6 +4,7 @@ import '../styles/mediaLibrary.css';
 import { CollectionsManager, MediaDetailsModal, MediaGrid } from '../components/media/index.js'
 import { useMediaLibrary } from '../hooks/useMediaLibrary.js'
 import { getCollections } from '../services/collectionsService';
+import { SearchBar } from '../components/shared/SearchBar.jsx';
 
 /**
  * MediaLibraryPage - Versión minimalista con interfaz simplificada
@@ -84,6 +85,12 @@ export const MediaLibraryPage = () => {
     setFilters({ searchTerm: value });
   };
 
+  // Manejador para limpiar la búsqueda
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setFilters({ searchTerm: '' });
+  };
+
   // Manejador para seleccionar un elemento para ver detalles
   const handleSelectItem = (item) => {
     setSelectedItem(item);
@@ -118,31 +125,16 @@ export const MediaLibraryPage = () => {
         </button>
       </div>
 
-      {/* Barra de búsqueda simplificada */}
-      <div className="search-bar-container mb-4">
-        <div className="input-group input-group-lg shadow-sm">
-          <span className="input-group-text bg-white border-end-0">
-            <i className="bi bi-search"></i>
-          </span>
-          <input
-            type="text"
-            className="form-control border-start-0"
-            placeholder="Buscar archivos multimedia..."
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-          {searchTerm && (
-            <button
-              className="btn btn-outline-secondary border-start-0"
-              onClick={() => {
-                setSearchTerm('');
-                setFilters({ searchTerm: '' });
-              }}
-            >
-              <i className="bi bi-x-lg"></i>
-            </button>
-          )}
-        </div>
+      {/* Barra de búsqueda usando el componente reutilizable */}
+      <div className="mb-4">
+        <SearchBar
+          value={searchTerm}
+          onChange={handleSearch}
+          onClear={handleClearSearch}
+          placeholder="Buscar archivos multimedia..."
+          size="lg"
+          className="mb-0"
+        />
       </div>
 
       {/* Mensaje de error si aplica */}

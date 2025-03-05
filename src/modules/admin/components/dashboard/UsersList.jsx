@@ -4,6 +4,8 @@ import { getUsersByRole, updateUserRole, deleteUserDoc } from "../../services/us
 import { UserRoleModal } from "./UserRoleModal";
 import { Spinner } from "../../../../shared/components/spinner/Spinner";
 import { TableView } from './TableView.jsx'
+import { SearchBar } from '../shared/SearchBar.jsx'
+
 
 /**
  * Componente que muestra la lista de usuarios filtrada por rol
@@ -98,6 +100,16 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
     setShowRoleModal(true);
   };
 
+  // Manejar cambio en la búsqueda
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Limpiar búsqueda
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
+
   // Filtrar usuarios según término de búsqueda
   const filteredUsers = users.filter(user =>
     user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -154,17 +166,6 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
             <i className="bi bi-eye"></i>
           </button>
 
-          {/* Cambiar rol (solo para superadmin) */}
-          {/*{currentUserRole === "superadmin" && (*/}
-          {/*  <button*/}
-          {/*    className="btn btn-sm btn-outline-warning"*/}
-          {/*    onClick={() => openRoleModal(user)}*/}
-          {/*    title="Cambiar rol"*/}
-          {/*  >*/}
-          {/*    <i className="bi bi-person-gear"></i>*/}
-          {/*  </button>*/}
-          {/*)}*/}
-
           {/* Eliminar (solo para superadmin) */}
           {currentUserRole === "superadmin" && (
             <button
@@ -186,14 +187,14 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
 
   return (
     <>
-      {/* Barra de búsqueda */}
+      {/* Barra de búsqueda refactorizada */}
       <div className="mb-4">
-        <input
-          type="text"
-          className="form-control form-control-lg border shadow-sm rounded-3"
-          placeholder={`🔍 Buscar ${userType === "admins" ? "administradores" : "clientes"}...`}
+        <SearchBar
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
+          onClear={handleClearSearch}
+          placeholder={`Buscar ${userType === "admins" ? "administradores" : "clientes"}...`}
+          size="lg"
         />
       </div>
 
@@ -243,18 +244,4 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
       )}
     </>
   );
-};
-
-// Utilidad para determinar el color del badge según el rol
-const getRoleBadgeColor = (role) => {
-  switch (role) {
-    case "superadmin":
-      return "bg-danger";
-    case "admin":
-      return "bg-warning text-dark";
-    case "user":
-      return "bg-success";
-    default:
-      return "bg-secondary";
-  }
 };

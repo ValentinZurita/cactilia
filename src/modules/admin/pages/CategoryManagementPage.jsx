@@ -4,6 +4,7 @@ import { getCategories, deleteCategory } from "../services/categoryService";
 import { CategoryForm } from '../components/dashboard/index.js'
 import placeholder from '../../../shared/assets/images/placeholder.jpg'
 import { TableView } from '../components/dashboard/TableView.jsx'
+import { SearchBar } from '../components/shared/SearchBar.jsx'
 
 
 /**
@@ -90,8 +91,18 @@ export const CategoryManagementPage = () => {
     }
   };
 
+  // Manejar cambio en la búsqueda
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
- // 🆕 Filtered categories based on search term
+  // Limpiar búsqueda
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
+
+
+  // 🆕 Filtered categories based on search term
   const filteredCategories = categories.filter(cat =>
     cat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -168,20 +179,14 @@ export const CategoryManagementPage = () => {
     // 🆕 Retornamos el TableView con la data de categorías
     return (
       <>
-        {/* 🆕 Search Bar */}
+        {/* Barra de búsqueda refactorizada */}
         <div className="mb-4">
-          <input
-            type="text"
-            className="form-control form-control-lg border shadow-sm rounded-3"
-            style={{ width: '100%' }}
-            placeholder="🔍 Buscar categorías..."
+          <SearchBar
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setSearchTerm('');
-              }
-            }}
+            onChange={handleSearchChange}
+            onClear={handleClearSearch}
+            placeholder="Buscar categorías..."
+            size="lg"
           />
         </div>
 

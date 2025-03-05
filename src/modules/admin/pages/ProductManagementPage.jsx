@@ -4,6 +4,8 @@ import { getProducts, deleteProduct } from "../services/productService";
 import { ProductForm } from '../components/dashboard/index.js'
 import placeholder from '../../../shared/assets/images/placeholder.jpg'
 import { TableView } from '../components/dashboard/TableView.jsx'
+import { SearchBar } from '../components/shared/SearchBar.jsx'
+
 
 
 /**
@@ -79,6 +81,16 @@ export const ProductManagementPage = () => {
       loadProducts();
       navigate("/admin/products/view");
     }
+  };
+
+  // Manejar cambio en la búsqueda
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Limpiar búsqueda
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
 
 
@@ -164,23 +176,15 @@ export const ProductManagementPage = () => {
     // Renderizar barra de búsqueda y tabla
     return (
       <div className="mb-4">
-        {/* 🆕 Barra de búsqueda a pantalla completa con estilos de Bootstrap */}
-        <div className="container-fluid px-0 my-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault(); // Evitar el envío del formulario
-              setSearchTerm(""); // Limpiar el campo después de presionar Enter
-            }}
-          >
-            <input
-              type="text"
-              className="form-control form-control-lg border shadow-sm rounded-3"
-              placeholder="🔍 Buscar productos por nombre..."
-              name="productSearch"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </form>
+        {/* Barra de búsqueda refactorizada */}
+        <div className="mb-4">
+          <SearchBar
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onClear={handleClearSearch}
+            placeholder="Buscar productos por nombre..."
+            size="lg"
+          />
         </div>
 
         {/* Tabla de productos */}
