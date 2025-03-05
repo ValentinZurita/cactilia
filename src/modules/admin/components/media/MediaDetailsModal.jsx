@@ -3,10 +3,7 @@ import ReactDOM from 'react-dom';
 import { getCollections } from '../../services/collectionsService';
 
 /**
- * MediaDetailsModal - Modal para ver y editar detalles de archivos multimedia
- *
- * Muestra una vista detallada de un archivo multimedia con opciones
- * para editar sus metadatos, incluido el nombre y la colección.
+ * MediaDetailsModal - Modal minimalista para ver y editar detalles de archivos multimedia
  *
  * @param {Object} props - Propiedades del componente
  * @param {Object} props.media - Elemento multimedia a mostrar
@@ -33,8 +30,6 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
   // Estado para colecciones disponibles
   const [collections, setCollections] = useState([]);
   const [collectionsLoading, setCollectionsLoading] = useState(false);
-  const [showNewCollectionOption, setShowNewCollectionOption] = useState(false);
-  const [newCollectionName, setNewCollectionName] = useState('');
 
   // Estado para procesar actualizaciones
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,8 +80,6 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
 
       if (result.ok) {
         setCollections(result.data);
-      } else {
-        console.error('Error cargando colecciones:', result.error);
       }
     } catch (error) {
       console.error('Error cargando colecciones:', error);
@@ -101,62 +94,10 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
   // Manejar cambios en campos de texto
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === 'collectionId' && value === 'new') {
-      setShowNewCollectionOption(true);
-      return;
-    }
-
     setMediaData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
-
-  /**
-   * Maneja la creación de una nueva colección
-   */
-  const handleCreateCollection = async () => {
-    if (!newCollectionName.trim()) {
-      alert('Por favor ingresa un nombre para la colección');
-      return;
-    }
-
-    try {
-      setCollectionsLoading(true);
-
-      // Importar el servicio para crear colecciones
-      const { createCollection } = await import('../../services/collectionsService');
-
-      // Crear nueva colección
-      const result = await createCollection({
-        name: newCollectionName.trim(),
-        description: 'Creado desde detalles de media'
-      });
-
-      if (!result.ok) {
-        throw new Error(result.error || 'Error al crear colección');
-      }
-
-      // Recargar colecciones
-      await loadCollections();
-
-      // Seleccionar la nueva colección
-      setMediaData(prev => ({
-        ...prev,
-        collectionId: result.id
-      }));
-
-      // Resetear estado
-      setNewCollectionName('');
-      setShowNewCollectionOption(false);
-
-    } catch (error) {
-      console.error('Error creando colección:', error);
-      alert('Error al crear la colección: ' + error.message);
-    } finally {
-      setCollectionsLoading(false);
-    }
   };
 
   // Manejar cambios en campo de etiquetas (separadas por comas)
@@ -233,7 +174,7 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
 
   return ReactDOM.createPortal(
     <div
-      className={`modal-backdrop ${isVisible ? 'visible' : ''}`}
+      className="modal-backdrop"
       onClick={onClose}
       style={{
         position: 'fixed',
@@ -256,8 +197,8 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
         onClick={stopPropagation}
         style={{
           backgroundColor: 'white',
-          borderRadius: '0.75rem',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+          borderRadius: '1rem',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
           width: '100%',
           maxWidth: '900px',
           maxHeight: '90vh',
@@ -266,324 +207,271 @@ export const MediaDetailsModal = ({ media, isOpen, onClose, onUpdate }) => {
           transition: 'transform 0.3s ease',
         }}
       >
-        {/* Cabecera del Modal */}
-        <div className="modal-header d-flex align-items-center">
-          <h5 className="modal-title d-flex align-items-center">
-            {media.collectionId && (
-              <span
-                className="color-dot me-2"
-                style={{ backgroundColor: getCollectionColor(media.collectionId) }}
-              ></span>
+        {/* Cabecera minimalista */}
+        <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
+          <h5 className="m-0 d-flex align-items-center">
+            {editMode ? (
+              <>
+                <i className="bi bi-pencil me-2 text-primary"></i>
+                Editar imagen
+              </>
+            ) : (
+              <>
+                <i className="bi bi-image me-2 text-primary"></i>
+                Detalles de imagen
+              </>
             )}
-            {editMode ? 'Editar Imagen' : 'Detalles de Imagen'}
           </h5>
           <button
             type="button"
             className="btn-close"
             onClick={onClose}
-            disabled={isSubmitting}
             aria-label="Cerrar"
           ></button>
         </div>
 
-        {/* Cuerpo del Modal */}
-        <div className="modal-body">
-          <div className="row g-4">
-            {/* Previsualización de la Imagen */}
-            <div className="col-md-6 mb-3 mb-md-0">
-              <div className="media-preview-modal">
+        {/* Cuerpo del modal con diseño mejorado */}
+        <div className="p-0" style={{ overflow: 'auto', maxHeight: 'calc(90vh - 110px)' }}>
+          <div className="row g-0">
+            {/* Panel lateral con la imagen */}
+            <div className="col-md-5 border-end position-relative" style={{ minHeight: '400px' }}>
+              <div className="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center bg-light">
                 <img
                   src={media.url}
-                  alt={media.alt || media.name || media.filename}
-                  className="img-fluid rounded shadow-sm"
+                  alt={media.alt || media.name || 'Imagen'}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                    padding: '1rem'
+                  }}
                 />
-              </div>
-
-              {/* Detalles del archivo */}
-              <div className="mt-3">
-                <h6 className="fw-bold mb-2">Detalles del Archivo</h6>
-                <div className="card border-0 bg-light rounded-3">
-                  <div className="card-body p-3">
-                    <div className="row g-2">
-                      <div className="col-6">
-                        <div className="detail-item">
-                          <small className="text-muted d-block">Nombre original</small>
-                          <p className="mb-2 fw-medium small text-truncate" title={media.filename}>
-                            {media.filename}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="col-6">
-                        <div className="detail-item">
-                          <small className="text-muted d-block">Tipo</small>
-                          <p className="mb-2 small">
-                            {media.type}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="col-6">
-                        <div className="detail-item">
-                          <small className="text-muted d-block">Tamaño</small>
-                          <p className="mb-2 small">
-                            {formatFileSize(media.size)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="col-6">
-                        <div className="detail-item">
-                          <small className="text-muted d-block">Subido</small>
-                          <p className="mb-2 small">
-                            {formatDate(media.uploadedAt)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* URL de la imagen */}
-              <div className="mt-3">
-                <label className="form-label small fw-medium">URL de la imagen</label>
-                <div className="input-group">
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    value={media.url}
-                    readOnly
-                  />
-                  <button
-                    className="btn btn-outline-primary"
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(media.url);
-                      // Mostrar una pequeña indicación de copiado (puedes implementar un toast aquí)
-                    }}
-                    title="Copiar al portapapeles"
-                  >
-                    <i className="bi bi-clipboard"></i>
-                  </button>
-                </div>
-                <div className="form-text">
-                  Usa esta URL para insertar la imagen en tu contenido
-                </div>
               </div>
             </div>
 
-            {/* Formulario de edición o vista de detalles */}
-            <div className="col-md-6">
-              {editMode ? (
-                <form onSubmit={handleSubmit}>
-                  {/* Campo nombre personalizado */}
-                  <div className="mb-3">
-                    <label htmlFor="name" className="form-label">Nombre personalizado</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="name"
-                      name="name"
-                      value={mediaData.name}
-                      onChange={handleChange}
-                      placeholder="Nombre descriptivo para la imagen"
-                      disabled={isSubmitting}
-                    />
-                    <div className="form-text">
-                      Este nombre identifica la imagen en el sistema
+            {/* Panel de información/edición */}
+            <div className="col-md-7">
+              <div className="p-4">
+                {editMode ? (
+                  /* FORMULARIO DE EDICIÓN */
+                  <form onSubmit={handleSubmit}>
+                    {/* Campo de nombre */}
+                    <div className="mb-3">
+                      <label htmlFor="name" className="form-label small fw-bold text-muted">
+                        NOMBRE
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        className="form-control form-control-lg"
+                        value={mediaData.name}
+                        onChange={handleChange}
+                        placeholder="Nombre descriptivo"
+                        disabled={isSubmitting}
+                      />
                     </div>
-                  </div>
 
-                  {/* Campo texto alternativo */}
-                  <div className="mb-3">
-                    <label htmlFor="alt" className="form-label">Texto Alternativo</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="alt"
-                      name="alt"
-                      value={mediaData.alt}
-                      onChange={handleChange}
-                      placeholder="Descripción para accesibilidad"
-                      disabled={isSubmitting}
-                    />
-                    <div className="form-text">
-                      Texto para usuarios con lectores de pantalla y SEO
-                    </div>
-                  </div>
-
-                  {/* Selector de colección mejorado */}
-                  <div className="mb-3">
-                    <label htmlFor="collectionId" className="form-label">Colección</label>
-                    {showNewCollectionOption ? (
-                      <div className="input-group mb-2">
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Nombre de la nueva colección"
-                          value={newCollectionName}
-                          onChange={(e) => setNewCollectionName(e.target.value)}
-                          disabled={collectionsLoading || isSubmitting}
-                        />
-                        <button
-                          className="btn btn-primary"
-                          type="button"
-                          onClick={handleCreateCollection}
-                          disabled={collectionsLoading || !newCollectionName.trim() || isSubmitting}
-                        >
-                          {collectionsLoading ? (
-                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                          ) : (
-                            <i className="bi bi-plus"></i>
-                          )}
-                        </button>
-                        <button
-                          className="btn btn-outline-secondary"
-                          type="button"
-                          onClick={() => {
-                            setShowNewCollectionOption(false);
-                            setNewCollectionName('');
-                          }}
-                          disabled={collectionsLoading || isSubmitting}
-                        >
-                          <i className="bi bi-x"></i>
-                        </button>
+                    {/* Campo de texto alternativo */}
+                    <div className="mb-3">
+                      <label htmlFor="alt" className="form-label small fw-bold text-muted">
+                        TEXTO ALTERNATIVO
+                      </label>
+                      <input
+                        type="text"
+                        id="alt"
+                        name="alt"
+                        className="form-control"
+                        value={mediaData.alt}
+                        onChange={handleChange}
+                        placeholder="Descripción para accesibilidad"
+                        disabled={isSubmitting}
+                      />
+                      <div className="form-text">
+                        Útil para SEO y usuarios con lectores de pantalla
                       </div>
-                    ) : (
+                    </div>
+
+                    {/* Selector de colección */}
+                    <div className="mb-3">
+                      <label htmlFor="collectionId" className="form-label small fw-bold text-muted">
+                        COLECCIÓN
+                      </label>
                       <select
-                        className="form-select"
                         id="collectionId"
                         name="collectionId"
+                        className="form-select"
                         value={mediaData.collectionId || ''}
                         onChange={handleChange}
                         disabled={collectionsLoading || isSubmitting}
                       >
                         <option value="">Sin colección</option>
-                        <option value="new" className="fw-bold text-primary">+ Crear nueva colección</option>
-                        {collections.length > 0 && (
-                          <optgroup label="Colecciones existentes">
-                            {collections.map(collection => (
-                              <option key={collection.id} value={collection.id}>
-                                {collection.name}
-                                {collection.description ? ` - ${collection.description}` : ''}
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
+                        {collections.map(collection => (
+                          <option key={collection.id} value={collection.id}>
+                            {collection.name}
+                          </option>
+                        ))}
                       </select>
-                    )}
-                    <div className="form-text">
-                      Asigna esta imagen a una colección para organizar tu biblioteca
                     </div>
-                  </div>
 
-                  {/* Campo de etiquetas */}
-                  <div className="mb-3">
-                    <label htmlFor="tags" className="form-label">Etiquetas</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="tags"
-                      name="tags"
-                      value={formatTags(mediaData.tags)}
-                      onChange={handleTagsChange}
-                      placeholder="verano, destacado, producto (separadas por comas)"
-                      disabled={isSubmitting}
-                    />
-                    <div className="form-text">
-                      Etiquetas separadas por comas para facilitar búsquedas
+                    {/* Campo de etiquetas */}
+                    <div className="mb-4">
+                      <label htmlFor="tags" className="form-label small fw-bold text-muted">
+                        ETIQUETAS
+                      </label>
+                      <input
+                        type="text"
+                        id="tags"
+                        className="form-control"
+                        value={formatTags(mediaData.tags)}
+                        onChange={handleTagsChange}
+                        placeholder="Separadas por comas (ej: verano, producto)"
+                        disabled={isSubmitting}
+                      />
+                      <div className="form-text">
+                        Ayudan a encontrar la imagen en búsquedas
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Botones de acción */}
-                  <div className="d-flex justify-content-end mt-4">
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary me-2"
-                      onClick={() => setEditMode(false)}
-                      disabled={isSubmitting}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                          Guardando...
-                        </>
-                      ) : (
-                        <>Guardar Cambios</>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div>
-                  <h6 className="fw-bold mb-3">Información de la Imagen</h6>
+                    {/* Botones de acción */}
+                    <div className="d-flex justify-content-end mt-4 pt-2 border-top">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary me-2"
+                        onClick={() => setEditMode(false)}
+                        disabled={isSubmitting}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-primary px-4"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Guardando...
+                          </>
+                        ) : (
+                          <>Guardar</>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  /* MODO VISUALIZACIÓN */
+                  <div>
+                    {/* Nombre del archivo */}
+                    <h3 className="fw-bold mb-3 text-break">
+                      {mediaData.name || 'Sin nombre'}
+                    </h3>
 
-                  {/* Nombre personalizado */}
-                  <div className="info-group mb-3">
-                    <label className="text-muted small d-block mb-1">Nombre personalizado</label>
-                    <p className="mb-0 fw-medium">{mediaData.name || 'Sin nombre personalizado'}</p>
-                  </div>
-
-                  {/* Colección con visual mejorado */}
-                  <div className="info-group mb-3">
-                    <label className="text-muted small d-block mb-1">Colección</label>
+                    {/* Colección con badge */}
                     {mediaData.collectionId ? (
-                      <div className="d-inline-flex align-items-center px-3 py-2 bg-light rounded-3">
+                      <div className="mb-4">
                         <span
-                          className="color-dot me-2"
-                          style={{ backgroundColor: getCollectionColor(mediaData.collectionId) }}
-                        ></span>
-                        <span>{getCollectionName(mediaData.collectionId)}</span>
+                          className="badge rounded-pill px-3 py-2"
+                          style={{
+                            backgroundColor: getCollectionColor(mediaData.collectionId),
+                            color: 'white'
+                          }}
+                        >
+                          {getCollectionName(mediaData.collectionId)}
+                        </span>
                       </div>
                     ) : (
-                      <p className="mb-0 fst-italic text-muted">Sin colección</p>
+                      <div className="mb-4">
+                        <span className="badge bg-light text-muted border px-3 py-2">
+                          Sin colección
+                        </span>
+                      </div>
                     )}
-                  </div>
 
-                  {/* Texto alternativo */}
-                  <div className="info-group mb-3">
-                    <label className="text-muted small d-block mb-1">Texto Alternativo</label>
-                    <p className="mb-0">
-                      {mediaData.alt || <span className="fst-italic text-muted">Sin texto alternativo</span>}
-                    </p>
-                  </div>
+                    {/* Detalles del archivo */}
+                    <div className="row mb-4">
+                      <div className="col-sm-6 mb-3">
+                        <h6 className="text-muted small fw-bold mb-2">DETALLES</h6>
+                        <ul className="list-unstyled">
+                          <li className="mb-2">
+                            <small className="text-muted">Tipo:</small>
+                            <span className="ms-2">{media.type || 'Desconocido'}</span>
+                          </li>
+                          <li className="mb-2">
+                            <small className="text-muted">Tamaño:</small>
+                            <span className="ms-2">{formatFileSize(media.size)}</span>
+                          </li>
+                          <li className="mb-2">
+                            <small className="text-muted">Subido:</small>
+                            <span className="ms-2">{formatDate(media.uploadedAt)}</span>
+                          </li>
+                        </ul>
+                      </div>
 
-                  {/* Etiquetas */}
-                  <div className="info-group mb-4">
-                    <label className="text-muted small d-block mb-1">Etiquetas</label>
-                    <div>
+                      <div className="col-sm-6 mb-3">
+                        <h6 className="text-muted small fw-bold mb-2">TEXTO ALTERNATIVO</h6>
+                        <p className="mb-0">
+                          {mediaData.alt || <span className="text-muted fst-italic">Sin texto alternativo</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Etiquetas */}
+                    <h6 className="text-muted small fw-bold mb-2">ETIQUETAS</h6>
+                    <div className="mb-4">
                       {mediaData.tags && mediaData.tags.length > 0 ? (
-                        <div className="tags-container">
+                        <div>
                           {mediaData.tags.map((tag, index) => (
-                            <span key={index} className="badge bg-light text-dark me-1 mb-1 px-2 py-1">
+                            <span
+                              key={index}
+                              className="badge bg-light text-dark me-1 mb-1"
+                              style={{ padding: '8px 12px' }}
+                            >
                               {tag}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <p className="mb-0 fst-italic text-muted">Sin etiquetas</p>
+                        <p className="text-muted fst-italic mb-0">Sin etiquetas</p>
                       )}
                     </div>
-                  </div>
 
-                  {/* Botón para editar */}
-                  <div className="d-flex justify-content-end">
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={() => setEditMode(true)}
-                    >
-                      <i className="bi bi-pencil me-2"></i>
-                      Editar Detalles
-                    </button>
+                    {/* URL de la imagen */}
+                    <h6 className="text-muted small fw-bold mb-2">URL DE LA IMAGEN</h6>
+                    <div className="input-group mb-4">
+                      <input
+                        type="text"
+                        className="form-control form-control-sm bg-light"
+                        value={media.url}
+                        readOnly
+                        onClick={(e) => e.target.select()}
+                      />
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(media.url);
+                        }}
+                        title="Copiar al portapapeles"
+                      >
+                        <i className="bi bi-clipboard"></i>
+                      </button>
+                    </div>
+
+                    {/* Botones de acción */}
+                    <div className="d-flex justify-content-end mt-4 pt-3 border-top">
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => setEditMode(true)}
+                      >
+                        <i className="bi bi-pencil me-2"></i>
+                        Editar
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>

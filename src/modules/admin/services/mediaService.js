@@ -66,8 +66,9 @@ export const uploadMedia = async (file, metadata = {}) => {
  * Get all media items with optional filtering
  *
  * @param {Object} options - Filter options
+ * @param {string} options.collectionId - Filter by collection ID
  * @param {string} options.category - Filter by category
- * @param {string} options.searchTerm - Search by filename, alt text, or tags
+ * @param {string} options.searchTerm - Search by filename, name, alt text, or tags
  * @param {Array} options.tags - Filter by tags
  * @returns {Promise<Object>} - Query result with media items
  */
@@ -75,6 +76,11 @@ export const getMediaItems = async (options = {}) => {
   try {
     const mediaCollection = collection(FirebaseDB, "media");
     const queryConstraints = [];
+
+    // Apply collectionId filter if provided
+    if (options.collectionId) {
+      queryConstraints.push(where("collectionId", "==", options.collectionId));
+    }
 
     // Apply category filter if provided
     if (options.category) {
@@ -107,7 +113,11 @@ export const getMediaItems = async (options = {}) => {
     if (options.searchTerm) {
       const searchLower = options.searchTerm.toLowerCase();
       mediaItems = mediaItems.filter(item =>
+        // Search in the custom name first (this is the important change)
+        (item.name && item.name.toLowerCase().includes(searchLower)) ||
+        // Then in filename as a fallback
         item.filename.toLowerCase().includes(searchLower) ||
+        // And also in alt text and tags
         (item.alt && item.alt.toLowerCase().includes(searchLower)) ||
         (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchLower)))
       );
