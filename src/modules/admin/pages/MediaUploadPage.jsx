@@ -4,10 +4,7 @@ import { MediaUploader } from '../components/media';
 import '../styles/mediaLibrary.css';
 
 /**
- * MediaUploadPage - Component for the media upload interface
- *
- * This page provides an interface for uploading new media files
- * with drag-and-drop capability and metadata entry
+ * MediaUploadPage - Página simplificada para carga de archivos multimedia
  *
  * @returns {JSX.Element}
  */
@@ -16,43 +13,38 @@ export const MediaUploadPage = () => {
   const { handleUpload, loading, error } = useMediaLibrary();
 
   /**
-   * Handles the successful upload of a file and redirects
-   * back to the media library
-   *
-   * @param {File} file - The uploaded file
-   * @param {Object} metadata - The metadata for the file
-   * @returns {Promise<void>}
+   * Maneja la carga completa del archivo y redirecciona
    */
   const handleSuccessfulUpload = async (file, metadata) => {
     try {
       const result = await handleUpload(file, metadata);
 
       if (result.ok) {
-        // Navigate back to the library after successful upload
+        // Navegar de vuelta a la biblioteca después de una carga exitosa
         navigate('/admin/media/browse');
       }
     } catch (err) {
-      console.error('Error during upload:', err);
-      // Error handling is managed by the hook
+      console.error('Error durante la carga:', err);
     }
   };
 
   return (
     <div className="media-upload-container">
-      {/* Header with title and back button */}
+      {/* Cabecera minimalista */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="page-title">Upload Media</h2>
-
-        <button
-          className="btn btn-outline-secondary"
-          onClick={() => navigate('/admin/media/browse')}
-        >
-          <i className="bi bi-arrow-left me-2"></i>
-          Back to Library
-        </button>
+        <div className="d-flex align-items-center">
+          <button
+            className="btn btn-icon btn-outline-secondary me-3 rounded-circle"
+            onClick={() => navigate('/admin/media/browse')}
+            style={{ width: '40px', height: '40px' }}
+          >
+            <i className="bi bi-arrow-left"></i>
+          </button>
+          <h2 className="page-title mb-0">Subir archivo</h2>
+        </div>
       </div>
 
-      {/* Error message if applicable */}
+      {/* Mensaje de error si aplica */}
       {error && (
         <div className="alert alert-danger" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -60,15 +52,11 @@ export const MediaUploadPage = () => {
         </div>
       )}
 
-      {/* Main content card with uploader */}
-      <div className="card shadow-sm border-0 rounded-3">
-        <div className="card-body p-4">
-          <MediaUploader
-            onUpload={handleSuccessfulUpload}
-            loading={loading}
-          />
-        </div>
-      </div>
+      {/* Uploader directamente sin card contenedor */}
+      <MediaUploader
+        onUpload={handleSuccessfulUpload}
+        loading={loading}
+      />
     </div>
   );
 };

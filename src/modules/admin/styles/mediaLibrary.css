@@ -1,16 +1,31 @@
 /*
 |--------------------------------------------------------------------------
-| MEDIA LIBRARY STYLES
+| BIBLIOTECA MULTIMEDIA - CSS COMPLETO
 |--------------------------------------------------------------------------
 |
-| Estilos completos para la biblioteca multimedia del panel de administración.
-| Diseño minimalista, elegante y fácil de usar con optimizaciones móviles.
+| CSS organizado por secciones para la biblioteca multimedia y carga de archivos
 |
 */
 
 /*
 |--------------------------------------------------------------------------
-| 1. CONTENEDORES PRINCIPALES
+| 1. VARIABLES Y CONFIGURACIÓN GLOBAL
+|--------------------------------------------------------------------------
+*/
+
+:root {
+    --primary-color: #0d6efd;
+    --primary-light: rgba(13, 110, 253, 0.05);
+    --secondary-color: #6c757d;
+    --light-gray: #f8f9fa;
+    --border-color: #dee2e6;
+    --border-radius: 10px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/*
+|--------------------------------------------------------------------------
+| 2. CONTENEDORES PRINCIPALES
 |--------------------------------------------------------------------------
 */
 
@@ -18,7 +33,18 @@
 .media-upload-container {
     background-color: white;
     padding: 20px;
+    min-height: calc(100vh - 200px);
 }
+
+.collections-manager {
+    margin-bottom: 1.5rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 3. ENCABEZADOS Y TÍTULOS
+|--------------------------------------------------------------------------
+*/
 
 .page-title {
     font-size: 1.6rem;
@@ -27,23 +53,74 @@
     font-weight: 500;
 }
 
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #444;
+}
+
+.btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    background-color: #e9ecef;
+}
+
 /*
 |--------------------------------------------------------------------------
-| 2. GESTOR DE COLECCIONES
+| 4. BARRA DE BÚSQUEDA
 |--------------------------------------------------------------------------
 */
 
-/* Contenedor principal */
-.collections-manager {
+.search-bar-container {
     margin-bottom: 1.5rem;
 }
+
+.search-bar-container .input-group {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.search-bar-container .input-group-text {
+    border: none;
+    padding-right: 0;
+    color: var(--secondary-color);
+}
+
+.search-bar-container .form-control {
+    border: none;
+    padding-left: 0;
+    font-size: 1rem;
+    height: 50px;
+}
+
+.search-bar-container .form-control:focus {
+    box-shadow: none;
+}
+
+.search-bar-container .btn {
+    border: none;
+    padding-left: 0;
+    color: var(--secondary-color);
+}
+
+/*
+|--------------------------------------------------------------------------
+| 5. COLECCIONES Y SIDEBAR
+|--------------------------------------------------------------------------
+*/
 
 /* Lista de colecciones con scroll vertical */
 .collections-list {
     max-height: calc(100vh - 280px);
     overflow-y: auto;
-    border: 1px solid rgba(0, 0, 0, 0.125);
-    border-radius: 0.375rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
     scrollbar-width: thin;
 }
 
@@ -53,7 +130,7 @@
 }
 
 .collections-list::-webkit-scrollbar-track {
-    background: #f8f9fa;
+    background: var(--light-gray);
     border-radius: 10px;
 }
 
@@ -74,12 +151,12 @@
 }
 
 .collection-item:hover {
-    background-color: #f8f9fa;
+    background-color: var(--light-gray);
     border-left-color: #e9ecef;
 }
 
 .collection-item.active {
-    background-color: #0d6efd !important;
+    background-color: var(--primary-color) !important;
     border-left-color: #0a58ca;
 }
 
@@ -136,7 +213,7 @@
 }
 
 .edit-btn:hover {
-    color: #0d6efd;
+    color: var(--primary-color);
 }
 
 .collection-item.active .edit-btn:hover {
@@ -151,45 +228,263 @@
     color: #ffc7cc;
 }
 
-/* Barra de búsqueda de colecciones */
-.collections-search {
-    position: relative;
-    margin-bottom: 1rem;
-}
-
-.collections-search .form-control {
-    border-radius: 6px;
-    padding-left: 36px;
-}
-
-.collections-search .search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #adb5bd;
-}
-
-.collections-search .clear-btn {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: #adb5bd;
-    padding: 0;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.collections-search .clear-btn:hover {
+/* Botón para añadir colección */
+.add-collection-btn {
+    background-color: transparent;
+    transition: all 0.2s ease;
     color: #6c757d;
+    border-top: 1px dashed var(--border-color) !important;
+    margin-top: 5px;
+}
+
+.add-collection-btn:hover {
+    background-color: #f0f7ff;
+    color: var(--primary-color);
+}
+
+.add-collection-btn i {
+    font-size: 1.1rem;
+}
+
+/* Colección seleccionada */
+.selected-collection-header {
+    background-color: var(--primary-light);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 8px;
 }
 
 /*
 |--------------------------------------------------------------------------
-| 3. MODAL DE COLECCIONES
+| 6. GRID DE ELEMENTOS MULTIMEDIA
+|--------------------------------------------------------------------------
+*/
+
+/* Tarjetas de elementos multimedia */
+.media-item-card {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background-color: #fff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.media-item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Previsualización de imágenes con overlay */
+.media-item-preview {
+    height: 150px;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--light-gray);
+}
+
+.media-item-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.media-item-preview:hover img {
+    transform: scale(1.08);
+}
+
+/* Overlay de acciones en hover */
+.media-item-actions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.media-item-preview:hover .media-item-actions {
+    opacity: 1;
+}
+
+/* Información de elemento multimedia */
+.media-item-info {
+    padding: 12px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.media-item-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 7. ÁREA DE CARGA Y ARRASTRAR/SOLTAR
+|--------------------------------------------------------------------------
+*/
+
+/* Botón flotante para subir archivo */
+.upload-floating-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    transition: all 0.3s ease;
+}
+
+.upload-floating-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(13, 110, 253, 0.4);
+}
+
+/* Área de arrastrar y soltar */
+.upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    background-color: var(--light-gray);
+    padding: 30px;
+}
+
+.upload-area.drag-active {
+    border-color: var(--primary-color);
+    background-color: var(--primary-light);
+}
+
+.upload-area-minimal {
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    background-color: var(--light-gray);
+    padding: 80px 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+.upload-area-minimal:hover {
+    border-color: #ced4da;
+}
+
+.upload-area-minimal.drag-active {
+    border-color: var(--primary-color);
+    background-color: var(--primary-light);
+    transform: scale(1.01);
+}
+
+.upload-area-minimal .upload-prompt {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.upload-area-minimal .upload-prompt i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+}
+
+.upload-area-minimal .upload-prompt h5 {
+    font-weight: 500;
+    color: #495057;
+}
+
+.upload-area-minimal .upload-prompt .btn-primary {
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    border-radius: 8px;
+}
+
+/* Contenedor de carga */
+.upload-container {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Formulario y previsualización */
+.selected-file-form {
+    padding: 20px 0;
+}
+
+.selected-file-preview {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    padding: 10px;
+    background-color: var(--light-gray);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.selected-file-preview img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 8. FORMULARIOS Y METADATOS
+|--------------------------------------------------------------------------
+*/
+
+/* Estilos para el paso de metadatos */
+.media-uploader-minimal .selected-file-form {
+    padding: 30px !important;
+}
+
+.media-uploader-minimal .selected-file-preview {
+    background-color: var(--light-gray);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Mejoras para la previsualización de la imagen */
+.media-uploader-minimal .selected-file-preview img {
+    max-height: 300px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Mejorar el aspecto de los botones */
+.media-uploader-minimal .btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 9. MODALES Y OVERLAYS
 |--------------------------------------------------------------------------
 */
 
@@ -246,7 +541,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #f8f9fa;
+    background-color: var(--light-gray);
 }
 
 .modal-title {
@@ -267,121 +562,66 @@
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    background-color: #f8f9fa;
-}
-
-/* Vista previa de colección */
-.collection-preview {
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
-    padding: 12px;
-    margin-top: 16px;
-}
-
-.collection-preview-item {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    background-color: white;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    background-color: var(--light-gray);
 }
 
 /*
 |--------------------------------------------------------------------------
-| 4. CUADRÍCULA DE MEDIOS
+| 10. BOTONES Y CONTROLES
 |--------------------------------------------------------------------------
 */
 
-/* Tarjetas de elementos multimedia */
-.media-item-card {
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    background-color: #fff;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+/* Botones específicos */
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
-.media-item-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    border-color: rgba(0, 0, 0, 0.15);
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
 }
 
-/* Previsualización de imágenes con overlay */
-.media-item-preview {
-    height: 150px;
-    position: relative;
-    overflow: hidden;
-    background-color: #f8f9fa;
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
-.media-item-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-    cursor: pointer;
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
 }
 
-.media-item-preview:hover img {
-    transform: scale(1.08);
+/* Botón verde */
+.btn-green {
+    background-color: #10b981;
+    border-color: #10b981;
+    color: white;
 }
 
-/* Overlay de acciones en hover */
-.media-item-actions {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+.btn-green:hover {
+    background-color: #0e9f6e;
+    border-color: #0e9f6e;
+    color: white;
 }
 
-.media-item-preview:hover .media-item-actions {
-    opacity: 1;
-}
+/*
+|--------------------------------------------------------------------------
+| 11. ESTADOS (LOADING, EMPTY, ACTIVE)
+|--------------------------------------------------------------------------
+*/
 
-/* Información de elemento multimedia */
-.media-item-info {
-    padding: 12px;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.media-item-title {
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
-    color: #333;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 500;
-}
-
-/* Badge para medios seleccionados */
+/* Estado seleccionado */
 .selected-media-item {
     position: relative;
-    border: 2px solid #0d6efd;
+    border: 2px solid var(--primary-color);
 }
 
 .selected-badge {
     position: absolute;
     top: 8px;
     right: 8px;
-    background-color: #0d6efd;
+    background-color: var(--primary-color);
     color: white;
     width: 24px;
     height: 24px;
@@ -396,7 +636,7 @@
 .empty-state {
     text-align: center;
     padding: 60px 20px;
-    background-color: #f8f9fa;
+    background-color: var(--light-gray);
     border-radius: 10px;
     margin: 20px 0;
     border: 1px solid rgba(0, 0, 0, 0.05);
@@ -420,153 +660,76 @@
     margin: 0 auto 15px;
 }
 
+/* Spinner para carga */
+.spinner-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /*
 |--------------------------------------------------------------------------
-| 5. CARGA DE ARCHIVOS
+| 12. UTILIDADES Y ANIMACIONES
 |--------------------------------------------------------------------------
 */
 
-/* Área de arrastrar y soltar */
-.upload-area {
-    border: 2px dashed #dee2e6;
+/* Animaciones */
+.fade-in {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Utilidades de tamaño */
+.text-xs {
+    font-size: 0.75rem;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
+
+/* Estilizar scrollbar global */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
     border-radius: 10px;
-    margin-bottom: 20px;
-    transition: all 0.3s ease;
-    background-color: #f8f9fa;
-    padding: 30px;
 }
 
-.upload-area.drag-active {
-    border-color: #0d6efd;
-    background-color: rgba(13, 109, 253, 0.05);
-}
-
-.upload-prompt {
-    padding: 40px 20px;
-    text-align: center;
-}
-
-/* Formulario y previsualización de archivo seleccionado */
-.selected-file-form {
-    padding: 20px 0;
-}
-
-.selected-file-preview {
-    border: 1px solid #dee2e6;
+::-webkit-scrollbar-thumb {
+    background: #ccc;
     border-radius: 10px;
-    overflow: hidden;
-    padding: 10px;
-    background-color: #f8f9fa;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-.selected-file-preview img {
-    width: 100%;
-    max-height: 250px;
-    object-fit: contain;
-    border-radius: 6px;
+::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
 }
 
 /*
 |--------------------------------------------------------------------------
-| 6. MODAL DE DETALLES DE MEDIOS
-|--------------------------------------------------------------------------
-*/
-
-/* Previsualización de imagen en modal */
-.media-preview-modal img {
-    max-height: 400px;
-    object-fit: contain;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 6px;
-}
-
-/* Tabla de metadatos */
-.metadata-table th {
-    width: 35%;
-    color: #666;
-    font-weight: 500;
-    padding: 8px 12px;
-    background-color: rgba(0, 0, 0, 0.02);
-}
-
-.metadata-table td {
-    word-break: break-word;
-    padding: 8px 12px;
-}
-
-/*
-|--------------------------------------------------------------------------
-| 7. FILTROS Y BÚSQUEDA
-|--------------------------------------------------------------------------
-*/
-
-/* Barra de filtros */
-.media-filters {
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-}
-
-/* Barra de búsqueda */
-.search-bar-bg {
-    background-color: #f8f9fa;
-    padding: 15px 0;
-    margin-bottom: 20px;
-}
-
-.search-bar-bg .input-group {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.search-bar-bg .form-control {
-    height: 45px;
-    font-size: 0.95rem;
-}
-
-.btn-green {
-    background-color: #10b981;
-    border-color: #10b981;
-    color: white;
-}
-
-.btn-green:hover {
-    background-color: #0e9f6e;
-    border-color: #0e9f6e;
-    color: white;
-}
-
-/*
-|--------------------------------------------------------------------------
-| 8. CARRUSEL DE PRODUCTOS
-|--------------------------------------------------------------------------
-*/
-
-/* Carrusel de imágenes en modal de producto */
-.product-image-carousel-container {
-    margin: 20px 0;
-    position: relative;
-}
-
-.carousel-image-wrapper {
-    height: 100px;
-    cursor: pointer;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
-}
-
-.carousel-image-wrapper:hover {
-    border-color: #10b981;
-}
-
-/*
-|--------------------------------------------------------------------------
-| 9. DISEÑO RESPONSIVO
+| 13. RESPONSIVE
 |--------------------------------------------------------------------------
 */
 
@@ -618,6 +781,10 @@
     .collection-text {
         max-width: 140px;
     }
+
+    .upload-area-minimal {
+        padding: 50px 20px;
+    }
 }
 
 /* Ajustes para móviles */
@@ -642,120 +809,12 @@
     .collection-text {
         max-width: 120px;
     }
-}
 
-/*
-|--------------------------------------------------------------------------
-| 10. UTILIDADES Y ELEMENTOS COMUNES
-|--------------------------------------------------------------------------
-*/
-
-/* Botones */
-.btn-outline-primary {
-    color: #0d6efd;
-    border-color: #0d6efd;
-}
-
-.btn-outline-primary:hover {
-    background-color: #0d6efd;
-    color: white;
-}
-
-/* Spinner para carga */
-.spinner-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 200px;
-}
-
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    border-radius: 50%;
-    border-top-color: #0d6efd;
-    animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Badge en carrito */
-.product-in-cart-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 5;
-}
-
-/* Animaciones */
-.fade-in {
-    animation: fadeIn 0.3s ease forwards;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Utilidades de tamaño */
-.text-xs {
-    font-size: 0.75rem;
-}
-
-.text-sm {
-    font-size: 0.875rem;
-}
-
-/* Estilizar scrollbar global */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #aaa;
-}
-
-/* Estilos para el botón de añadir colección */
-.add-collection-btn {
-    background-color: transparent;
-    transition: all 0.2s ease;
-    color: #6c757d;
-    border-top: 1px dashed #dee2e6 !important;
-    margin-top: 5px;
-}
-
-.add-collection-btn:hover {
-    background-color: #f0f7ff;
-    color: #0d6efd;
-}
-
-.add-collection-btn i {
-    font-size: 1.1rem;
-}
-
-/* Cuando no hay colecciones, dar más espacio al botón */
-.collections-list:empty + .add-collection-btn {
-    padding: 12px;
-}
-
-/* Ajuste para dispositivos móviles */
-@media (max-width: 767px) {
-    .add-collection-btn {
-        padding: 10px;
+    .upload-floating-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+        bottom: 1.5rem;
+        right: 1.5rem;
     }
 }
