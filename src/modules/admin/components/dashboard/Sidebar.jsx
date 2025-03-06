@@ -159,6 +159,19 @@ export const Sidebar = ({ onLinkClick }) => {
         </SidebarDropdown>
 
 
+        {/* NUEVA SECCIÓN: Gestión de Contenido */}
+        <SidebarDropdown
+          label="Gestión de Contenido"
+          icon="bi-layout-text-window"
+          isOpen={openMenus.content}
+          toggle={() => toggleMenu("content")}
+        >
+          <SidebarItem to="/admin/content/home" label="Página Principal" onClick={handleNavClick} />
+          <SidebarItem to="/admin/content/about" label="Sobre Nosotros" onClick={handleNavClick} />
+          <SidebarItem to="/admin/content/contact" label="Contacto" onClick={handleNavClick} />
+        </SidebarDropdown>
+
+
         {/* Nuevo botón para ir al perfil de usuario */}
         <li className="nav-item">
           <Link to="/profile" className="nav-link text-light">

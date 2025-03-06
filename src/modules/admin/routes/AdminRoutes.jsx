@@ -10,6 +10,7 @@ import {
   MediaUploadPage,    // NEW
 } from '../pages/index.js'
 import { RequireAdminAuth } from '../components/login/index.js'
+import { ContentManagementPage } from '../pages/ContentManagementPage.jsx'
 
 export const AdminRoutes = () => {
   return (
@@ -37,6 +38,9 @@ export const AdminRoutes = () => {
           <Route path="media" element={<Navigate to="media/browse" />} />
           <Route path="media/browse" element={<MediaLibraryPage />} />
           <Route path="media/upload" element={<MediaUploadPage />} />
+
+          {/* Content Management */}
+          <Route path="content" element={<ContentManagementPage />} />
 
           {/* Users */}
           <Route path="users" element={<Navigate to="users/customers" />} />
