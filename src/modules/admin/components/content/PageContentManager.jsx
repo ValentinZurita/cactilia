@@ -3,11 +3,12 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { usePageContent } from '../../hooks/usePageContent';
 import { BLOCK_TYPES, BLOCK_SCHEMAS } from '../../services/contentService';
 import { Spinner } from '../../../../shared/components/spinner/Spinner';
-import { MediaSelector } from '../media/index.js'
-
+import { MediaSelector } from '../media/index.js';
+import { BlockEditor } from './BlockEditor';
 
 /**
  * Componente principal para gestionar el contenido de una página
+ * Versión mejorada con mejor interfaz y experiencia de usuario
  *
  * @param {Object} props - Propiedades del componente
  * @param {string} props.pageId - ID de la página a gestionar
@@ -26,8 +27,6 @@ export const PageContentManager = ({ pageId = 'home' }) => {
     error,
     selectedBlockId,
     setSelectedBlockId,
-    loadPageContent,
-    savePageContent,
     addBlock,
     updateBlock,
     deleteBlock,
@@ -83,141 +82,6 @@ export const PageContentManager = ({ pageId = 'home' }) => {
     setNewBlockType('');
   };
 
-  // Manejador de cambios en los campos del bloque
-  const handleBlockFieldChange = (field, value) => {
-    if (!selectedBlockId) return;
-
-    // Actualizar el campo del bloque
-    const updates = { [field]: value };
-    updateBlock(selectedBlockId, updates);
-  };
-
-  // Renderizar editor de campos según el tipo de campo
-  const renderFieldEditor = (fieldName, fieldConfig, currentValue) => {
-    const { type, label, options, defaultValue } = fieldConfig;
-    const value = currentValue || defaultValue || '';
-
-    switch (type) {
-      case 'text':
-        return (
-          <div className="mb-3" key={fieldName}>
-            <label className="form-label">{label}</label>
-            <input
-              type="text"
-              className="form-control"
-              value={value}
-              onChange={(e) => handleBlockFieldChange(fieldName, e.target.value)}
-            />
-          </div>
-        );
-
-      case 'textarea':
-        return (
-          <div className="mb-3" key={fieldName}>
-            <label className="form-label">{label}</label>
-            <textarea
-              className="form-control"
-              rows="3"
-              value={value}
-              onChange={(e) => handleBlockFieldChange(fieldName, e.target.value)}
-            ></textarea>
-          </div>
-        );
-
-      case 'select':
-        return (
-          <div className="mb-3" key={fieldName}>
-            <label className="form-label">{label}</label>
-            <select
-              className="form-select"
-              value={value}
-              onChange={(e) => handleBlockFieldChange(fieldName, e.target.value)}
-            >
-              {options.map(option => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-        );
-
-      case 'boolean':
-        return (
-          <div className="mb-3 form-check" key={fieldName}>
-            <input
-              type="checkbox"
-              className="form-check-input"
-              id={`${selectedBlockId}-${fieldName}`}
-              checked={!!value}
-              onChange={(e) => handleBlockFieldChange(fieldName, e.target.checked)}
-            />
-            <label className="form-check-label" htmlFor={`${selectedBlockId}-${fieldName}`}>
-              {label}
-            </label>
-          </div>
-        );
-
-      case 'number':
-        return (
-          <div className="mb-3" key={fieldName}>
-            <label className="form-label">{label}</label>
-            <input
-              type="number"
-              className="form-control"
-              value={value}
-              onChange={(e) => handleBlockFieldChange(fieldName, parseInt(e.target.value) || 0)}
-            />
-          </div>
-        );
-
-      case 'media':
-      case 'collection':
-        return (
-          <div className="mb-3" key={fieldName}>
-            <label className="form-label">{label}</label>
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control"
-                value={value}
-                readOnly
-              />
-              <button
-                type="button"
-                className="btn btn-outline-primary"
-                onClick={() => handleOpenMediaSelector(fieldName)}
-              >
-                <i className="bi bi-images me-1"></i>
-                Seleccionar
-              </button>
-            </div>
-            {value && type === 'media' && (
-              <div className="mt-2">
-                <img
-                  src={value}
-                  alt="Preview"
-                  className="img-thumbnail"
-                  style={{ maxHeight: '100px' }}
-                />
-              </div>
-            )}
-          </div>
-        );
-
-      default:
-        return (
-          <div className="mb-3" key={fieldName}>
-            <label className="form-label">{label}</label>
-            <input
-              type="text"
-              className="form-control"
-              value={value}
-              onChange={(e) => handleBlockFieldChange(fieldName, e.target.value)}
-            />
-          </div>
-        );
-    }
-  };
-
   // Si está cargando
   if (loading && blocks.length === 0) {
     return (
@@ -243,10 +107,10 @@ export const PageContentManager = ({ pageId = 'home' }) => {
       <div className="row g-4">
         {/* Columna izquierda: Lista de bloques y opciones */}
         <div className="col-md-4">
-          <div className="card border-0 shadow-sm">
+          <div className="card border-0 shadow-sm h-100">
             <div className="card-header bg-white border-bottom">
               <h5 className="mb-0 fw-bold">
-                <i className="bi bi-layout-text-window me-2"></i>
+                <i className="bi bi-layout-text-window me-2 text-primary"></i>
                 Bloques de Contenido
               </h5>
             </div>
@@ -273,24 +137,26 @@ export const PageContentManager = ({ pageId = 'home' }) => {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`block-item p-3 mb-2 border rounded ${selectedBlockId === block.id ? 'border-primary' : 'border-light'}`}
+                                className={`block-item p-3 mb-2 border rounded ${selectedBlockId === block.id ? 'border-primary bg-light' : 'border-light'}`}
                                 onClick={() => setSelectedBlockId(block.id)}
                               >
                                 <div className="d-flex justify-content-between align-items-center">
-                                  <div>
+                                  <div className="d-flex align-items-center">
                                     <i className="bi bi-grip-vertical text-muted me-2"></i>
-                                    <span className="fw-medium">
+                                    {getBlockIcon(block.type)}
+                                    <span className="fw-medium ms-2">
                                       {BLOCK_SCHEMAS[block.type]?.title || block.type}
                                     </span>
                                   </div>
                                   <div>
                                     <button
                                       type="button"
-                                      className="btn btn-sm btn-outline-danger"
+                                      className="btn btn-sm btn-outline-danger rounded-circle"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         deleteBlock(block.id);
                                       }}
+                                      title="Eliminar bloque"
                                     >
                                       <i className="bi bi-trash"></i>
                                     </button>
@@ -340,27 +206,18 @@ export const PageContentManager = ({ pageId = 'home' }) => {
               </div>
             </div>
 
-            {/* Botones de acción */}
+            {/* Guía rápida para usar los bloques */}
             <div className="card-footer bg-white border-top p-3">
-              <div className="d-grid">
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={savePageContent}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-check-circle me-2"></i>
-                      Guardar Cambios
-                    </>
-                  )}
-                </button>
+              <div className="alert alert-light mb-0 p-2">
+                <p className="mb-1 small">
+                  <i className="bi bi-info-circle-fill text-primary me-1"></i>
+                  <strong>Consejos de uso:</strong>
+                </p>
+                <ul className="mb-0 ps-3 small">
+                  <li>Arrastra los bloques para reordenarlos</li>
+                  <li>Haz clic en un bloque para editarlo</li>
+                  <li>Utiliza el botón flotante para guardar</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -369,10 +226,10 @@ export const PageContentManager = ({ pageId = 'home' }) => {
         {/* Columna derecha: Editor del bloque seleccionado */}
         <div className="col-md-8">
           {selectedBlock ? (
-            <div className="card border-0 shadow-sm">
+            <div className="card border-0 shadow-sm h-100">
               <div className="card-header bg-white border-bottom">
                 <h5 className="mb-0 fw-bold">
-                  <i className="bi bi-pencil-square me-2"></i>
+                  <i className="bi bi-pencil-square me-2 text-primary"></i>
                   Editar: {BLOCK_SCHEMAS[selectedBlock.type]?.title || selectedBlock.type}
                 </h5>
               </div>
@@ -380,11 +237,11 @@ export const PageContentManager = ({ pageId = 'home' }) => {
               <div className="card-body">
                 {/* Editor de campos */}
                 {selectedBlock.type && BLOCK_SCHEMAS[selectedBlock.type] ? (
-                  <form>
-                    {Object.entries(BLOCK_SCHEMAS[selectedBlock.type].fields).map(([fieldName, fieldConfig]) =>
-                      renderFieldEditor(fieldName, fieldConfig, selectedBlock[fieldName])
-                    )}
-                  </form>
+                  <BlockEditor
+                    block={selectedBlock}
+                    onUpdate={(updates) => updateBlock(selectedBlock.id, updates)}
+                    onOpenMediaSelector={handleOpenMediaSelector}
+                  />
                 ) : (
                   <div className="alert alert-warning">
                     <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -394,7 +251,7 @@ export const PageContentManager = ({ pageId = 'home' }) => {
               </div>
             </div>
           ) : (
-            <div className="card border-0 shadow-sm">
+            <div className="card border-0 shadow-sm h-100">
               <div className="card-body p-5 text-center">
                 <i className="bi bi-arrow-left-circle display-4 text-muted mb-3"></i>
                 <h4>Selecciona un bloque</h4>
@@ -416,4 +273,22 @@ export const PageContentManager = ({ pageId = 'home' }) => {
       />
     </div>
   );
+};
+
+/**
+ * Devuelve el icono correspondiente al tipo de bloque
+ * @param {string} blockType - Tipo de bloque
+ * @returns {JSX.Element} - Icono
+ */
+const getBlockIcon = (blockType) => {
+  const iconMap = {
+    'hero-slider': <i className="bi bi-images text-info"></i>,
+    'featured-products': <i className="bi bi-star text-warning"></i>,
+    'image-carousel': <i className="bi bi-card-image text-success"></i>,
+    'product-categories': <i className="bi bi-grid text-primary"></i>,
+    'text-block': <i className="bi bi-file-text text-secondary"></i>,
+    'call-to-action': <i className="bi bi-megaphone text-danger"></i>
+  };
+
+  return iconMap[blockType] || <i className="bi bi-puzzle text-muted"></i>;
 };

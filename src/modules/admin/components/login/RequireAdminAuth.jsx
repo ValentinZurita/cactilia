@@ -46,9 +46,10 @@ export const RequireAdminAuth = () => {
     return <p>Cargando...</p>;
   }
 
+
   // Redirect to the login page if the user is not an admin or super admin
   return (role === 'admin' || role === 'superadmin')
     ? <Outlet />
-    : <Navigate to="/admin/login" />;
+    : <Navigate to="/admin/login" replace />;
 
 };

@@ -41,6 +41,7 @@ export const AdminRoutes = () => {
 
           {/* Content Management */}
           <Route path="content" element={<ContentManagementPage />} />
+          <Route path="content/:pageId" element={<ContentManagementPage />} />
 
           {/* Users */}
           <Route path="users" element={<Navigate to="users/customers" />} />

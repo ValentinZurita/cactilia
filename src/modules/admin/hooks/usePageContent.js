@@ -22,6 +22,134 @@ export const usePageContent = (pageId) => {
   const dispatch = useDispatch();
 
   /**
+   * Crea bloques predeterminados según el tipo de página
+   * @param {string} pageType - Tipo de página ('home', 'about', etc.)
+   * @returns {Array} - Bloques predeterminados
+   */
+  const createDefaultBlocks = (pageType) => {
+    const timestamp = new Date().toISOString();
+
+    // Bloques predeterminados para la página de inicio
+    if (pageType === 'home') {
+      return [
+        {
+          id: `hero_${Date.now()}`,
+          type: BLOCK_TYPES.HERO_SLIDER,
+          title: 'Bienvenido a Cactilia',
+          subtitle: 'Productos frescos y naturales para una vida mejor',
+          showButton: true,
+          buttonText: 'Conoce Más',
+          buttonLink: '#',
+          height: '100vh',
+          autoRotate: true,
+          interval: 5000,
+          createdAt: timestamp
+        },
+        {
+          id: `featured_${Date.now() + 1}`,
+          type: BLOCK_TYPES.FEATURED_PRODUCTS,
+          title: 'Productos Destacados',
+          subtitle: 'Explora nuestra selección especial.',
+          icon: 'bi-star-fill',
+          showBg: false,
+          maxProducts: 6,
+          filterByFeatured: true,
+          createdAt: timestamp
+        },
+        {
+          id: `farm_${Date.now() + 2}`,
+          type: BLOCK_TYPES.IMAGE_CAROUSEL,
+          title: 'Nuestro Huerto',
+          subtitle: 'Descubre la belleza y frescura de nuestra granja.',
+          icon: 'bi-tree-fill',
+          showBg: true,
+          createdAt: timestamp
+        },
+        {
+          id: `products_${Date.now() + 3}`,
+          type: BLOCK_TYPES.PRODUCT_CATEGORIES,
+          title: 'Descubre Nuestros Productos',
+          subtitle: 'Productos orgánicos de alta calidad para una vida mejor.',
+          icon: 'bi-box-seam',
+          showBg: false,
+          createdAt: timestamp
+        }
+      ];
+    }
+
+    // Bloques predeterminados para la página "Acerca de"
+    if (pageType === 'about') {
+      return [
+        {
+          id: `about_hero_${Date.now()}`,
+          type: BLOCK_TYPES.HERO_SLIDER,
+          title: 'Acerca de Nosotros',
+          subtitle: 'Conozca nuestra historia y valores',
+          showButton: false,
+          height: '50vh',
+          createdAt: timestamp
+        },
+        {
+          id: `about_text_${Date.now() + 1}`,
+          type: BLOCK_TYPES.TEXT_BLOCK,
+          title: 'Nuestra Historia',
+          content: '<p>Aquí va la historia de la empresa...</p>',
+          alignment: 'left',
+          showBg: false,
+          createdAt: timestamp
+        },
+        {
+          id: `about_cta_${Date.now() + 2}`,
+          type: BLOCK_TYPES.CALL_TO_ACTION,
+          title: '¿Quieres saber más?',
+          subtitle: 'Contáctanos para conocer más sobre nuestros productos',
+          buttonText: 'Contactar',
+          buttonLink: '/contact',
+          alignment: 'center',
+          createdAt: timestamp
+        }
+      ];
+    }
+
+    // Bloques predeterminados para la página de contacto
+    if (pageType === 'contact') {
+      return [
+        {
+          id: `contact_hero_${Date.now()}`,
+          type: BLOCK_TYPES.HERO_SLIDER,
+          title: 'Contáctanos',
+          subtitle: 'Estamos aquí para ayudarte',
+          showButton: false,
+          height: '40vh',
+          createdAt: timestamp
+        },
+        {
+          id: `contact_text_${Date.now() + 1}`,
+          type: BLOCK_TYPES.TEXT_BLOCK,
+          title: 'Información de Contacto',
+          content: '<p>Dirección: Calle Principal #123<br>Teléfono: (123) 456-7890<br>Email: info@ejemplo.com</p>',
+          alignment: 'center',
+          showBg: true,
+          createdAt: timestamp
+        }
+      ];
+    }
+
+    // Para cualquier otra página, devolver un bloque de texto básico
+    return [
+      {
+        id: `text_${Date.now()}`,
+        type: BLOCK_TYPES.TEXT_BLOCK,
+        title: 'Título de la página',
+        content: '<p>Contenido de ejemplo para esta página.</p>',
+        alignment: 'center',
+        showBg: false,
+        createdAt: timestamp
+      }
+    ];
+  };
+
+  /**
    * Carga los datos de la página
    */
   const loadPageContent = useCallback(async () => {
@@ -50,7 +178,17 @@ export const usePageContent = (pageId) => {
 
       if (result.ok) {
         setPageData(result.data);
-        setBlocks(result.data.blocks || []);
+
+        // Si no hay bloques o está vacío, crear bloques predeterminados
+        if (!result.data.blocks || result.data.blocks.length === 0) {
+          const defaultBlocks = createDefaultBlocks(pageId);
+          setBlocks(defaultBlocks);
+
+          // Opcional: guardar automáticamente estos bloques predeterminados
+          // await ContentService.savePageContent(pageId, { ...result.data, blocks: defaultBlocks });
+        } else {
+          setBlocks(result.data.blocks || []);
+        }
       } else {
         throw new Error(result.error || "Error al cargar el contenido");
       }

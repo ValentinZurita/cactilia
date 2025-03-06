@@ -1,15 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { PageContentManager } from '../components/content/PageContentManager';
+import { BlockPreview } from '../components/content/BlockPreview';
+import { usePageContent } from '../hooks/usePageContent';
 
 /**
- * Página de gestión de contenido
+ * Página de gestión de contenido mejorada
  * Permite configurar el contenido de las diferentes páginas del sitio
+ * con previsualización en vivo
  *
  * @returns {JSX.Element}
  */
 export const ContentManagementPage = () => {
+  // Obtener el pageId de la URL o usar 'home' por defecto
+  const { pageId = 'home' } = useParams();
+  const navigate = useNavigate();
+
   // Estado para la página seleccionada
-  const [selectedPage, setSelectedPage] = useState('home');
+  const [selectedPage, setSelectedPage] = useState(pageId);
+
+  // Obtener datos y métodos del hook
+  const {
+    blocks,
+    loading,
+    error,
+    savePageContent
+  } = usePageContent(selectedPage);
+
+  // Actualizar selectedPage cuando cambia el parámetro pageId
+  useEffect(() => {
+    setSelectedPage(pageId);
+  }, [pageId]);
+
+  // Manejar cambio de página
+  const handlePageChange = (newPageId) => {
+    setSelectedPage(newPageId);
+    navigate(`/admin/content/${newPageId}`);
+  };
 
   // Lista de páginas disponibles
   const availablePages = [
@@ -20,10 +47,11 @@ export const ContentManagementPage = () => {
 
   return (
     <div className="content-management-page">
+      {/* Cabecera con título y selector de página */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Contenido</h2>
+        <h2>Editor de Contenido</h2>
 
-        {/* Selector de página */}
+        {/* Selector de página con botones */}
         <div className="page-selector">
           <div className="btn-group" role="group">
             {availablePages.map((page) => (
@@ -31,7 +59,7 @@ export const ContentManagementPage = () => {
                 key={page.id}
                 type="button"
                 className={`btn ${selectedPage === page.id ? 'btn-primary' : 'btn-outline-primary'}`}
-                onClick={() => setSelectedPage(page.id)}
+                onClick={() => handlePageChange(page.id)}
               >
                 <i className={`${page.icon} me-2`}></i>
                 {page.name}
@@ -41,25 +69,92 @@ export const ContentManagementPage = () => {
         </div>
       </div>
 
-      {/* Explicación */}
+      {/* Guía de uso */}
       <div className="alert alert-info mb-4">
         <div className="d-flex">
           <div className="me-3">
-            <i className="bi bi-info-circle-fill fs-3"></i>
+            <i className="bi bi-lightbulb-fill fs-3 text-warning"></i>
           </div>
           <div>
-            <h5>Gestión de Contenido</h5>
+            <h5>Cómo editar tu página</h5>
+            <p className="mb-1">
+              1. <strong>Selecciona o añade</strong> un bloque desde el panel izquierdo
+            </p>
+            <p className="mb-1">
+              2. <strong>Edita</strong> la información del bloque en el panel derecho
+            </p>
+            <p className="mb-1">
+              3. <strong>Guarda los cambios</strong> con el botón verde al finalizar
+            </p>
             <p className="mb-0">
-              Aquí puedes gestionar el contenido de las páginas del sitio.
-              Arrastra los bloques para cambiar su orden, edita sus propiedades o añade nuevos bloques.
-              Recuerda guardar los cambios antes de salir.
+              <strong>Nota:</strong> Los cambios se reflejarán en la página principal después de guardar.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Gestor de contenido para la página seleccionada */}
+      {/* Vista previa en tiempo real */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">Vista Previa</h5>
+              <a href="/" target="_blank" className="btn btn-sm btn-outline-primary">
+                <i className="bi bi-box-arrow-up-right me-1"></i>
+                Ver página completa
+              </a>
+            </div>
+            <div className="card-body p-0 bg-light">
+              {loading ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                  </div>
+                  <p className="mt-3 text-muted">Cargando vista previa...</p>
+                </div>
+              ) : error ? (
+                <div className="alert alert-danger m-4">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  Error: {error}
+                </div>
+              ) : blocks.length === 0 ? (
+                <div className="text-center py-5">
+                  <i className="bi bi-layout-text-window display-1 text-muted mb-3"></i>
+                  <p>No hay bloques de contenido configurados.</p>
+                  <p className="text-muted">Añade bloques usando el panel izquierdo.</p>
+                </div>
+              ) : (
+                <div className="preview-container p-3">
+                  <BlockPreview blocks={blocks} isPreview={true} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Gestor de contenido */}
       <PageContentManager pageId={selectedPage} />
+
+      {/* Botón flotante para guardar cambios */}
+      <button
+        className="btn btn-success rounded-circle shadow position-fixed"
+        style={{
+          bottom: '2rem',
+          right: '2rem',
+          width: '60px',
+          height: '60px',
+          fontSize: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}
+        onClick={savePageContent}
+        title="Guardar cambios"
+      >
+        <i className="bi bi-check-lg"></i>
+      </button>
     </div>
   );
 };
