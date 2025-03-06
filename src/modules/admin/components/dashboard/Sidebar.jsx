@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from 'firebase/auth'
@@ -157,6 +157,14 @@ export const Sidebar = ({ onLinkClick }) => {
           <SidebarItem to="/admin/media/browse" label="Browse Media" onClick={handleNavClick} />
           <SidebarItem to="/admin/media/upload" label="Upload Media" onClick={handleNavClick} />
         </SidebarDropdown>
+
+
+        {/* Nuevo botón para ir al perfil de usuario */}
+        <li className="nav-item">
+          <Link to="/profile" className="nav-link text-light">
+            <i className="bi bi-person-circle me-2" /> Perfil de Usuario
+          </Link>
+        </li>
 
         {/* Sidebar Logout */}
         <li className="nav-item">

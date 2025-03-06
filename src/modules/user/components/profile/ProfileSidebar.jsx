@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from 'firebase/auth';
 import { FirebaseAuth } from '../../../../firebase/firebaseConfig';
 import { logout } from '../../../../store/auth/authSlice';
@@ -13,6 +13,10 @@ import '../../styles/profileNavigation.css';
 export const ProfileSidebar = ({ displayName, email, photoURL }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  // Obtener el rol del usuario
+  const { role } = useSelector(state => state.auth);
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   // Estado para la sección activa
   const [activeSection, setActiveSection] = useState('orders');
@@ -87,6 +91,17 @@ export const ProfileSidebar = ({ displayName, email, photoURL }) => {
           </button>
         ))}
 
+        {/* Botón para ir al panel de admin (solo visible para admins) */}
+        {isAdmin && (
+          <button
+            className="profile-nav-item "
+            onClick={() => navigate("/admin/home")}
+          >
+            <i className="bi bi-speedometer2 me-2"></i>
+            Panel de Administración
+          </button>
+        )}
+
         {/* Botón de cierre de sesión */}
         <button
           className="profile-nav-item text-danger mt-2"
@@ -96,6 +111,8 @@ export const ProfileSidebar = ({ displayName, email, photoURL }) => {
           Cerrar Sesión
         </button>
       </div>
+
+
     </div>
   );
 };
