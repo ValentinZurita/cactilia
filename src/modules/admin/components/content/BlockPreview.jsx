@@ -7,15 +7,14 @@ import { getMediaByCollection } from '../../services/collectionsService';
 
 /**
  * Componente mejorado que muestra una vista previa de los bloques de contenido
- * con integración de datos reales y soporte para visualización de versiones
+ * con integración de datos reales
  *
  * @param {Object} props
  * @param {Array} props.blocks - Bloques de contenido a mostrar
  * @param {boolean} props.isPreview - Si es solo vista previa (escala reducida)
- * @param {string} props.viewMode - Modo de visualización ('draft' o 'published')
  * @returns {JSX.Element}
  */
-export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) => {
+export const BlockPreview = ({ blocks, isPreview = true }) => {
   // Estados para datos
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -28,7 +27,7 @@ export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) =
       setLoading(true);
       try {
         // Cargar productos destacados si hay un bloque que los use
-        if (blocks.some(b => b.type === BLOCK_TYPES.FEATURED_PRODUCTS && b.filterByFeatured)) {
+        if (blocks.some(b => b.type === BLOCK_TYPES.FEATURED_PRODUCTS && !b.useCollection && b.filterByFeatured)) {
           const { ok, data } = await getProducts();
           if (ok) {
             // Filtrar solo los productos destacados y activos
@@ -38,7 +37,7 @@ export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) =
         }
 
         // Cargar categorías si hay un bloque que las use
-        if (blocks.some(b => b.type === BLOCK_TYPES.PRODUCT_CATEGORIES)) {
+        if (blocks.some(b => b.type === BLOCK_TYPES.PRODUCT_CATEGORIES && !b.useCollection)) {
           const { ok, data } = await getCategories();
           if (ok) {
             // Solo categorías activas
@@ -96,9 +95,7 @@ export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) =
         height: '50vh',
         autoRotate: true,
         interval: 5000,
-        mainImage: '/public/images/placeholder.jpg',
-        showLogo: true,
-        showSubtitle: true
+        mainImage: '/public/images/placeholder.jpg'
       },
       {
         id: 'skeleton_featured',
@@ -150,14 +147,12 @@ export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) =
               images={images}
               title={block.title || 'Título Principal'}
               subtitle={block.subtitle || 'Subtítulo descriptivo'}
-              showButton={block.showButton ?? true}
-              showLogo={block.showLogo ?? true}
-              showSubtitle={block.showSubtitle ?? true}
+              showButton={block.showButton}
+              showLogo={false}
+              showSubtitle={true}
               height={block.height || '50vh'}
-              autoRotate={block.autoRotate ?? true}
+              autoRotate={block.autoRotate}
               interval={block.interval || 5000}
-              buttonText={block.buttonText || 'Conoce Más'}
-              buttonLink={block.buttonLink || '#'}
             />
           </div>
         );
@@ -167,7 +162,7 @@ export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) =
         // Determinar qué productos mostrar
         let productsToShow = [];
 
-        // Si usa colección personalizada de imágenes
+        // Si usa colección personalizada
         if (block.useCollection && block.collectionId && mediaCollections[block.collectionId]) {
           productsToShow = mediaCollections[block.collectionId].map((url, index) => ({
             id: `preview-${index}`,
@@ -176,20 +171,20 @@ export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) =
           }));
         }
         // Si usa productos destacados reales
-        else if (block.filterByFeatured && featuredProducts.length > 0) {
+        else if (!block.useCollection && block.filterByFeatured && featuredProducts.length > 0) {
           productsToShow = featuredProducts.map(product => ({
             id: product.id,
             name: product.name,
             image: product.mainImage || '/public/images/placeholder.jpg'
           }));
         }
-        // Fallback a productos de ejemplo (con IDs únicos)
+        // Fallback a productos de ejemplo
         else {
-          productsToShow = Array(6).fill(null).map((_, index) => ({
-            id: `preview-product-${index}`,
-            name: `Producto Ejemplo ${index + 1}`,
+          productsToShow = Array(block.maxProducts || 6).fill({
+            id: 'preview',
+            name: 'Producto Ejemplo',
             image: '/public/images/placeholder.jpg',
-          }));
+          });
         }
 
         return (
@@ -256,7 +251,7 @@ export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) =
           }));
         }
         // Si usa categorías reales
-        else if (categories.length > 0) {
+        else if (!block.useCollection && categories.length > 0) {
           categoriesToShow = categories.map(category => ({
             id: category.id,
             name: category.name,
@@ -336,7 +331,16 @@ export const BlockPreview = ({ blocks, isPreview = true, viewMode = 'draft' }) =
 
   return (
     <div className="block-preview">
-      {blocksToRender.length === 0 ? (
+      {loading && (
+        <div className="text-center py-3">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Cargando previsualización...</span>
+          </div>
+          <p className="mt-2 text-muted">Cargando previsualización...</p>
+        </div>
+      )}
+
+      {!loading && blocksToRender.length === 0 ? (
         <div className="alert alert-info text-center">
           <i className="bi bi-info-circle-fill me-2"></i>
           No hay bloques para mostrar

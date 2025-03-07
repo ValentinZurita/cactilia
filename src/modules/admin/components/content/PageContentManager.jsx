@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { BLOCK_TYPES, BLOCK_SCHEMAS } from '../../services/contentService';
 import { Spinner } from '../../../../shared/components/spinner/Spinner';
 import { MediaSelector } from '../media/index.js';
 import { BlockEditor } from './BlockEditor';
+import { getMediaByCollection } from '../../services/collectionsService';
 
 /**
  * Componente principal para gestionar el contenido de una página
@@ -18,6 +19,7 @@ export const PageContentManager = ({ pageContentHook }) => {
   const [isMediaSelectorOpen, setIsMediaSelectorOpen] = useState(false);
   const [selectedMediaField, setSelectedMediaField] = useState(null);
   const [newBlockType, setNewBlockType] = useState('');
+  const [mediaCache, setMediaCache] = useState({});
 
   // Extraer datos y métodos del hook
   const {
@@ -34,6 +36,41 @@ export const PageContentManager = ({ pageContentHook }) => {
 
   // Obtener el bloque seleccionado
   const selectedBlock = blocks.find(block => block.id === selectedBlockId);
+
+  // Cargar el contenido de las colecciones utilizadas en los bloques
+  useEffect(() => {
+    const loadCollectionImages = async () => {
+      const collectionIds = new Set();
+
+      // Recopilar todos los IDs de colecciones usados en los bloques
+      blocks.forEach(block => {
+        if (block.collectionId && !mediaCache[block.collectionId]) {
+          collectionIds.add(block.collectionId);
+        }
+      });
+
+      // Si no hay nuevas colecciones para cargar, salir
+      if (collectionIds.size === 0) return;
+
+      // Cargar las imágenes para cada colección
+      const newCache = {...mediaCache};
+
+      for (const collectionId of collectionIds) {
+        try {
+          const result = await getMediaByCollection(collectionId);
+          if (result.ok) {
+            newCache[collectionId] = result.data.map(item => item.url);
+          }
+        } catch (error) {
+          console.error(`Error cargando imágenes para colección ${collectionId}:`, error);
+        }
+      }
+
+      setMediaCache(newCache);
+    };
+
+    loadCollectionImages();
+  }, [blocks]);
 
   // Manejar selección de imagen de la librería de medios
   const handleMediaSelect = (media) => {
@@ -53,6 +90,37 @@ export const PageContentManager = ({ pageContentHook }) => {
   const handleOpenMediaSelector = (fieldName) => {
     setSelectedMediaField(fieldName);
     setIsMediaSelectorOpen(true);
+  };
+
+  // Función para cargar imágenes de una colección
+  const handleUpdateCollectionImages = async (collectionId) => {
+    try {
+      // Si ya tenemos las imágenes en caché, no recargar
+      if (mediaCache[collectionId]) {
+        return;
+      }
+
+      const result = await getMediaByCollection(collectionId);
+      if (result.ok && selectedBlockId) {
+        const collectionImages = result.data.map(item => item.url);
+
+        // Actualizar la caché
+        setMediaCache(prev => ({
+          ...prev,
+          [collectionId]: collectionImages
+        }));
+
+        // Si el bloque tiene un campo images, actualizarlo
+        if (selectedBlock && selectedBlock.type) {
+          const schema = BLOCK_SCHEMAS[selectedBlock.type];
+          if (schema && schema.fields.images) {
+            updateBlock(selectedBlockId, { images: collectionImages });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando imágenes de colección:", error);
+    }
   };
 
   // Manejar cambio de posición por drag and drop
@@ -189,7 +257,7 @@ export const PageContentManager = ({ pageContentHook }) => {
                     <option value="">Seleccionar tipo de bloque</option>
                     {Object.entries(BLOCK_SCHEMAS).map(([type, schema]) => (
                       <option key={type} value={type}>
-                        {schema.title}
+                        {schema.title} - {schema.description || 'Bloque personalizable'}
                       </option>
                     ))}
                   </select>
@@ -240,6 +308,7 @@ export const PageContentManager = ({ pageContentHook }) => {
                     block={selectedBlock}
                     onUpdate={(updates) => updateBlock(selectedBlock.id, updates)}
                     onOpenMediaSelector={handleOpenMediaSelector}
+                    onUpdateCollectionImages={handleUpdateCollectionImages}
                   />
                 ) : (
                   <div className="alert alert-warning">
@@ -289,5 +358,5 @@ const getBlockIcon = (blockType) => {
     'call-to-action': <i className="bi bi-megaphone text-danger"></i>
   };
 
-  return iconMap[blockType] || <i className="bi bi-puzzle text-muted"></i>;
-};
+  return iconMap[blockType] || <i className="bi bi-puzzle text-muted"></i>
+}

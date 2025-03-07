@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { ContentService, BLOCK_TYPES } from '../services/contentService';
 import { addMessage } from '../../../store/messages/messageSlice';
-import { CacheService } from '../../../utils/cacheService';
 
 /**
  * Función para generar IDs consistentes para bloques
@@ -13,7 +12,6 @@ const generateBlockId = (type) => `block_${type.replace(/-/g, '_')}_${Date.now()
 
 /**
  * Hook personalizado para gestionar el contenido de páginas
- * Incluye soporte para draft/publicación
  *
  * @param {string} pageId - Identificador de la página (ej: "home", "about")
  * @returns {Object} - Métodos y estado para gestionar el contenido
@@ -21,11 +19,11 @@ const generateBlockId = (type) => `block_${type.replace(/-/g, '_')}_${Date.now()
 export const usePageContent = (pageId) => {
   // Estado para los datos de la página
   const [pageData, setPageData] = useState(null);
-  const [publishedData, setPublishedData] = useState(null);
   const [blocks, setBlocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBlockId, setSelectedBlockId] = useState(null);
+  const [lastSaved, setLastSaved] = useState(null);
 
   // Redux para mensajes globales
   const dispatch = useDispatch();
@@ -50,8 +48,6 @@ export const usePageContent = (pageId) => {
           buttonText: 'Conoce Más',
           buttonLink: '#',
           height: '100vh',
-          showLogo: true,
-          showSubtitle: true,
           autoRotate: true,
           interval: 5000,
           createdAt: timestamp,
@@ -66,6 +62,7 @@ export const usePageContent = (pageId) => {
           showBg: false,
           maxProducts: 6,
           filterByFeatured: true,
+          useCollection: false,
           createdAt: timestamp
         },
         {
@@ -84,6 +81,7 @@ export const usePageContent = (pageId) => {
           subtitle: 'Productos orgánicos de alta calidad para una vida mejor.',
           icon: 'bi-box-seam',
           showBg: false,
+          useCollection: false,
           createdAt: timestamp
         }
       ];
@@ -98,8 +96,6 @@ export const usePageContent = (pageId) => {
           title: 'Acerca de Nosotros',
           subtitle: 'Conozca nuestra historia y valores',
           showButton: false,
-          showLogo: true,
-          showSubtitle: true,
           height: '50vh',
           createdAt: timestamp
         },
@@ -134,8 +130,6 @@ export const usePageContent = (pageId) => {
           title: 'Contáctanos',
           subtitle: 'Estamos aquí para ayudarte',
           showButton: false,
-          showLogo: true,
-          showSubtitle: true,
           height: '40vh',
           createdAt: timestamp
         },
@@ -166,7 +160,7 @@ export const usePageContent = (pageId) => {
   };
 
   /**
-   * Carga los datos de la página (borrador)
+   * Carga los datos de la página
    */
   const loadPageContent = useCallback(async () => {
     if (!pageId) {
@@ -178,49 +172,20 @@ export const usePageContent = (pageId) => {
     setError(null);
 
     try {
-      // Cargar borrador de contenido
-      const cacheKey = `page_${pageId}_draft`;
-      let draftResult = CacheService.get(cacheKey);
+      const result = await ContentService.getPageContent(pageId);
 
-      // Si no está en caché, obtener de Firebase
-      if (!draftResult) {
-        draftResult = await ContentService.getPageContent(pageId, 'draft');
-
-        // Si la operación fue exitosa, guardar en caché
-        if (draftResult.ok) {
-          CacheService.set(cacheKey, draftResult, 5); // Caché de 5 minutos
-        }
-      }
-
-      // Cargar contenido publicado
-      const publishedCacheKey = `page_${pageId}_published`;
-      let publishedResult = CacheService.get(publishedCacheKey);
-
-      if (!publishedResult) {
-        publishedResult = await ContentService.getPageContent(pageId, 'published');
-        if (publishedResult.ok) {
-          CacheService.set(publishedCacheKey, publishedResult, 5);
-        }
-      }
-
-      // Guardar ambos conjuntos de datos
-      if (draftResult.ok) {
-        setPageData(draftResult.data);
+      if (result.ok) {
+        setPageData(result.data);
 
         // Si no hay bloques o está vacío, crear bloques predeterminados
-        if (!draftResult.data.blocks || draftResult.data.blocks.length === 0) {
+        if (!result.data.blocks || result.data.blocks.length === 0) {
           const defaultBlocks = createDefaultBlocks(pageId);
           setBlocks(defaultBlocks);
         } else {
-          setBlocks(draftResult.data.blocks || []);
+          setBlocks(result.data.blocks || []);
         }
       } else {
-        throw new Error(draftResult.error || "Error al cargar el contenido");
-      }
-
-      // Guardar datos publicados
-      if (publishedResult.ok) {
-        setPublishedData(publishedResult.data);
+        throw new Error(result.error || "Error al cargar el contenido");
       }
     } catch (err) {
       console.error(`Error cargando contenido de página [${pageId}]:`, err);
@@ -236,10 +201,12 @@ export const usePageContent = (pageId) => {
   }, [pageId, dispatch]);
 
   /**
-   * Guarda los cambios en la página completa (como borrador)
+   * Guarda los cambios en la página completa
    */
   const savePageContent = useCallback(async () => {
-    if (!pageId || !pageData) return;
+    if (!pageId || !pageData) {
+      throw new Error("No hay datos de página para guardar");
+    }
 
     setLoading(true);
 
@@ -255,14 +222,16 @@ export const usePageContent = (pageId) => {
       if (result.ok) {
         dispatch(addMessage({
           type: 'success',
-          text: 'Borrador guardado correctamente'
+          text: 'Contenido guardado correctamente'
         }));
 
-        // Invalidar caché
-        CacheService.remove(`page_${pageId}_draft`);
+        // Actualizar la marca de tiempo del último guardado
+        setLastSaved(new Date());
 
-        // Actualizar estado local
-        setPageData(updatedPageData);
+        // Recargar contenido para sincronizar con servidor
+        await loadPageContent();
+
+        return true;
       } else {
         throw new Error(result.error || "Error al guardar contenido");
       }
@@ -275,55 +244,11 @@ export const usePageContent = (pageId) => {
         text: `Error guardando contenido: ${err.message}`
       }));
 
-      throw err; // Re-lanzar para manejar en el componente
+      throw err; // Re-lanzar para gestión en el componente
     } finally {
       setLoading(false);
     }
-  }, [pageId, pageData, blocks, dispatch]);
-
-  /**
-   * Publica el borrador actual
-   */
-  const publishPageContent = useCallback(async () => {
-    if (!pageId) return;
-
-    setLoading(true);
-
-    try {
-      const result = await ContentService.publishPageContent(pageId);
-
-      if (result.ok) {
-        dispatch(addMessage({
-          type: 'success',
-          text: 'Contenido publicado correctamente'
-        }));
-
-        // Invalidar cachés
-        CacheService.remove(`page_${pageId}_draft`);
-        CacheService.remove(`page_${pageId}_published`);
-
-        // Cargar el contenido publicado
-        const publishedResult = await ContentService.getPageContent(pageId, 'published');
-        if (publishedResult.ok) {
-          setPublishedData(publishedResult.data);
-        }
-      } else {
-        throw new Error(result.error || "Error al publicar contenido");
-      }
-    } catch (err) {
-      console.error(`Error publicando contenido de página [${pageId}]:`, err);
-      setError(err.message);
-
-      dispatch(addMessage({
-        type: 'error',
-        text: `Error publicando contenido: ${err.message}`
-      }));
-
-      throw err; // Re-lanzar para manejar en el componente
-    } finally {
-      setLoading(false);
-    }
-  }, [pageId, dispatch]);
+  }, [pageId, pageData, blocks, dispatch, loadPageContent]);
 
   /**
    * Añade un nuevo bloque al final de la página
@@ -350,20 +275,10 @@ export const usePageContent = (pageId) => {
       // Seleccionar el nuevo bloque para edición
       setSelectedBlockId(blockId);
 
-      // Actualizar en Firebase (puede ser asíncrono)
-      const result = await ContentService.updateBlock(pageId, blockId, newBlock);
-
-      if (result.ok) {
-        dispatch(addMessage({
-          type: 'success',
-          text: 'Bloque añadido correctamente'
-        }));
-
-        // Invalidar caché
-        CacheService.remove(`page_${pageId}_draft`);
-      } else {
-        throw new Error(result.error || "Error al añadir bloque");
-      }
+      dispatch(addMessage({
+        type: 'success',
+        text: 'Bloque añadido correctamente'
+      }));
     } catch (err) {
       console.error(`Error añadiendo bloque a página [${pageId}]:`, err);
       setError(err.message);
@@ -381,44 +296,28 @@ export const usePageContent = (pageId) => {
    * @param {string} blockId - ID del bloque a actualizar
    * @param {Object} updatedData - Nuevos datos para el bloque
    */
-  const updateBlock = useCallback(async (blockId, updatedData) => {
-    try {
-      // Buscar el bloque en la lista
-      const blockIndex = blocks.findIndex(b => b.id === blockId);
+  const updateBlock = useCallback((blockId, updatedData) => {
+    // Buscar el bloque en la lista
+    const blockIndex = blocks.findIndex(b => b.id === blockId);
 
-      if (blockIndex === -1) {
-        throw new Error(`Bloque ${blockId} no encontrado`);
-      }
-
-      // Actualizar el bloque en la lista
-      const updatedBlocks = [...blocks];
-      updatedBlocks[blockIndex] = {
-        ...updatedBlocks[blockIndex],
-        ...updatedData,
-        updatedAt: new Date().toISOString()
-      };
-
-      setBlocks(updatedBlocks);
-
-      // Actualizar en Firebase
-      const result = await ContentService.updateBlock(pageId, blockId, updatedBlocks[blockIndex]);
-
-      if (result.ok) {
-        // Invalidar caché
-        CacheService.remove(`page_${pageId}_draft`);
-      } else {
-        throw new Error(result.error || "Error al actualizar bloque");
-      }
-    } catch (err) {
-      console.error(`Error actualizando bloque [${blockId}] en página [${pageId}]:`, err);
-      setError(err.message);
-
+    if (blockIndex === -1) {
       dispatch(addMessage({
         type: 'error',
-        text: `Error actualizando bloque: ${err.message}`
+        text: `Bloque ${blockId} no encontrado`
       }));
+      return;
     }
-  }, [pageId, blocks, dispatch]);
+
+    // Actualizar el bloque en la lista
+    const updatedBlocks = [...blocks];
+    updatedBlocks[blockIndex] = {
+      ...updatedBlocks[blockIndex],
+      ...updatedData,
+      updatedAt: new Date().toISOString()
+    };
+
+    setBlocks(updatedBlocks);
+  }, [blocks, dispatch]);
 
   /**
    * Elimina un bloque
@@ -441,20 +340,10 @@ export const usePageContent = (pageId) => {
         setSelectedBlockId(null);
       }
 
-      // Eliminar en Firebase
-      const result = await ContentService.deleteBlock(pageId, blockId);
-
-      if (result.ok) {
-        dispatch(addMessage({
-          type: 'success',
-          text: 'Bloque eliminado correctamente'
-        }));
-
-        // Invalidar caché
-        CacheService.remove(`page_${pageId}_draft`);
-      } else {
-        throw new Error(result.error || "Error al eliminar bloque");
-      }
+      dispatch(addMessage({
+        type: 'success',
+        text: 'Bloque eliminado correctamente'
+      }));
     } catch (err) {
       console.error(`Error eliminando bloque [${blockId}] de página [${pageId}]:`, err);
       setError(err.message);
@@ -471,7 +360,7 @@ export const usePageContent = (pageId) => {
    *
    * @param {string[]} newOrder - Array de IDs en el nuevo orden
    */
-  const reorderBlocks = useCallback(async (newOrder) => {
+  const reorderBlocks = useCallback((newOrder) => {
     try {
       // Crear un mapa para acceder rápidamente a los bloques por ID
       const blocksMap = blocks.reduce((map, block) => {
@@ -486,21 +375,6 @@ export const usePageContent = (pageId) => {
 
       // Actualizar estado
       setBlocks(reorderedBlocks);
-
-      // Actualizar en Firebase
-      const result = await ContentService.reorderBlocks(pageId, newOrder);
-
-      if (result.ok) {
-        dispatch(addMessage({
-          type: 'success',
-          text: 'Bloques reordenados correctamente'
-        }));
-
-        // Invalidar caché
-        CacheService.remove(`page_${pageId}_draft`);
-      } else {
-        throw new Error(result.error || "Error al reordenar bloques");
-      }
     } catch (err) {
       console.error(`Error reordenando bloques en página [${pageId}]:`, err);
       setError(err.message);
@@ -512,23 +386,22 @@ export const usePageContent = (pageId) => {
     }
   }, [pageId, blocks, dispatch]);
 
-  // Cargar contenido al montar el componente
+  // Cargar contenido al montar el componente o cambiar pageId
   useEffect(() => {
     loadPageContent();
-  }, [loadPageContent]);
+  }, [pageId, loadPageContent]);
 
   // Retornar todos los métodos y estados
   return {
     pageData,
-    publishedData,
     blocks,
     loading,
     error,
     selectedBlockId,
+    lastSaved,
     setSelectedBlockId,
     loadPageContent,
     savePageContent,
-    publishPageContent,
     addBlock,
     updateBlock,
     deleteBlock,

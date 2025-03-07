@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BLOCK_SCHEMAS } from '../../services/contentService';
-import { CollectionsManager } from '../media/index.js'
+import { CollectionsManager } from '../media/index.js';
 
 /**
  * Editor de propiedades para un bloque de contenido
+ * Versión mejorada con soporte para carga dinámica de colecciones
  *
  * @param {Object} props
  * @param {Object} props.block - Bloque a editar
  * @param {Function} props.onUpdate - Función a llamar cuando se actualice un campo
  * @param {Function} props.onOpenMediaSelector - Función para abrir el selector de medios
+ * @param {Function} props.onUpdateCollectionImages - Función para cargar imágenes de colección
  * @returns {JSX.Element}
  */
-export const BlockEditor = ({ block, onUpdate, onOpenMediaSelector }) => {
+export const BlockEditor = ({ block, onUpdate, onOpenMediaSelector, onUpdateCollectionImages }) => {
   // Obtener el esquema del bloque
   const schema = BLOCK_SCHEMAS[block.type] || null;
 
@@ -25,14 +27,47 @@ export const BlockEditor = ({ block, onUpdate, onOpenMediaSelector }) => {
     );
   }
 
+  // Efecto para cargar imágenes cuando cambia la colección
+  useEffect(() => {
+    if (block.collectionId && onUpdateCollectionImages) {
+      onUpdateCollectionImages(block.collectionId);
+    }
+  }, [block.collectionId, onUpdateCollectionImages]);
+
   // Manejar cambio en un campo
   const handleFieldChange = (fieldName, value) => {
+    // Si estamos cambiando useCollection y activándolo, asegurarnos que filterByFeatured se desactive
+    if (fieldName === 'useCollection' && value === true) {
+      onUpdate({ [fieldName]: value, filterByFeatured: false });
+      return;
+    }
+
+    // Si estamos cambiando filterByFeatured y activándolo, asegurarnos que useCollection se desactive
+    if (fieldName === 'filterByFeatured' && value === true) {
+      onUpdate({ [fieldName]: value, useCollection: false });
+      return;
+    }
+
     onUpdate({ [fieldName]: value });
   };
 
   // Renderizar campo según su tipo
   const renderField = (fieldName, fieldSchema) => {
     const fieldValue = block[fieldName] !== undefined ? block[fieldName] : fieldSchema.defaultValue || '';
+
+    // Mostrar u ocultar campos condicionales
+    const shouldShow = (condition) => {
+      if (!condition) return true;
+
+      // Evaluar la condición (por ejemplo 'useCollection === true')
+      const [dependsOn, requiredValue] = condition.split(' === ');
+      return String(block[dependsOn]) === requiredValue;
+    };
+
+    // Si hay una condición de visualización definida y no se cumple, no mostrar el campo
+    if (fieldSchema.showIf && !shouldShow(fieldSchema.showIf)) {
+      return null;
+    }
 
     switch (fieldSchema.type) {
       case 'text':

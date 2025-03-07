@@ -1,0 +1,172 @@
+/* Estilos para el gestor de contenido */
+
+/* Estilos generales */
+.content-management-page {
+    padding-bottom: 70px; /* Espacio para el botón flotante */
+}
+
+/* Bloques arrastrables */
+.blocks-list {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.block-item {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background-color: #fff;
+}
+
+.block-item:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.block-item.selected {
+    border-color: var(--bs-primary) !important;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Vista previa de bloques */
+.preview-container {
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    overflow: hidden;
+}
+
+.preview-scale {
+    transform: scale(0.9);
+    transform-origin: top center;
+    margin-bottom: -5%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.preview-block {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Barra de herramientas para los bloques */
+.block-toolbar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.preview-block:hover .block-toolbar {
+    opacity: 1;
+}
+
+.block-toolbar .btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Estilos para el editor */
+.block-editor {
+    padding: 10px;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #555;
+}
+
+.form-text {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Media preview */
+.media-preview {
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.no-media-placeholder {
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estilos para los botones de opciones */
+.dropdown-item.active {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.3s ease-in-out;
+}
+
+/* Estilos responsivos */
+@media (max-width: 992px) {
+    .blocks-list {
+        max-height: 40vh;
+    }
+}
+
+@media (max-width: 768px) {
+    .preview-scale {
+        transform: scale(0.95);
+    }
+}
+
+/* Estilos para el contenedor del mensaje flotante */
+.floating-message {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 1100;
+    min-width: 300px;
+    max-width: 80%;
+    animation: slideUp 0.3s ease-in-out;
+}
+
+/* Clases de utilidad */
+.cursor-move {
+    cursor: move;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.overflow-hidden {
+    overflow: hidden !important;
+}
