@@ -19,13 +19,9 @@ export const ContentManagementPage = () => {
   // Estado para la página seleccionada
   const [selectedPage, setSelectedPage] = useState(pageId);
 
-  // Obtener datos y métodos del hook
-  const {
-    blocks,
-    loading,
-    error,
-    savePageContent
-  } = usePageContent(selectedPage);
+  // Obtener datos y métodos del hook (UNA SOLA INSTANCIA)
+  const pageContentHook = usePageContent(selectedPage);
+  const { blocks, loading, error, savePageContent } = pageContentHook;
 
   // Actualizar selectedPage cuando cambia el parámetro pageId
   useEffect(() => {
@@ -99,7 +95,7 @@ export const ContentManagementPage = () => {
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">Vista Previa</h5>
-              <a href="/" target="_blank" className="btn btn-sm btn-outline-primary">
+              <a href="/" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary">
                 <i className="bi bi-box-arrow-up-right me-1"></i>
                 Ver página completa
               </a>
@@ -117,12 +113,6 @@ export const ContentManagementPage = () => {
                   <i className="bi bi-exclamation-triangle-fill me-2"></i>
                   Error: {error}
                 </div>
-              ) : blocks.length === 0 ? (
-                <div className="text-center py-5">
-                  <i className="bi bi-layout-text-window display-1 text-muted mb-3"></i>
-                  <p>No hay bloques de contenido configurados.</p>
-                  <p className="text-muted">Añade bloques usando el panel izquierdo.</p>
-                </div>
               ) : (
                 <div className="preview-container p-3">
                   <BlockPreview blocks={blocks} isPreview={true} />
@@ -133,8 +123,8 @@ export const ContentManagementPage = () => {
         </div>
       </div>
 
-      {/* Gestor de contenido */}
-      <PageContentManager pageId={selectedPage} />
+      {/* Gestor de contenido - PASAMOS TODO EL HOOK */}
+      <PageContentManager pageContentHook={pageContentHook} />
 
       {/* Botón flotante para guardar cambios */}
       <button

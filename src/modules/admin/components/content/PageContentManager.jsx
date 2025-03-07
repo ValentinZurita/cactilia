@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { usePageContent } from '../../hooks/usePageContent';
 import { BLOCK_TYPES, BLOCK_SCHEMAS } from '../../services/contentService';
 import { Spinner } from '../../../../shared/components/spinner/Spinner';
 import { MediaSelector } from '../media/index.js';
@@ -11,16 +10,16 @@ import { BlockEditor } from './BlockEditor';
  * Versión mejorada con mejor interfaz y experiencia de usuario
  *
  * @param {Object} props - Propiedades del componente
- * @param {string} props.pageId - ID de la página a gestionar
+ * @param {Object} props.pageContentHook - Hook con los datos y métodos para gestionar el contenido
  * @returns {JSX.Element}
  */
-export const PageContentManager = ({ pageId = 'home' }) => {
+export const PageContentManager = ({ pageContentHook }) => {
   // Estados locales
   const [isMediaSelectorOpen, setIsMediaSelectorOpen] = useState(false);
   const [selectedMediaField, setSelectedMediaField] = useState(null);
   const [newBlockType, setNewBlockType] = useState('');
 
-  // Hook de gestión de contenido
+  // Extraer datos y métodos del hook
   const {
     blocks,
     loading,
@@ -31,7 +30,7 @@ export const PageContentManager = ({ pageId = 'home' }) => {
     updateBlock,
     deleteBlock,
     reorderBlocks
-  } = usePageContent(pageId);
+  } = pageContentHook;
 
   // Obtener el bloque seleccionado
   const selectedBlock = blocks.find(block => block.id === selectedBlockId);

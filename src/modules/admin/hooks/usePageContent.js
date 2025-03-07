@@ -5,6 +5,13 @@ import { addMessage } from '../../../store/messages/messageSlice';
 import { CacheService } from '../../../utils/cacheService';
 
 /**
+ * Función para generar IDs consistentes para bloques
+ * @param {string} type - Tipo de bloque (para fines de legibilidad)
+ * @returns {string} - ID único para el bloque
+ */
+const generateBlockId = (type) => `block_${type.replace(/-/g, '_')}_${Date.now()}`;
+
+/**
  * Hook personalizado para gestionar el contenido de páginas
  *
  * @param {string} pageId - Identificador de la página (ej: "home", "about")
@@ -33,7 +40,7 @@ export const usePageContent = (pageId) => {
     if (pageType === 'home') {
       return [
         {
-          id: `hero_${Date.now()}`,
+          id: generateBlockId('hero'),
           type: BLOCK_TYPES.HERO_SLIDER,
           title: 'Bienvenido a Cactilia',
           subtitle: 'Productos frescos y naturales para una vida mejor',
@@ -43,10 +50,11 @@ export const usePageContent = (pageId) => {
           height: '100vh',
           autoRotate: true,
           interval: 5000,
-          createdAt: timestamp
+          createdAt: timestamp,
+          mainImage: '/public/images/placeholder.jpg'
         },
         {
-          id: `featured_${Date.now() + 1}`,
+          id: generateBlockId('featured'),
           type: BLOCK_TYPES.FEATURED_PRODUCTS,
           title: 'Productos Destacados',
           subtitle: 'Explora nuestra selección especial.',
@@ -57,7 +65,7 @@ export const usePageContent = (pageId) => {
           createdAt: timestamp
         },
         {
-          id: `farm_${Date.now() + 2}`,
+          id: generateBlockId('farm'),
           type: BLOCK_TYPES.IMAGE_CAROUSEL,
           title: 'Nuestro Huerto',
           subtitle: 'Descubre la belleza y frescura de nuestra granja.',
@@ -66,7 +74,7 @@ export const usePageContent = (pageId) => {
           createdAt: timestamp
         },
         {
-          id: `products_${Date.now() + 3}`,
+          id: generateBlockId('categories'),
           type: BLOCK_TYPES.PRODUCT_CATEGORIES,
           title: 'Descubre Nuestros Productos',
           subtitle: 'Productos orgánicos de alta calidad para una vida mejor.',
@@ -81,7 +89,7 @@ export const usePageContent = (pageId) => {
     if (pageType === 'about') {
       return [
         {
-          id: `about_hero_${Date.now()}`,
+          id: generateBlockId('about_hero'),
           type: BLOCK_TYPES.HERO_SLIDER,
           title: 'Acerca de Nosotros',
           subtitle: 'Conozca nuestra historia y valores',
@@ -90,7 +98,7 @@ export const usePageContent = (pageId) => {
           createdAt: timestamp
         },
         {
-          id: `about_text_${Date.now() + 1}`,
+          id: generateBlockId('about_text'),
           type: BLOCK_TYPES.TEXT_BLOCK,
           title: 'Nuestra Historia',
           content: '<p>Aquí va la historia de la empresa...</p>',
@@ -99,7 +107,7 @@ export const usePageContent = (pageId) => {
           createdAt: timestamp
         },
         {
-          id: `about_cta_${Date.now() + 2}`,
+          id: generateBlockId('about_cta'),
           type: BLOCK_TYPES.CALL_TO_ACTION,
           title: '¿Quieres saber más?',
           subtitle: 'Contáctanos para conocer más sobre nuestros productos',
@@ -115,7 +123,7 @@ export const usePageContent = (pageId) => {
     if (pageType === 'contact') {
       return [
         {
-          id: `contact_hero_${Date.now()}`,
+          id: generateBlockId('contact_hero'),
           type: BLOCK_TYPES.HERO_SLIDER,
           title: 'Contáctanos',
           subtitle: 'Estamos aquí para ayudarte',
@@ -124,7 +132,7 @@ export const usePageContent = (pageId) => {
           createdAt: timestamp
         },
         {
-          id: `contact_text_${Date.now() + 1}`,
+          id: generateBlockId('contact_text'),
           type: BLOCK_TYPES.TEXT_BLOCK,
           title: 'Información de Contacto',
           content: '<p>Dirección: Calle Principal #123<br>Teléfono: (123) 456-7890<br>Email: info@ejemplo.com</p>',
@@ -138,7 +146,7 @@ export const usePageContent = (pageId) => {
     // Para cualquier otra página, devolver un bloque de texto básico
     return [
       {
-        id: `text_${Date.now()}`,
+        id: generateBlockId('text'),
         type: BLOCK_TYPES.TEXT_BLOCK,
         title: 'Título de la página',
         content: '<p>Contenido de ejemplo para esta página.</p>',
@@ -258,7 +266,7 @@ export const usePageContent = (pageId) => {
   const addBlock = useCallback(async (blockType, initialData = {}) => {
     try {
       // Crear un ID único para el bloque
-      const blockId = `block_${Date.now()}`;
+      const blockId = generateBlockId(blockType);
 
       // Crear el nuevo bloque con datos básicos
       const newBlock = {
@@ -268,14 +276,13 @@ export const usePageContent = (pageId) => {
         createdAt: new Date().toISOString()
       };
 
-      // Añadir el bloque a la lista
-      const updatedBlocks = [...blocks, newBlock];
-      setBlocks(updatedBlocks);
+      // Añadir el bloque a la lista (actualización inmediata del estado)
+      setBlocks(prevBlocks => [...prevBlocks, newBlock]);
 
       // Seleccionar el nuevo bloque para edición
       setSelectedBlockId(blockId);
 
-      // Actualizar en Firebase
+      // Actualizar en Firebase (puede ser asíncrono)
       const result = await ContentService.updateBlock(pageId, blockId, newBlock);
 
       if (result.ok) {
@@ -298,7 +305,7 @@ export const usePageContent = (pageId) => {
         text: `Error añadiendo bloque: ${err.message}`
       }));
     }
-  }, [pageId, blocks, dispatch]);
+  }, [pageId, dispatch]);
 
   /**
    * Actualiza un bloque existente
