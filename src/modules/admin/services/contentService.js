@@ -16,23 +16,28 @@ import { FirebaseDB } from "../../../firebase/firebaseConfig";
 /**
  * Servicio para gestionar los bloques de contenido de las páginas
  * Permite crear, leer, actualizar y eliminar bloques de contenido configurables
+ * Soporta gestión de borradores y publicación
  */
 export const ContentService = {
 
   /**
    * Obtiene la configuración de una página por su identificador
    * @param {string} pageId - Identificador de la página (ej: "home", "about", "contact")
+   * @param {string} [version='draft'] - Versión a cargar ('draft' o 'published')
    * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
    */
-  getPageContent: async (pageId) => {
+  getPageContent: async (pageId, version = 'draft') => {
     try {
       // Verificar parámetro
       if (!pageId) {
         throw new Error("Se requiere un ID de página");
       }
 
+      // Determinar la colección según la versión
+      const collectionName = version === 'published' ? "content_published" : "content";
+
       // Referencia al documento de la página
-      const pageRef = doc(FirebaseDB, "content", pageId);
+      const pageRef = doc(FirebaseDB, collectionName, pageId);
       const pageDoc = await getDoc(pageRef);
 
       // Si no existe, devolvemos un objeto vacío
@@ -63,7 +68,7 @@ export const ContentService = {
   },
 
   /**
-   * Guarda la configuración completa de una página
+   * Guarda la configuración completa de una página (borrador)
    * @param {string} pageId - Identificador de la página
    * @param {Object} pageData - Datos de la página y sus bloques
    * @returns {Promise<{ok: boolean, error?: string}>}
@@ -98,6 +103,51 @@ export const ContentService = {
       return { ok: true };
     } catch (error) {
       console.error(`Error guardando contenido de página [${pageId}]:`, error);
+      return { ok: false, error: error.message };
+    }
+  },
+
+  /**
+   * Publica la configuración actual de la página
+   * Copia el contenido de la colección "content" a "content_published"
+   * @param {string} pageId - Identificador de la página
+   * @returns {Promise<{ok: boolean, error?: string}>}
+   */
+  publishPageContent: async (pageId) => {
+    try {
+      // Verificar parámetros
+      if (!pageId) {
+        throw new Error("Se requiere un ID de página");
+      }
+
+      // Obtener el contenido actual (borrador)
+      const { ok, data, error } = await ContentService.getPageContent(pageId, 'draft');
+      if (!ok) {
+        throw new Error(error || "Error obteniendo contenido para publicar");
+      }
+
+      // Referencia al documento publicado
+      const publishedRef = doc(FirebaseDB, "content_published", pageId);
+
+      // Preparar datos para publicar con timestamps
+      const dataToPublish = {
+        ...data,
+        publishedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      // Si es la primera vez que se publica, añadir timestamp de creación
+      const publishedDoc = await getDoc(publishedRef);
+      if (!publishedDoc.exists()) {
+        dataToPublish.createdAt = serverTimestamp();
+      }
+
+      // Guardar en Firestore como publicado
+      await setDoc(publishedRef, dataToPublish, { merge: true });
+
+      return { ok: true };
+    } catch (error) {
+      console.error(`Error publicando contenido de página [${pageId}]:`, error);
       return { ok: false, error: error.message };
     }
   },
@@ -239,15 +289,23 @@ export const BLOCK_SCHEMAS = {
   [BLOCK_TYPES.HERO_SLIDER]: {
     title: 'Slider Hero',
     fields: {
-      title: { type: 'text', label: 'Título principal' },
+      title: { type: 'text', label: 'Título principal', required: true },
       subtitle: { type: 'text', label: 'Subtítulo' },
-      buttonText: { type: 'text', label: 'Texto del botón' },
-      buttonLink: { type: 'text', label: 'Enlace del botón' },
-      showButton: { type: 'boolean', label: 'Mostrar botón' },
-      height: { type: 'select', label: 'Altura', options: ['25vh', '50vh', '75vh', '100vh'] },
-      collectionId: { type: 'collection', label: 'Colección de imágenes' },
-      autoRotate: { type: 'boolean', label: 'Rotación automática' },
-      interval: { type: 'number', label: 'Intervalo (ms)', defaultValue: 5000 }
+      buttonText: { type: 'text', label: 'Texto del botón',
+        help: 'Texto que se mostrará en el botón de acción' },
+      buttonLink: { type: 'text', label: 'Enlace del botón',
+        help: 'URL a la que llevará el botón al hacer clic' },
+      showButton: { type: 'boolean', label: 'Mostrar botón', defaultValue: true },
+      showLogo: { type: 'boolean', label: 'Mostrar logo', defaultValue: true },
+      showSubtitle: { type: 'boolean', label: 'Mostrar subtítulo', defaultValue: true },
+      height: { type: 'select', label: 'Altura', options: ['25vh', '50vh', '75vh', '100vh'], defaultValue: '50vh' },
+      collectionId: { type: 'collection', label: 'Colección de imágenes',
+        help: 'Selecciona una colección de imágenes para el slider' },
+      mainImage: { type: 'media', label: 'Imagen principal',
+        help: 'Se usará si no hay colección seleccionada' },
+      autoRotate: { type: 'boolean', label: 'Rotación automática', defaultValue: true },
+      interval: { type: 'number', label: 'Intervalo (ms)', defaultValue: 5000,
+        help: 'Tiempo entre cambios de imágenes en milisegundos' }
     }
   },
   [BLOCK_TYPES.FEATURED_PRODUCTS]: {
@@ -258,7 +316,14 @@ export const BLOCK_SCHEMAS = {
       icon: { type: 'text', label: 'Icono (clases Bootstrap)', defaultValue: 'bi-star-fill' },
       showBg: { type: 'boolean', label: 'Mostrar fondo' },
       maxProducts: { type: 'number', label: 'Cantidad de productos', defaultValue: 6 },
-      filterByFeatured: { type: 'boolean', label: 'Filtrar destacados', defaultValue: true }
+      filterByFeatured: { type: 'boolean', label: 'Usar productos destacados', defaultValue: true },
+      useCollection: { type: 'boolean', label: 'Usar colección de imágenes', defaultValue: false },
+      collectionId: {
+        type: 'collection',
+        label: 'Colección (si no usa productos destacados)',
+        required: false,
+        help: 'Solo se usa si "Usar colección de imágenes" está activado'
+      }
     }
   },
   [BLOCK_TYPES.IMAGE_CAROUSEL]: {
@@ -268,7 +333,12 @@ export const BLOCK_SCHEMAS = {
       subtitle: { type: 'text', label: 'Subtítulo' },
       icon: { type: 'text', label: 'Icono (clases Bootstrap)', defaultValue: 'bi-images' },
       showBg: { type: 'boolean', label: 'Mostrar fondo' },
-      collectionId: { type: 'collection', label: 'Colección de imágenes' }
+      collectionId: {
+        type: 'collection',
+        label: 'Colección de imágenes',
+        required: true,
+        help: 'Selecciona una colección de imágenes para el carrusel'
+      }
     }
   },
   [BLOCK_TYPES.PRODUCT_CATEGORIES]: {
@@ -277,7 +347,14 @@ export const BLOCK_SCHEMAS = {
       title: { type: 'text', label: 'Título de sección' },
       subtitle: { type: 'text', label: 'Subtítulo' },
       icon: { type: 'text', label: 'Icono (clases Bootstrap)', defaultValue: 'bi-grid-fill' },
-      showBg: { type: 'boolean', label: 'Mostrar fondo' }
+      showBg: { type: 'boolean', label: 'Mostrar fondo' },
+      useCollection: { type: 'boolean', label: 'Usar colección personalizada', defaultValue: false },
+      collectionId: {
+        type: 'collection',
+        label: 'Colección (si no usa categorías reales)',
+        required: false,
+        help: 'Solo se usa si "Usar colección personalizada" está activado'
+      }
     }
   },
   [BLOCK_TYPES.TEXT_BLOCK]: {

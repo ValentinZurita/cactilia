@@ -26,16 +26,18 @@ export const HomePage = () => {
   const [pageContent, setPageContent] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Cargar el contenido personalizado cuando el componente se monta
+  // Cargar el contenido publicado cuando el componente se monta
   useEffect(() => {
     const loadContent = async () => {
       try {
-        const result = await ContentService.getPageContent('home');
+        setLoading(true);
+        // Importante: Cargar contenido "published" en lugar de draft
+        const result = await ContentService.getPageContent('home', 'published');
         if (result.ok && result.data && result.data.blocks) {
           setPageContent(result.data);
         }
       } catch (error) {
-        console.error("Error cargando contenido personalizado:", error);
+        console.error("Error cargando contenido publicado:", error);
       } finally {
         setLoading(false);
       }
@@ -85,6 +87,10 @@ export const HomePage = () => {
         title={getBlockContent('hero-slider', 'title', "Bienvenido a Cactilia")}
         subtitle={getBlockContent('hero-slider', 'subtitle', "Productos frescos y naturales para una vida mejor")}
         showButton={getBlockContent('hero-slider', 'showButton', true)}
+        buttonText={getBlockContent('hero-slider', 'buttonText', "Conoce Más")}
+        buttonLink={getBlockContent('hero-slider', 'buttonLink', "#")}
+        showLogo={getBlockContent('hero-slider', 'showLogo', true)}
+        showSubtitle={getBlockContent('hero-slider', 'showSubtitle', true)}
         height={getBlockContent('hero-slider', 'height', "100vh")}
         autoRotate={getBlockContent('hero-slider', 'autoRotate', true)}
         interval={getBlockContent('hero-slider', 'interval', 5000)}
@@ -156,9 +162,12 @@ export const HomePage = () => {
             <div className={`text-${getBlockContent('call-to-action', 'alignment', 'center')} py-5`}>
               <h2 className="mb-3">{getBlockContent('call-to-action', 'title', 'Llámado a la Acción')}</h2>
               <p className="lead mb-4">{getBlockContent('call-to-action', 'subtitle', 'Subtítulo descriptivo')}</p>
-              <button className="btn btn-primary btn-lg">
+              <a
+                href={getBlockContent('call-to-action', 'buttonLink', '#')}
+                className="btn btn-primary btn-lg"
+              >
                 {getBlockContent('call-to-action', 'buttonText', 'Botón de Acción')}
-              </button>
+              </a>
             </div>
           </div>
         </div>

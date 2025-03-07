@@ -5,7 +5,15 @@ import { addMessage } from '../../../store/messages/messageSlice';
 import { CacheService } from '../../../utils/cacheService';
 
 /**
+ * Función para generar IDs consistentes para bloques
+ * @param {string} type - Tipo de bloque (para fines de legibilidad)
+ * @returns {string} - ID único para el bloque
+ */
+const generateBlockId = (type) => `block_${type.replace(/-/g, '_')}_${Date.now()}`;
+
+/**
  * Hook personalizado para gestionar el contenido de páginas
+ * Incluye soporte para draft/publicación
  *
  * @param {string} pageId - Identificador de la página (ej: "home", "about")
  * @returns {Object} - Métodos y estado para gestionar el contenido
@@ -13,6 +21,7 @@ import { CacheService } from '../../../utils/cacheService';
 export const usePageContent = (pageId) => {
   // Estado para los datos de la página
   const [pageData, setPageData] = useState(null);
+  const [publishedData, setPublishedData] = useState(null);
   const [blocks, setBlocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,7 +42,7 @@ export const usePageContent = (pageId) => {
     if (pageType === 'home') {
       return [
         {
-          id: `hero_${Date.now()}`,
+          id: generateBlockId('hero'),
           type: BLOCK_TYPES.HERO_SLIDER,
           title: 'Bienvenido a Cactilia',
           subtitle: 'Productos frescos y naturales para una vida mejor',
@@ -41,12 +50,15 @@ export const usePageContent = (pageId) => {
           buttonText: 'Conoce Más',
           buttonLink: '#',
           height: '100vh',
+          showLogo: true,
+          showSubtitle: true,
           autoRotate: true,
           interval: 5000,
-          createdAt: timestamp
+          createdAt: timestamp,
+          mainImage: '/public/images/placeholder.jpg'
         },
         {
-          id: `featured_${Date.now() + 1}`,
+          id: generateBlockId('featured'),
           type: BLOCK_TYPES.FEATURED_PRODUCTS,
           title: 'Productos Destacados',
           subtitle: 'Explora nuestra selección especial.',
@@ -57,7 +69,7 @@ export const usePageContent = (pageId) => {
           createdAt: timestamp
         },
         {
-          id: `farm_${Date.now() + 2}`,
+          id: generateBlockId('farm'),
           type: BLOCK_TYPES.IMAGE_CAROUSEL,
           title: 'Nuestro Huerto',
           subtitle: 'Descubre la belleza y frescura de nuestra granja.',
@@ -66,7 +78,7 @@ export const usePageContent = (pageId) => {
           createdAt: timestamp
         },
         {
-          id: `products_${Date.now() + 3}`,
+          id: generateBlockId('categories'),
           type: BLOCK_TYPES.PRODUCT_CATEGORIES,
           title: 'Descubre Nuestros Productos',
           subtitle: 'Productos orgánicos de alta calidad para una vida mejor.',
@@ -81,16 +93,18 @@ export const usePageContent = (pageId) => {
     if (pageType === 'about') {
       return [
         {
-          id: `about_hero_${Date.now()}`,
+          id: generateBlockId('about_hero'),
           type: BLOCK_TYPES.HERO_SLIDER,
           title: 'Acerca de Nosotros',
           subtitle: 'Conozca nuestra historia y valores',
           showButton: false,
+          showLogo: true,
+          showSubtitle: true,
           height: '50vh',
           createdAt: timestamp
         },
         {
-          id: `about_text_${Date.now() + 1}`,
+          id: generateBlockId('about_text'),
           type: BLOCK_TYPES.TEXT_BLOCK,
           title: 'Nuestra Historia',
           content: '<p>Aquí va la historia de la empresa...</p>',
@@ -99,7 +113,7 @@ export const usePageContent = (pageId) => {
           createdAt: timestamp
         },
         {
-          id: `about_cta_${Date.now() + 2}`,
+          id: generateBlockId('about_cta'),
           type: BLOCK_TYPES.CALL_TO_ACTION,
           title: '¿Quieres saber más?',
           subtitle: 'Contáctanos para conocer más sobre nuestros productos',
@@ -115,16 +129,18 @@ export const usePageContent = (pageId) => {
     if (pageType === 'contact') {
       return [
         {
-          id: `contact_hero_${Date.now()}`,
+          id: generateBlockId('contact_hero'),
           type: BLOCK_TYPES.HERO_SLIDER,
           title: 'Contáctanos',
           subtitle: 'Estamos aquí para ayudarte',
           showButton: false,
+          showLogo: true,
+          showSubtitle: true,
           height: '40vh',
           createdAt: timestamp
         },
         {
-          id: `contact_text_${Date.now() + 1}`,
+          id: generateBlockId('contact_text'),
           type: BLOCK_TYPES.TEXT_BLOCK,
           title: 'Información de Contacto',
           content: '<p>Dirección: Calle Principal #123<br>Teléfono: (123) 456-7890<br>Email: info@ejemplo.com</p>',
@@ -138,7 +154,7 @@ export const usePageContent = (pageId) => {
     // Para cualquier otra página, devolver un bloque de texto básico
     return [
       {
-        id: `text_${Date.now()}`,
+        id: generateBlockId('text'),
         type: BLOCK_TYPES.TEXT_BLOCK,
         title: 'Título de la página',
         content: '<p>Contenido de ejemplo para esta página.</p>',
@@ -150,7 +166,7 @@ export const usePageContent = (pageId) => {
   };
 
   /**
-   * Carga los datos de la página
+   * Carga los datos de la página (borrador)
    */
   const loadPageContent = useCallback(async () => {
     if (!pageId) {
@@ -162,35 +178,49 @@ export const usePageContent = (pageId) => {
     setError(null);
 
     try {
-      // Intentar obtener de caché primero
-      const cacheKey = `page_${pageId}`;
-      let result = CacheService.get(cacheKey);
+      // Cargar borrador de contenido
+      const cacheKey = `page_${pageId}_draft`;
+      let draftResult = CacheService.get(cacheKey);
 
       // Si no está en caché, obtener de Firebase
-      if (!result) {
-        result = await ContentService.getPageContent(pageId);
+      if (!draftResult) {
+        draftResult = await ContentService.getPageContent(pageId, 'draft');
 
         // Si la operación fue exitosa, guardar en caché
-        if (result.ok) {
-          CacheService.set(cacheKey, result, 5); // Caché de 5 minutos
+        if (draftResult.ok) {
+          CacheService.set(cacheKey, draftResult, 5); // Caché de 5 minutos
         }
       }
 
-      if (result.ok) {
-        setPageData(result.data);
+      // Cargar contenido publicado
+      const publishedCacheKey = `page_${pageId}_published`;
+      let publishedResult = CacheService.get(publishedCacheKey);
+
+      if (!publishedResult) {
+        publishedResult = await ContentService.getPageContent(pageId, 'published');
+        if (publishedResult.ok) {
+          CacheService.set(publishedCacheKey, publishedResult, 5);
+        }
+      }
+
+      // Guardar ambos conjuntos de datos
+      if (draftResult.ok) {
+        setPageData(draftResult.data);
 
         // Si no hay bloques o está vacío, crear bloques predeterminados
-        if (!result.data.blocks || result.data.blocks.length === 0) {
+        if (!draftResult.data.blocks || draftResult.data.blocks.length === 0) {
           const defaultBlocks = createDefaultBlocks(pageId);
           setBlocks(defaultBlocks);
-
-          // Opcional: guardar automáticamente estos bloques predeterminados
-          // await ContentService.savePageContent(pageId, { ...result.data, blocks: defaultBlocks });
         } else {
-          setBlocks(result.data.blocks || []);
+          setBlocks(draftResult.data.blocks || []);
         }
       } else {
-        throw new Error(result.error || "Error al cargar el contenido");
+        throw new Error(draftResult.error || "Error al cargar el contenido");
+      }
+
+      // Guardar datos publicados
+      if (publishedResult.ok) {
+        setPublishedData(publishedResult.data);
       }
     } catch (err) {
       console.error(`Error cargando contenido de página [${pageId}]:`, err);
@@ -206,7 +236,7 @@ export const usePageContent = (pageId) => {
   }, [pageId, dispatch]);
 
   /**
-   * Guarda los cambios en la página completa
+   * Guarda los cambios en la página completa (como borrador)
    */
   const savePageContent = useCallback(async () => {
     if (!pageId || !pageData) return;
@@ -225,14 +255,14 @@ export const usePageContent = (pageId) => {
       if (result.ok) {
         dispatch(addMessage({
           type: 'success',
-          text: 'Contenido guardado correctamente'
+          text: 'Borrador guardado correctamente'
         }));
 
         // Invalidar caché
-        CacheService.remove(`page_${pageId}`);
+        CacheService.remove(`page_${pageId}_draft`);
 
-        // Recargar contenido
-        await loadPageContent();
+        // Actualizar estado local
+        setPageData(updatedPageData);
       } else {
         throw new Error(result.error || "Error al guardar contenido");
       }
@@ -244,10 +274,56 @@ export const usePageContent = (pageId) => {
         type: 'error',
         text: `Error guardando contenido: ${err.message}`
       }));
+
+      throw err; // Re-lanzar para manejar en el componente
     } finally {
       setLoading(false);
     }
-  }, [pageId, pageData, blocks, dispatch, loadPageContent]);
+  }, [pageId, pageData, blocks, dispatch]);
+
+  /**
+   * Publica el borrador actual
+   */
+  const publishPageContent = useCallback(async () => {
+    if (!pageId) return;
+
+    setLoading(true);
+
+    try {
+      const result = await ContentService.publishPageContent(pageId);
+
+      if (result.ok) {
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Contenido publicado correctamente'
+        }));
+
+        // Invalidar cachés
+        CacheService.remove(`page_${pageId}_draft`);
+        CacheService.remove(`page_${pageId}_published`);
+
+        // Cargar el contenido publicado
+        const publishedResult = await ContentService.getPageContent(pageId, 'published');
+        if (publishedResult.ok) {
+          setPublishedData(publishedResult.data);
+        }
+      } else {
+        throw new Error(result.error || "Error al publicar contenido");
+      }
+    } catch (err) {
+      console.error(`Error publicando contenido de página [${pageId}]:`, err);
+      setError(err.message);
+
+      dispatch(addMessage({
+        type: 'error',
+        text: `Error publicando contenido: ${err.message}`
+      }));
+
+      throw err; // Re-lanzar para manejar en el componente
+    } finally {
+      setLoading(false);
+    }
+  }, [pageId, dispatch]);
 
   /**
    * Añade un nuevo bloque al final de la página
@@ -258,7 +334,7 @@ export const usePageContent = (pageId) => {
   const addBlock = useCallback(async (blockType, initialData = {}) => {
     try {
       // Crear un ID único para el bloque
-      const blockId = `block_${Date.now()}`;
+      const blockId = generateBlockId(blockType);
 
       // Crear el nuevo bloque con datos básicos
       const newBlock = {
@@ -268,14 +344,13 @@ export const usePageContent = (pageId) => {
         createdAt: new Date().toISOString()
       };
 
-      // Añadir el bloque a la lista
-      const updatedBlocks = [...blocks, newBlock];
-      setBlocks(updatedBlocks);
+      // Añadir el bloque a la lista (actualización inmediata del estado)
+      setBlocks(prevBlocks => [...prevBlocks, newBlock]);
 
       // Seleccionar el nuevo bloque para edición
       setSelectedBlockId(blockId);
 
-      // Actualizar en Firebase
+      // Actualizar en Firebase (puede ser asíncrono)
       const result = await ContentService.updateBlock(pageId, blockId, newBlock);
 
       if (result.ok) {
@@ -285,7 +360,7 @@ export const usePageContent = (pageId) => {
         }));
 
         // Invalidar caché
-        CacheService.remove(`page_${pageId}`);
+        CacheService.remove(`page_${pageId}_draft`);
       } else {
         throw new Error(result.error || "Error al añadir bloque");
       }
@@ -298,7 +373,7 @@ export const usePageContent = (pageId) => {
         text: `Error añadiendo bloque: ${err.message}`
       }));
     }
-  }, [pageId, blocks, dispatch]);
+  }, [pageId, dispatch]);
 
   /**
    * Actualiza un bloque existente
@@ -329,13 +404,8 @@ export const usePageContent = (pageId) => {
       const result = await ContentService.updateBlock(pageId, blockId, updatedBlocks[blockIndex]);
 
       if (result.ok) {
-        dispatch(addMessage({
-          type: 'success',
-          text: 'Bloque actualizado correctamente'
-        }));
-
         // Invalidar caché
-        CacheService.remove(`page_${pageId}`);
+        CacheService.remove(`page_${pageId}_draft`);
       } else {
         throw new Error(result.error || "Error al actualizar bloque");
       }
@@ -381,7 +451,7 @@ export const usePageContent = (pageId) => {
         }));
 
         // Invalidar caché
-        CacheService.remove(`page_${pageId}`);
+        CacheService.remove(`page_${pageId}_draft`);
       } else {
         throw new Error(result.error || "Error al eliminar bloque");
       }
@@ -427,7 +497,7 @@ export const usePageContent = (pageId) => {
         }));
 
         // Invalidar caché
-        CacheService.remove(`page_${pageId}`);
+        CacheService.remove(`page_${pageId}_draft`);
       } else {
         throw new Error(result.error || "Error al reordenar bloques");
       }
@@ -450,6 +520,7 @@ export const usePageContent = (pageId) => {
   // Retornar todos los métodos y estados
   return {
     pageData,
+    publishedData,
     blocks,
     loading,
     error,
@@ -457,6 +528,7 @@ export const usePageContent = (pageId) => {
     setSelectedBlockId,
     loadPageContent,
     savePageContent,
+    publishPageContent,
     addBlock,
     updateBlock,
     deleteBlock,
