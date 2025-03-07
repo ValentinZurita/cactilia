@@ -258,7 +258,14 @@ export const BLOCK_SCHEMAS = {
       icon: { type: 'text', label: 'Icono (clases Bootstrap)', defaultValue: 'bi-star-fill' },
       showBg: { type: 'boolean', label: 'Mostrar fondo' },
       maxProducts: { type: 'number', label: 'Cantidad de productos', defaultValue: 6 },
-      filterByFeatured: { type: 'boolean', label: 'Filtrar destacados', defaultValue: true }
+      filterByFeatured: { type: 'boolean', label: 'Usar productos destacados', defaultValue: true },
+      useCollection: { type: 'boolean', label: 'Usar colección de imágenes', defaultValue: false },
+      collectionId: {
+        type: 'collection',
+        label: 'Colección (si no usa productos destacados)',
+        required: false,
+        help: 'Solo se usa si "Usar colección de imágenes" está activado'
+      }
     }
   },
   [BLOCK_TYPES.IMAGE_CAROUSEL]: {
@@ -268,7 +275,12 @@ export const BLOCK_SCHEMAS = {
       subtitle: { type: 'text', label: 'Subtítulo' },
       icon: { type: 'text', label: 'Icono (clases Bootstrap)', defaultValue: 'bi-images' },
       showBg: { type: 'boolean', label: 'Mostrar fondo' },
-      collectionId: { type: 'collection', label: 'Colección de imágenes' }
+      collectionId: {
+        type: 'collection',
+        label: 'Colección de imágenes',
+        required: true,
+        help: 'Selecciona una colección de imágenes para el carrusel'
+      }
     }
   },
   [BLOCK_TYPES.PRODUCT_CATEGORIES]: {
@@ -277,7 +289,14 @@ export const BLOCK_SCHEMAS = {
       title: { type: 'text', label: 'Título de sección' },
       subtitle: { type: 'text', label: 'Subtítulo' },
       icon: { type: 'text', label: 'Icono (clases Bootstrap)', defaultValue: 'bi-grid-fill' },
-      showBg: { type: 'boolean', label: 'Mostrar fondo' }
+      showBg: { type: 'boolean', label: 'Mostrar fondo' },
+      useCollection: { type: 'boolean', label: 'Usar colección personalizada', defaultValue: false },
+      collectionId: {
+        type: 'collection',
+        label: 'Colección (si no usa categorías reales)',
+        required: false,
+        help: 'Solo se usa si "Usar colección personalizada" está activado'
+      }
     }
   },
   [BLOCK_TYPES.TEXT_BLOCK]: {
