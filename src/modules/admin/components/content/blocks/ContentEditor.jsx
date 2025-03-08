@@ -9,6 +9,7 @@ import { BlockList } from './BlockList.jsx'
 /**
  * Editor principal de contenido
  * Gestiona la lista de bloques y el panel de edición
+ * Actualizado para manejar selección de colecciones correctamente
  *
  * @param {Object} props - Propiedades del componente
  * @param {Object} props.contentHook - Hook con los datos y métodos para gestionar el contenido
@@ -18,6 +19,7 @@ export const ContentEditor = ({ contentHook }) => {
   // Estados locales
   const [isMediaSelectorOpen, setIsMediaSelectorOpen] = useState(false);
   const [selectedMediaField, setSelectedMediaField] = useState(null);
+  const [isCollection, setIsCollection] = useState(false); // Nuevo estado para identificar si es colección
   const [newBlockType, setNewBlockType] = useState('');
 
   // Extraer datos y métodos del hook de contenido
@@ -40,23 +42,28 @@ export const ContentEditor = ({ contentHook }) => {
   // Obtener el bloque seleccionado
   const selectedBlock = blocks.find(block => block.id === selectedBlockId);
 
-  // Manejar selección de imagen de la librería de medios
+  // Manejar selección de imagen/colección de la librería de medios
   const handleMediaSelect = (media) => {
     if (!selectedBlockId || !selectedMediaField) return;
 
-    // Actualizar el bloque con la imagen seleccionada
+    // Actualizar el bloque con el valor seleccionado
+    // Si es colección, usamos su ID, si es imagen usamos la URL
+    const value = isCollection ? media.id : media.url;
+
     blockOperations.updateBlock(selectedBlockId, {
-      [selectedMediaField]: media.url
+      [selectedMediaField]: value
     });
 
     // Cerrar selector
     setIsMediaSelectorOpen(false);
     setSelectedMediaField(null);
+    setIsCollection(false);
   };
 
   // Manejar apertura del selector de medios
-  const handleOpenMediaSelector = (fieldName) => {
+  const handleOpenMediaSelector = (fieldName, isCollectionField = false) => {
     setSelectedMediaField(fieldName);
+    setIsCollection(isCollectionField); // Guardar si estamos seleccionando una colección
     setIsMediaSelectorOpen(true);
   };
 
@@ -193,12 +200,18 @@ export const ContentEditor = ({ contentHook }) => {
         </div>
       </div>
 
-      {/* Selector de medios */}
+      {/* Selector de medios (modificado para manejar colecciones) */}
       <MediaSelector
         isOpen={isMediaSelectorOpen}
-        onClose={() => setIsMediaSelectorOpen(false)}
+        onClose={() => {
+          setIsMediaSelectorOpen(false);
+          setSelectedMediaField(null);
+          setIsCollection(false);
+        }}
         onSelect={handleMediaSelect}
-        title={`Seleccionar ${selectedMediaField === 'collectionId' ? 'colección' : 'imagen'}`}
+        title={`Seleccionar ${isCollection ? 'colección' : 'imagen'}`}
+        // Pasar flag que indique si buscamos colecciones o imágenes individuales
+        selectCollection={isCollection}
       />
     </div>
   );

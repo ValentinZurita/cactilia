@@ -74,6 +74,11 @@ export const ContentService = {
    * @returns {Promise<{ok: boolean, error?: string}>}
    */
   savePageContent: async (pageId, pageData) => {
+
+    console.log("Guardando página:", pageId);
+    console.log("Con datos:", pageData);
+
+
     try {
       // Verificar parámetros
       if (!pageId) {
