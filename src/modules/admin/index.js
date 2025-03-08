@@ -1,7 +1,7 @@
-// src/modules/admin/index.js
+// src/modules/admin/index.jsx
 
 // Importar la función de registro de bloques
-import { registerAllBlockTypes } from './components/content/blocks';
+import { registerAllBlockTypes } from './components/content/blocks/index.jsx';
 
 // Inicializar el sistema de bloques
 registerAllBlockTypes();
