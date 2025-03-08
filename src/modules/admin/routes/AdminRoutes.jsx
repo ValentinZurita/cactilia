@@ -11,6 +11,7 @@ import {
 } from '../pages/index.js'
 import { RequireAdminAuth } from '../components/login/index.js'
 import { ContentManagementPage } from '../pages/ContentManagementPage.jsx'
+import { HomePageManagementPage } from '../components/homepage-editor/HomePageManagementPage.jsx'
 
 export const AdminRoutes = () => {
   return (
@@ -40,6 +41,8 @@ export const AdminRoutes = () => {
           <Route path="media/upload" element={<MediaUploadPage />} />
 
           {/* Content Management */}
+          <Route path="homepage" element={<HomePageManagementPage />} />
+
           <Route path="content" element={<ContentManagementPage />} />
           <Route path="content/:pageId" element={<ContentManagementPage />} />
 

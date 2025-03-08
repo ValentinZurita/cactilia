@@ -172,6 +172,27 @@ export const Sidebar = ({ onLinkClick }) => {
         </SidebarDropdown>
 
 
+        {/* GESTIÓN DE CONTENIDO */}
+        <SidebarDropdown
+          label="Gestión de Contenido 2"
+          icon="bi-layout-text-window"
+          isOpen={openMenus.content}
+          toggle={() => toggleMenu("content")}
+        >
+          <SidebarItem to="/admin/content/home" label="Página Principal" onClick={handleNavClick} />
+          <SidebarItem to="/admin/content/about" label="Sobre Nosotros" onClick={handleNavClick} />
+          <SidebarItem to="/admin/content/contact" label="Contacto" onClick={handleNavClick} />
+
+          {/* AÑADIR ESTA NUEVA LÍNEA */}
+          <SidebarItem
+            to="/admin/homepage"
+            label="Editor de Inicio"
+            onClick={handleNavClick}
+            icon="bi-house-gear"  // Opcional: usar este icono o cualquier otro de Bootstrap Icons
+          />
+        </SidebarDropdown>
+
+
         {/* Nuevo botón para ir al perfil de usuario */}
         <li className="nav-item">
           <Link to="/profile" className="nav-link text-light">
