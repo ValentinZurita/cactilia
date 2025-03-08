@@ -6,6 +6,7 @@ import { usePageContent } from '../hooks/usePageContent';
 import { ContentEditor } from '../components/content/blocks/ContentEditor';
 import { SaveButton } from '../components/content/common/SaveButton';
 import { ResetBlocksButton } from '../components/content/common/ResetBlocksButton';
+import { ContentService } from '../services/contentService';
 
 /**
  * Página de gestión de contenido mejorada
@@ -24,10 +25,12 @@ export const ContentManagementPage = () => {
 
   // Estado para mostrar mensaje de éxito
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Obtener datos y métodos del hook
   const pageContentHook = usePageContent(selectedPage);
   const { blocks, loading, error, savePageContent, setBlocks } = pageContentHook;
+
 
   // Actualizar selectedPage cuando cambia el parámetro pageId
   useEffect(() => {
@@ -43,9 +46,41 @@ export const ContentManagementPage = () => {
   // Manejar guardado con mensaje de éxito
   const handleSave = async () => {
     await savePageContent();
-    setShowSuccess(true);
+    showSuccessNotification('¡Cambios guardados! Los cambios se guardaron como borrador.');
+  };
 
-    // Ocultar mensaje después de 3 segundos
+ /* // Manejar publicación de contenido
+  const handlePublish = async () => {
+    try {
+      // Primero guardamos los cambios
+      await savePageContent();
+
+      // Luego publicamos
+      const result = await ContentService.publishPageContent(selectedPage);
+
+      if (result.ok) {
+        showSuccessNotification('¡Cambios publicados! Los cambios ahora son visibles para todos los usuarios.');
+      } else {
+        throw new Error(result.error || 'Error al publicar cambios');
+      }
+    } catch (error) {
+      console.error('Error al publicar cambios:', error);
+      alert('Error al publicar cambios: ' + error.message);
+    }
+  };*/
+
+  const handlePublish = async () => {
+    await ContentService.publishPageContent(selectedPage);
+    setShowSuccess(true);
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 3000);
+  };
+
+  // Función helper para mostrar notificación de éxito
+  const showSuccessNotification = (message) => {
+    setSuccessMessage(message);
+    setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
     }, 3000);
@@ -64,16 +99,29 @@ export const ContentManagementPage = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Editor de Contenido</h2>
 
-        <ResetBlocksButton
-          pageId={selectedPage}
-          setBlocks={setBlocks}
-        />
+        <div className="d-flex gap-2">
+          {/* Botón de publicación */}
+          <button
+            className="btn btn-success"
+            onClick={handlePublish}
+            disabled={loading}
+            title="Publicar los cambios para que sean visibles en el sitio público"
+          >
+            <i className="bi bi-globe me-2"></i>
+            Publicar Cambios
+          </button>
+
+          <ResetBlocksButton
+            pageId={selectedPage}
+            setBlocks={setBlocks}
+          />
+        </div>
       </div>
 
       {/* Mensaje de éxito flotante */}
       {showSuccess && (
         <div className="alert alert-success alert-dismissible fade show" role="alert">
-          <strong>¡Cambios guardados!</strong> Los cambios se han guardado correctamente.
+          <strong>{successMessage}</strong>
           <button type="button" className="btn-close" onClick={() => setShowSuccess(false)}></button>
         </div>
       )}
@@ -102,6 +150,9 @@ export const ContentManagementPage = () => {
             <p className="mb-1">
               3. <strong>Guarda los cambios</strong> con el botón verde al finalizar
             </p>
+            <p className="mb-1">
+              4. <strong>Publica los cambios</strong> para que sean visibles en la página pública
+            </p>
             <p className="mb-0">
               <strong>Nota:</strong> Si deseas volver al diseño original, utiliza el botón "Restaurar Diseño Original".
             </p>
@@ -115,10 +166,16 @@ export const ContentManagementPage = () => {
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">Vista Previa</h5>
-              <a href="/" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary">
-                <i className="bi bi-box-arrow-up-right me-1"></i>
-                Ver página completa
-              </a>
+              <div className="d-flex gap-2">
+                <span className="badge bg-secondary me-2">
+                  <i className="bi bi-pencil-fill me-1"></i>
+                  Modo Editor
+                </span>
+                <a href="/" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary">
+                  <i className="bi bi-box-arrow-up-right me-1"></i>
+                  Ver página completa
+                </a>
+              </div>
             </div>
             <div className="card-body p-0 bg-light">
               <ContentPreview
@@ -134,6 +191,15 @@ export const ContentManagementPage = () => {
 
       {/* Editor de contenido */}
       <ContentEditor contentHook={pageContentHook} />
+
+      <button
+        className="btn btn-success me-2"
+        onClick={handlePublish}
+        disabled={loading}
+      >
+        <i className="bi bi-globe me-2"></i>
+        Publicar cambios
+      </button>
 
       {/* Botón flotante para guardar cambios */}
       <SaveButton onSave={handleSave} disabled={loading} />

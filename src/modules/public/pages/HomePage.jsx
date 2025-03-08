@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { HeroSection, ProductCarousel, HomeSection, HomeCarousel } from '../components/home-page/index.js';
 import '../../../styles/global.css';
 import { heroImages } from '../../../shared/constants/images.js';
-import { ContentService } from '../../admin/services/contentService';
+import { ContentService } from '../../admin/index.js'
 
 // Contenido predeterminado para las imágenes del carrusel
 const defaultImages = [
@@ -59,6 +59,27 @@ export const HomePage = () => {
       : defaultValue;
   };
 
+
+  // Nueva función específica para obtener imágenes del Hero Slider
+  const getHeroImages = () => {
+    if (!pageContent || !pageContent.blocks) return heroImages;
+
+    const heroBlock = pageContent.blocks.find(b => b.type === 'hero-slider');
+    if (!heroBlock) return heroImages;
+
+    // Si el bloque usa colección y tiene imágenes de esa colección
+    if (heroBlock.useCollection && Array.isArray(heroBlock.images)) {
+      return heroBlock.images;
+    }
+
+    // Si usa imagen principal
+    if (heroBlock.mainImage) {
+      return [heroBlock.mainImage];
+    }
+
+    return heroImages;
+  };
+
   // Mientras se carga, mostrar un indicador o el contenido predeterminado
   if (loading) {
     return (
@@ -83,7 +104,7 @@ export const HomePage = () => {
     <div className="home-section">
       {/* HeroSection - Hero principal */}
       <HeroSection
-        images={getBlockContent('hero-slider', 'images', heroImages)}
+        images={getHeroImages()}
         title={getBlockContent('hero-slider', 'title', "Bienvenido a Cactilia")}
         subtitle={getBlockContent('hero-slider', 'subtitle', "Productos frescos y naturales para una vida mejor")}
         showButton={getBlockContent('hero-slider', 'showButton', true)}
