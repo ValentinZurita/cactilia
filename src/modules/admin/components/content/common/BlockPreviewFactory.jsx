@@ -1,5 +1,11 @@
 import { getBlockConfig, getBlockPreview } from '../../../utilis/blockRegistry.js'
 
+import { ImageCarouselPreview } from '../blocks/ImageCarousel/Preview.jsx';
+import { ProductCategoriesPreview } from '../blocks/ProductCategories/Preview.jsx';
+import { TextBlockPreview } from '../blocks/TextBlock/Preview.jsx';
+import { CallToActionPreview } from '../blocks/CallToAction/Preview.jsx';
+import { FeaturedProductsPreview } from '../blocks/FeaturedProducts/Preview.jsx'
+import { HeroSliderPreview } from '../blocks/index.jsx'
 
 /**
  * Factory para renderizar la vista previa específica para un tipo de bloque
@@ -22,8 +28,23 @@ export const BlockPreviewFactory = ({ block, isPreview = true }) => {
     );
   }
 
-  // Obtener el componente de vista previa para el tipo de bloque
-  const PreviewComponent = getBlockPreview(block.type);
+  // Mapa directo de tipos de bloques a componentes (para evitar problemas de registro)
+  const previewMap = {
+    'hero-slider': HeroSliderPreview,
+    'featured-products': FeaturedProductsPreview,
+    'image-carousel': ImageCarouselPreview,
+    'product-categories': ProductCategoriesPreview,
+    'text-block': TextBlockPreview,
+    'call-to-action': CallToActionPreview
+  };
+
+  // Intentar obtener del mapa directo primero
+  let PreviewComponent = previewMap[block.type];
+
+  // Si no está en el mapa, intentar obtenerlo del registro
+  if (!PreviewComponent) {
+    PreviewComponent = getBlockPreview(block.type);
+  }
 
   // Si no hay vista previa para este tipo, mostrar mensaje de error
   if (!PreviewComponent) {

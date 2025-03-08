@@ -1,34 +1,4 @@
-import { useState } from 'react';
-
-/**
- * Custom hook to toggle a boolean state
- * @returns {[boolean, Function]} - The current state and a function to toggle it
- */
-const useToggle = (initialValue = false) => {
-  const [value, setValue] = useState(initialValue);
-  const toggle = () => setValue((prev) => !prev);
-  return [value, toggle];
-};
-
-/**
- * Action button component
- * @param {Object} props - Props for the button
- * @param {string} props.className - Additional classes for the button
- * @param {Function} props.onClick - Click handler for the button
- * @param {string} props.title - Title for the button
- * @param {JSX.Element} props.icon - Icon to display in the button
- * @returns {JSX.Element}
- */
-const ActionButton = ({ className, onClick, title, icon }) => (
-  <button
-    type="button"
-    className={`btn btn-sm ${className}`}
-    onClick={onClick}
-    title={title}
-  >
-    {icon}
-  </button>
-);
+import React, { useState } from 'react';
 
 /**
  * Elemento individual en la lista de bloques
@@ -60,7 +30,7 @@ export const BlockItem = ({
                             isLast = false
                           }) => {
   // Estado para mostrar/ocultar menú de opciones
-  const [showOptions, toggleShowOptions] = useToggle(false);
+  const [showOptions, setShowOptions] = useState(false);
 
   // Obtener nombre para mostrar (para bloques con título propio)
   const displayName = block.title ? `${title}: ${block.title}` : title;
@@ -71,7 +41,6 @@ export const BlockItem = ({
         isSelected ? 'border-primary bg-light' : 'border-light'
       }`}
     >
-
       {/* Contenido principal del bloque */}
       <div className="d-flex justify-content-between align-items-center" onClick={onClick}>
         <div className="d-flex align-items-center">
@@ -83,61 +52,74 @@ export const BlockItem = ({
         </div>
 
         {/* Toggle de opciones */}
-        <ActionButton
-          className="btn-link text-secondary p-0"
-          onClick={(e) => { e.stopPropagation(); toggleShowOptions(); } }
-          title="Opciones"
-          icon={<i className="bi bi-three-dots-vertical"></i>}
-        />
+        <button
+          type="button"
+          className="btn btn-sm btn-link text-secondary p-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowOptions(!showOptions);
+          }}
+        >
+          <i className="bi bi-three-dots-vertical"></i>
+        </button>
       </div>
 
       {/* Panel de opciones expandible */}
       {showOptions && (
         <div className="block-options mt-2 pt-2 border-top">
           <div className="d-flex justify-content-between">
-
             {/* Opciones de movimiento */}
             <div>
-
-              {/* Botones de mover arriba/abajo */}
-              <ActionButton
-                className="btn-outline-secondary me-1"
-                onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
-                title="Mover arriba"
-                icon={<i className="bi bi-arrow-up"></i>}
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary me-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveUp();
+                }}
                 disabled={isFirst}
-              />
-
-              {/* Botón de mover abajo */}
-              <ActionButton
-                className="btn-outline-secondary"
-                onClick={(e) => { e.stopPropagation(); onMoveDown(); } }
-                title="Mover abajo"
-                icon={<i className="bi bi-arrow-down"></i>}
+                title="Mover arriba"
+              >
+                <i className="bi bi-arrow-up"></i>
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveDown();
+                }}
                 disabled={isLast}
-              />
-
+                title="Mover abajo"
+              >
+                <i className="bi bi-arrow-down"></i>
+              </button>
             </div>
 
             {/* Opciones de clonar/eliminar */}
             <div>
-
-              {/* Botón de clonar */}
-              <ActionButton
-                className="btn-outline-primary me-1"
-                onClick={(e) => { e.stopPropagation(); onClone(); } }
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary me-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClone();
+                }}
                 title="Duplicar bloque"
-                icon={<i className="bi bi-copy"></i>}
-              />
-
-              {/* Botón de eliminar */}
-              <ActionButton
-                className="btn-outline-danger"
-                onClick={ (e) => { e.stopPropagation(); onDelete(); } }
+              >
+                <i className="bi bi-copy"></i>
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
                 title="Eliminar bloque"
-                icon={<i className="bi bi-trash"></i>}
-              />
-
+              >
+                <i className="bi bi-trash"></i>
+              </button>
             </div>
           </div>
         </div>

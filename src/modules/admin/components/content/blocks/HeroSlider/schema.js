@@ -1,6 +1,6 @@
 /**
  * Esquema para el bloque de tipo Hero Slider
- * Define todos los campos que puede tener el bloque
+ * Define todos los campos que puede tener el bloque y sus propiedades
  */
 export const heroSliderSchema = {
   // Campos de texto
@@ -8,14 +8,14 @@ export const heroSliderSchema = {
     type: 'text',
     label: 'Título principal',
     placeholder: 'Ingresa el título principal',
-    defaultValue: '',
+    defaultValue: 'Bienvenido a Cactilia',
     help: 'El título que aparecerá destacado en el hero'
   },
   subtitle: {
     type: 'text',
     label: 'Subtítulo',
     placeholder: 'Ingresa el subtítulo o descripción',
-    defaultValue: '',
+    defaultValue: 'Productos frescos y naturales para una vida mejor',
     help: 'Un texto descriptivo que aparece bajo el título'
   },
 
@@ -74,6 +74,7 @@ export const heroSliderSchema = {
   mainImage: {
     type: 'media',
     label: 'Imagen principal',
+    defaultValue: '/public/images/placeholder.jpg',
     help: 'Se usará si no hay una colección seleccionada'
   },
   collectionId: {

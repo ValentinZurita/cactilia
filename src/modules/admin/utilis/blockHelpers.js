@@ -1,5 +1,4 @@
-import { v4 as uuidv4 } from 'uuid'; // Asegúrate de añadir esta dependencia
-
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Genera un ID único para un bloque
@@ -9,9 +8,8 @@ import { v4 as uuidv4 } from 'uuid'; // Asegúrate de añadir esta dependencia
 export const generateBlockId = (type) => {
   // Asegurarse de que se use el mismo formato que espera el componente
   const safeType = type.replace(/-/g, '_');
-  return `block_${safeType}_${Date.now()}`;
+  return `block_${safeType}_${uuidv4().substring(0, 8)}`;
 };
-
 
 /**
  * Crea bloques predeterminados según el tipo de página
@@ -35,6 +33,8 @@ export const createDefaultBlocks = (pageType) => {
         height: '100vh',
         autoRotate: true,
         interval: 5000,
+        showLogo: true,
+        showSubtitle: true,
         createdAt: timestamp,
         mainImage: '/public/images/placeholder.jpg'
       },
@@ -70,7 +70,6 @@ export const createDefaultBlocks = (pageType) => {
     ];
   }
 
-
   // Bloques predeterminados para la página "Acerca de"
   if (pageType === 'about') {
     return [
@@ -81,13 +80,16 @@ export const createDefaultBlocks = (pageType) => {
         subtitle: 'Conozca nuestra historia y valores',
         showButton: false,
         height: '50vh',
-        createdAt: timestamp
+        showLogo: true,
+        showSubtitle: true,
+        createdAt: timestamp,
+        mainImage: '/public/images/placeholder.jpg'
       },
       {
         id: generateBlockId('text-block'),
         type: 'text-block',
         title: 'Nuestra Historia',
-        content: '<p>Aquí va la historia de la empresa...</p>',
+        content: '<p>Somos una empresa comprometida con la producción y distribución de productos orgánicos de alta calidad. Nuestra misión es ofrecer a nuestros clientes alimentos frescos, saludables y sostenibles que contribuyan a su bienestar y al cuidado del medio ambiente.</p><p>Desde nuestros inicios, hemos trabajado con pasión y dedicación para cultivar cada producto con los más altos estándares de calidad, respetando los ciclos naturales y utilizando técnicas de agricultura sostenible.</p>',
         alignment: 'left',
         showBg: false,
         createdAt: timestamp
@@ -105,7 +107,6 @@ export const createDefaultBlocks = (pageType) => {
     ];
   }
 
-
   // Bloques predeterminados para la página de contacto
   if (pageType === 'contact') {
     return [
@@ -116,13 +117,16 @@ export const createDefaultBlocks = (pageType) => {
         subtitle: 'Estamos aquí para ayudarte',
         showButton: false,
         height: '40vh',
-        createdAt: timestamp
+        showLogo: true,
+        showSubtitle: true,
+        createdAt: timestamp,
+        mainImage: '/public/images/placeholder.jpg'
       },
       {
         id: generateBlockId('text-block'),
         type: 'text-block',
         title: 'Información de Contacto',
-        content: '<p>Dirección: Calle Principal #123<br>Teléfono: (123) 456-7890<br>Email: info@ejemplo.com</p>',
+        content: '<div class="row text-center"><div class="col-md-4 mb-4"><i class="bi bi-geo-alt fs-1 text-primary mb-3"></i><h5>Dirección</h5><p>Calle Principal #123<br>Ciudad, País</p></div><div class="col-md-4 mb-4"><i class="bi bi-telephone fs-1 text-primary mb-3"></i><h5>Teléfono</h5><p>(123) 456-7890</p></div><div class="col-md-4 mb-4"><i class="bi bi-envelope fs-1 text-primary mb-3"></i><h5>Email</h5><p>info@cactilia.com</p></div></div>',
         alignment: 'center',
         showBg: true,
         createdAt: timestamp
@@ -136,40 +140,10 @@ export const createDefaultBlocks = (pageType) => {
       id: generateBlockId('text-block'),
       type: 'text-block',
       title: 'Título de la página',
-      content: '<p>Contenido de ejemplo para esta página.</p>',
+      content: '<p>Contenido de ejemplo para esta página. Puedes personalizar este contenido según tus necesidades.</p>',
       alignment: 'center',
       showBg: false,
       createdAt: timestamp
     }
   ];
-};
-
-
-/**
- * Obtiene un valor único para un bloque (para la clave key en React)
- * @param {Object} block - Objeto del bloque
- * @returns {string} - Valor único para la clave
- */
-export const getBlockKey = (block) => {
-  return block.id || `temp_${Math.random().toString(36).substr(2, 9)}`;
-};
-
-
-/**
- * Obtiene el icono para un tipo de bloque (como fallback)
- * @param {string} blockType - Tipo de bloque
- * @returns {string} - Clase de icono Bootstrap
- */
-export const getDefaultBlockIcon = (blockType) => {
-  const iconMap = {
-    'hero-slider': 'bi-images',
-    'featured-products': 'bi-star',
-    'image-carousel': 'bi-card-image',
-    'product-categories': 'bi-grid',
-    'text-block': 'bi-file-text',
-    'call-to-action': 'bi-megaphone'
-  };
-
-
-  return iconMap[blockType] || 'bi-puzzle';
 };

@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ContentPreview } from '../components/content/ContentPreview';
 import { PageSelector } from '../components/content/common/PageSelector';
 import { usePageContent } from '../hooks/usePageContent';
-import { ContentEditor } from '../components/content/blocks/ContentEditor.jsx'
-import { SaveButton } from '../components/content/common/SaveButton.jsx'
+import { ContentEditor } from '../components/content/blocks/ContentEditor';
+import { SaveButton } from '../components/content/common/SaveButton';
+import { ResetBlocksButton } from '../components/content/common/ResetBlocksButton';
 
 /**
  * Página de gestión de contenido mejorada
  * Permite configurar el contenido de las diferentes páginas del sitio
- * con previsualización en vivo
+ * con previsualización en vivo y opción para resetear a valores predeterminados
  *
  * @returns {JSX.Element}
  */
@@ -21,9 +22,12 @@ export const ContentManagementPage = () => {
   // Estado para la página seleccionada
   const [selectedPage, setSelectedPage] = useState(pageId);
 
+  // Estado para mostrar mensaje de éxito
+  const [showSuccess, setShowSuccess] = useState(false);
+
   // Obtener datos y métodos del hook
   const pageContentHook = usePageContent(selectedPage);
-  const { blocks, loading, error, savePageContent } = pageContentHook;
+  const { blocks, loading, error, savePageContent, setBlocks } = pageContentHook;
 
   // Actualizar selectedPage cuando cambia el parámetro pageId
   useEffect(() => {
@@ -36,6 +40,17 @@ export const ContentManagementPage = () => {
     navigate(`/admin/content/${newPageId}`);
   };
 
+  // Manejar guardado con mensaje de éxito
+  const handleSave = async () => {
+    await savePageContent();
+    setShowSuccess(true);
+
+    // Ocultar mensaje después de 3 segundos
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 3000);
+  };
+
   // Lista de páginas disponibles
   const availablePages = [
     { id: 'home', name: 'Página Principal', icon: 'bi-house-door' },
@@ -45,10 +60,23 @@ export const ContentManagementPage = () => {
 
   return (
     <div className="content-management-page">
-      {/* Cabecera con título */}
+      {/* Cabecera con título y botón de reseteo */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Editor de Contenido</h2>
+
+        <ResetBlocksButton
+          pageId={selectedPage}
+          setBlocks={setBlocks}
+        />
       </div>
+
+      {/* Mensaje de éxito flotante */}
+      {showSuccess && (
+        <div className="alert alert-success alert-dismissible fade show" role="alert">
+          <strong>¡Cambios guardados!</strong> Los cambios se han guardado correctamente.
+          <button type="button" className="btn-close" onClick={() => setShowSuccess(false)}></button>
+        </div>
+      )}
 
       {/* Selector de página */}
       <PageSelector
@@ -75,7 +103,7 @@ export const ContentManagementPage = () => {
               3. <strong>Guarda los cambios</strong> con el botón verde al finalizar
             </p>
             <p className="mb-0">
-              <strong>Nota:</strong> Los cambios se reflejarán en la página principal después de guardar.
+              <strong>Nota:</strong> Si deseas volver al diseño original, utiliza el botón "Restaurar Diseño Original".
             </p>
           </div>
         </div>
@@ -108,7 +136,7 @@ export const ContentManagementPage = () => {
       <ContentEditor contentHook={pageContentHook} />
 
       {/* Botón flotante para guardar cambios */}
-      <SaveButton onSave={savePageContent} disabled={loading} />
+      <SaveButton onSave={handleSave} disabled={loading} />
     </div>
   );
 };

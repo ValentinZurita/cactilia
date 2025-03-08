@@ -1,7 +1,6 @@
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { BlockItem } from '../common/BlockItem.jsx'
 import { getBlockConfig } from '../../../utilis/blockRegistry.js'
-
+import { BlockItem } from './BlockItem';
 
 /**
  * Lista de bloques con soporte para arrastrar y soltar

@@ -15,13 +15,26 @@ const blockTypes = {};
  * @param {React.Component} config.editor - Componente para editar el bloque
  * @param {React.Component} config.preview - Componente para previsualizar el bloque
  * @param {Object} config.schema - Definición de los campos del bloque
+ * @param {boolean} [config.experimental] - Si es una característica experimental
  */
 export const registerBlockType = (type, config) => {
   if (blockTypes[type]) {
-    console.warn(`Block type '${type}' already registered. Overwriting...`);
+    console.warn(`Tipo de bloque '${type}' ya registrado. Sobrescribiendo...`);
   }
 
   blockTypes[type] = config;
+
+  // Verificar si los componentes necesarios están presentes
+  if (!config.editor) {
+    console.warn(`El tipo de bloque '${type}' no tiene un componente editor definido.`);
+  }
+
+  if (!config.preview) {
+    console.warn(`El tipo de bloque '${type}' no tiene un componente preview definido.`);
+  }
+
+  // Si todo está bien, confirmar registro
+  console.log(`Bloque '${type}' registrado exitosamente.`);
 };
 
 /**
@@ -35,13 +48,16 @@ export const getBlockConfig = (type) => {
 
 /**
  * Obtiene todos los tipos de bloques registrados
+ * @param {boolean} [includeExperimental=false] - Si se deben incluir bloques experimentales
  * @returns {Array} - Array de objetos con información de los bloques
  */
-export const getAllBlockTypes = () => {
-  return Object.keys(blockTypes).map(type => ({
-    type,
-    ...blockTypes[type],
-  }));
+export const getAllBlockTypes = (includeExperimental = false) => {
+  return Object.keys(blockTypes)
+    .filter(type => includeExperimental || !blockTypes[type].experimental)
+    .map(type => ({
+      type,
+      ...blockTypes[type],
+    }));
 };
 
 /**
@@ -78,4 +94,14 @@ export const getBlockPreview = (type) => {
  */
 export const getBlockSchema = (type) => {
   return blockTypes[type]?.schema || null;
+};
+
+/**
+ * Registra varios tipos de bloques a la vez
+ * @param {Object} blocksConfig - Objeto con la configuración de múltiples bloques
+ */
+export const registerBlockTypes = (blocksConfig) => {
+  Object.entries(blocksConfig).forEach(([type, config]) => {
+    registerBlockType(type, config);
+  });
 };
