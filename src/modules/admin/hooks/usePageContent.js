@@ -3,20 +3,20 @@ import { useDispatch } from 'react-redux';
 import { ContentService } from '../services/contentService';
 import { addMessage } from '../../../store/messages/messageSlice';
 import { CacheService } from '../../../utils/cacheService';
-import { createDefaultBlocks } from '../utilis/blockHelpers.js'
-
-
+import { createDefaultBlocks } from '../utilis/blockHelpers.js';
 
 /**
  * Hook personalizado para gestionar el contenido de páginas
+ * Proporciona funcionalidad para cargar, guardar y manipular bloques de contenido
+ *
  * @param {string} pageId - Identificador de la página
  * @returns {Object} - Estado y métodos para gestionar el contenido
  */
 export const usePageContent = (pageId) => {
-
   // Estado para los datos de la página
   const [pageData, setPageData] = useState(null);
   const [blocks, setBlocks] = useState([]);
+  const [originalBlocks, setOriginalBlocks] = useState(null); // Para comparar y detectar cambios
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBlockId, setSelectedBlockId] = useState(null);
@@ -24,11 +24,9 @@ export const usePageContent = (pageId) => {
   // Redux para mensajes globales
   const dispatch = useDispatch();
 
-
   /**
-   * Carga los datos de la página desde Firebase y los almacena en el estado
-   * Si no hay datos, crea bloques predeterminados para la página actual
-   * Actualiza el estado de carga y muestra mensajes de error en caso de fallo
+   * Carga los datos de la página desde Firebase
+   * Si no hay datos, crea bloques predeterminados
    */
   const loadPageContent = useCallback(async () => {
     if (!pageId) {
@@ -59,16 +57,18 @@ export const usePageContent = (pageId) => {
         setPageData(result.data);
 
         // Si no hay bloques o está vacío, crear bloques predeterminados
+        let currentBlocks;
         if (!result.data.blocks || result.data.blocks.length === 0) {
-          const defaultBlocks = createDefaultBlocks(pageId);
-          setBlocks(defaultBlocks);
+          currentBlocks = createDefaultBlocks(pageId);
         } else {
-          setBlocks(result.data.blocks || []);
+          currentBlocks = result.data.blocks || [];
         }
+
+        setBlocks(currentBlocks);
+        setOriginalBlocks(JSON.parse(JSON.stringify(currentBlocks))); // Copia profunda para comparación
       } else {
         throw new Error(result.error || "Error al cargar el contenido");
       }
-
     } catch (err) {
       console.error(`Error cargando contenido de página [${pageId}]:`, err);
       setError(err.message);
@@ -77,18 +77,13 @@ export const usePageContent = (pageId) => {
         type: 'error',
         text: `Error cargando contenido: ${err.message}`
       }));
-
     } finally {
       setLoading(false);
     }
-
   }, [pageId, dispatch]);
 
-
   /**
-   * Guarda los cambios en la página completa (incluyendo bloques) en Firebase
-   * Actualiza el estado de carga y muestra mensajes de error o éxito en caso de fallo o éxito
-   * Invalida la caché para forzar la recarga de los datos
+   * Guarda los cambios del contenido de la página en Firebase
    */
   const savePageContent = useCallback(async () => {
     if (!pageId || !pageData) return;
@@ -102,7 +97,7 @@ export const usePageContent = (pageId) => {
         blocks
       };
 
-      // Guardar en Firebase y obtener el resultado de la operación
+      // Guardar en Firebase y obtener el resultado
       const result = await ContentService.savePageContent(pageId, updatedPageData);
 
       // Mostrar mensajes de error o éxito según el resultado
@@ -112,15 +107,17 @@ export const usePageContent = (pageId) => {
           text: 'Contenido guardado correctamente'
         }));
 
+        // Actualizar original blocks para reflejar los cambios guardados
+        setOriginalBlocks(JSON.parse(JSON.stringify(blocks)));
+
         // Invalidar caché
         CacheService.remove(`page_${pageId}`);
 
-        // Recargar contenido
+        // Recargar contenido para obtener timestamps actualizados
         await loadPageContent();
       } else {
         throw new Error(result.error || "Error al guardar contenido");
       }
-
     } catch (err) {
       console.error(`Error guardando contenido de página [${pageId}]:`, err);
       setError(err.message);
@@ -130,24 +127,23 @@ export const usePageContent = (pageId) => {
         text: `Error guardando contenido: ${err.message}`
       }));
 
+      throw err; // Re-lanzar para que el componente pueda manejar el error
     } finally {
       setLoading(false);
     }
-
   }, [pageId, pageData, blocks, dispatch, loadPageContent]);
-
 
   // Cargar contenido al montar el componente o cambiar pageId
   useEffect(() => {
     loadPageContent();
   }, [loadPageContent]);
 
-
   // Retornar todos los métodos y estados
   return {
     // Estados
     pageData,
     blocks,
+    originalBlocks,
     setBlocks,
     loading,
     error,
@@ -159,3 +155,5 @@ export const usePageContent = (pageId) => {
     savePageContent
   };
 };
+
+export default usePageContent;
