@@ -4,18 +4,52 @@ import { HeroSliderPreview } from './HeroSlider/Preview';
 import { heroSliderSchema } from './HeroSlider/schema';
 import { registerBlockType } from '../../../utilis/blockRegistry.js'
 
-// Importaciones para otros tipos de bloques
-// import { TextBlockEditor } from './TextBlock/Editor';
-// import { TextBlockPreview } from './TextBlock/Preview';
-// import { textBlockSchema } from './TextBlock/schema';
+// Componentes genéricos temporales para evitar errores
+const GenericBlockEditor = ({ block, onChange }) => (
+  <div className="p-3">
+    <div className="alert alert-info">
+      <i className="bi bi-info-circle me-2"></i>
+      Editor en desarrollo para el tipo: <strong>{block.type}</strong>
+    </div>
+    <div className="mb-3">
+      <label className="form-label">Título</label>
+      <input
+        type="text"
+        className="form-control"
+        value={block.title || ''}
+        onChange={(e) => onChange({ title: e.target.value })}
+      />
+    </div>
+    {block.type === 'text-block' && (
+      <div className="mb-3">
+        <label className="form-label">Contenido</label>
+        <textarea
+          className="form-control"
+          value={block.content || ''}
+          onChange={(e) => onChange({ content: e.target.value })}
+        />
+      </div>
+    )}
+  </div>
+);
 
-// ... y así sucesivamente para cada tipo de bloque
+const GenericBlockPreview = ({ block }) => (
+  <div className="p-4 text-center bg-light rounded">
+    <h4>{block.title || 'Título del bloque'}</h4>
+    <p className="text-muted">Vista previa en desarrollo para: {block.type}</p>
+    {block.type === 'text-block' && block.content && (
+      <div dangerouslySetInnerHTML={{ __html: block.content }} />
+    )}
+  </div>
+);
 
 /**
  * Registra todos los tipos de bloques disponibles
  * Esta función debe llamarse al inicializar la aplicación
  */
 export const registerAllBlockTypes = () => {
+  console.log('⚠️ Registrando todos los tipos de bloques...');
+
   // Registrar bloque Hero Slider
   registerBlockType('hero-slider', {
     title: 'Slider Hero',
@@ -24,25 +58,28 @@ export const registerAllBlockTypes = () => {
     preview: HeroSliderPreview,
     schema: heroSliderSchema
   });
+  console.log('✅ Bloque hero-slider registrado correctamente');
 
   // Registrar bloque de Texto
-  // registerBlockType('text-block', {
-  //   title: 'Bloque de Texto',
-  //   icon: 'bi-file-text',
-  //   editor: TextBlockEditor,
-  //   preview: TextBlockPreview,
-  //   schema: textBlockSchema
-  // });
+  registerBlockType('text-block', {
+    title: 'Bloque de Texto',
+    icon: 'bi-file-text',
+    editor: GenericBlockEditor,
+    preview: GenericBlockPreview,
+    schema: {
+      title: { type: 'text', label: 'Título de sección' },
+      content: { type: 'textarea', label: 'Contenido' },
+      alignment: { type: 'select', label: 'Alineación', options: ['left', 'center', 'right'] },
+      showBg: { type: 'toggle', label: 'Mostrar fondo' }
+    }
+  });
 
-  // ... y así sucesivamente para cada tipo de bloque
-
-  // Ejemplo de registrar un bloque simple sin componentes personalizados
+  // Productos destacados
   registerBlockType('featured-products', {
     title: 'Productos Destacados',
     icon: 'bi-star-fill',
-    // Usar componentes genéricos (se implementarían más tarde)
-    editor: null,
-    preview: null,
+    editor: GenericBlockEditor,
+    preview: GenericBlockPreview,
     schema: {
       title: { type: 'text', label: 'Título de sección' },
       subtitle: { type: 'text', label: 'Subtítulo' },
@@ -53,32 +90,37 @@ export const registerAllBlockTypes = () => {
     }
   });
 
-  // Registrar otros tipos básicos para completar el sistema
+  // Carrusel de imágenes
   registerBlockType('image-carousel', {
     title: 'Carrusel de Imágenes',
-    icon: 'bi-card-image'
+    icon: 'bi-card-image',
+    editor: GenericBlockEditor,
+    preview: GenericBlockPreview
   });
 
+  // Categorías de productos
   registerBlockType('product-categories', {
     title: 'Categorías de Productos',
-    icon: 'bi-grid'
+    icon: 'bi-grid',
+    editor: GenericBlockEditor,
+    preview: GenericBlockPreview
   });
 
-  registerBlockType('text-block', {
-    title: 'Bloque de Texto',
-    icon: 'bi-file-text'
-  });
-
+  // Llamada a la acción
   registerBlockType('call-to-action', {
     title: 'Llamada a la Acción',
-    icon: 'bi-megaphone'
+    icon: 'bi-megaphone',
+    editor: GenericBlockEditor,
+    preview: GenericBlockPreview
   });
 
   // Registro de tipos experimentales o en desarrollo
   registerBlockType('testimonials', {
     title: 'Testimonios',
     icon: 'bi-chat-quote',
-    experimental: true
+    experimental: true,
+    editor: GenericBlockEditor,
+    preview: GenericBlockPreview
   });
 
   console.log('🧩 Todos los tipos de bloques han sido registrados');
@@ -86,5 +128,3 @@ export const registerAllBlockTypes = () => {
 
 // Exportar también los componentes individuales para casos especiales
 export { HeroSliderEditor, HeroSliderPreview, heroSliderSchema };
-// export { TextBlockEditor, TextBlockPreview, textBlockSchema };
-// ... y así sucesivamente

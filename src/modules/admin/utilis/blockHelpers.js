@@ -7,7 +7,9 @@ import { v4 as uuidv4 } from 'uuid'; // Asegúrate de añadir esta dependencia
  * @returns {string} - ID generado
  */
 export const generateBlockId = (type) => {
-  return `block_${type.replace(/-/g, '_')}_${uuidv4().slice(0, 8)}`;
+  // Asegurarse de que se use el mismo formato que espera el componente
+  const safeType = type.replace(/-/g, '_');
+  return `block_${safeType}_${Date.now()}`;
 };
 
 
