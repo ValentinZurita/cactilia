@@ -2,7 +2,7 @@
  * HomeCarousel Component
  *
  * Componente responsivo para carrusel de imágenes usando solo clases de Bootstrap.
- * No utiliza estilos CSS adicionales ni estilos inline.
+ * Garantiza que todas las imágenes mantengan proporciones consistentes.
  *
  * @param {Array} images - Array de objetos de imagen con `id`, `src`, y `alt`.
  */
@@ -42,12 +42,28 @@ export const HomeCarousel = ({ images }) => {
         <div className="carousel-inner">
           {images.map((image, index) => (
             <div key={image.id || index} className={`carousel-item ${index === 0 ? "active" : ""}`}>
-              <div className="text-center">
-                <img
-                  src={image.src}
-                  className="d-block mx-auto img-fluid rounded-3"
-                  alt={image.alt || `Imagen ${index + 1}`}
-                />
+              <div className="d-flex justify-content-center align-items-center" style={{ height: '100%' }}>
+                <div style={{
+                  width: '100%',
+                  maxWidth: '900px',
+                  height: '400px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: '0.5rem'
+                }}>
+                  <img
+                    src={image.src}
+                    className="position-absolute"
+                    alt={image.alt || `Imagen ${index + 1}`}
+                    style={{
+                      top: '0',
+                      left: '0',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
               </div>
             </div>
           ))}

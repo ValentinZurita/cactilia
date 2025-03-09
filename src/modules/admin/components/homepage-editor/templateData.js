@@ -1,4 +1,3 @@
-
 /**
  * Datos de plantillas predefinidas para la página de inicio
  */
@@ -50,11 +49,14 @@ export const DEFAULT_TEMPLATE = {
       title: 'Nuestro Huerto',
       subtitle: 'Descubre la belleza y frescura de nuestra granja.',
       icon: 'bi-tree-fill',
-      showBg: true
+      showBg: true,
+      useCollection: false,
+      collectionId: null,
+      collectionName: null
     },
     productCategories: {
       title: 'Descubre Nuestros Productos',
-      subtitle: 'Productos orgánicos de alta calidad para una vida mejor.',
+      subtitle: 'Explora nuestras categorías destacadas.',
       icon: 'bi-box-seam',
       showBg: false
     }
@@ -113,7 +115,10 @@ export const MODERN_TEMPLATE = {
       title: 'De la granja a tu mesa',
       subtitle: 'Conoce nuestro proceso de cultivo',
       icon: 'bi-flower1',
-      showBg: false
+      showBg: false,
+      useCollection: false,
+      collectionId: null,
+      collectionName: null
     }
   },
   // Orden diferente de secciones para esta plantilla

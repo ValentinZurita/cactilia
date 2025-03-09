@@ -23,6 +23,7 @@ import { getCategories } from '../../admin/services/categoryService.js';
  * - Carga de productos destacados desde la base de datos.
  * - Carga de categorías destacadas desde la base de datos.
  * - Carga de contenido personalizado para la página 'home'.
+ * - Soporte para colecciones de imágenes en hero y carrusel de granja.
  * - Fallback a datos de muestra cuando no hay datos en Firestore.
  * - Orden dinámico de las secciones, según configuración almacenada o por defecto.
  */
@@ -32,7 +33,7 @@ export const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [collectionImages, setCollectionImages] = useState({});
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [featuredCategories, setFeaturedCategories] = useState([]); // Nuevo estado para categorías destacadas
+  const [featuredCategories, setFeaturedCategories] = useState([]);
 
   // ---------------------- FALLBACK DATA ----------------------
   // Imágenes de muestra para secciones de carrusel (OurFarmSection).
@@ -68,7 +69,7 @@ export const HomePage = () => {
    * 1. Carga productos destacados.
    * 2. Carga categorías destacadas.
    * 3. Obtiene el contenido personalizado de Firestore para la página 'home'.
-   * 4. Si el hero usa una colección, carga sus imágenes.
+   * 4. Si el hero o el farmCarousel usan una colección, carga sus imágenes.
    */
   useEffect(() => {
     const loadPageData = async () => {
@@ -95,10 +96,18 @@ export const HomePage = () => {
         if (result?.ok && result?.data) {
           setPageData(result.data);
 
-          // 4. Si el hero usa una colección específica, cargar sus imágenes
-          const hero = result.data.sections?.hero;
-          if (hero?.useCollection && hero?.collectionId) {
-            loadCollectionImages(hero.collectionId);
+          // 4. Cargar imágenes de colecciones si están configuradas
+          const heroSection = result.data.sections?.hero;
+          const farmCarouselSection = result.data.sections?.farmCarousel;
+
+          // Cargar colección del hero si está configurada
+          if (heroSection?.useCollection && heroSection?.collectionId) {
+            loadCollectionImages(heroSection.collectionId);
+          }
+
+          // Cargar colección del farmCarousel si está configurada
+          if (farmCarouselSection?.useCollection && farmCarouselSection?.collectionId) {
+            loadCollectionImages(farmCarouselSection.collectionId);
           }
         } else {
           console.log(
@@ -240,10 +249,16 @@ export const HomePage = () => {
     try {
       const result = await getCollectionImages(collectionId);
       if (result.ok && Array.isArray(result.data)) {
-        const imageUrls = result.data.map((item) => item.url);
+        // Formatear imágenes para el componente HomeCarousel
+        const formattedImages = result.data.map((item, index) => ({
+          id: item.id || `image-${index}`,
+          src: item.url,
+          alt: item.alt || `Imagen ${index + 1}`
+        }));
+
         setCollectionImages((prev) => ({
           ...prev,
-          [collectionId]: imageUrls,
+          [collectionId]: formattedImages
         }));
       }
     } catch (error) {
@@ -261,13 +276,28 @@ export const HomePage = () => {
     if (heroConfig.useCollection && heroConfig.collectionId) {
       const collectionId = heroConfig.collectionId;
       if (collectionImages[collectionId]) {
-        return collectionImages[collectionId];
+        return collectionImages[collectionId].map(img => img.src);
       }
     }
     if (heroConfig.backgroundImage) {
       return [heroConfig.backgroundImage];
     }
     return heroImages;
+  };
+
+  /**
+   * Retorna imágenes para el carrusel de granja. Usa imágenes de la colección si está
+   * configurado, de lo contrario, usa las imágenes de muestra.
+   */
+  const getFarmCarouselImages = () => {
+    const farmConfig = pageData?.sections?.farmCarousel || {};
+    if (farmConfig.useCollection && farmConfig.collectionId) {
+      const collectionId = farmConfig.collectionId;
+      if (collectionImages[collectionId]) {
+        return collectionImages[collectionId];
+      }
+    }
+    return sampleImages;
   };
 
   /**
@@ -419,7 +449,7 @@ export const HomePage = () => {
                 spacing="py-6"
                 height="min-vh-75"
               >
-                <HomeCarousel images={sampleImages} />
+                <HomeCarousel images={getFarmCarouselImages()} />
               </HomeSection>
             );
 
