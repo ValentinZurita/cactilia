@@ -1,40 +1,77 @@
 // src/modules/public/pages/HomePage.jsx
+
 import { useState, useEffect } from 'react';
-import { HeroSection, ProductCarousel, HomeSection, HomeCarousel } from '../components/home-page/index.js';
+import {
+  HeroSection,
+  ProductCarousel,
+  HomeSection,
+  HomeCarousel,
+} from '../components/home-page/index.js';
 import '../../../styles/global.css';
 import { heroImages } from '../../../shared/constants/images.js';
 import { getCollectionImages } from '../../admin/services/collectionsService.js';
-import { ContentService } from '../../admin/services/contentService.js'
+import { ContentService } from '../../admin/services/contentService.js';
+import { getProducts } from '../../admin/services/productService.js';
 
+/**
+ * HomePage
+ *
+ * Página principal que muestra diferentes secciones (Hero, Productos Destacados,
+ * Carrusel de Granjas, Categorías, etc.) con datos cargados desde Firestore
+ * (o datos de muestra como fallback).
+ *
+ * Características:
+ * - Carga de productos destacados desde la base de datos.
+ * - Carga de contenido personalizado para la página 'home'.
+ * - Fallback a datos de muestra cuando no hay datos en Firestore.
+ * - Orden dinámico de las secciones, según configuración almacenada o por defecto.
+ */
 export const HomePage = () => {
+  // ---------------------- STATE ----------------------
   const [pageData, setPageData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [collectionImages, setCollectionImages] = useState({});
+  const [featuredProducts, setFeaturedProducts] = useState([]);
 
-  // Datos de muestra para cuando no hay datos guardados
+  // ---------------------- FALLBACK DATA ----------------------
+  // Imágenes de muestra para secciones de carrusel (OurFarmSection).
   const sampleImages = [
-    { id: 1, src: "/public/images/placeholder.jpg", alt: "Farm 1" },
-    { id: 2, src: "/public/images/placeholder.jpg", alt: "Farm 2" },
-    { id: 3, src: "/public/images/placeholder.jpg", alt: "Farm 3" }
+    { id: 1, src: '/public/images/placeholder.jpg', alt: 'Farm 1' },
+    { id: 2, src: '/public/images/placeholder.jpg', alt: 'Farm 2' },
+    { id: 3, src: '/public/images/placeholder.jpg', alt: 'Farm 3' },
   ];
 
-  const sampleProducts = [
-    { id: 1, name: 'Vegetables', image: '/public/images/placeholder.jpg' },
-    { id: 2, name: 'Edible Flowers', image: '/public/images/placeholder.jpg' },
-    { id: 3, name: 'Product 3', image: '/public/images/placeholder.jpg' },
-    { id: 4, name: 'Product 4', image: '/public/images/placeholder.jpg' },
-    { id: 5, name: 'Product 5', image: '/public/images/placeholder.jpg' },
-    { id: 6, name: 'Product 6', image: '/public/images/placeholder.jpg' },
-  ];
+  // Productos de muestra por si no hay productos reales.
+  const sampleProducts = Array(6)
+    .fill(null)
+    .map((_, i) => ({
+      id: i + 1,
+      name: `Producto ${i + 1}`,
+      image: '/public/images/placeholder.jpg',
+      price: 25 + i,
+      category: 'Muestra',
+    }));
 
-  // Cargar datos desde Firestore
+  // ---------------------- EFFECTS ----------------------
+  /**
+   * Efecto principal que:
+   * 1. Carga productos destacados.
+   * 2. Obtiene el contenido personalizado de Firestore para la página 'home'.
+   * 3. Si el hero usa una colección, carga sus imágenes.
+   */
   useEffect(() => {
     const loadPageData = async () => {
       try {
         setLoading(true);
-        // Verificar si ContentService está disponible
+
+        // 1. Cargar productos destacados
+        await loadFeaturedProducts();
+
+        // 2. Cargar contenido de la página
         if (typeof ContentService?.getPageContent !== 'function') {
-          console.warn('ContentService no está disponible o no tiene el método getPageContent');
+          console.warn(
+            'ContentService no está disponible o no tiene el método getPageContent'
+          );
           setPageData(null);
           return;
         }
@@ -44,16 +81,19 @@ export const HomePage = () => {
         if (result?.ok && result?.data) {
           setPageData(result.data);
 
-          // Si hero sección usa una colección, cargar sus imágenes
-          if (result.data.sections?.hero?.useCollection && result.data.sections?.hero?.collectionId) {
-            loadCollectionImages(result.data.sections.hero.collectionId);
+          // 3. Si el hero usa una colección específica, cargar sus imágenes
+          const hero = result.data.sections?.hero;
+          if (hero?.useCollection && hero?.collectionId) {
+            loadCollectionImages(hero.collectionId);
           }
         } else {
-          console.log('No se encontraron datos publicados, usando valores predeterminados');
+          console.log(
+            'No se encontraron datos publicados, usando valores predeterminados'
+          );
           setPageData(null);
         }
       } catch (error) {
-        console.error("Error cargando página:", error);
+        console.error('Error cargando página:', error);
         setPageData(null);
       } finally {
         setLoading(false);
@@ -63,31 +103,110 @@ export const HomePage = () => {
     loadPageData();
   }, []);
 
-  // Cargar imágenes de una colección
+  // ---------------------- HELPERS ----------------------
+  /**
+   * Carga productos desde el servicio getProducts() y filtra los que sean 'featured'.
+   * Si no hay suficientes destacados, se combinan con productos regulares o se
+   * duplican para asegurar al menos 6 en el carrusel.
+   */
+  const loadFeaturedProducts = async () => {
+    try {
+      const { ok, data, error } = await getProducts();
+      if (!ok) {
+        console.error('Error cargando productos:', error);
+        return;
+      }
+
+      // 1. Obtener productos con featured === true
+      let featured = data.filter(
+        (product) => product.active && product.featured === true
+      );
+
+      // 2. Si hay pocos destacados, completarlos con regulares activos
+      if (featured.length < 4) {
+        const regularProducts = data
+          .filter((product) => product.active && !product.featured)
+          .slice(0, Math.max(6 - featured.length, 0));
+        featured = [...featured, ...regularProducts];
+
+        // 3. Si aún así son pocos, duplicarlos para asegurar un mínimo de 6
+        if (featured.length > 0 && featured.length < 6) {
+          const originalLength = featured.length;
+          for (let i = 0; i < Math.min(6 - originalLength, originalLength); i++) {
+            featured.push({
+              ...featured[i],
+              id: `${featured[i].id}_duplicate_${i}`,
+            });
+          }
+        }
+      }
+
+      // Formatear productos para el componente ProductCarousel
+      const formattedProducts = featured.map((product) => ({
+        id: product.id,
+        name: product.name || 'Producto sin nombre',
+        image: product.mainImage || '/public/images/placeholder.jpg',
+        mainImage: product.mainImage, // se incluye mainImage para fallback en ProductCard
+        price: product.price || 0,
+        category: product.category || 'Sin categoría',
+        stock: product.stock || 0,
+        description: product.description || '',
+        images: product.images || [],
+        featured: product.featured || false,
+      }));
+
+      setFeaturedProducts(formattedProducts);
+    } catch (error) {
+      console.error('Error procesando productos:', error);
+    }
+  };
+
+  /**
+   * Carga las imágenes de una colección (por ID) usando getCollectionImages().
+   * Se almacena en un objeto para evitar recargar la misma colección varias veces.
+   */
   const loadCollectionImages = async (collectionId) => {
     if (!collectionId) return;
+    if (collectionImages[collectionId]) return; // evitar carga repetida
 
     try {
-      // Evitar cargar imágenes que ya tenemos
-      if (collectionImages[collectionId]) return;
-
       const result = await getCollectionImages(collectionId);
       if (result.ok && Array.isArray(result.data)) {
-        // Guardar las URL de las imágenes
-        const imageUrls = result.data.map(item => item.url);
-        setCollectionImages(prev => ({
+        const imageUrls = result.data.map((item) => item.url);
+        setCollectionImages((prev) => ({
           ...prev,
-          [collectionId]: imageUrls
+          [collectionId]: imageUrls,
         }));
-      } else {
-        console.error('Error cargando imágenes de colección:', result.error);
       }
     } catch (error) {
       console.error('Error cargando imágenes de colección:', error);
     }
   };
 
-  // Versión original de la página si no hay datos personalizados
+  /**
+   * Retorna imágenes para la sección Hero. Usa imágenes de la colección si está
+   * configurado, de lo contrario, usa la imagen de fondo específica o el array
+   * heroImages por defecto.
+   */
+  const getHeroImages = () => {
+    const heroConfig = pageData?.sections?.hero || {};
+    if (heroConfig.useCollection && heroConfig.collectionId) {
+      const collectionId = heroConfig.collectionId;
+      if (collectionImages[collectionId]) {
+        return collectionImages[collectionId];
+      }
+    }
+    if (heroConfig.backgroundImage) {
+      return [heroConfig.backgroundImage];
+    }
+    return heroImages;
+  };
+
+  /**
+   * Renderiza la página por defecto (sin datos personalizados).
+   * Incluye sección Hero, productos destacados, carrusel de granja y categorías,
+   * todo con datos de muestra o datos locales cargados.
+   */
   const renderDefaultPage = () => (
     <div className="home-section">
       {/* HeroSection */}
@@ -101,7 +220,7 @@ export const HomePage = () => {
         interval={5000}
       />
 
-      {/* Categorias */}
+      {/* Productos Destacados */}
       <HomeSection
         title="Productos Destacados"
         subtitle="Explora nuestra selección especial."
@@ -110,7 +229,9 @@ export const HomePage = () => {
         spacing="py-6"
         height="min-vh-75"
       >
-        <ProductCarousel products={sampleProducts} />
+        <ProductCarousel
+          products={featuredProducts.length > 0 ? featuredProducts : sampleProducts}
+        />
       </HomeSection>
 
       {/* OurFarmSection */}
@@ -125,7 +246,7 @@ export const HomePage = () => {
         <HomeCarousel images={sampleImages} />
       </HomeSection>
 
-      {/* Productos Destacados */}
+      {/* Categorías de Productos */}
       <HomeSection
         title="Descubre Nuestros Productos"
         subtitle="Productos orgánicos de alta calidad para una vida mejor."
@@ -134,54 +255,39 @@ export const HomePage = () => {
         spacing="py-6"
         height="min-vh-75"
       >
-        <ProductCarousel products={sampleProducts}/>
+        <ProductCarousel
+          products={featuredProducts.length > 0 ? featuredProducts : sampleProducts}
+        />
       </HomeSection>
     </div>
   );
 
-  // Si no hay datos personalizados o están cargando, mostrar la implementación original
+  // ---------------------- RENDER ----------------------
+  // Si estamos cargando datos, no hay contenido personalizado, o la estructura
+  // no es válida, usar la página por defecto
   if (!pageData || loading || !pageData.sections) {
     return renderDefaultPage();
   }
 
-  // Con datos personalizados, usar la configuración guardada
+  // Extraemos sections y blockOrder (si existe)
   const { sections, blockOrder } = pageData;
 
-  // Verificar que sections exista
+  // Si no hay secciones definidas, también se usa la página por defecto
   if (!sections) {
     console.warn('La estructura de datos no es correcta, usando la versión predeterminada');
     return renderDefaultPage();
   }
 
-  // Determinar el orden de renderización
-  const renderOrder = blockOrder && Array.isArray(blockOrder) && blockOrder.length > 0
+  // Determinar el orden de renderización (si existe blockOrder, usarlo; si no,
+  // usar la clave de cada sección)
+  const renderOrder = Array.isArray(blockOrder) && blockOrder.length > 0
     ? blockOrder
     : Object.keys(sections);
-
-  // Preparar imágenes para el hero section
-  const getHeroImages = () => {
-    const heroConfig = sections.hero;
-
-    // Si usa colección y tenemos imágenes cargadas, usarlas
-    if (heroConfig.useCollection && heroConfig.collectionId && collectionImages[heroConfig.collectionId]) {
-      return collectionImages[heroConfig.collectionId];
-    }
-
-    // Si tiene imagen de fondo específica
-    if (heroConfig.backgroundImage) {
-      return [heroConfig.backgroundImage];
-    }
-
-    // Imágenes predeterminadas
-    return heroImages;
-  };
 
   // Renderizar las secciones en el orden especificado
   return (
     <div className="home-section">
-      {/* Renderizar todas las secciones según el orden especificado */}
       {renderOrder.map((sectionId) => {
-        // Verificar que la sección existe
         if (!sections[sectionId]) return null;
 
         const sectionData = sections[sectionId];
@@ -192,14 +298,17 @@ export const HomePage = () => {
               <HeroSection
                 key={sectionId}
                 images={getHeroImages()}
-                title={sectionData.title || "Bienvenido a Cactilia"}
-                subtitle={sectionData.subtitle || "Productos frescos y naturales para una vida mejor"}
+                title={sectionData.title || 'Bienvenido a Cactilia'}
+                subtitle={
+                  sectionData.subtitle ||
+                  'Productos frescos y naturales para una vida mejor'
+                }
                 showButton={sectionData.showButton !== false}
-                buttonText={sectionData.buttonText || "Conoce Más"}
-                buttonLink={sectionData.buttonLink || "#"}
+                buttonText={sectionData.buttonText || 'Conoce Más'}
+                buttonLink={sectionData.buttonLink || '#'}
                 showLogo={sectionData.showLogo !== false}
                 showSubtitle={sectionData.showSubtitle !== false}
-                height={sectionData.height || "100vh"}
+                height={sectionData.height || '100vh'}
                 autoRotate={sectionData.autoRotate !== false}
                 interval={sectionData.interval || 5000}
                 useCollection={sectionData.useCollection === true}
@@ -211,14 +320,20 @@ export const HomePage = () => {
             return (
               <HomeSection
                 key={sectionId}
-                title={sectionData.title || "Productos Destacados"}
-                subtitle={sectionData.subtitle || "Explora nuestra selección especial."}
-                icon={sectionData.icon || "bi-star-fill"}
+                title={sectionData.title || 'Productos Destacados'}
+                subtitle={
+                  sectionData.subtitle || 'Explora nuestra selección especial.'
+                }
+                icon={sectionData.icon || 'bi-star-fill'}
                 showBg={sectionData.showBg === true}
                 spacing="py-6"
                 height="min-vh-75"
               >
-                <ProductCarousel products={sampleProducts} />
+                <ProductCarousel
+                  products={
+                    featuredProducts.length > 0 ? featuredProducts : sampleProducts
+                  }
+                />
               </HomeSection>
             );
 
@@ -226,9 +341,12 @@ export const HomePage = () => {
             return (
               <HomeSection
                 key={sectionId}
-                title={sectionData.title || "Nuestro Huerto"}
-                subtitle={sectionData.subtitle || "Descubre la belleza y frescura de nuestra granja."}
-                icon={sectionData.icon || "bi-tree-fill"}
+                title={sectionData.title || 'Nuestro Huerto'}
+                subtitle={
+                  sectionData.subtitle ||
+                  'Descubre la belleza y frescura de nuestra granja.'
+                }
+                icon={sectionData.icon || 'bi-tree-fill'}
                 showBg={sectionData.showBg !== false}
                 spacing="py-6"
                 height="min-vh-75"
@@ -241,14 +359,21 @@ export const HomePage = () => {
             return (
               <HomeSection
                 key={sectionId}
-                title={sectionData.title || "Descubre Nuestros Productos"}
-                subtitle={sectionData.subtitle || "Productos orgánicos de alta calidad para una vida mejor."}
-                icon={sectionData.icon || "bi-box-seam"}
+                title={sectionData.title || 'Descubre Nuestros Productos'}
+                subtitle={
+                  sectionData.subtitle ||
+                  'Productos orgánicos de alta calidad para una vida mejor.'
+                }
+                icon={sectionData.icon || 'bi-box-seam'}
                 showBg={sectionData.showBg === true}
                 spacing="py-6"
                 height="min-vh-75"
               >
-                <ProductCarousel products={sampleProducts}/>
+                <ProductCarousel
+                  products={
+                    featuredProducts.length > 0 ? featuredProducts : sampleProducts
+                  }
+                />
               </HomeSection>
             );
 

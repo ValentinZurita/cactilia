@@ -6,59 +6,125 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import '../../styles/homepage.css';
 
+
 /**
  * ProductCarousel Component
  *
- * A responsive product carousel that displays product cards using Swiper.js.
- * It supports infinite looping, autoplay, and custom navigation buttons-and-fields.
+ * Muestra un carrusel de productos utilizando Swiper.js.
+ * - Soporta loop infinito, autoplay y botones de navegación personalizados.
+ * - Ajusta el número de slides visibles según el tamaño de la pantalla.
  *
- * Features:
- * - Displays a scrollable row of product cards.
- * - Supports responsive breakpoints for different screen sizes.
- * - Enables infinite looping and smooth transitions.
- * - Allows both automatic scrolling and manual navigation.
- *
- * Props:
- * @param {Array} products - List of products to be displayed.
+ * @param {Array} products - Lista de productos a mostrar.
  */
 export const ProductCarousel = ({ products }) => {
+
+
+  /**
+   * Verifica si no hay productos y retorna un mensaje amigable.
+   */
+  if (!products || products.length === 0) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-muted">No hay productos disponibles</p>
+      </div>
+    );
+  }
+
+
+  /**
+   * Dado que para un carrusel más lleno se necesitan al menos 4 productos,
+   * se duplican los productos si la lista inicial es menor a 4.
+   *
+   * - Si tras duplicar sigue habiendo menos de 6 slides, se duplican de nuevo.
+   * - El objetivo es ofrecer una mejor experiencia visual en pantallas grandes.
+   */
+  let displayProducts = [...products];
+
+  if (products.length < 4) {
+    // Primera duplicación
+    const duplicates = products.map((product, idx) => ({
+      ...product,
+      id: `${product.id}_duplicate_${idx}`
+    }));
+
+    displayProducts = [...products, ...duplicates];
+
+    // Segunda duplicación si sigue habiendo pocos
+    if (displayProducts.length < 6) {
+      const moreDuplicates = displayProducts
+        .slice(0, products.length)
+        .map((product, idx) => ({
+          ...product,
+          id: `${product.id}_duplicate_2_${idx}`
+        }));
+
+      displayProducts = [...displayProducts, ...moreDuplicates];
+    }
+  }
+
+
+  /**
+   * Configuración de breakpoints para Swiper.
+   * Ajusta cuántos slides se muestran en función del tamaño de pantalla.
+   */
+  const swiperBreakpoints = {
+    320: { slidesPerView: 1.5, spaceBetween: 10 },   // Móviles pequeños
+    480: { slidesPerView: 2.5, spaceBetween: 12 },   // Móviles medianos
+    768: { slidesPerView: 2.5, spaceBetween: 15 },   // Tablets
+    990: { slidesPerView: 3, spaceBetween: 20 },     // Pantallas medianas
+    1024: { slidesPerView: 4, spaceBetween: 20 },    // Pantallas grandes
+    1400: { slidesPerView: 4, spaceBetween: 30 },    // Pantallas extra grandes
+  };
+
+
+  /**
+   * Retorno del componente principal:
+   * - Envuelve el carrusel de productos en su contenedor principal.
+   * - Incluye configuración de autoplay, navegación y loop infinito.
+   * - Muestra una SwiperSlide por cada producto de `displayProducts`.
+   * - Agrega botones de navegación personalizados.
+   */
   return (
+
     <div className="product-carousel-container">
 
-      {/* Swiper Carousel Component */}
+      {/* Swiper Carousel */}
       <Swiper
-        modules={[Navigation, Autoplay]} // Enables navigation and autoplay features
+        // Módulos de Swiper a utilizar
+        modules={[Navigation, Autoplay]}
         className="home-swiper"
-        loop={true} // Enables infinite scrolling
-        grabCursor={true} // Provides a "grabbing" cursor effect on hover
-        autoplay={{ delay: 5000, disableOnInteraction: false }} // Automatically moves slides
+        loop
+        grabCursor
         navigation={{
           nextEl: '.swiper-button-next-custom',
           prevEl: '.swiper-button-prev-custom',
         }}
-        spaceBetween={15} // Default space between slides
-        breakpoints={{
-          320: { slidesPerView: 1.5, spaceBetween: 10 }, // Tiny screens
-          480: { slidesPerView: 2, spaceBetween: 15 },
-          768: { slidesPerView: 2.5, spaceBetween: 15 }, // Tablets
-          990: { slidesPerView: 3, spaceBetween: 20 }, // Medium screens
-          1024: { slidesPerView: 4, spaceBetween: 20 }, // Large screens
-          1400: { slidesPerView: 4, spaceBetween: 30 }, // Extra large screens
+        autoplay={{
+          delay: 5000,
+          disableOnInteraction: false,
+          pauseOnMouseEnter: true,
         }}
+        spaceBetween={15}
+        loopAdditionalSlides={displayProducts.length}
+        breakpoints={swiperBreakpoints}
       >
-        {/* Iterates through products array and creates a slide for each product */}
-        {products.map((product) => (
+
+        {/* Render de slides basado en la lista de productos procesada */}
+        {displayProducts.map((product) => (
           <SwiperSlide key={product.id} className="home-product-slide">
-            <ProductCard name={product.name} image={product.image} />
+            <ProductCard
+              name={product.name}
+              image={product.image}
+              mainImage={product.mainImage} // Fallback de imagen
+            />
           </SwiperSlide>
         ))}
       </Swiper>
 
-      {/* Custom Navigation Buttons */}
+      {/* Botones de navegación personalizados */}
       <button className="swiper-button-prev-custom">
         <i className="bi bi-chevron-left"></i>
       </button>
-
       <button className="swiper-button-next-custom">
         <i className="bi bi-chevron-right"></i>
       </button>
