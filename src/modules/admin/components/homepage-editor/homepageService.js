@@ -1,9 +1,8 @@
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { FirebaseDB } from '../../../../firebase/firebaseConfig';
 
-// Colecciones de Firestore
-const DRAFT_COLLECTION = 'content';
-const PUBLISHED_COLLECTION = 'content_published';
+import { ContentService } from '../../services/contentService';
+import { DEFAULT_TEMPLATE } from './templateData';
+
+// ID para el documento de la página de inicio
 const HOME_PAGE_ID = 'home';
 
 /**
@@ -13,29 +12,17 @@ const HOME_PAGE_ID = 'home';
  */
 export const getHomePageContent = async (version = 'draft') => {
   try {
-    // Determinar la colección según la versión
-    const collectionName = version === 'published' ? PUBLISHED_COLLECTION : DRAFT_COLLECTION;
+    const result = await ContentService.getPageContent(HOME_PAGE_ID, version);
 
-    // Obtener el documento
-    const docRef = doc(FirebaseDB, collectionName, HOME_PAGE_ID);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      // Documento encontrado
+    // Si no hay datos, devolver la plantilla predeterminada para evitar errores
+    if (result.ok && !result.data) {
       return {
         ok: true,
-        data: {
-          id: docSnap.id,
-          ...docSnap.data()
-        }
-      };
-    } else {
-      // Documento no encontrado, pero no es un error
-      return {
-        ok: true,
-        data: null
+        data: { ...DEFAULT_TEMPLATE }
       };
     }
+
+    return result;
   } catch (error) {
     console.error('Error obteniendo contenido de la página de inicio:', error);
     return {
@@ -52,30 +39,7 @@ export const getHomePageContent = async (version = 'draft') => {
  */
 export const saveHomePageContent = async (data) => {
   try {
-    // Validar datos mínimos
-    if (!data || typeof data !== 'object') {
-      throw new Error('Se requieren datos válidos para guardar');
-    }
-
-    // Referencia al documento
-    const docRef = doc(FirebaseDB, DRAFT_COLLECTION, HOME_PAGE_ID);
-
-    // Preparar datos con timestamps
-    const dataToSave = {
-      ...data,
-      updatedAt: serverTimestamp()
-    };
-
-    // Verificar si ya existe
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-      dataToSave.createdAt = serverTimestamp();
-    }
-
-    // Guardar en Firestore
-    await setDoc(docRef, dataToSave);
-
-    return { ok: true };
+    return await ContentService.savePageContent(HOME_PAGE_ID, data);
   } catch (error) {
     console.error('Error guardando contenido de la página de inicio:', error);
     return {
@@ -92,35 +56,25 @@ export const saveHomePageContent = async (data) => {
  */
 export const publishHomePageContent = async () => {
   try {
-    // 1. Obtener el borrador actual
-    const draftResult = await getHomePageContent('draft');
-
-    if (!draftResult.ok || !draftResult.data) {
-      throw new Error('No se encontró un borrador para publicar');
-    }
-
-    // 2. Referencia al documento publicado
-    const publishedRef = doc(FirebaseDB, PUBLISHED_COLLECTION, HOME_PAGE_ID);
-
-    // 3. Preparar datos con timestamps
-    const dataToPublish = {
-      ...draftResult.data,
-      publishedAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-
-    // 4. Verificar si ya existe un documento publicado
-    const publishedSnap = await getDoc(publishedRef);
-    if (!publishedSnap.exists()) {
-      dataToPublish.createdAt = serverTimestamp();
-    }
-
-    // 5. Guardar en Firestore como publicado
-    await setDoc(publishedRef, dataToPublish);
-
-    return { ok: true };
+    return await ContentService.publishPageContent(HOME_PAGE_ID);
   } catch (error) {
     console.error('Error publicando contenido de la página de inicio:', error);
+    return {
+      ok: false,
+      error: error.message
+    };
+  }
+};
+
+/**
+ * Resetea la configuración de la página de inicio a la plantilla predeterminada
+ * @returns {Promise<Object>} - Resultado de la operación
+ */
+export const resetHomePageContent = async () => {
+  try {
+    return await saveHomePageContent({ ...DEFAULT_TEMPLATE });
+  } catch (error) {
+    console.error('Error reseteando contenido de la página de inicio:', error);
     return {
       ok: false,
       error: error.message

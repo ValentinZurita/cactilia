@@ -1,3 +1,4 @@
+// src/modules/admin/components/homepage-editor/templateData.js
 import { heroImages } from "../../../../shared/constants/images";
 
 /**
@@ -57,6 +58,13 @@ export const DEFAULT_TEMPLATE = {
       showBg: false
     }
   },
+  // Orden en que se muestran las secciones
+  blockOrder: [
+    'hero',
+    'featuredProducts',
+    'farmCarousel',
+    'productCategories'
+  ],
   settings: {
     colors: {
       primary: '#34C749',
@@ -104,6 +112,13 @@ export const MODERN_TEMPLATE = {
       showBg: false
     }
   },
+  // Orden diferente de secciones para esta plantilla
+  blockOrder: [
+    'hero',
+    'productCategories',
+    'featuredProducts',
+    'farmCarousel'
+  ],
   settings: {
     colors: {
       primary: '#28a745',

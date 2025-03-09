@@ -6,11 +6,10 @@ import {
   CategoryManagementPage,
   ProductManagementPage,
   UserManagementPage,
-  MediaLibraryPage,  // NEW
-  MediaUploadPage,    // NEW
+  MediaLibraryPage,
+  MediaUploadPage,
 } from '../pages/index.js'
 import { RequireAdminAuth } from '../components/login/index.js'
-import { ContentManagementPage } from '../pages/ContentManagementPage.jsx'
 import { HomePageManagementPage } from '../components/homepage-editor/HomePageManagementPage.jsx'
 
 export const AdminRoutes = () => {
@@ -40,11 +39,8 @@ export const AdminRoutes = () => {
           <Route path="media/browse" element={<MediaLibraryPage />} />
           <Route path="media/upload" element={<MediaUploadPage />} />
 
-          {/* Content Management */}
+          {/* Homepage Editor (New Content Management) */}
           <Route path="homepage" element={<HomePageManagementPage />} />
-
-          <Route path="content" element={<ContentManagementPage />} />
-          <Route path="content/:pageId" element={<ContentManagementPage />} />
 
           {/* Users */}
           <Route path="users" element={<Navigate to="users/customers" />} />

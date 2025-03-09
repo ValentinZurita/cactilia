@@ -1,23 +1,23 @@
 import { useState, useEffect } from 'react';
-import { TemplateSelector } from './TemplateSelector';
 import { SectionEditor } from './SectionEditor';
 import { PreviewPanel } from './PreviewPanel';
 import { ActionButtons } from './ActionButton.jsx'
-import { getHomePageContent, saveHomePageContent } from './homepageService.js'
+import { getHomePageContent, saveHomePageContent, publishHomePageContent } from './homepageService.js'
 import { DEFAULT_TEMPLATE } from './templateData.js'
 
 /**
  * Editor principal para la página de inicio
- * Maneja la carga, edición y guardado de configuración de la homepage
+ * Maneja la carga, edición, guardado y publicación de configuración de la homepage
  */
 const HomePageEditor = () => {
   // Estado principal para la configuración de la página
   const [pageConfig, setPageConfig] = useState(null);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [activeSection, setActiveSection] = useState('hero');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [hasSavedContent, setHasSavedContent] = useState(false);
   const [showAlert, setShowAlert] = useState({ show: false, type: '', message: '' });
 
   // Cargar la configuración al iniciar
@@ -29,12 +29,11 @@ const HomePageEditor = () => {
 
         if (result.ok && result.data) {
           setPageConfig(result.data);
-          // Identificar la plantilla según la configuración cargada
-          setSelectedTemplate(result.data.templateId || 'default');
+          setHasSavedContent(true); // Hay contenido guardado que podemos publicar
         } else {
           // Si no hay configuración guardada, usar la predeterminada
           setPageConfig({ ...DEFAULT_TEMPLATE });
-          setSelectedTemplate('default');
+          setHasSavedContent(false);
         }
       } catch (error) {
         console.error('Error cargando la configuración:', error);
@@ -45,7 +44,6 @@ const HomePageEditor = () => {
         });
         // En caso de error, usar la plantilla predeterminada
         setPageConfig({ ...DEFAULT_TEMPLATE });
-        setSelectedTemplate('default');
       } finally {
         setLoading(false);
       }
@@ -53,22 +51,6 @@ const HomePageEditor = () => {
 
     loadContent();
   }, []);
-
-  // Manejar cambio de plantilla
-  const handleTemplateChange = (templateId) => {
-    if (hasChanges) {
-      if (!window.confirm('Hay cambios sin guardar. ¿Deseas cambiar de plantilla y perder estos cambios?')) {
-        return;
-      }
-    }
-
-    // Obtener la plantilla y aplicarla
-    const newTemplate = templatesData.find(t => t.id === templateId) || DEFAULT_TEMPLATE;
-    setPageConfig({ ...newTemplate });
-    setSelectedTemplate(templateId);
-    setActiveSection('hero'); // Resetear a la primera sección
-    setHasChanges(true);
-  };
 
   // Actualizar una sección específica
   const handleSectionUpdate = (sectionId, newData) => {
@@ -85,36 +67,65 @@ const HomePageEditor = () => {
     setHasChanges(true);
   };
 
-  // Guardar la configuración
+  // Mostrar alerta y ocultarla después de un tiempo
+  const showTemporaryAlert = (type, message) => {
+    setShowAlert({
+      show: true,
+      type,
+      message
+    });
+
+    setTimeout(() => {
+      setShowAlert({ show: false, type: '', message: '' });
+    }, 3000);
+  };
+
+  // Guardar borrador
   const handleSave = async () => {
     try {
       setSaving(true);
       const result = await saveHomePageContent(pageConfig);
 
       if (result.ok) {
-        setShowAlert({
-          show: true,
-          type: 'success',
-          message: 'Configuración guardada correctamente'
-        });
+        showTemporaryAlert('success', 'Borrador guardado correctamente');
         setHasChanges(false);
+        setHasSavedContent(true); // Activar que hay contenido guardado para publicar
       } else {
-        throw new Error(result.error || 'Error desconocido');
+        throw new Error(result.error || 'Error desconocido al guardar');
       }
     } catch (error) {
       console.error('Error guardando la configuración:', error);
-      setShowAlert({
-        show: true,
-        type: 'danger',
-        message: `Error al guardar: ${error.message}`
-      });
+      showTemporaryAlert('danger', `Error al guardar: ${error.message}`);
     } finally {
       setSaving(false);
+    }
+  };
 
-      // Ocultar la alerta después de 3 segundos
-      setTimeout(() => {
-        setShowAlert({ show: false, type: '', message: '' });
-      }, 3000);
+  // Publicar cambios
+  const handlePublish = async () => {
+    try {
+      setPublishing(true);
+
+      // Guardar primero para asegurarnos de tener la última versión
+      const saveResult = await saveHomePageContent(pageConfig);
+      if (!saveResult.ok) {
+        throw new Error(saveResult.error || 'Error al guardar antes de publicar');
+      }
+
+      // Luego publicar
+      const publishResult = await publishHomePageContent();
+
+      if (publishResult.ok) {
+        showTemporaryAlert('success', '✅ Cambios publicados correctamente. Ya son visibles en la página web.');
+        setHasChanges(false);
+      } else {
+        throw new Error(publishResult.error || 'Error desconocido al publicar');
+      }
+    } catch (error) {
+      console.error('Error publicando la configuración:', error);
+      showTemporaryAlert('danger', `Error al publicar: ${error.message}`);
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -122,7 +133,6 @@ const HomePageEditor = () => {
   const handleReset = () => {
     if (window.confirm('¿Estás seguro de resetear la configuración a la plantilla predeterminada? Perderás todos los cambios.')) {
       setPageConfig({ ...DEFAULT_TEMPLATE });
-      setSelectedTemplate('default');
       setActiveSection('hero');
       setHasChanges(true);
     }
@@ -131,11 +141,11 @@ const HomePageEditor = () => {
   // Mostrar spinner mientras carga
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="d-flex justify-content-center align-items-center py-5">
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Cargando...</span>
         </div>
-        <p className="mt-3">Cargando configuración de la página...</p>
+        <p className="ms-3 mb-0">Cargando configuración...</p>
       </div>
     );
   }
@@ -145,29 +155,32 @@ const HomePageEditor = () => {
       {/* Alerta de estado */}
       {showAlert.show && (
         <div className={`alert alert-${showAlert.type} alert-dismissible fade show`} role="alert">
-          {showAlert.message}
+          <div className="d-flex align-items-center">
+            <i className={`bi ${showAlert.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} fs-4 me-2`}></i>
+            <div>{showAlert.message}</div>
+          </div>
           <button type="button" className="btn-close" onClick={() => setShowAlert({ show: false })}></button>
         </div>
       )}
 
-      <div className="row g-4">
-        {/* Panel izquierdo - Controles de edición */}
-        <div className="col-lg-5">
-          <div className="card border-0 shadow-sm mb-4">
-            <div className="card-header bg-white">
-              <h5 className="mb-0">Plantilla</h5>
-            </div>
-            <div className="card-body">
-              <TemplateSelector
-                selectedTemplate={selectedTemplate}
-                onSelectTemplate={handleTemplateChange}
-              />
-            </div>
-          </div>
+      {/* Explicación del flujo de trabajo */}
+      <div className="alert alert-info mb-4 d-flex">
+        <i className="bi bi-info-circle-fill fs-4 me-2"></i>
+        <div>
+          <strong>Cómo funciona:</strong> Los cambios que realices no serán visibles en tu sitio hasta que hagas clic en "Publicar cambios".
+          Puedes guardar un borrador en cualquier momento.
+        </div>
+      </div>
 
-          <div className="card border-0 shadow-sm">
+      <div className="row g-4">
+        {/* Panel izquierdo con pestañas de secciones */}
+        <div className="col-lg-5">
+          <div className="card">
             <div className="card-header bg-white">
-              <h5 className="mb-0">Editar secciones</h5>
+              <h5 className="mb-0 d-flex align-items-center">
+                <i className="bi bi-pencil-square text-primary me-2"></i>
+                Editor de Secciones
+              </h5>
             </div>
             <div className="card-body p-0">
               {pageConfig && (
@@ -184,14 +197,28 @@ const HomePageEditor = () => {
 
         {/* Panel derecho - Vista previa */}
         <div className="col-lg-7">
-          <div className="card border-0 shadow-sm">
+          <div className="card">
             <div className="card-header bg-white d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Vista previa</h5>
-              <span className="badge bg-secondary">Previsualización</span>
+              <h5 className="mb-0 d-flex align-items-center">
+                <i className="bi bi-eye text-primary me-2"></i>
+                Vista Previa
+              </h5>
+              <span className="badge bg-primary">
+                <i className="bi bi-display me-1"></i>
+                Previsualización
+              </span>
             </div>
             <div className="card-body p-0">
               {pageConfig && (
-                <PreviewPanel config={pageConfig} />
+                <div className="position-relative">
+                  <div className="position-absolute top-0 end-0 z-index-10 m-2">
+                    <span className="badge bg-warning text-dark px-3 py-2">
+                      <i className="bi bi-eye-fill me-1"></i>
+                      VISTA PREVIA
+                    </span>
+                  </div>
+                  <PreviewPanel config={pageConfig} />
+                </div>
               )}
             </div>
           </div>
@@ -199,12 +226,17 @@ const HomePageEditor = () => {
       </div>
 
       {/* Botones de acción */}
-      <ActionButtons
-        onSave={handleSave}
-        onReset={handleReset}
-        saving={saving}
-        hasChanges={hasChanges}
-      />
+      <div className="mt-4">
+        <ActionButtons
+          onSave={handleSave}
+          onPublish={handlePublish}
+          onReset={handleReset}
+          saving={saving}
+          publishing={publishing}
+          hasChanges={hasChanges}
+          hasSavedContent={hasSavedContent}
+        />
+      </div>
     </div>
   );
 };

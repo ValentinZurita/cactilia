@@ -42,7 +42,7 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
   return (
     <div className="hero-section-editor">
       <div className="mb-4">
-        <h6 className="fw-bold mb-3">Contenido Principal</h6>
+        <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Contenido Principal</h6>
 
         {/* Título */}
         <div className="mb-3">
@@ -68,10 +68,12 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
             onChange={(e) => handleChange('subtitle', e.target.value)}
             placeholder="Ej: Productos frescos y naturales para una vida mejor"
           />
-          <div className="form-check mt-2">
+
+          <div className="form-check form-switch mt-2">
             <input
               className="form-check-input"
               type="checkbox"
+              role="switch"
               id="showSubtitle"
               checked={data.showSubtitle !== false}
               onChange={() => handleToggleChange('showSubtitle')}
@@ -84,7 +86,7 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
       </div>
 
       <div className="mb-4">
-        <h6 className="fw-bold mb-3">Imagen de Fondo</h6>
+        <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Imagen de Fondo</h6>
 
         <div className="mb-3">
           <div className="d-flex align-items-center mb-2">
@@ -118,18 +120,22 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
               />
             </div>
           ) : (
-            <div className="text-muted">Ninguna imagen seleccionada</div>
+            <div className="text-muted border rounded p-3 text-center bg-light">
+              <i className="bi bi-card-image fs-1 d-block mb-2"></i>
+              Ninguna imagen seleccionada
+            </div>
           )}
         </div>
       </div>
 
       <div className="mb-4">
-        <h6 className="fw-bold mb-3">Opciones del Logo</h6>
+        <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Opciones del Logo</h6>
 
-        <div className="form-check">
+        <div className="form-check form-switch">
           <input
             className="form-check-input"
             type="checkbox"
+            role="switch"
             id="showLogo"
             checked={data.showLogo !== false}
             onChange={() => handleToggleChange('showLogo')}
@@ -141,12 +147,13 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
       </div>
 
       <div className="mb-4">
-        <h6 className="fw-bold mb-3">Botón de Acción</h6>
+        <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Botón de Acción</h6>
 
-        <div className="form-check mb-3">
+        <div className="form-check form-switch mb-3">
           <input
             className="form-check-input"
             type="checkbox"
+            role="switch"
             id="showButton"
             checked={data.showButton !== false}
             onChange={() => handleToggleChange('showButton')}
@@ -157,7 +164,7 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
         </div>
 
         {data.showButton !== false && (
-          <>
+          <div className="card bg-light border-0 p-3 mb-3">
             <div className="mb-3">
               <label htmlFor="buttonText" className="form-label">Texto del botón</label>
               <input
@@ -180,12 +187,12 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
                 placeholder="Ej: /productos"
               />
             </div>
-          </>
+          </div>
         )}
       </div>
 
       <div className="mb-3">
-        <h6 className="fw-bold mb-3">Configuración avanzada</h6>
+        <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Configuración avanzada</h6>
 
         <div className="mb-3">
           <label htmlFor="height" className="form-label">Altura del banner</label>
@@ -202,10 +209,11 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
           </select>
         </div>
 
-        <div className="form-check">
+        <div className="form-check form-switch">
           <input
             className="form-check-input"
             type="checkbox"
+            role="switch"
             id="autoRotate"
             checked={data.autoRotate !== false}
             onChange={() => handleToggleChange('autoRotate')}
