@@ -6,30 +6,28 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import '../../styles/homepage.css';
 
-
 /**
  * ProductCarousel Component
  *
- * Muestra un carrusel de productos utilizando Swiper.js.
+ * Muestra un carrusel de productos o categorías utilizando Swiper.js.
  * - Soporta loop infinito, autoplay y botones de navegación personalizados.
  * - Ajusta el número de slides visibles según el tamaño de la pantalla.
+ * - Ahora identifica si los elementos son productos o categorías para su redirección
  *
- * @param {Array} products - Lista de productos a mostrar.
+ * @param {Array} products - Lista de productos o categorías a mostrar.
+ * @param {boolean} isCategory - Indica si los elementos son categorías (true) o productos (false)
  */
-export const ProductCarousel = ({ products }) => {
-
-
+export const ProductCarousel = ({ products, isCategory = false }) => {
   /**
    * Verifica si no hay productos y retorna un mensaje amigable.
    */
   if (!products || products.length === 0) {
     return (
       <div className="text-center py-4">
-        <p className="text-muted">No hay productos disponibles</p>
+        <p className="text-muted">No hay {isCategory ? 'categorías' : 'productos'} disponibles</p>
       </div>
     );
   }
-
 
   /**
    * Dado que para un carrusel más lleno se necesitan al menos 4 productos,
@@ -62,7 +60,6 @@ export const ProductCarousel = ({ products }) => {
     }
   }
 
-
   /**
    * Configuración de breakpoints para Swiper.
    * Ajusta cuántos slides se muestran en función del tamaño de pantalla.
@@ -76,18 +73,15 @@ export const ProductCarousel = ({ products }) => {
     1400: { slidesPerView: 4, spaceBetween: 30 },    // Pantallas extra grandes
   };
 
-
   /**
    * Retorno del componente principal:
    * - Envuelve el carrusel de productos en su contenedor principal.
    * - Incluye configuración de autoplay, navegación y loop infinito.
    * - Muestra una SwiperSlide por cada producto de `displayProducts`.
-   * - Agrega botones de navegación personalizados.
+   * - Ahora pasa isCategory a los ProductCard
    */
   return (
-
     <div className="product-carousel-container">
-
       {/* Swiper Carousel */}
       <Swiper
         // Módulos de Swiper a utilizar
@@ -108,14 +102,14 @@ export const ProductCarousel = ({ products }) => {
         loopAdditionalSlides={displayProducts.length}
         breakpoints={swiperBreakpoints}
       >
-
         {/* Render de slides basado en la lista de productos procesada */}
         {displayProducts.map((product) => (
           <SwiperSlide key={product.id} className="home-product-slide">
             <ProductCard
+              id={product.id.split('_duplicate_')[0]} // Usamos el ID original sin sufijo de duplicado
               name={product.name}
-              image={product.image}
-              mainImage={product.mainImage} // Fallback de imagen
+              image={product.image || product.mainImage}
+              isCategory={isCategory}
             />
           </SwiperSlide>
         ))}
@@ -128,7 +122,6 @@ export const ProductCarousel = ({ products }) => {
       <button className="swiper-button-next-custom">
         <i className="bi bi-chevron-right"></i>
       </button>
-
     </div>
   );
 };

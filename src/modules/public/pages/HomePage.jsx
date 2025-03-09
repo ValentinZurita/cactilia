@@ -6,6 +6,7 @@ import {
   HomeCarousel,
 } from '../components/home-page/index.js';
 import '../../../styles/global.css';
+import './../../public/styles/homepage.css';
 import { heroImages } from '../../../shared/constants/images.js';
 import { getCollectionImages } from '../../admin/services/collectionsService.js';
 import { ContentService } from '../../admin/services/contentService.js';
@@ -22,6 +23,7 @@ import { getCategories } from '../../admin/services/categoryService.js';
  * Características:
  * - Carga de productos destacados desde la base de datos.
  * - Carga de categorías destacadas desde la base de datos.
+ * - Soporte para navegación al hacer clic en productos y categorías.
  * - Carga de contenido personalizado para la página 'home'.
  * - Soporte para colecciones de imágenes en hero y carrusel de granja.
  * - Fallback a datos de muestra cuando no hay datos en Firestore.
@@ -47,7 +49,7 @@ export const HomePage = () => {
   const sampleProducts = Array(6)
     .fill(null)
     .map((_, i) => ({
-      id: i + 1,
+      id: `sample-product-${i + 1}`,
       name: `Producto ${i + 1}`,
       image: '/public/images/placeholder.jpg',
       price: 25 + i,
@@ -58,7 +60,7 @@ export const HomePage = () => {
   const sampleCategories = Array(6)
     .fill(null)
     .map((_, i) => ({
-      id: i + 1,
+      id: `sample-category-${i + 1}`,
       name: `Categoría ${i + 1}`,
       image: '/public/images/placeholder.jpg',
     }));
@@ -131,6 +133,7 @@ export const HomePage = () => {
    * Carga productos desde el servicio getProducts() y filtra los que sean 'featured'.
    * Si no hay suficientes destacados, se combinan con productos regulares o se
    * duplican para asegurar al menos 6 en el carrusel.
+   * Asegura que los productos tengan su ID original para correcta navegación.
    */
   const loadFeaturedProducts = async () => {
     try {
@@ -166,7 +169,7 @@ export const HomePage = () => {
 
       // Formatear productos para el componente ProductCarousel
       const formattedProducts = featured.map((product) => ({
-        id: product.id,
+        id: product.id, // Conservamos el ID original para la navegación
         name: product.name || 'Producto sin nombre',
         image: product.mainImage || '/public/images/placeholder.jpg',
         mainImage: product.mainImage, // se incluye mainImage para fallback en ProductCard
@@ -188,6 +191,7 @@ export const HomePage = () => {
    * Carga categorías desde el servicio getCategories() y filtra las que sean 'featured'.
    * Si no hay suficientes destacadas, se combinan con categorías regulares o se
    * duplican para asegurar al menos 6 en el carrusel.
+   * Asegura que las categorías tengan su ID original para correcta navegación.
    */
   const loadFeaturedCategories = async () => {
     try {
@@ -223,7 +227,7 @@ export const HomePage = () => {
 
       // Formatear categorías para el componente ProductCarousel (mismo formato)
       const formattedCategories = featured.map((category) => ({
-        id: category.id,
+        id: category.id, // Conservamos el ID original para la navegación
         name: category.name || 'Categoría sin nombre',
         image: category.mainImage || '/public/images/placeholder.jpg',
         mainImage: category.mainImage,
@@ -329,6 +333,7 @@ export const HomePage = () => {
       >
         <ProductCarousel
           products={featuredProducts.length > 0 ? featuredProducts : sampleProducts}
+          isCategory={false}
         />
       </HomeSection>
 
@@ -347,7 +352,7 @@ export const HomePage = () => {
       {/* Categorías de Productos */}
       <HomeSection
         title="Descubre Nuestros Productos"
-        subtitle="Productos orgánicos de alta calidad para una vida mejor."
+        subtitle="Explora por categorías."
         icon="bi-box-seam"
         showBg={false}
         spacing="py-6"
@@ -355,6 +360,7 @@ export const HomePage = () => {
       >
         <ProductCarousel
           products={featuredCategories.length > 0 ? featuredCategories : sampleCategories}
+          isCategory={true}
         />
       </HomeSection>
     </div>
@@ -431,6 +437,7 @@ export const HomePage = () => {
                   products={
                     featuredProducts.length > 0 ? featuredProducts : sampleProducts
                   }
+                  isCategory={false}
                 />
               </HomeSection>
             );
@@ -460,7 +467,7 @@ export const HomePage = () => {
                 title={sectionData.title || 'Descubre Nuestros Productos'}
                 subtitle={
                   sectionData.subtitle ||
-                  'Productos orgánicos de alta calidad para una vida mejor.'
+                  'Explora por categorías.'
                 }
                 icon={sectionData.icon || 'bi-box-seam'}
                 showBg={sectionData.showBg === true}
@@ -471,6 +478,7 @@ export const HomePage = () => {
                   products={
                     featuredCategories.length > 0 ? featuredCategories : sampleCategories
                   }
+                  isCategory={true}
                 />
               </HomeSection>
             );

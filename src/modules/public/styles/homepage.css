@@ -1,7 +1,5 @@
 /*
    🏠 HOME PAGE CSS - Cactilia
-   Author: [Your Name]
-   Last Updated: [Date]
 */
 
 /* 🔄 Import global styles to reuse variables */
@@ -14,11 +12,8 @@
 
 /* Section padding for uniform spacing */
 .home-section {
-    /* padding: var(--spacing-xl) 0;*/
     padding: 0;
     margin: 0 auto;
-    /* max-width: 1400px;*/
-    /* margin-bottom: clamp(75px, 8vw, 75px);*/
 }
 
 /* Custom section spacing */
@@ -94,18 +89,49 @@
     align-items: center;
 }
 
+/*
+  🃏 4) PRODUCT CARD STYLES
+  Styling for product and category cards with hover effects.
+*/
+
+/* Card container with hover effect */
+.product-card-container {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+/* Elevation effect on hover */
+.product-card-container:hover {
+    transform: translateY(-5px);
+}
+
+/* Image zoom effect on hover */
+.product-card-container:hover img {
+    transform: scale(1.05);
+}
+
+/* Overlay visibility on hover */
+.product-card-container:hover .hover-overlay {
+    opacity: 1 !important;
+}
+
+/* Smooth transitions for all effects */
+.transition-all {
+    transition: all 0.3s ease;
+}
 
 /*
-  ⏩ 4) CUSTOM SWIPER NAVIGATION BUTTONS
+  ⏩ 5) CUSTOM SWIPER NAVIGATION BUTTONS
   Styling for custom left/right navigation arrows.
 */
 
-/* Container to ensure buttons-and-fields are correctly positioned */
+/* Container to ensure buttons are correctly positioned */
 .product-carousel-container {
     position: relative;
     width: 100%;
     height: auto;
-
 }
 
 /* Custom navigation button style */
@@ -150,7 +176,7 @@
     background-color: rgba(52, 199, 73, 1);
 }
 
-/* Bootstrap icon inside navigation buttons-and-fields */
+/* Bootstrap icon inside navigation buttons */
 .swiper-button-prev-custom i,
 .swiper-button-next-custom i {
     font-size: 20px;
@@ -158,7 +184,7 @@
 }
 
 /*
-  ⭐ 5) SECTION ICON STYLES
+  ⭐ 6) SECTION ICON STYLES
   Styling for the icon above the section title.
 */
 
@@ -170,16 +196,24 @@
     margin-bottom: 8px;
 }
 
-/* 🌿 Our Farm Section - Estilos para el carrusel */
+/*
+  🌿 7) FARM CAROUSEL STYLES
+  Styling for the farm carousel section.
+*/
 
-/* 🖼️ Ajusta el tamaño del carrusel */
+/* Adjust carousel image size */
 .farm-carousel-img {
     max-width: 900px;
     height: 500px;
     object-fit: cover;
 }
 
-/* 🔘 Indicadores más visibles */
+/* Section spacing */
+.our-farm-section {
+    padding: var(--spacing-xl) 0;
+}
+
+/* Dot indicators styling */
 .carousel-indicators button {
     background-color: var(--green-3);
     border-radius: 50%;
@@ -187,19 +221,6 @@
     height: 12px;
 }
 
-/* 🌿 Our Farm Section */
-.our-farm-section {
-    padding: var(--spacing-xl) 0;
-}
-
-/* 🖼️ Carousel image size */
-.farm-carousel-img {
-    max-width: 900px;
-    height: 500px;
-    object-fit: cover;
-}
-
-/* 🔘 Dot indicators instead of bars */
 .carousel-indicators [data-bs-target] {
     width: 12px;
     height: 12px;
@@ -212,4 +233,3 @@
 .carousel-indicators .active {
     opacity: 1;
 }
-
