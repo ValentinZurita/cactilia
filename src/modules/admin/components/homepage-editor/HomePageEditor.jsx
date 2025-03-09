@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { HeroSectionEditor } from './HeroSectionEditor';
 import { FarmCarouselEditor } from './FarmCarouselEditor';
 import { ProductCategoriesEditor } from './ProductCategoriesEditor';
-import { ActionButtons } from './ActionButton';
 import { DEFAULT_TEMPLATE } from './templateData';
 import { getHomePageContent, saveHomePageContent, publishHomePageContent } from './homepageService';
 import { FeaturedProductsEditor } from './FeaturedProducstEditor.jsx'
+import { ActionButtons } from './ActionButton.jsx'
 
 /**
  * Editor principal para la página de inicio - Versión rediseñada
@@ -249,19 +249,19 @@ const HomePageEditor = () => {
         </div>
       )}
 
-      {/* Header con botones de acciones secundarias */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      {/* Header con botones de acciones secundarias - Mejorado para móviles */}
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
         <button
-          className={`btn btn-sm ${isReordering ? 'btn-secondary' : 'btn-outline-secondary'}`}
+          className={`btn ${isReordering ? 'btn-secondary' : 'btn-outline-secondary'} w-100 w-sm-auto`}
           onClick={toggleReorderMode}
           title={isReordering ? "Terminar reordenamiento" : "Reordenar secciones"}
         >
           <i className="bi bi-arrow-down-up me-2"></i>
-          {isReordering ? 'Terminar' : 'Reordenar'}
+          {isReordering ? 'Terminar reordenamiento' : 'Reordenar secciones'}
         </button>
 
         <button
-          className="btn btn-sm btn-outline-primary"
+          className="btn btn-outline-primary w-100 w-sm-auto"
           onClick={() => window.open('/', '_blank')}
           title="Ver la página en una nueva ventana"
         >
@@ -276,11 +276,11 @@ const HomePageEditor = () => {
           <div className="col-12" key={sectionId}>
             <div className={`card shadow-sm ${isReordering ? 'border-primary' : ''}`}>
               <div
-                className="card-header bg-white d-flex justify-content-between align-items-center py-3"
+                className="card-header bg-white d-flex flex-wrap justify-content-between align-items-center py-3"
                 onClick={() => toggleSection(sectionId)}
                 style={{ cursor: isReordering ? 'move' : 'pointer' }}
               >
-                <div className="d-flex align-items-center">
+                <div className="d-flex align-items-center mb-2 mb-sm-0">
                   <i className={`bi ${sectionInfo[sectionId]?.icon || 'bi-square'} text-primary me-3 fs-4`}></i>
                   <div>
                     <h6 className="mb-0 fw-bold">{sectionInfo[sectionId]?.name || sectionId}</h6>
@@ -291,7 +291,7 @@ const HomePageEditor = () => {
                 </div>
 
                 {isReordering ? (
-                  <div className="d-flex">
+                  <div className="d-flex mt-2 mt-sm-0">
                     <button
                       className="btn btn-sm btn-outline-secondary me-1"
                       onClick={(e) => { e.stopPropagation(); moveSectionUp(index); }}
@@ -308,7 +308,7 @@ const HomePageEditor = () => {
                     </button>
                   </div>
                 ) : (
-                  <i className={`bi ${expandedSection === sectionId ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+                  <i className={`bi ${expandedSection === sectionId ? 'bi-chevron-up' : 'bi-chevron-down'} d-none d-sm-block`}></i>
                 )}
               </div>
 

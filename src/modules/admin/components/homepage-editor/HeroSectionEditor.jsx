@@ -3,7 +3,7 @@ import { MediaSelector } from '../media/index.js'
 
 /**
  * Editor específico para la sección Hero
- * Permite personalizar todos los aspectos del Hero banner
+ * Versión mejorada con responsividad completa
  */
 export const HeroSectionEditor = ({ data, onUpdate }) => {
   const [showMediaSelector, setShowMediaSelector] = useState(false);
@@ -89,10 +89,10 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
         <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Imagen de Fondo</h6>
 
         <div className="mb-3">
-          <div className="d-flex align-items-center mb-2">
+          <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 mb-2">
             <button
               type="button"
-              className="btn btn-outline-primary"
+              className="btn btn-outline-primary w-100 w-sm-auto"
               onClick={() => openMediaSelector('backgroundImage')}
             >
               <i className="bi bi-image me-2"></i>
@@ -102,10 +102,11 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
             {data.backgroundImage && (
               <button
                 type="button"
-                className="btn btn-outline-danger ms-2"
+                className="btn btn-outline-danger w-100 w-sm-auto"
                 onClick={() => handleChange('backgroundImage', '')}
               >
-                <i className="bi bi-x-lg"></i>
+                <i className="bi bi-x-lg me-2"></i>
+                Eliminar imagen
               </button>
             )}
           </div>

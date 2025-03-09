@@ -3,10 +3,11 @@ import { ProductsHeader } from "./ProductsHeader.jsx";
 /**
  * HomeSection Component
  *
- * A reusable layout component for different homepage sections.
- * It standardizes the structure, styling, and layout across multiple sections.
+ * A fully responsive, reusable layout component for different homepage sections.
+ * Optimized for all device sizes from mobile to desktop.
  *
  * Features:
+ * - Mobile-first design with full responsiveness
  * - Dynamically renders a title, subtitle, and an optional icon.
  * - Supports customizable vertical spacing and height.
  * - Optional background styling (light gray).
@@ -30,18 +31,22 @@ export const HomeSection = ({
                               height = "auto",
                               children,
                             }) => {
+  // Clase de altura responsive: en móviles usa altura automática
+  const heightClass = height === "auto" ? "auto" : "min-vh-50 " + height;
+
   return (
-    // Section container with dynamic classes for spacing, height, and background
-    <section className={`home-section ${spacing} ${height} ${showBg ? "bg-light" : "" } d-flex flex-column justify-content-center align-items-center`}>
-
+    // Section container with responsive classes for mobile-first design
+    <section
+      className={`home-section ${spacing} ${showBg ? "bg-light" : ""} d-flex flex-column justify-content-center align-items-center w-100`}
+      style={{ minHeight: height === "auto" ? "auto" : undefined }}
+    >
       {/* Section Header - Displays the icon, title, and subtitle */}
-      <ProductsHeader icon={icon} title={title} subtitle={subtitle}  />
+      <ProductsHeader icon={icon} title={title} subtitle={subtitle} />
 
-      {/* Content Wrapper - Centers the provided children */}
-      <div className="container d-flex flex-column justify-content-center">
+      {/* Content Wrapper - Centers the provided children with responsive padding */}
+      <div className="container px-3 px-sm-4 d-flex flex-column justify-content-center">
         <div className="w-100">{children}</div>
       </div>
-
     </section>
   );
 };
