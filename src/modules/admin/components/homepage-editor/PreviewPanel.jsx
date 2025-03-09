@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { heroImages } from '../../../../shared/constants/images.js';
-import { HeroSection, HomeCarousel, HomeSection, ProductCarousel } from '../../../public/components/home-page/index.js'
+import { HeroSection, HomeCarousel, HomeSection, ProductCarousel } from '../../../public/components/home-page/index.js';
 
 // Constantes para datos de ejemplo
 const sampleProducts = Array(6).fill(null).map((_, i) => ({
@@ -15,8 +15,12 @@ const sampleImages = [
   { id: 3, src: "/public/images/placeholder.jpg", alt: "Farm 3" }
 ];
 
+// Imágenes de muestra para colecciones
+const sampleCollectionImages = heroImages;
+
 /**
  * Panel de vista previa que muestra la página de inicio tal como se verá
+ * Versión actualizada con soporte para colecciones
  */
 export const PreviewPanel = ({ config }) => {
   const containerRef = useRef(null);
@@ -31,6 +35,11 @@ export const PreviewPanel = ({ config }) => {
   // Preparar imágenes para el hero section
   const getHeroImages = () => {
     const heroConfig = config.sections.hero;
+
+    // Si usa colección, mostrar imágenes de prueba para la colección
+    if (heroConfig.useCollection && heroConfig.collectionId) {
+      return sampleCollectionImages;
+    }
 
     if (heroConfig.backgroundImage) {
       return [heroConfig.backgroundImage];
@@ -64,6 +73,8 @@ export const PreviewPanel = ({ config }) => {
             height={config.sections.hero.height || '100vh'}
             autoRotate={config.sections.hero.autoRotate !== false}
             interval={config.sections.hero.interval || 5000}
+            useCollection={config.sections.hero.useCollection === true}
+            collectionId={config.sections.hero.collectionId || null}
           />
         )}
 

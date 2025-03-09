@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { MediaSelector } from '../media/index.js'
+import { MediaSelector } from '../media/index.js';
 
 /**
  * Editor específico para la sección Hero
- * Versión mejorada con responsividad completa
+ * Versión mejorada con soporte para selección de colecciones
  */
 export const HeroSectionEditor = ({ data, onUpdate }) => {
   const [showMediaSelector, setShowMediaSelector] = useState(false);
+  const [showCollectionSelector, setShowCollectionSelector] = useState(false);
   const [currentField, setCurrentField] = useState(null);
 
   // Manejador para cambios en campos de texto
@@ -25,6 +26,11 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
     setShowMediaSelector(true);
   };
 
+  // Abrir selector de colecciones
+  const openCollectionSelector = () => {
+    setShowCollectionSelector(true);
+  };
+
   // Manejar selección de medios
   const handleMediaSelected = (media) => {
     if (!currentField) return;
@@ -37,6 +43,19 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
     onUpdate({ [currentField]: url });
     setShowMediaSelector(false);
     setCurrentField(null);
+  };
+
+  // Manejar selección de colección
+  const handleCollectionSelected = (collection) => {
+    if (!collection) return;
+
+    onUpdate({
+      useCollection: true,
+      collectionId: collection.id,
+      collectionName: collection.name
+    });
+
+    setShowCollectionSelector(false);
   };
 
   return (
@@ -86,47 +105,124 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
       </div>
 
       <div className="mb-4">
-        <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Imagen de Fondo</h6>
+        <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Imágenes del Slider</h6>
 
+        {/* Selector de origen: Imagen única o Colección */}
         <div className="mb-3">
-          <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 mb-2">
-            <button
-              type="button"
-              className="btn btn-outline-primary w-100 w-sm-auto"
-              onClick={() => openMediaSelector('backgroundImage')}
-            >
-              <i className="bi bi-image me-2"></i>
-              {data.backgroundImage ? 'Cambiar imagen' : 'Seleccionar imagen'}
-            </button>
+          <div className="form-check form-switch">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              role="switch"
+              id="useCollection"
+              checked={data.useCollection === true}
+              onChange={() => handleToggleChange('useCollection')}
+            />
+            <label className="form-check-label" htmlFor="useCollection">
+              Usar imágenes de una colección
+            </label>
+          </div>
+          <div className="form-text text-muted small">
+            <i className="bi bi-info-circle me-1"></i>
+            {data.useCollection
+              ? "Se usarán todas las imágenes de la colección seleccionada"
+              : "Se usará solo la imagen seleccionada o la predeterminada"}
+          </div>
+        </div>
 
-            {data.backgroundImage && (
+        {/* Contenido condicional según el modo seleccionado */}
+        {data.useCollection ? (
+          /* Selector de colección */
+          <div className="card bg-light border-0 p-3 mb-3">
+            <h6 className="mb-3 text-muted">Colección de imágenes</h6>
+
+            <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 mb-3">
               <button
                 type="button"
-                className="btn btn-outline-danger w-100 w-sm-auto"
-                onClick={() => handleChange('backgroundImage', '')}
+                className="btn btn-outline-primary w-100 w-sm-auto"
+                onClick={openCollectionSelector}
               >
-                <i className="bi bi-x-lg me-2"></i>
-                Eliminar imagen
+                <i className="bi bi-collection me-2"></i>
+                {data.collectionId ? 'Cambiar colección' : 'Seleccionar colección'}
               </button>
+
+              {data.collectionId && (
+                <button
+                  type="button"
+                  className="btn btn-outline-danger w-100 w-sm-auto"
+                  onClick={() => {
+                    onUpdate({
+                      useCollection: false,
+                      collectionId: null,
+                      collectionName: null
+                    });
+                  }}
+                >
+                  <i className="bi bi-x-lg me-2"></i>
+                  Quitar colección
+                </button>
+              )}
+            </div>
+
+            {data.collectionId ? (
+              <div className="selected-collection p-3 bg-white rounded border">
+                <div className="d-flex align-items-center">
+                  <span className="badge bg-primary me-2">
+                    <i className="bi bi-collection me-1"></i>
+                    Colección
+                  </span>
+                  <span className="fw-bold">{data.collectionName || 'Colección seleccionada'}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-muted border rounded p-3 text-center bg-white">
+                <i className="bi bi-collection fs-1 d-block mb-2"></i>
+                Ninguna colección seleccionada
+              </div>
             )}
           </div>
+        ) : (
+          /* Selector de imagen única */
+          <div className="mb-3">
+            <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 mb-2">
+              <button
+                type="button"
+                className="btn btn-outline-primary w-100 w-sm-auto"
+                onClick={() => openMediaSelector('backgroundImage')}
+              >
+                <i className="bi bi-image me-2"></i>
+                {data.backgroundImage ? 'Cambiar imagen' : 'Seleccionar imagen'}
+              </button>
 
-          {data.backgroundImage ? (
-            <div className="bg-light p-2 rounded">
-              <img
-                src={data.backgroundImage}
-                alt="Background"
-                className="img-fluid rounded"
-                style={{ maxHeight: '150px' }}
-              />
+              {data.backgroundImage && (
+                <button
+                  type="button"
+                  className="btn btn-outline-danger w-100 w-sm-auto"
+                  onClick={() => handleChange('backgroundImage', '')}
+                >
+                  <i className="bi bi-x-lg me-2"></i>
+                  Eliminar imagen
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="text-muted border rounded p-3 text-center bg-light">
-              <i className="bi bi-card-image fs-1 d-block mb-2"></i>
-              Ninguna imagen seleccionada
-            </div>
-          )}
-        </div>
+
+            {data.backgroundImage ? (
+              <div className="bg-light p-2 rounded">
+                <img
+                  src={data.backgroundImage}
+                  alt="Background"
+                  className="img-fluid rounded"
+                  style={{ maxHeight: '150px' }}
+                />
+              </div>
+            ) : (
+              <div className="text-muted border rounded p-3 text-center bg-light">
+                <i className="bi bi-card-image fs-1 d-block mb-2"></i>
+                <div className="text-muted">Se usará la imagen predeterminada del sistema</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="mb-4">
@@ -234,6 +330,15 @@ export const HeroSectionEditor = ({ data, onUpdate }) => {
         onClose={() => setShowMediaSelector(false)}
         onSelect={handleMediaSelected}
         title="Seleccionar Imagen"
+      />
+
+      {/* Selector de colecciones */}
+      <MediaSelector
+        isOpen={showCollectionSelector}
+        onClose={() => setShowCollectionSelector(false)}
+        onSelect={handleCollectionSelected}
+        title="Seleccionar Colección de Imágenes"
+        selectCollection={true}
       />
     </div>
   );

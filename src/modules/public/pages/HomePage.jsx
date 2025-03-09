@@ -1,13 +1,15 @@
 // src/modules/public/pages/HomePage.jsx
 import { useState, useEffect } from 'react';
-import { HeroSection, ProductCarousel, HomeSection, HomeCarousel } from '../components/home-page/index.js'
-import '../../../styles/global.css'
+import { HeroSection, ProductCarousel, HomeSection, HomeCarousel } from '../components/home-page/index.js';
+import '../../../styles/global.css';
 import { heroImages } from '../../../shared/constants/images.js';
-import { ContentService } from '../../admin/index.js'
+import { getCollectionImages } from '../../admin/services/collectionsService.js';
+import { ContentService } from '../../admin/services/contentService.js'
 
 export const HomePage = () => {
   const [pageData, setPageData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [collectionImages, setCollectionImages] = useState({});
 
   // Datos de muestra para cuando no hay datos guardados
   const sampleImages = [
@@ -41,6 +43,11 @@ export const HomePage = () => {
 
         if (result?.ok && result?.data) {
           setPageData(result.data);
+
+          // Si hero sección usa una colección, cargar sus imágenes
+          if (result.data.sections?.hero?.useCollection && result.data.sections?.hero?.collectionId) {
+            loadCollectionImages(result.data.sections.hero.collectionId);
+          }
         } else {
           console.log('No se encontraron datos publicados, usando valores predeterminados');
           setPageData(null);
@@ -55,6 +62,30 @@ export const HomePage = () => {
 
     loadPageData();
   }, []);
+
+  // Cargar imágenes de una colección
+  const loadCollectionImages = async (collectionId) => {
+    if (!collectionId) return;
+
+    try {
+      // Evitar cargar imágenes que ya tenemos
+      if (collectionImages[collectionId]) return;
+
+      const result = await getCollectionImages(collectionId);
+      if (result.ok && Array.isArray(result.data)) {
+        // Guardar las URL de las imágenes
+        const imageUrls = result.data.map(item => item.url);
+        setCollectionImages(prev => ({
+          ...prev,
+          [collectionId]: imageUrls
+        }));
+      } else {
+        console.error('Error cargando imágenes de colección:', result.error);
+      }
+    } catch (error) {
+      console.error('Error cargando imágenes de colección:', error);
+    }
+  };
 
   // Versión original de la página si no hay datos personalizados
   const renderDefaultPage = () => (
@@ -127,6 +158,24 @@ export const HomePage = () => {
     ? blockOrder
     : Object.keys(sections);
 
+  // Preparar imágenes para el hero section
+  const getHeroImages = () => {
+    const heroConfig = sections.hero;
+
+    // Si usa colección y tenemos imágenes cargadas, usarlas
+    if (heroConfig.useCollection && heroConfig.collectionId && collectionImages[heroConfig.collectionId]) {
+      return collectionImages[heroConfig.collectionId];
+    }
+
+    // Si tiene imagen de fondo específica
+    if (heroConfig.backgroundImage) {
+      return [heroConfig.backgroundImage];
+    }
+
+    // Imágenes predeterminadas
+    return heroImages;
+  };
+
   // Renderizar las secciones en el orden especificado
   return (
     <div className="home-section">
@@ -142,7 +191,7 @@ export const HomePage = () => {
             return (
               <HeroSection
                 key={sectionId}
-                images={sectionData.backgroundImage ? [sectionData.backgroundImage] : heroImages}
+                images={getHeroImages()}
                 title={sectionData.title || "Bienvenido a Cactilia"}
                 subtitle={sectionData.subtitle || "Productos frescos y naturales para una vida mejor"}
                 showButton={sectionData.showButton !== false}
@@ -153,6 +202,8 @@ export const HomePage = () => {
                 height={sectionData.height || "100vh"}
                 autoRotate={sectionData.autoRotate !== false}
                 interval={sectionData.interval || 5000}
+                useCollection={sectionData.useCollection === true}
+                collectionId={sectionData.collectionId}
               />
             );
 

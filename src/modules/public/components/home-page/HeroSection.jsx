@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { ImageGallery } from '../../../../shared/components/images/index.js'
-import { heroImages } from '../../../../shared/constants/images.js'
-import { Logo } from '../../../../shared/components/logo/Logo.jsx'
-import '../../../../styles/global.css'
+import { ImageGallery } from '../../../../shared/components/images/index.js';
+import { heroImages } from '../../../../shared/constants/images.js';
+import { Logo } from '../../../../shared/components/logo/Logo.jsx';
+import { getCollectionImages } from '../../../admin/services/collectionsService.js';
+import '../../../../styles/global.css';
 
 /**
  * HeroSection Component
  * Muestra un slider hero con título, subtítulo y botón opcional
+ * Versión mejorada con soporte para imágenes de colecciones
  *
  * @param {Object} props
  * @param {string|Array} props.images - Imágenes a mostrar (string o array)
@@ -20,10 +22,12 @@ import '../../../../styles/global.css'
  * @param {string} props.height - Altura del hero
  * @param {boolean} props.autoRotate - Si las imágenes rotan automáticamente
  * @param {number} props.interval - Intervalo de rotación en ms
+ * @param {string} props.collectionId - ID de la colección de imágenes (opcional)
+ * @param {boolean} props.useCollection - Si se debe usar una colección de imágenes
  * @returns {JSX.Element}
  */
 export const HeroSection = ({
-                              images, // Puede ser un array o un string
+                              images,
                               title,
                               subtitle,
                               showLogo = true,
@@ -34,11 +38,53 @@ export const HeroSection = ({
                               height = "100vh",
                               autoRotate = false,
                               interval = 5000,
+                              collectionId,
+                              useCollection = false,
                             }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [collectionImages, setCollectionImages] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Normalizar las imágenes a un array
-  const imageArray = Array.isArray(images) ? images : [images];
+  // Cargar imágenes de la colección si se especifica
+  useEffect(() => {
+    const loadCollectionImages = async () => {
+      if (useCollection && collectionId) {
+        setLoading(true);
+        try {
+          const result = await getCollectionImages(collectionId);
+          if (result.ok && Array.isArray(result.data)) {
+            setCollectionImages(result.data.map(item => item.url));
+          } else {
+            console.error('Error cargando imágenes de colección:', result.error);
+            setCollectionImages([]);
+          }
+        } catch (error) {
+          console.error('Error cargando imágenes de colección:', error);
+          setCollectionImages([]);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadCollectionImages();
+  }, [useCollection, collectionId]);
+
+  // Determinar qué imágenes usar
+  const getImagesToDisplay = () => {
+    if (loading) {
+      return [heroImages[0]]; // Imagen de respaldo durante la carga
+    }
+
+    if (useCollection && collectionImages.length > 0) {
+      return collectionImages;
+    }
+
+    // Normalizar las imágenes a un array
+    return Array.isArray(images) ? images : [images];
+  };
+
+  const imageArray = getImagesToDisplay();
 
   // Si autoRotate está activado, cambia la imagen cada X segundos
   useEffect(() => {

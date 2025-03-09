@@ -1,203 +1,171 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  serverTimestamp
-} from "firebase/firestore";
-import { FirebaseDB } from "../../../firebase/firebaseConfig";
+import { collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { FirebaseDB } from '../../../firebase/firebaseConfig.js'
+
+// Colección de Firestore
+const COLLECTIONS_COLLECTION = 'mediaCollections';
+const MEDIA_COLLECTION = 'media';
 
 /**
- * Servicio para gestionar colecciones de archivos multimedia
- * Proporciona funciones CRUD para las colecciones de imágenes
- */
-
-const COLLECTIONS_PATH = "mediaCollections";
-
-/**
- * Obtiene todas las colecciones disponibles
- * @returns {Promise<{ok: boolean, data?: Array, error?: string}>}
+ * Obtiene todas las colecciones de medios
+ * @returns {Promise<{ok: boolean, data: Array, error: string?}>}
  */
 export const getCollections = async () => {
   try {
-    // Consulta colecciones ordenadas por nombre
-    const collectionsQuery = query(
-      collection(FirebaseDB, COLLECTIONS_PATH),
-      orderBy("name", "asc")
-    );
+    const querySnapshot = await getDocs(collection(FirebaseDB, COLLECTIONS_COLLECTION));
 
-    const querySnapshot = await getDocs(collectionsQuery);
-
-    // Procesar resultados
-    const collections = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      // Convertir timestamps para una visualización adecuada
-      createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      updatedAt: doc.data().updatedAt?.toDate?.() || new Date()
-    }));
-
-    return { ok: true, data: collections };
-  } catch (error) {
-    console.error("Error obteniendo colecciones:", error);
-    return { ok: false, error: error.message };
-  }
-};
-
-/**
- * Obtiene una colección específica por su ID
- * @param {string} collectionId - ID de la colección
- * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
- */
-export const getCollectionById = async (collectionId) => {
-  try {
-    if (!collectionId) {
-      throw new Error("ID de colección requerido");
-    }
-
-    const collectionRef = doc(FirebaseDB, COLLECTIONS_PATH, collectionId);
-    const collectionSnap = await getDoc(collectionRef);
-
-    if (!collectionSnap.exists()) {
-      throw new Error("Colección no encontrada");
-    }
+    const collections = [];
+    querySnapshot.forEach((doc) => {
+      collections.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
 
     return {
       ok: true,
-      data: {
-        id: collectionSnap.id,
-        ...collectionSnap.data(),
-        createdAt: collectionSnap.data().createdAt?.toDate?.() || new Date(),
-        updatedAt: collectionSnap.data().updatedAt?.toDate?.() || new Date()
-      }
+      data: collections
     };
   } catch (error) {
-    console.error("Error obteniendo colección:", error);
-    return { ok: false, error: error.message };
+    console.error('Error obteniendo colecciones:', error);
+    return {
+      ok: false,
+      error: error.message
+    };
   }
 };
 
 /**
- * Crea una nueva colección de imágenes
+ * Crea una nueva colección
  * @param {Object} collectionData - Datos de la colección
- * @param {string} collectionData.name - Nombre de la colección
- * @param {string} collectionData.description - Descripción de la colección
- * @returns {Promise<{ok: boolean, id?: string, error?: string}>}
+ * @returns {Promise<{ok: boolean, id: string?, error: string?}>}
  */
 export const createCollection = async (collectionData) => {
   try {
-    // Validar datos mínimos requeridos
-    if (!collectionData?.name) {
-      throw new Error("El nombre de la colección es obligatorio");
-    }
-
-    // Preparar datos para guardar
-    const dataToSave = {
+    const docRef = await addDoc(collection(FirebaseDB, COLLECTIONS_COLLECTION), {
       ...collectionData,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: new Date().toISOString()
+    });
+
+    return {
+      ok: true,
+      id: docRef.id
     };
-
-    // Crear documento en Firestore
-    const docRef = await addDoc(
-      collection(FirebaseDB, COLLECTIONS_PATH),
-      dataToSave
-    );
-
-    return { ok: true, id: docRef.id };
   } catch (error) {
-    console.error("Error creando colección:", error);
-    return { ok: false, error: error.message };
+    console.error('Error creando colección:', error);
+    return {
+      ok: false,
+      error: error.message
+    };
   }
 };
 
 /**
  * Actualiza una colección existente
- * @param {string} collectionId - ID de la colección a actualizar
- * @param {Object} updatedData - Datos actualizados
- * @returns {Promise<{ok: boolean, error?: string}>}
+ * @param {string} collectionId - ID de la colección
+ * @param {Object} collectionData - Nuevos datos de la colección
+ * @returns {Promise<{ok: boolean, error: string?}>}
  */
-export const updateCollection = async (collectionId, updatedData) => {
+export const updateCollection = async (collectionId, collectionData) => {
   try {
-    if (!collectionId) {
-      throw new Error("ID de colección requerido para actualizar");
-    }
-
-    // Preparar datos para actualizar
-    const dataToUpdate = {
-      ...updatedData,
-      updatedAt: serverTimestamp()
-    };
-
-    // Actualizar documento en Firestore
-    const collectionRef = doc(FirebaseDB, COLLECTIONS_PATH, collectionId);
-    await updateDoc(collectionRef, dataToUpdate);
+    await updateDoc(doc(FirebaseDB, COLLECTIONS_COLLECTION, collectionId), {
+      ...collectionData,
+      updatedAt: new Date().toISOString()
+    });
 
     return { ok: true };
   } catch (error) {
-    console.error("Error actualizando colección:", error);
-    return { ok: false, error: error.message };
+    console.error('Error actualizando colección:', error);
+    return {
+      ok: false,
+      error: error.message
+    };
   }
 };
 
 /**
  * Elimina una colección
  * @param {string} collectionId - ID de la colección a eliminar
- * @returns {Promise<{ok: boolean, error?: string}>}
+ * @returns {Promise<{ok: boolean, error: string?}>}
  */
 export const deleteCollection = async (collectionId) => {
   try {
-    if (!collectionId) {
-      throw new Error("ID de colección requerido para eliminar");
-    }
-
-    // Eliminar documento en Firestore
-    const collectionRef = doc(FirebaseDB, COLLECTIONS_PATH, collectionId);
-    await deleteDoc(collectionRef);
+    await deleteDoc(doc(FirebaseDB, COLLECTIONS_COLLECTION, collectionId));
 
     return { ok: true };
   } catch (error) {
-    console.error("Error eliminando colección:", error);
-    return { ok: false, error: error.message };
+    console.error('Error eliminando colección:', error);
+    return {
+      ok: false,
+      error: error.message
+    };
   }
 };
 
 /**
- * Obtiene todos los medios asociados a una colección
+ * Obtiene una colección por su ID
  * @param {string} collectionId - ID de la colección
- * @returns {Promise<{ok: boolean, data?: Array, error?: string}>}
+ * @returns {Promise<{ok: boolean, data: Object?, error: string?}>}
  */
-export const getMediaByCollection = async (collectionId) => {
+export const getCollectionById = async (collectionId) => {
   try {
-    if (!collectionId) {
-      throw new Error("ID de colección requerido");
-    }
+    const docRef = doc(FirebaseDB, COLLECTIONS_COLLECTION, collectionId);
+    const docSnap = await getDoc(docRef);
 
-    // Consultar medios de esta colección
-    const mediaQuery = query(
-      collection(FirebaseDB, "media"),
-      orderBy("uploadedAt", "desc")
+    if (docSnap.exists()) {
+      return {
+        ok: true,
+        data: {
+          id: docSnap.id,
+          ...docSnap.data()
+        }
+      };
+    } else {
+      return {
+        ok: false,
+        error: 'Colección no encontrada'
+      };
+    }
+  } catch (error) {
+    console.error('Error obteniendo colección:', error);
+    return {
+      ok: false,
+      error: error.message
+    };
+  }
+};
+
+/**
+ * Obtiene todas las imágenes de una colección específica
+ * @param {string} collectionId - ID de la colección
+ * @returns {Promise<{ok: boolean, data: Array, error: string?}>}
+ */
+export const getCollectionImages = async (collectionId) => {
+  try {
+    // Consulta para obtener elementos de media que pertenecen a esta colección
+    const q = query(
+      collection(FirebaseDB, MEDIA_COLLECTION),
+      where('collectionId', '==', collectionId)
     );
 
-    const querySnapshot = await getDocs(mediaQuery);
+    const querySnapshot = await getDocs(q);
 
-    // Filtrar los resultados por collectionId
-    const mediaItems = querySnapshot.docs
-      .map(doc => ({
+    const mediaItems = [];
+    querySnapshot.forEach((doc) => {
+      mediaItems.push({
         id: doc.id,
-        ...doc.data(),
-        uploadedAt: doc.data().uploadedAt?.toDate?.() || new Date()
-      }))
-      .filter(item => item.collectionId === collectionId);
+        ...doc.data()
+      });
+    });
 
-    return { ok: true, data: mediaItems };
+    return {
+      ok: true,
+      data: mediaItems
+    };
   } catch (error) {
-    console.error("Error obteniendo medios de la colección:", error);
-    return { ok: false, error: error.message };
+    console.error(`Error obteniendo imágenes de colección ${collectionId}:`, error);
+    return {
+      ok: false,
+      error: error.message
+    };
   }
 };

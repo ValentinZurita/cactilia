@@ -1,5 +1,3 @@
-// src/modules/admin/components/homepage-editor/templateData.js
-import { heroImages } from "../../../../shared/constants/images";
 
 /**
  * Datos de plantillas predefinidas para la página de inicio
@@ -37,7 +35,10 @@ export const DEFAULT_TEMPLATE = {
       showSubtitle: true,
       height: '100vh',
       autoRotate: true,
-      interval: 5000
+      interval: 5000,
+      useCollection: false,
+      collectionId: null,
+      collectionName: null
     },
     featuredProducts: {
       title: 'Productos Destacados',
@@ -91,7 +92,10 @@ export const MODERN_TEMPLATE = {
       showSubtitle: true,
       height: '75vh',
       autoRotate: true,
-      interval: 4000
+      interval: 4000,
+      useCollection: false,
+      collectionId: null,
+      collectionName: null
     },
     productCategories: {
       title: 'Categorías',
