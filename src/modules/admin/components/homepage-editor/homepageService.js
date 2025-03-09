@@ -1,5 +1,4 @@
-
-import { ContentService } from '../../services/contentService';
+import { ContentService } from './ContentService';
 import { DEFAULT_TEMPLATE } from './templateData';
 
 // ID para el documento de la página de inicio
@@ -39,7 +38,14 @@ export const getHomePageContent = async (version = 'draft') => {
  */
 export const saveHomePageContent = async (data) => {
   try {
-    return await ContentService.savePageContent(HOME_PAGE_ID, data);
+    // Asegurarse de que el blockOrder existe
+    const dataToSave = {
+      ...data,
+      // Si no hay blockOrder, usar las claves de las secciones como orden predeterminado
+      blockOrder: data.blockOrder || Object.keys(data.sections || {})
+    };
+
+    return await ContentService.savePageContent(HOME_PAGE_ID, dataToSave);
   } catch (error) {
     console.error('Error guardando contenido de la página de inicio:', error);
     return {

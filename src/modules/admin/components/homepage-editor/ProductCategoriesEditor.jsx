@@ -1,5 +1,6 @@
 /**
  * Editor para la sección de Categorías de Productos
+ * Versión actualizada con toggles unificados
  */
 export const ProductCategoriesEditor = ({ data = {}, onUpdate }) => {
   // Manejador para cambios en campos de texto
@@ -68,11 +69,12 @@ export const ProductCategoriesEditor = ({ data = {}, onUpdate }) => {
       <div className="mb-4">
         <h6 className="fw-bold mb-3">Apariencia</h6>
 
-        {/* Fondo */}
-        <div className="form-check">
+        {/* Fondo - Ahora con toggle en lugar de checkbox */}
+        <div className="form-check form-switch">
           <input
             className="form-check-input"
             type="checkbox"
+            role="switch"
             id="categoriesShowBg"
             checked={data.showBg === true}
             onChange={() => handleToggleChange('showBg')}

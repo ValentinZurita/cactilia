@@ -1,24 +1,28 @@
 import { useState, useEffect } from 'react';
-import { SectionEditor } from './SectionEditor';
-import { PreviewPanel } from './PreviewPanel';
-import { ActionButtons } from './ActionButton.jsx'
-import { getHomePageContent, saveHomePageContent, publishHomePageContent } from './homepageService.js'
-import { DEFAULT_TEMPLATE } from './templateData.js'
+import { HeroSectionEditor } from './HeroSectionEditor';
+import { FarmCarouselEditor } from './FarmCarouselEditor';
+import { ProductCategoriesEditor } from './ProductCategoriesEditor';
+import { ActionButtons } from './ActionButton';
+import { DEFAULT_TEMPLATE } from './templateData';
+import { getHomePageContent, saveHomePageContent, publishHomePageContent } from './homepageService';
+import { FeaturedProductsEditor } from './FeaturedProducstEditor.jsx'
 
 /**
- * Editor principal para la página de inicio
- * Maneja la carga, edición, guardado y publicación de configuración de la homepage
+ * Editor principal para la página de inicio - Versión rediseñada
+ * Enfoque mobile-first con sistema de cards
  */
 const HomePageEditor = () => {
-  // Estado principal para la configuración de la página
+  // Estado principal
   const [pageConfig, setPageConfig] = useState(null);
-  const [activeSection, setActiveSection] = useState('hero');
+  const [expandedSection, setExpandedSection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [hasSavedContent, setHasSavedContent] = useState(false);
   const [showAlert, setShowAlert] = useState({ show: false, type: '', message: '' });
+  const [isReordering, setIsReordering] = useState(false);
+  const [sectionOrder, setSectionOrder] = useState([]);
 
   // Cargar la configuración al iniciar
   useEffect(() => {
@@ -29,10 +33,12 @@ const HomePageEditor = () => {
 
         if (result.ok && result.data) {
           setPageConfig(result.data);
-          setHasSavedContent(true); // Hay contenido guardado que podemos publicar
+          // Inicializar el orden de secciones
+          setSectionOrder(Object.keys(result.data.sections));
+          setHasSavedContent(true);
         } else {
-          // Si no hay configuración guardada, usar la predeterminada
           setPageConfig({ ...DEFAULT_TEMPLATE });
+          setSectionOrder(Object.keys(DEFAULT_TEMPLATE.sections));
           setHasSavedContent(false);
         }
       } catch (error) {
@@ -40,10 +46,10 @@ const HomePageEditor = () => {
         setShowAlert({
           show: true,
           type: 'danger',
-          message: 'Error al cargar la configuración de la página'
+          message: 'Error al cargar la configuración'
         });
-        // En caso de error, usar la plantilla predeterminada
         setPageConfig({ ...DEFAULT_TEMPLATE });
+        setSectionOrder(Object.keys(DEFAULT_TEMPLATE.sections));
       } finally {
         setLoading(false);
       }
@@ -67,29 +73,29 @@ const HomePageEditor = () => {
     setHasChanges(true);
   };
 
-  // Mostrar alerta y ocultarla después de un tiempo
+  // Mostrar alerta temporal
   const showTemporaryAlert = (type, message) => {
-    setShowAlert({
-      show: true,
-      type,
-      message
-    });
-
-    setTimeout(() => {
-      setShowAlert({ show: false, type: '', message: '' });
-    }, 3000);
+    setShowAlert({ show: true, type, message });
+    setTimeout(() => setShowAlert({ show: false, type: '', message: '' }), 3000);
   };
 
   // Guardar borrador
   const handleSave = async () => {
     try {
       setSaving(true);
-      const result = await saveHomePageContent(pageConfig);
+
+      // Actualizar el orden de secciones en el pageConfig antes de guardar
+      const updatedConfig = {
+        ...pageConfig,
+        blockOrder: sectionOrder
+      };
+
+      const result = await saveHomePageContent(updatedConfig);
 
       if (result.ok) {
         showTemporaryAlert('success', 'Borrador guardado correctamente');
         setHasChanges(false);
-        setHasSavedContent(true); // Activar que hay contenido guardado para publicar
+        setHasSavedContent(true);
       } else {
         throw new Error(result.error || 'Error desconocido al guardar');
       }
@@ -106,17 +112,22 @@ const HomePageEditor = () => {
     try {
       setPublishing(true);
 
-      // Guardar primero para asegurarnos de tener la última versión
-      const saveResult = await saveHomePageContent(pageConfig);
+      // Asegurar que el orden actualizado se guarde antes de publicar
+      const updatedConfig = {
+        ...pageConfig,
+        blockOrder: sectionOrder
+      };
+
+      const saveResult = await saveHomePageContent(updatedConfig);
+
       if (!saveResult.ok) {
         throw new Error(saveResult.error || 'Error al guardar antes de publicar');
       }
 
-      // Luego publicar
       const publishResult = await publishHomePageContent();
 
       if (publishResult.ok) {
-        showTemporaryAlert('success', '✅ Cambios publicados correctamente. Ya son visibles en la página web.');
+        showTemporaryAlert('success', '✅ Cambios publicados correctamente');
         setHasChanges(false);
       } else {
         throw new Error(publishResult.error || 'Error desconocido al publicar');
@@ -131,11 +142,42 @@ const HomePageEditor = () => {
 
   // Resetear a la plantilla predeterminada
   const handleReset = () => {
-    if (window.confirm('¿Estás seguro de resetear la configuración a la plantilla predeterminada? Perderás todos los cambios.')) {
+    if (window.confirm('¿Estás seguro de resetear la configuración? Perderás todos los cambios.')) {
       setPageConfig({ ...DEFAULT_TEMPLATE });
-      setActiveSection('hero');
+      setSectionOrder(Object.keys(DEFAULT_TEMPLATE.sections));
+      setExpandedSection(null);
       setHasChanges(true);
     }
+  };
+
+  // Controlador para expandir/colapsar secciones
+  const toggleSection = (sectionId) => {
+    if (isReordering) return; // No expandir/colapsar durante reordenamiento
+    setExpandedSection(expandedSection === sectionId ? null : sectionId);
+  };
+
+  // Habilitar/deshabilitar modo de reordenamiento
+  const toggleReorderMode = () => {
+    setIsReordering(!isReordering);
+    setExpandedSection(null); // Cerrar cualquier sección expandida
+  };
+
+  // Mover una sección hacia arriba
+  const moveSectionUp = (index) => {
+    if (index <= 0) return;
+    const newOrder = [...sectionOrder];
+    [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
+    setSectionOrder(newOrder);
+    setHasChanges(true);
+  };
+
+  // Mover una sección hacia abajo
+  const moveSectionDown = (index) => {
+    if (index >= sectionOrder.length - 1) return;
+    const newOrder = [...sectionOrder];
+    [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+    setSectionOrder(newOrder);
+    setHasChanges(true);
   };
 
   // Mostrar spinner mientras carga
@@ -145,10 +187,54 @@ const HomePageEditor = () => {
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Cargando...</span>
         </div>
-        <p className="ms-3 mb-0">Cargando configuración...</p>
+        <p className="ms-3 mb-0">Cargando...</p>
       </div>
     );
   }
+
+  // Información de las secciones para mostrar en las cards
+  const sectionInfo = {
+    'hero': {
+      icon: 'bi-image',
+      name: 'Banner Principal',
+      description: 'Personaliza la primera impresión'
+    },
+    'featuredProducts': {
+      icon: 'bi-star',
+      name: 'Productos Destacados',
+      description: 'Muestra tus mejores productos'
+    },
+    'farmCarousel': {
+      icon: 'bi-images',
+      name: 'Carrusel de Granja',
+      description: 'Galería de imágenes y contenido'
+    },
+    'productCategories': {
+      icon: 'bi-grid',
+      name: 'Categorías de Productos',
+      description: 'Organiza tu catálogo'
+    }
+  };
+
+  // Renderizar el editor para una sección específica
+  const renderSectionEditor = (sectionId) => {
+    const sectionData = pageConfig.sections[sectionId];
+
+    if (!sectionData) return null;
+
+    switch (sectionId) {
+      case 'hero':
+        return <HeroSectionEditor data={sectionData} onUpdate={(newData) => handleSectionUpdate('hero', newData)} />;
+      case 'featuredProducts':
+        return <FeaturedProductsEditor data={sectionData} onUpdate={(newData) => handleSectionUpdate('featuredProducts', newData)} />;
+      case 'farmCarousel':
+        return <FarmCarouselEditor data={sectionData} onUpdate={(newData) => handleSectionUpdate('farmCarousel', newData)} />;
+      case 'productCategories':
+        return <ProductCategoriesEditor data={sectionData} onUpdate={(newData) => handleSectionUpdate('productCategories', newData)} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="homepage-editor">
@@ -156,87 +242,96 @@ const HomePageEditor = () => {
       {showAlert.show && (
         <div className={`alert alert-${showAlert.type} alert-dismissible fade show`} role="alert">
           <div className="d-flex align-items-center">
-            <i className={`bi ${showAlert.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} fs-4 me-2`}></i>
+            <i className={`bi ${showAlert.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} fs-5 me-2`}></i>
             <div>{showAlert.message}</div>
           </div>
           <button type="button" className="btn-close" onClick={() => setShowAlert({ show: false })}></button>
         </div>
       )}
 
-      {/* Explicación del flujo de trabajo */}
-      <div className="alert alert-info mb-4 d-flex">
-        <i className="bi bi-info-circle-fill fs-4 me-2"></i>
-        <div>
-          <strong>Cómo funciona:</strong> Los cambios que realices no serán visibles en tu sitio hasta que hagas clic en "Publicar cambios".
-          Puedes guardar un borrador en cualquier momento.
-        </div>
+      {/* Header con botones de acciones secundarias */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <button
+          className={`btn btn-sm ${isReordering ? 'btn-secondary' : 'btn-outline-secondary'}`}
+          onClick={toggleReorderMode}
+          title={isReordering ? "Terminar reordenamiento" : "Reordenar secciones"}
+        >
+          <i className="bi bi-arrow-down-up me-2"></i>
+          {isReordering ? 'Terminar' : 'Reordenar'}
+        </button>
+
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={() => window.open('/', '_blank')}
+          title="Ver la página en una nueva ventana"
+        >
+          <i className="bi bi-eye me-2"></i>
+          Previsualizar
+        </button>
       </div>
 
-      <div className="row g-4">
-        {/* Panel izquierdo con pestañas de secciones */}
-        <div className="col-lg-5">
-          <div className="card">
-            <div className="card-header bg-white">
-              <h5 className="mb-0 d-flex align-items-center">
-                <i className="bi bi-pencil-square text-primary me-2"></i>
-                Editor de Secciones
-              </h5>
-            </div>
-            <div className="card-body p-0">
-              {pageConfig && (
-                <SectionEditor
-                  sections={pageConfig.sections}
-                  activeSection={activeSection}
-                  onSectionChange={setActiveSection}
-                  onUpdateSection={handleSectionUpdate}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Panel derecho - Vista previa */}
-        <div className="col-lg-7">
-          <div className="card">
-            <div className="card-header bg-white d-flex justify-content-between align-items-center">
-              <h5 className="mb-0 d-flex align-items-center">
-                <i className="bi bi-eye text-primary me-2"></i>
-                Vista Previa
-              </h5>
-              <span className="badge bg-primary">
-                <i className="bi bi-display me-1"></i>
-                Previsualización
-              </span>
-            </div>
-            <div className="card-body p-0">
-              {pageConfig && (
-                <div className="position-relative">
-                  <div className="position-absolute top-0 end-0 z-index-10 m-2">
-                    <span className="badge bg-warning text-dark px-3 py-2">
-                      <i className="bi bi-eye-fill me-1"></i>
-                      VISTA PREVIA
-                    </span>
+      {/* Cards de secciones */}
+      <div className="row g-3 mb-4">
+        {sectionOrder.map((sectionId, index) => (
+          <div className="col-12" key={sectionId}>
+            <div className={`card shadow-sm ${isReordering ? 'border-primary' : ''}`}>
+              <div
+                className="card-header bg-white d-flex justify-content-between align-items-center py-3"
+                onClick={() => toggleSection(sectionId)}
+                style={{ cursor: isReordering ? 'move' : 'pointer' }}
+              >
+                <div className="d-flex align-items-center">
+                  <i className={`bi ${sectionInfo[sectionId]?.icon || 'bi-square'} text-primary me-3 fs-4`}></i>
+                  <div>
+                    <h6 className="mb-0 fw-bold">{sectionInfo[sectionId]?.name || sectionId}</h6>
+                    <p className="text-muted small mb-0">
+                      {sectionInfo[sectionId]?.description || ''}
+                    </p>
                   </div>
-                  <PreviewPanel config={pageConfig} />
+                </div>
+
+                {isReordering ? (
+                  <div className="d-flex">
+                    <button
+                      className="btn btn-sm btn-outline-secondary me-1"
+                      onClick={(e) => { e.stopPropagation(); moveSectionUp(index); }}
+                      disabled={index === 0}
+                    >
+                      <i className="bi bi-arrow-up"></i>
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={(e) => { e.stopPropagation(); moveSectionDown(index); }}
+                      disabled={index === sectionOrder.length - 1}
+                    >
+                      <i className="bi bi-arrow-down"></i>
+                    </button>
+                  </div>
+                ) : (
+                  <i className={`bi ${expandedSection === sectionId ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+                )}
+              </div>
+
+              {expandedSection === sectionId && !isReordering && (
+                <div className="card-body border-top">
+                  {renderSectionEditor(sectionId)}
                 </div>
               )}
             </div>
           </div>
-        </div>
+        ))}
       </div>
 
       {/* Botones de acción */}
-      <div className="mt-4">
-        <ActionButtons
-          onSave={handleSave}
-          onPublish={handlePublish}
-          onReset={handleReset}
-          saving={saving}
-          publishing={publishing}
-          hasChanges={hasChanges}
-          hasSavedContent={hasSavedContent}
-        />
-      </div>
+      <ActionButtons
+        onSave={handleSave}
+        onPublish={handlePublish}
+        onReset={handleReset}
+        saving={saving}
+        publishing={publishing}
+        hasChanges={hasChanges}
+        hasSavedContent={hasSavedContent}
+      />
     </div>
   );
 };

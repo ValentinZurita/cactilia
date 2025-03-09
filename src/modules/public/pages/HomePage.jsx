@@ -38,7 +38,7 @@ export const HomePage = () => {
         }
 
         const result = await ContentService.getPageContent('home', 'published');
-        
+
         if (result?.ok && result?.data) {
           setPageData(result.data);
         } else {
@@ -114,72 +114,97 @@ export const HomePage = () => {
   }
 
   // Con datos personalizados, usar la configuración guardada
-  const { sections } = pageData;
-  
-  // Verificar que sections y todas las secciones necesarias existan
-  if (!sections || !sections.hero) {
+  const { sections, blockOrder } = pageData;
+
+  // Verificar que sections exista
+  if (!sections) {
     console.warn('La estructura de datos no es correcta, usando la versión predeterminada');
     return renderDefaultPage();
   }
 
+  // Determinar el orden de renderización
+  const renderOrder = blockOrder && Array.isArray(blockOrder) && blockOrder.length > 0
+    ? blockOrder
+    : Object.keys(sections);
+
+  // Renderizar las secciones en el orden especificado
   return (
     <div className="home-section">
-      {/* HeroSection */}
-      <HeroSection
-        images={sections.hero.backgroundImage ? [sections.hero.backgroundImage] : heroImages}
-        title={sections.hero.title || "Bienvenido a Cactilia"}
-        subtitle={sections.hero.subtitle || "Productos frescos y naturales para una vida mejor"}
-        showButton={sections.hero.showButton !== false}
-        buttonText={sections.hero.buttonText || "Conoce Más"}
-        buttonLink={sections.hero.buttonLink || "#"}
-        showLogo={sections.hero.showLogo !== false}
-        showSubtitle={sections.hero.showSubtitle !== false}
-        height={sections.hero.height || "100vh"}
-        autoRotate={sections.hero.autoRotate !== false}
-        interval={sections.hero.interval || 5000}
-      />
+      {/* Renderizar todas las secciones según el orden especificado */}
+      {renderOrder.map((sectionId) => {
+        // Verificar que la sección existe
+        if (!sections[sectionId]) return null;
 
-      {/* Sección Productos Destacados */}
-      {sections.featuredProducts && (
-        <HomeSection
-          title={sections.featuredProducts.title || "Productos Destacados"}
-          subtitle={sections.featuredProducts.subtitle || "Explora nuestra selección especial."}
-          icon={sections.featuredProducts.icon || "bi-star-fill"}
-          showBg={sections.featuredProducts.showBg === true}
-          spacing="py-6"
-          height="min-vh-75"
-        >
-          <ProductCarousel products={sampleProducts} />
-        </HomeSection>
-      )}
+        const sectionData = sections[sectionId];
 
-      {/* Sección Carrusel de Granja */}
-      {sections.farmCarousel && (
-        <HomeSection
-          title={sections.farmCarousel.title || "Nuestro Huerto"}
-          subtitle={sections.farmCarousel.subtitle || "Descubre la belleza y frescura de nuestra granja."}
-          icon={sections.farmCarousel.icon || "bi-tree-fill"}
-          showBg={sections.farmCarousel.showBg !== false}
-          spacing="py-6"
-          height="min-vh-75"
-        >
-          <HomeCarousel images={sampleImages} />
-        </HomeSection>
-      )}
+        switch (sectionId) {
+          case 'hero':
+            return (
+              <HeroSection
+                key={sectionId}
+                images={sectionData.backgroundImage ? [sectionData.backgroundImage] : heroImages}
+                title={sectionData.title || "Bienvenido a Cactilia"}
+                subtitle={sectionData.subtitle || "Productos frescos y naturales para una vida mejor"}
+                showButton={sectionData.showButton !== false}
+                buttonText={sectionData.buttonText || "Conoce Más"}
+                buttonLink={sectionData.buttonLink || "#"}
+                showLogo={sectionData.showLogo !== false}
+                showSubtitle={sectionData.showSubtitle !== false}
+                height={sectionData.height || "100vh"}
+                autoRotate={sectionData.autoRotate !== false}
+                interval={sectionData.interval || 5000}
+              />
+            );
 
-      {/* Sección Categorías de Productos */}
-      {sections.productCategories && (
-        <HomeSection
-          title={sections.productCategories.title || "Descubre Nuestros Productos"}
-          subtitle={sections.productCategories.subtitle || "Productos orgánicos de alta calidad para una vida mejor."}
-          icon={sections.productCategories.icon || "bi-box-seam"}
-          showBg={sections.productCategories.showBg === true}
-          spacing="py-6"
-          height="min-vh-75"
-        >
-          <ProductCarousel products={sampleProducts}/>
-        </HomeSection>
-      )}
+          case 'featuredProducts':
+            return (
+              <HomeSection
+                key={sectionId}
+                title={sectionData.title || "Productos Destacados"}
+                subtitle={sectionData.subtitle || "Explora nuestra selección especial."}
+                icon={sectionData.icon || "bi-star-fill"}
+                showBg={sectionData.showBg === true}
+                spacing="py-6"
+                height="min-vh-75"
+              >
+                <ProductCarousel products={sampleProducts} />
+              </HomeSection>
+            );
+
+          case 'farmCarousel':
+            return (
+              <HomeSection
+                key={sectionId}
+                title={sectionData.title || "Nuestro Huerto"}
+                subtitle={sectionData.subtitle || "Descubre la belleza y frescura de nuestra granja."}
+                icon={sectionData.icon || "bi-tree-fill"}
+                showBg={sectionData.showBg !== false}
+                spacing="py-6"
+                height="min-vh-75"
+              >
+                <HomeCarousel images={sampleImages} />
+              </HomeSection>
+            );
+
+          case 'productCategories':
+            return (
+              <HomeSection
+                key={sectionId}
+                title={sectionData.title || "Descubre Nuestros Productos"}
+                subtitle={sectionData.subtitle || "Productos orgánicos de alta calidad para una vida mejor."}
+                icon={sectionData.icon || "bi-box-seam"}
+                showBg={sectionData.showBg === true}
+                spacing="py-6"
+                height="min-vh-75"
+              >
+                <ProductCarousel products={sampleProducts}/>
+              </HomeSection>
+            );
+
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 /**
  * Editor para la sección de Productos Destacados
+ * Versión actualizada con toggles unificados
  */
 export const FeaturedProductsEditor = ({ data = {}, onUpdate }) => {
   // Manejador para cambios en campos de texto
@@ -71,11 +72,12 @@ export const FeaturedProductsEditor = ({ data = {}, onUpdate }) => {
       <div className="mb-4">
         <h6 className="fw-bold mb-3">Apariencia</h6>
 
-        {/* Fondo */}
-        <div className="form-check">
+        {/* Fondo - Ahora con toggle en lugar de checkbox */}
+        <div className="form-check form-switch">
           <input
             className="form-check-input"
             type="checkbox"
+            role="switch"
             id="featuredShowBg"
             checked={data.showBg === true}
             onChange={() => handleToggleChange('showBg')}
@@ -88,9 +90,3 @@ export const FeaturedProductsEditor = ({ data = {}, onUpdate }) => {
     </div>
   );
 };
-
-
-
-
-
-
