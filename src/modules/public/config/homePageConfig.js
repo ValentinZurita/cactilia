@@ -13,6 +13,13 @@ export const sampleProducts = Array(6).fill(null).map((_, i) => ({
   image: '/public/images/placeholder.jpg'
 }));
 
+// Categorías de muestra
+export const sampleCategories = Array(6).fill(null).map((_, i) => ({
+  id: i+1,
+  name: `Categoría ${i+1}`,
+  image: '/public/images/placeholder.jpg'
+}));
+
 // Configuración de bloques por tipo
 export const blockConfig = {
 
@@ -87,7 +94,7 @@ export const blockConfig = {
     component: 'HomeSection',
     defaultProps: {
       title: "Descubre Nuestros Productos",
-      subtitle: "Productos orgánicos de alta calidad para una vida mejor.",
+      subtitle: "Explora nuestras categorías destacadas.",
       icon: "bi-box-seam",
       showBg: false,
       spacing: "py-6",
@@ -95,7 +102,7 @@ export const blockConfig = {
     },
     children: 'ProductCarousel',
     childrenProps: {
-      products: sampleProducts
+      products: sampleCategories // Usamos categorías en lugar de productos
     }
   },
 

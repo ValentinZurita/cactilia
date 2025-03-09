@@ -1,5 +1,3 @@
-// src/modules/public/pages/HomePage.jsx
-
 import { useState, useEffect } from 'react';
 import {
   HeroSection,
@@ -12,6 +10,7 @@ import { heroImages } from '../../../shared/constants/images.js';
 import { getCollectionImages } from '../../admin/services/collectionsService.js';
 import { ContentService } from '../../admin/services/contentService.js';
 import { getProducts } from '../../admin/services/productService.js';
+import { getCategories } from '../../admin/services/categoryService.js';
 
 /**
  * HomePage
@@ -22,6 +21,7 @@ import { getProducts } from '../../admin/services/productService.js';
  *
  * Características:
  * - Carga de productos destacados desde la base de datos.
+ * - Carga de categorías destacadas desde la base de datos.
  * - Carga de contenido personalizado para la página 'home'.
  * - Fallback a datos de muestra cuando no hay datos en Firestore.
  * - Orden dinámico de las secciones, según configuración almacenada o por defecto.
@@ -32,6 +32,7 @@ export const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [collectionImages, setCollectionImages] = useState({});
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [featuredCategories, setFeaturedCategories] = useState([]); // Nuevo estado para categorías destacadas
 
   // ---------------------- FALLBACK DATA ----------------------
   // Imágenes de muestra para secciones de carrusel (OurFarmSection).
@@ -52,12 +53,22 @@ export const HomePage = () => {
       category: 'Muestra',
     }));
 
+  // Categorías de muestra por si no hay categorías reales.
+  const sampleCategories = Array(6)
+    .fill(null)
+    .map((_, i) => ({
+      id: i + 1,
+      name: `Categoría ${i + 1}`,
+      image: '/public/images/placeholder.jpg',
+    }));
+
   // ---------------------- EFFECTS ----------------------
   /**
    * Efecto principal que:
    * 1. Carga productos destacados.
-   * 2. Obtiene el contenido personalizado de Firestore para la página 'home'.
-   * 3. Si el hero usa una colección, carga sus imágenes.
+   * 2. Carga categorías destacadas.
+   * 3. Obtiene el contenido personalizado de Firestore para la página 'home'.
+   * 4. Si el hero usa una colección, carga sus imágenes.
    */
   useEffect(() => {
     const loadPageData = async () => {
@@ -67,7 +78,10 @@ export const HomePage = () => {
         // 1. Cargar productos destacados
         await loadFeaturedProducts();
 
-        // 2. Cargar contenido de la página
+        // 2. Cargar categorías destacadas
+        await loadFeaturedCategories();
+
+        // 3. Cargar contenido de la página
         if (typeof ContentService?.getPageContent !== 'function') {
           console.warn(
             'ContentService no está disponible o no tiene el método getPageContent'
@@ -81,7 +95,7 @@ export const HomePage = () => {
         if (result?.ok && result?.data) {
           setPageData(result.data);
 
-          // 3. Si el hero usa una colección específica, cargar sus imágenes
+          // 4. Si el hero usa una colección específica, cargar sus imágenes
           const hero = result.data.sections?.hero;
           if (hero?.useCollection && hero?.collectionId) {
             loadCollectionImages(hero.collectionId);
@@ -158,6 +172,60 @@ export const HomePage = () => {
       setFeaturedProducts(formattedProducts);
     } catch (error) {
       console.error('Error procesando productos:', error);
+    }
+  };
+
+  /**
+   * Carga categorías desde el servicio getCategories() y filtra las que sean 'featured'.
+   * Si no hay suficientes destacadas, se combinan con categorías regulares o se
+   * duplican para asegurar al menos 6 en el carrusel.
+   */
+  const loadFeaturedCategories = async () => {
+    try {
+      const { ok, data, error } = await getCategories();
+      if (!ok) {
+        console.error('Error cargando categorías:', error);
+        return;
+      }
+
+      // 1. Obtener categorías con featured === true
+      let featured = data.filter(
+        (category) => category.active && category.featured === true
+      );
+
+      // 2. Si hay pocas destacadas, completarlas con regulares activas
+      if (featured.length < 4) {
+        const regularCategories = data
+          .filter((category) => category.active && !category.featured)
+          .slice(0, Math.max(6 - featured.length, 0));
+        featured = [...featured, ...regularCategories];
+
+        // 3. Si aún así son pocas, duplicarlas para asegurar un mínimo de 6
+        if (featured.length > 0 && featured.length < 6) {
+          const originalLength = featured.length;
+          for (let i = 0; i < Math.min(6 - originalLength, originalLength); i++) {
+            featured.push({
+              ...featured[i],
+              id: `${featured[i].id}_duplicate_${i}`,
+            });
+          }
+        }
+      }
+
+      // Formatear categorías para el componente ProductCarousel (mismo formato)
+      const formattedCategories = featured.map((category) => ({
+        id: category.id,
+        name: category.name || 'Categoría sin nombre',
+        image: category.mainImage || '/public/images/placeholder.jpg',
+        mainImage: category.mainImage,
+        description: category.description || '',
+        images: category.images || [],
+        featured: category.featured || false,
+      }));
+
+      setFeaturedCategories(formattedCategories);
+    } catch (error) {
+      console.error('Error procesando categorías:', error);
     }
   };
 
@@ -256,7 +324,7 @@ export const HomePage = () => {
         height="min-vh-75"
       >
         <ProductCarousel
-          products={featuredProducts.length > 0 ? featuredProducts : sampleProducts}
+          products={featuredCategories.length > 0 ? featuredCategories : sampleCategories}
         />
       </HomeSection>
     </div>
@@ -371,7 +439,7 @@ export const HomePage = () => {
               >
                 <ProductCarousel
                   products={
-                    featuredProducts.length > 0 ? featuredProducts : sampleProducts
+                    featuredCategories.length > 0 ? featuredCategories : sampleCategories
                   }
                 />
               </HomeSection>

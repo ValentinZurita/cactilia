@@ -100,6 +100,7 @@ export const CategoryForm = ({ onCategorySaved, editingCategory }) => {
       name: data.name,
       description: data.description || "",
       active: data.active === "true",
+      featured: data.featured === "true", // Añadido campo featured
       images: uploadedURLs,
       mainImage: mainUrl,
     };
@@ -165,6 +166,14 @@ export const CategoryForm = ({ onCategorySaved, editingCategory }) => {
           label="Activa"
           control={control}
           options={[["true", "Sí"], ["false", "No"]]}
+        />
+
+        {/* Featured - Nuevo campo */}
+        <SelectField
+          name="featured"
+          label="Destacada"
+          control={control}
+          options={[["false", "No"], ["true", "Sí"]]}
         />
 
         {/* Submit button */}
