@@ -21,6 +21,15 @@ export const getHomePageContent = async (version = 'draft') => {
       };
     }
 
+    // Validación adicional: si blockOrder no existe o está vacío, reconstruirlo
+    if (result.ok && result.data) {
+      if (!result.data.blockOrder || !Array.isArray(result.data.blockOrder) || result.data.blockOrder.length === 0) {
+        // Si no hay blockOrder válido, reconstruirlo a partir de las secciones
+        console.log('Reconstruyendo blockOrder ausente');
+        result.data.blockOrder = result.data.sections ? Object.keys(result.data.sections) : [...DEFAULT_TEMPLATE.blockOrder];
+      }
+    }
+
     return result;
   } catch (error) {
     console.error('Error obteniendo contenido de la página de inicio:', error);
@@ -38,12 +47,25 @@ export const getHomePageContent = async (version = 'draft') => {
  */
 export const saveHomePageContent = async (data) => {
   try {
-    // Asegurarse de que el blockOrder existe
-    const dataToSave = {
-      ...data,
-      // Si no hay blockOrder, usar las claves de las secciones como orden predeterminado
-      blockOrder: data.blockOrder || Object.keys(data.sections || {})
-    };
+    // Validar estructura básica
+    if (!data || typeof data !== 'object') {
+      throw new Error('Los datos de la página no son válidos');
+    }
+
+    // Validar y asegurar que blockOrder existe y es válido
+    let dataToSave = { ...data };
+
+    // Si no hay blockOrder o no es un array, recrearlo basado en las secciones
+    if (!dataToSave.blockOrder || !Array.isArray(dataToSave.blockOrder) || dataToSave.blockOrder.length === 0) {
+      dataToSave.blockOrder = dataToSave.sections ? Object.keys(dataToSave.sections) : [...DEFAULT_TEMPLATE.blockOrder];
+      console.log('Reconstruido blockOrder en saveHomePageContent:', dataToSave.blockOrder);
+    }
+
+    // Hacer copia profunda para evitar problemas de referencia
+    dataToSave = JSON.parse(JSON.stringify(dataToSave));
+
+    // Log explícito del orden para debugging
+    console.log('Guardando página con blockOrder:', dataToSave.blockOrder);
 
     return await ContentService.savePageContent(HOME_PAGE_ID, dataToSave);
   } catch (error) {

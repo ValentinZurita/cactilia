@@ -33,12 +33,25 @@ const HomePageEditor = () => {
 
         if (result.ok && result.data) {
           setPageConfig(result.data);
-          // Inicializar el orden de secciones
-          setSectionOrder(Object.keys(result.data.sections));
+
+          // Inicializar el orden de secciones con blockOrder si existe,
+          // o con las claves de sections si no hay blockOrder
+          const orderToUse = result.data.blockOrder && Array.isArray(result.data.blockOrder) && result.data.blockOrder.length > 0
+            ? result.data.blockOrder
+            : Object.keys(result.data.sections || {});
+
+          setSectionOrder(orderToUse);
+
+          // Intentar restaurar la sección expandida desde localStorage
+          const savedExpandedSection = localStorage.getItem('homepageEditor_expandedSection');
+          if (savedExpandedSection && orderToUse.includes(savedExpandedSection)) {
+            setExpandedSection(savedExpandedSection);
+          }
+
           setHasSavedContent(true);
         } else {
           setPageConfig({ ...DEFAULT_TEMPLATE });
-          setSectionOrder(Object.keys(DEFAULT_TEMPLATE.sections));
+          setSectionOrder(DEFAULT_TEMPLATE.blockOrder || Object.keys(DEFAULT_TEMPLATE.sections || {}));
           setHasSavedContent(false);
         }
       } catch (error) {
@@ -49,7 +62,7 @@ const HomePageEditor = () => {
           message: 'Error al cargar la configuración'
         });
         setPageConfig({ ...DEFAULT_TEMPLATE });
-        setSectionOrder(Object.keys(DEFAULT_TEMPLATE.sections));
+        setSectionOrder(DEFAULT_TEMPLATE.blockOrder || Object.keys(DEFAULT_TEMPLATE.sections || {}));
       } finally {
         setLoading(false);
       }
@@ -57,6 +70,15 @@ const HomePageEditor = () => {
 
     loadContent();
   }, []);
+
+  // Guarda la sección expandida en localStorage cuando cambia
+  useEffect(() => {
+    if (expandedSection) {
+      localStorage.setItem('homepageEditor_expandedSection', expandedSection);
+    } else {
+      localStorage.removeItem('homepageEditor_expandedSection');
+    }
+  }, [expandedSection]);
 
   // Actualizar una sección específica
   const handleSectionUpdate = (sectionId, newData) => {
@@ -84,11 +106,13 @@ const HomePageEditor = () => {
     try {
       setSaving(true);
 
-      // Actualizar el orden de secciones en el pageConfig antes de guardar
-      const updatedConfig = {
-        ...pageConfig,
-        blockOrder: sectionOrder
-      };
+      // Crear una copia profunda para evitar problemas de referencia
+      const updatedConfig = JSON.parse(JSON.stringify(pageConfig));
+
+      // Asegurar que blockOrder refleja el orden actual en el editor
+      updatedConfig.blockOrder = [...sectionOrder];
+
+      console.log('Guardando configuración con orden:', updatedConfig.blockOrder);
 
       const result = await saveHomePageContent(updatedConfig);
 
@@ -96,12 +120,15 @@ const HomePageEditor = () => {
         showTemporaryAlert('success', 'Borrador guardado correctamente');
         setHasChanges(false);
         setHasSavedContent(true);
+
+        // Actualizar también el estado local para consistencia
+        setPageConfig(updatedConfig);
       } else {
         throw new Error(result.error || 'Error desconocido al guardar');
       }
-    } catch (error) {
-      console.error('Error guardando la configuración:', error);
-      showTemporaryAlert('danger', `Error al guardar: ${error.message}`);
+    } catch (err) {
+      console.error('Error guardando la configuración:', err);
+      showTemporaryAlert('danger', `Error al guardar: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -113,10 +140,8 @@ const HomePageEditor = () => {
       setPublishing(true);
 
       // Asegurar que el orden actualizado se guarde antes de publicar
-      const updatedConfig = {
-        ...pageConfig,
-        blockOrder: sectionOrder
-      };
+      const updatedConfig = JSON.parse(JSON.stringify(pageConfig));
+      updatedConfig.blockOrder = [...sectionOrder];
 
       const saveResult = await saveHomePageContent(updatedConfig);
 
@@ -129,12 +154,15 @@ const HomePageEditor = () => {
       if (publishResult.ok) {
         showTemporaryAlert('success', '✅ Cambios publicados correctamente');
         setHasChanges(false);
+
+        // Actualizar estado local para consistencia
+        setPageConfig(updatedConfig);
       } else {
         throw new Error(publishResult.error || 'Error desconocido al publicar');
       }
-    } catch (error) {
-      console.error('Error publicando la configuración:', error);
-      showTemporaryAlert('danger', `Error al publicar: ${error.message}`);
+    } catch (err) {
+      console.error('Error publicando la configuración:', err);
+      showTemporaryAlert('danger', `Error al publicar: ${err.message}`);
     } finally {
       setPublishing(false);
     }
@@ -144,8 +172,9 @@ const HomePageEditor = () => {
   const handleReset = () => {
     if (window.confirm('¿Estás seguro de resetear la configuración? Perderás todos los cambios.')) {
       setPageConfig({ ...DEFAULT_TEMPLATE });
-      setSectionOrder(Object.keys(DEFAULT_TEMPLATE.sections));
+      setSectionOrder(DEFAULT_TEMPLATE.blockOrder || Object.keys(DEFAULT_TEMPLATE.sections));
       setExpandedSection(null);
+      localStorage.removeItem('homepageEditor_expandedSection');
       setHasChanges(true);
     }
   };
