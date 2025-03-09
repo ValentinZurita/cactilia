@@ -1,0 +1,72 @@
+/* Estilos para el HeroSection con transiciones suaves */
+.hero-section {
+    position: relative;
+    overflow: hidden;
+    will-change: transform; /* Ayuda en el rendimiento de la animación */
+}
+
+/* Optimizaciones para el background del hero */
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+
+    /* Hardware acceleration para transiciones más suaves */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: opacity;
+
+    /* Transición optimizada */
+    transition: opacity 1s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Clase para el elemento activo */
+.hero-background-active {
+    opacity: 1;
+    z-index: 1;
+}
+
+/* Clase para elementos inactivos */
+.hero-background-inactive {
+    opacity: 0;
+    z-index: 0;
+}
+
+/* Optimizaciones para el contenido */
+.hero-content {
+    z-index: 10;
+    position: relative;
+}
+
+/* Overlay con efecto suavizado */
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 5;
+}
+
+/* Mejora de rendimiento para animaciones */
+@media screen and (min-width: 768px) {
+    .hero-section * {
+        /* Solo activar aceleración por hardware en dispositivos de mayor capacidad */
+        transform: translateZ(0);
+    }
+}
+
+/* Prevenir parpadeo en dispositivos móviles */
+@media screen and (max-width: 767px) {
+    .hero-background {
+        /* Transición levemente más corta para mejor rendimiento en dispositivos móviles */
+        transition: opacity 0.8s ease-in-out;
+    }
+}

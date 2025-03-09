@@ -1,14 +1,13 @@
-import { useState, useEffect } from "react";
-import { ImageGallery } from '../../../../shared/components/images/index.js';
-import { heroImages } from '../../../../shared/constants/images.js';
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Logo } from '../../../../shared/components/logo/Logo.jsx';
+import { heroImages } from '../../../../shared/constants/images.js';
 import { getCollectionImages } from '../../../admin/services/collectionsService.js';
 import '../../../../styles/global.css';
+import './../../styles/homepage.css';
 
 /**
- * HeroSection Component
- * Muestra un slider hero con título, subtítulo y botón opcional
- * Versión mejorada con soporte para imágenes de colecciones
+ * HeroSection Component con transiciones CSS puras
+ * Implementa un slider con transiciones fluidas usando CSS puro
  *
  * @param {Object} props
  * @param {string|Array} props.images - Imágenes a mostrar (string o array)
@@ -41,9 +40,13 @@ export const HeroSection = ({
                               collectionId,
                               useCollection = false,
                             }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [collectionImages, setCollectionImages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const imagesContainerRef = useRef(null);
+  const preloadedImages = useRef(new Set());
+  const intervalRef = useRef(null);
 
   // Cargar imágenes de la colección si se especifica
   useEffect(() => {
@@ -53,7 +56,10 @@ export const HeroSection = ({
         try {
           const result = await getCollectionImages(collectionId);
           if (result.ok && Array.isArray(result.data)) {
-            setCollectionImages(result.data.map(item => item.url));
+            const imageUrls = result.data.map(item => item.url);
+            setCollectionImages(imageUrls);
+            // Precargar imágenes
+            preloadImages(imageUrls);
           } else {
             console.error('Error cargando imágenes de colección:', result.error);
             setCollectionImages([]);
@@ -71,7 +77,7 @@ export const HeroSection = ({
   }, [useCollection, collectionId]);
 
   // Determinar qué imágenes usar
-  const getImagesToDisplay = () => {
+  const imageArray = useMemo(() => {
     if (loading) {
       return [heroImages[0]]; // Imagen de respaldo durante la carga
     }
@@ -82,37 +88,93 @@ export const HeroSection = ({
 
     // Normalizar las imágenes a un array
     return Array.isArray(images) ? images : [images];
+  }, [images, loading, useCollection, collectionImages]);
+
+  // Función para precargar imágenes
+  const preloadImages = (imagesToPreload) => {
+    imagesToPreload.forEach(url => {
+      if (!preloadedImages.current.has(url)) {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+          preloadedImages.current.add(url);
+        };
+      }
+    });
   };
 
-  const imageArray = getImagesToDisplay();
-
-  // Si autoRotate está activado, cambia la imagen cada X segundos
+  // Configurar rotación automática
   useEffect(() => {
-    if (autoRotate && imageArray.length > 1) {
-      const imageInterval = setInterval(() => {
-        setCurrentImageIndex((prevIndex) => (prevIndex + 1) % imageArray.length);
-      }, interval);
+    // Precargar todas las imágenes al inicio
+    preloadImages(imageArray);
 
-      return () => clearInterval(imageInterval); // Cleanup interval
+    if (autoRotate && imageArray.length > 1) {
+      // Limpiar intervalo existente
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+
+      // Iniciar nuevo intervalo
+      intervalRef.current = setInterval(() => {
+        if (!isTransitioning) {
+          setIsTransitioning(true);
+          setTimeout(() => {
+            setCurrentIndex((prevIndex) => (prevIndex + 1) % imageArray.length);
+            setIsTransitioning(false);
+          }, 500); // Duración de la transición
+        }
+      }, interval);
     }
-  }, [autoRotate, imageArray, interval]);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [autoRotate, imageArray, interval, isTransitioning]);
+
+  // Crear estilos CSS para cada imagen
+  const createImageStyles = (index) => {
+    return {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      opacity: index === currentIndex ? 1 : 0,
+      backgroundImage: `url(${imageArray[index]})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      transition: 'opacity 1s ease-in-out',
+      zIndex: index === currentIndex ? 1 : 0
+    };
+  };
 
   return (
     <section
       className="hero-section position-relative text-white text-center d-flex flex-column justify-content-center align-items-center"
-      style={{ height }}
+      style={{ height, overflow: 'hidden' }}
     >
-      {/* Si hay más de una imagen y autoRotate está activado, rota las imágenes */}
-      <ImageGallery
-        images={autoRotate && imageArray.length > 1 ? [imageArray[currentImageIndex]] : [imageArray[0]]}
+      {/* Container para todas las imágenes */}
+      <div
+        ref={imagesContainerRef}
         className="position-absolute top-0 start-0 w-100 h-100"
-      />
+      >
+        {/* Renderizar todas las imágenes con opacidad controlada */}
+        {imageArray.map((_, index) => (
+          <div
+            key={index}
+            style={createImageStyles(index)}
+            aria-hidden={index !== currentIndex}
+          />
+        ))}
+      </div>
 
       {/* Overlay oscuro */}
-      <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"></div>
+      <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" style={{ zIndex: 2 }}></div>
 
       {/* Contenido del Hero */}
-      <div className="position-relative z-1">
+      <div className="position-relative" style={{ zIndex: 3 }}>
         {showLogo && <Logo color="white" />}
         <h1 className="display-6 fw-bold">{title}</h1>
         {showSubtitle && <p className="lead text-xs">{subtitle}</p>}
