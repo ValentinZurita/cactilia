@@ -9,7 +9,7 @@ import { ActionButtons } from './ActionButton.jsx'
 
 /**
  * Editor principal para la página de inicio - Versión rediseñada
- * Enfoque mobile-first con sistema de cards
+ * Enfoque mobile-first con sistema de cards y UX mejorada
  */
 const HomePageEditor = () => {
   // Estado principal
@@ -176,6 +176,7 @@ const HomePageEditor = () => {
       setExpandedSection(null);
       localStorage.removeItem('homepageEditor_expandedSection');
       setHasChanges(true);
+      showTemporaryAlert('warning', 'Se ha restaurado la configuración predeterminada');
     }
   };
 
@@ -216,7 +217,7 @@ const HomePageEditor = () => {
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Cargando...</span>
         </div>
-        <p className="ms-3 mb-0">Cargando...</p>
+        <p className="ms-3 mb-0 h5">Cargando editor...</p>
       </div>
     );
   }
@@ -267,50 +268,86 @@ const HomePageEditor = () => {
 
   return (
     <div className="homepage-editor">
-      {/* Alerta de estado */}
+      {/* Alerta de estado mejorada */}
       {showAlert.show && (
-        <div className={`alert alert-${showAlert.type} alert-dismissible fade show`} role="alert">
+        <div className={`alert alert-${showAlert.type} alert-dismissible fade show`}
+             style={{
+               position: 'fixed',
+               top: '1rem',
+               right: '1rem',
+               zIndex: 1050,
+               maxWidth: '90%',
+               boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+             }}
+             role="alert">
           <div className="d-flex align-items-center">
-            <i className={`bi ${showAlert.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} fs-5 me-2`}></i>
+            <i className={`bi ${showAlert.type === 'success' ? 'bi-check-circle' : showAlert.type === 'warning' ? 'bi-exclamation-triangle' : 'bi-exclamation-circle'} fs-5 me-2`}></i>
             <div>{showAlert.message}</div>
           </div>
           <button type="button" className="btn-close" onClick={() => setShowAlert({ show: false })}></button>
         </div>
       )}
 
-      {/* Header con botones de acciones secundarias - Mejorado para móviles */}
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
-        <button
-          className={`btn ${isReordering ? 'btn-secondary' : 'btn-outline-secondary'} w-100 w-sm-auto`}
-          onClick={toggleReorderMode}
-          title={isReordering ? "Terminar reordenamiento" : "Reordenar secciones"}
-        >
-          <i className="bi bi-arrow-down-up me-2"></i>
-          {isReordering ? 'Terminar reordenamiento' : 'Reordenar secciones'}
-        </button>
+      {/* Card de herramientas superior */}
+      <div className="card shadow-sm mb-4">
+        <div className="card-body p-3">
+          <div className="row g-2">
+            <div className="col-12 col-sm-6 mb-2 mb-sm-0">
+              <button
+                className={`btn ${isReordering ? 'btn-primary' : 'btn-outline-primary'} w-100`}
+                onClick={toggleReorderMode}
+              >
+                <i className={`bi ${isReordering ? 'bi-check-lg' : 'bi-arrow-down-up'} me-2`}></i>
+                {isReordering ? 'Finalizar orden' : 'Reordenar secciones'}
+              </button>
+            </div>
 
-        <button
-          className="btn btn-outline-primary w-100 w-sm-auto"
-          onClick={() => window.open('/', '_blank')}
-          title="Ver la página en una nueva ventana"
-        >
-          <i className="bi bi-eye me-2"></i>
-          Previsualizar
-        </button>
+            <div className="col-12 col-sm-6">
+              <button
+                className="btn btn-outline-primary w-100"
+                onClick={() => window.open('/', '_blank')}
+                title="Ver la página en una nueva ventana"
+              >
+                <i className="bi bi-eye me-2"></i>
+                Previsualizar sitio
+              </button>
+            </div>
+          </div>
+
+          {/* Indicador de cambios pendientes */}
+          {hasChanges && (
+            <div className="mt-3 alert alert-warning py-2 mb-0">
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              Tienes cambios sin guardar
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Cards de secciones */}
+      {/* Cards de secciones mejoradas */}
       <div className="row g-3 mb-4">
         {sectionOrder.map((sectionId, index) => (
           <div className="col-12" key={sectionId}>
             <div className={`card shadow-sm ${isReordering ? 'border-primary' : ''}`}>
               <div
-                className="card-header bg-white d-flex flex-wrap justify-content-between align-items-center py-3"
+                className="card-header d-flex flex-wrap justify-content-between align-items-center py-3"
                 onClick={() => toggleSection(sectionId)}
-                style={{ cursor: isReordering ? 'move' : 'pointer' }}
+                style={{
+                  cursor: isReordering ? 'move' : 'pointer',
+                  background: expandedSection === sectionId ? '#f8f9fa' : 'white'
+                }}
               >
                 <div className="d-flex align-items-center mb-2 mb-sm-0">
-                  <i className={`bi ${sectionInfo[sectionId]?.icon || 'bi-square'} text-primary me-3 fs-4`}></i>
+                  <div className="section-icon d-flex align-items-center justify-content-center me-3"
+                       style={{
+                         width: '40px',
+                         height: '40px',
+                         borderRadius: '8px',
+                         backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                         color: '#0d6efd'
+                       }}>
+                    <i className={`bi ${sectionInfo[sectionId]?.icon || 'bi-square'} fs-4`}></i>
+                  </div>
                   <div>
                     <h6 className="mb-0 fw-bold">{sectionInfo[sectionId]?.name || sectionId}</h6>
                     <p className="text-muted small mb-0">
@@ -322,27 +359,29 @@ const HomePageEditor = () => {
                 {isReordering ? (
                   <div className="d-flex mt-2 mt-sm-0">
                     <button
-                      className="btn btn-sm btn-outline-secondary me-1"
+                      className="btn btn-sm btn-outline-primary me-1"
                       onClick={(e) => { e.stopPropagation(); moveSectionUp(index); }}
                       disabled={index === 0}
+                      style={{width: '38px', height: '38px'}}
                     >
                       <i className="bi bi-arrow-up"></i>
                     </button>
                     <button
-                      className="btn btn-sm btn-outline-secondary"
+                      className="btn btn-sm btn-outline-primary"
                       onClick={(e) => { e.stopPropagation(); moveSectionDown(index); }}
                       disabled={index === sectionOrder.length - 1}
+                      style={{width: '38px', height: '38px'}}
                     >
                       <i className="bi bi-arrow-down"></i>
                     </button>
                   </div>
                 ) : (
-                  <i className={`bi ${expandedSection === sectionId ? 'bi-chevron-up' : 'bi-chevron-down'} d-none d-sm-block`}></i>
+                  <i className={`bi ${expandedSection === sectionId ? 'bi-chevron-up' : 'bi-chevron-down'} fs-4 text-muted`}></i>
                 )}
               </div>
 
               {expandedSection === sectionId && !isReordering && (
-                <div className="card-body border-top">
+                <div className="card-body border-top p-4">
                   {renderSectionEditor(sectionId)}
                 </div>
               )}
@@ -351,16 +390,28 @@ const HomePageEditor = () => {
         ))}
       </div>
 
-      {/* Botones de acción */}
-      <ActionButtons
-        onSave={handleSave}
-        onPublish={handlePublish}
-        onReset={handleReset}
-        saving={saving}
-        publishing={publishing}
-        hasChanges={hasChanges}
-        hasSavedContent={hasSavedContent}
-      />
+      {/* Botones de acción con anclaje al fondo */}
+      <div className="sticky-action-bar card shadow-sm"
+           style={{
+             position: 'sticky',
+             bottom: '0',
+             zIndex: '1020',
+             marginTop: '1rem',
+             borderTop: '1px solid #dee2e6',
+             borderRadius: '0'
+           }}>
+        <div className="card-body py-3">
+          <ActionButtons
+            onSave={handleSave}
+            onPublish={handlePublish}
+            onReset={handleReset}
+            saving={saving}
+            publishing={publishing}
+            hasChanges={hasChanges}
+            hasSavedContent={hasSavedContent}
+          />
+        </div>
+      </div>
     </div>
   );
 };
