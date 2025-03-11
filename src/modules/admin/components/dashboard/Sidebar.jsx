@@ -157,7 +157,7 @@ export const Sidebar = ({ onLinkClick }) => {
           <SidebarItem to="/admin/media/upload" label="Upload Media" onClick={handleNavClick} />
         </SidebarDropdown>
 
-        {/* Gestión de Contenido (sección única) */}
+        {/* Sidebar Content Management */}
         <SidebarDropdown
           label="Gestión de Contenido"
           icon="bi-layout-text-window"
@@ -169,6 +169,12 @@ export const Sidebar = ({ onLinkClick }) => {
             label="Editor de Página de Inicio"
             onClick={handleNavClick}
             icon="bi-house-gear"
+          />
+          <SidebarItem
+            to="/admin/shoppage"
+            label="Editor de Página de Tienda"
+            onClick={handleNavClick}
+            icon="bi-shop-window"
           />
         </SidebarDropdown>
 

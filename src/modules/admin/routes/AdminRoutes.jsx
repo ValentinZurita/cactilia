@@ -11,6 +11,7 @@ import {
 } from '../pages/index.js'
 import { RequireAdminAuth } from '../components/login/index.js'
 import { HomePageManagementPage } from '../components/homepage-editor/HomePageManagementPage.jsx'
+import { ShopPageManagementPage } from '../components/homepage-editor/ShopPageManagement.jsx'
 
 export const AdminRoutes = () => {
   return (
@@ -39,8 +40,9 @@ export const AdminRoutes = () => {
           <Route path="media/browse" element={<MediaLibraryPage />} />
           <Route path="media/upload" element={<MediaUploadPage />} />
 
-          {/* Homepage Editor (New Content Management) */}
+          {/* Content Management - Homepage and Shop Editor */}
           <Route path="homepage" element={<HomePageManagementPage />} />
+          <Route path="shoppage" element={<ShopPageManagementPage />} />
 
           {/* Users */}
           <Route path="users" element={<Navigate to="users/customers" />} />
