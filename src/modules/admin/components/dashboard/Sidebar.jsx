@@ -176,6 +176,13 @@ export const Sidebar = ({ onLinkClick }) => {
             onClick={handleNavClick}
             icon="bi-shop-window"
           />
+
+          <SidebarItem
+            to="/admin/contactpage"
+            label="Editor de Página de Contacto"
+            onClick={handleNavClick}
+            icon="bi-envelope-fill"
+          />
         </SidebarDropdown>
 
         {/* Nuevo botón para ir al perfil de usuario */}

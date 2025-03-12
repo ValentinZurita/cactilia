@@ -1,3 +1,4 @@
+// src/modules/admin/routes/AdminRoutes.jsx (versión actualizada)
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AdminLayout } from '../../../layout/AdminLayout.jsx'
 import {
@@ -12,6 +13,7 @@ import {
 import { RequireAdminAuth } from '../components/login/index.js'
 import { HomePageManagementPage } from '../components/homepage-editor/HomePageManagementPage.jsx'
 import { ShopPageManagementPage } from '../components/homepage-editor/ShopPageManagementPage.jsx'
+import ContactPageManagementPage from '../components/homepage-editor/ContactPageManagementPage.jsx'
 
 export const AdminRoutes = () => {
   return (
@@ -40,9 +42,10 @@ export const AdminRoutes = () => {
           <Route path="media/browse" element={<MediaLibraryPage />} />
           <Route path="media/upload" element={<MediaUploadPage />} />
 
-          {/* Content Management - Homepage and Shop Editor */}
+          {/* Content Management - Homepage, Shop Editor and Contact Editor */}
           <Route path="homepage" element={<HomePageManagementPage />} />
           <Route path="shoppage" element={<ShopPageManagementPage />} />
+          <Route path="contactpage" element={<ContactPageManagementPage />} />
 
           {/* Users */}
           <Route path="users" element={<Navigate to="users/customers" />} />
