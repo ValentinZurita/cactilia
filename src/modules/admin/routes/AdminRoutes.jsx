@@ -11,7 +11,7 @@ import {
 } from '../pages/index.js'
 import { RequireAdminAuth } from '../components/login/index.js'
 import { HomePageManagementPage } from '../components/homepage-editor/HomePageManagementPage.jsx'
-import { ShopPageManagementPage } from '../components/homepage-editor/ShopPageManagement.jsx'
+import { ShopPageManagementPage } from '../components/homepage-editor/ShopPageManagementPage.jsx'
 
 export const AdminRoutes = () => {
   return (

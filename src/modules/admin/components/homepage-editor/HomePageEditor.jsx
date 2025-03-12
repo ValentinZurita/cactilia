@@ -4,8 +4,11 @@ import { FarmCarouselEditor } from './FarmCarouselEditor';
 import { ProductCategoriesEditor } from './ProductCategoriesEditor';
 import { DEFAULT_TEMPLATE } from './templateData';
 import { getHomePageContent, saveHomePageContent, publishHomePageContent } from './homepageService';
-import { FeaturedProductsEditor } from './FeaturedProducstEditor.jsx'
-import { ActionButtons } from './ActionButton.jsx'
+import { FeaturedProductsEditor } from './FeaturedProducstEditor.jsx';
+import { EditorActionBar } from './EditorActionBar.jsx'
+import { EditorToolbar } from './EditorToolbar.jsx'
+import { AlertMessage } from './AlertMessage.jsx'
+
 
 /**
  * Editor principal para la página de inicio - Versión rediseñada
@@ -20,7 +23,7 @@ const HomePageEditor = () => {
   const [publishing, setPublishing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [hasSavedContent, setHasSavedContent] = useState(false);
-  const [showAlert, setShowAlert] = useState({ show: false, type: '', message: '' });
+  const [alertMessage, setAlertMessage] = useState({ show: false, type: '', message: '' });
   const [isReordering, setIsReordering] = useState(false);
   const [sectionOrder, setSectionOrder] = useState([]);
 
@@ -50,17 +53,16 @@ const HomePageEditor = () => {
 
           setHasSavedContent(true);
         } else {
+          console.log(
+            'No se encontraron datos publicados, usando valores predeterminados'
+          );
           setPageConfig({ ...DEFAULT_TEMPLATE });
           setSectionOrder(DEFAULT_TEMPLATE.blockOrder || Object.keys(DEFAULT_TEMPLATE.sections || {}));
           setHasSavedContent(false);
         }
       } catch (error) {
         console.error('Error cargando la configuración:', error);
-        setShowAlert({
-          show: true,
-          type: 'danger',
-          message: 'Error al cargar la configuración'
-        });
+        showTemporaryAlert('danger', 'Error al cargar la configuración');
         setPageConfig({ ...DEFAULT_TEMPLATE });
         setSectionOrder(DEFAULT_TEMPLATE.blockOrder || Object.keys(DEFAULT_TEMPLATE.sections || {}));
       } finally {
@@ -97,8 +99,12 @@ const HomePageEditor = () => {
 
   // Mostrar alerta temporal
   const showTemporaryAlert = (type, message) => {
-    setShowAlert({ show: true, type, message });
-    setTimeout(() => setShowAlert({ show: false, type: '', message: '' }), 3000);
+    setAlertMessage({ show: true, type, message });
+  };
+
+  // Cerrar alerta
+  const closeAlert = () => {
+    setAlertMessage({ show: false, type: '', message: '' });
   };
 
   // Guardar borrador
@@ -269,60 +275,21 @@ const HomePageEditor = () => {
   return (
     <div className="homepage-editor">
       {/* Alerta de estado mejorada */}
-      {showAlert.show && (
-        <div className={`alert alert-${showAlert.type} alert-dismissible fade show`}
-             style={{
-               position: 'fixed',
-               top: '1rem',
-               right: '1rem',
-               zIndex: 1050,
-               maxWidth: '90%',
-               boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-             }}
-             role="alert">
-          <div className="d-flex align-items-center">
-            <i className={`bi ${showAlert.type === 'success' ? 'bi-check-circle' : showAlert.type === 'warning' ? 'bi-exclamation-triangle' : 'bi-exclamation-circle'} fs-5 me-2`}></i>
-            <div>{showAlert.message}</div>
-          </div>
-          <button type="button" className="btn-close" onClick={() => setShowAlert({ show: false })}></button>
-        </div>
-      )}
+      <AlertMessage
+        show={alertMessage.show}
+        type={alertMessage.type}
+        message={alertMessage.message}
+        onClose={closeAlert}
+      />
 
-      {/* Card de herramientas superior */}
-      <div className="card shadow-sm mb-4">
-        <div className="card-body p-3">
-          <div className="row g-2">
-            <div className="col-12 col-sm-6 mb-2 mb-sm-0">
-              <button
-                className={`btn ${isReordering ? 'btn-primary' : 'btn-outline-primary'} w-100`}
-                onClick={toggleReorderMode}
-              >
-                <i className={`bi ${isReordering ? 'bi-check-lg' : 'bi-arrow-down-up'} me-2`}></i>
-                {isReordering ? 'Finalizar orden' : 'Reordenar secciones'}
-              </button>
-            </div>
-
-            <div className="col-12 col-sm-6">
-              <button
-                className="btn btn-outline-primary w-100"
-                onClick={() => window.open('/', '_blank')}
-                title="Ver la página en una nueva ventana"
-              >
-                <i className="bi bi-eye me-2"></i>
-                Previsualizar sitio
-              </button>
-            </div>
-          </div>
-
-          {/* Indicador de cambios pendientes */}
-          {hasChanges && (
-            <div className="mt-3 alert alert-warning py-2 mb-0">
-              <i className="bi bi-exclamation-triangle-fill me-2"></i>
-              Tienes cambios sin guardar
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Barra de herramientas */}
+      <EditorToolbar
+        previewUrl="/"
+        showReordering={true}
+        isReordering={isReordering}
+        onToggleReordering={toggleReorderMode}
+        hasChanges={hasChanges}
+      />
 
       {/* Cards de secciones mejoradas */}
       <div className="row g-3 mb-4">
@@ -391,27 +358,15 @@ const HomePageEditor = () => {
       </div>
 
       {/* Botones de acción con anclaje al fondo */}
-      <div className="sticky-action-bar card shadow-sm"
-           style={{
-             position: 'sticky',
-             bottom: '0',
-             zIndex: '1020',
-             marginTop: '1rem',
-             borderTop: '1px solid #dee2e6',
-             borderRadius: '0'
-           }}>
-        <div className="card-body py-3">
-          <ActionButtons
-            onSave={handleSave}
-            onPublish={handlePublish}
-            onReset={handleReset}
-            saving={saving}
-            publishing={publishing}
-            hasChanges={hasChanges}
-            hasSavedContent={hasSavedContent}
-          />
-        </div>
-      </div>
+      <EditorActionBar
+        onSave={handleSave}
+        onPublish={handlePublish}
+        onReset={handleReset}
+        saving={saving}
+        publishing={publishing}
+        hasChanges={hasChanges}
+        hasSavedContent={hasSavedContent}
+      />
     </div>
   );
 };

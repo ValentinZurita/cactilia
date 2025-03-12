@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { ShopBannerEditor } from './ShopBannerEditor';
 import { DEFAULT_SHOP_TEMPLATE } from './shopPageService';
 import { getShopPageContent, saveShopPageContent, publishShopPageContent } from './shopPageService';
-import { ActionButtons } from './ActionButton.jsx'
+import { EditorActionBar } from './EditorActionBar.jsx'
+import { EditorToolbar } from './EditorToolbar.jsx'
+import { AlertMessage } from './AlertMessage.jsx'
+import { ShopBannerPreview } from './ShopBannePreview.jsx'
 
 /**
  * Editor principal para la página de tienda
@@ -16,7 +19,9 @@ const ShopPageEditor = () => {
   const [publishing, setPublishing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [hasSavedContent, setHasSavedContent] = useState(false);
-  const [showAlert, setShowAlert] = useState({ show: false, type: '', message: '' });
+  const [alertMessage, setAlertMessage] = useState({ show: false, type: '', message: '' });
+  // Estado para controlar la expansión del banner
+  const [bannerExpanded, setBannerExpanded] = useState(true);
 
   // Cargar la configuración al iniciar
   useEffect(() => {
@@ -35,11 +40,7 @@ const ShopPageEditor = () => {
         }
       } catch (error) {
         console.error('Error cargando la configuración:', error);
-        setShowAlert({
-          show: true,
-          type: 'danger',
-          message: 'Error al cargar la configuración'
-        });
+        showTemporaryAlert('danger', 'Error al cargar la configuración');
         setPageConfig({ ...DEFAULT_SHOP_TEMPLATE });
       } finally {
         setLoading(false);
@@ -48,6 +49,11 @@ const ShopPageEditor = () => {
 
     loadContent();
   }, []);
+
+  // Manejador para expandir/contraer la sección del banner
+  const toggleBannerExpanded = () => {
+    setBannerExpanded(!bannerExpanded);
+  };
 
   // Actualizar la sección del banner
   const handleBannerUpdate = (newData) => {
@@ -66,8 +72,12 @@ const ShopPageEditor = () => {
 
   // Mostrar alerta temporal
   const showTemporaryAlert = (type, message) => {
-    setShowAlert({ show: true, type, message });
-    setTimeout(() => setShowAlert({ show: false, type: '', message: '' }), 3000);
+    setAlertMessage({ show: true, type, message });
+  };
+
+  // Cerrar alerta
+  const closeAlert = () => {
+    setAlertMessage({ show: false, type: '', message: '' });
   };
 
   // Guardar borrador
@@ -155,57 +165,43 @@ const ShopPageEditor = () => {
   return (
     <div className="shop-page-editor">
       {/* Alerta de estado mejorada */}
-      {showAlert.show && (
-        <div className={`alert alert-${showAlert.type} alert-dismissible fade show`}
-             style={{
-               position: 'fixed',
-               top: '1rem',
-               right: '1rem',
-               zIndex: 1050,
-               maxWidth: '90%',
-               boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-             }}
-             role="alert">
-          <div className="d-flex align-items-center">
-            <i className={`bi ${showAlert.type === 'success' ? 'bi-check-circle' : showAlert.type === 'warning' ? 'bi-exclamation-triangle' : 'bi-exclamation-circle'} fs-5 me-2`}></i>
-            <div>{showAlert.message}</div>
-          </div>
-          <button type="button" className="btn-close" onClick={() => setShowAlert({ show: false })}></button>
-        </div>
-      )}
+      <AlertMessage
+        show={alertMessage.show}
+        type={alertMessage.type}
+        message={alertMessage.message}
+        onClose={closeAlert}
+      />
 
-      {/* Card de herramientas superior */}
-      <div className="card shadow-sm mb-4">
-        <div className="card-body p-3">
-          <div className="row g-2">
-            <div className="col-12">
-              <button
-                className="btn btn-outline-primary w-100"
-                onClick={() => window.open('/shop', '_blank')}
-                title="Ver la página en una nueva ventana"
-              >
-                <i className="bi bi-eye me-2"></i>
-                Previsualizar tienda
-              </button>
+      {/* Barra de herramientas */}
+      <EditorToolbar
+        previewUrl="/shop"
+        hasChanges={hasChanges}
+      />
+
+      {/* Vista previa */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <ShopBannerPreview config={pageConfig.sections.banner} />
             </div>
           </div>
-
-          {/* Indicador de cambios pendientes */}
-          {hasChanges && (
-            <div className="mt-3 alert alert-warning py-2 mb-0">
-              <i className="bi bi-exclamation-triangle-fill me-2"></i>
-              Tienes cambios sin guardar
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Editor del banner */}
-      <div className="row">
+      {/* Editor del banner - Ahora expandible/contraíble */}
+      <div className="row g-3 mb-4">
         <div className="col-12">
-          <div className="card shadow-sm mb-4">
-            <div className="card-header d-flex flex-wrap justify-content-between align-items-center py-3">
-              <div className="d-flex align-items-center">
+          <div className="card shadow-sm">
+            <div
+              className="card-header d-flex flex-wrap justify-content-between align-items-center py-3"
+              onClick={toggleBannerExpanded}
+              style={{
+                cursor: 'pointer',
+                background: bannerExpanded ? '#f8f9fa' : 'white'
+              }}
+            >
+              <div className="d-flex align-items-center mb-2 mb-sm-0">
                 <div className="section-icon d-flex align-items-center justify-content-center me-3"
                      style={{
                        width: '40px',
@@ -223,39 +219,32 @@ const ShopPageEditor = () => {
                   </p>
                 </div>
               </div>
+              <i className={`bi ${bannerExpanded ? 'bi-chevron-up' : 'bi-chevron-down'} fs-4 text-muted`}></i>
             </div>
-            <div className="card-body p-4">
-              <ShopBannerEditor
-                data={pageConfig.sections.banner}
-                onUpdate={handleBannerUpdate}
-              />
-            </div>
+
+            {/* Contenido expandible/contraíble */}
+            {bannerExpanded && (
+              <div className="card-body border-top p-4">
+                <ShopBannerEditor
+                  data={pageConfig.sections.banner}
+                  onUpdate={handleBannerUpdate}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Botones de acción con anclaje al fondo */}
-      <div className="sticky-action-bar card shadow-sm"
-           style={{
-             position: 'sticky',
-             bottom: '0',
-             zIndex: '1020',
-             marginTop: '1rem',
-             borderTop: '1px solid #dee2e6',
-             borderRadius: '0'
-           }}>
-        <div className="card-body py-3">
-          <ActionButtons
-            onSave={handleSave}
-            onPublish={handlePublish}
-            onReset={handleReset}
-            saving={saving}
-            publishing={publishing}
-            hasChanges={hasChanges}
-            hasSavedContent={hasSavedContent}
-          />
-        </div>
-      </div>
+      {/* Botones de acción */}
+      <EditorActionBar
+        onSave={handleSave}
+        onPublish={handlePublish}
+        onReset={handleReset}
+        saving={saving}
+        publishing={publishing}
+        hasChanges={hasChanges}
+        hasSavedContent={hasSavedContent}
+      />
     </div>
   );
 };
