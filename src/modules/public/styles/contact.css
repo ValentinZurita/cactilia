@@ -1,14 +1,13 @@
 /*
-   ✉️ CONTACT PAGE CSS - Cactilia
-   Versión mejorada con diseño de cards y mobile-first
+  ✉️ CONTACT PAGE CSS - Cactilia
+  -------------------------------------------------------------------
+  Mejora la estructura y legibilidad, manteniendo la misma funcionalidad.
 */
 
-/* 🔄 Import global styles */
+/* 1) IMPORT GLOBAL STYLES ----------------------------------------- */
 @import url('../../../../src/styles/global.css');
 
-/*
-  🌍 1) GENERAL LAYOUT
-*/
+/* 2) PAGE CONTAINER & BACKGROUND ---------------------------------- */
 .contact-page-container {
     padding-top: 80px;
     padding-bottom: 80px;
@@ -17,7 +16,7 @@
     background-color: #f7f8fa;
 }
 
-/* Fondo sutil con degradado */
+/* Fondo con degradado sutil */
 .contact-page-container::before {
     content: '';
     position: absolute;
@@ -25,10 +24,15 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(40, 167, 69, 0.03) 0%, rgba(73, 117, 149, 0.01) 100%);
+    background: linear-gradient(
+            135deg,
+            rgba(40, 167, 69, 0.03) 0%,
+            rgba(73, 117, 149, 0.01) 100%
+    );
     z-index: -1;
 }
 
+/* Titulado y subtítulo */
 .contact-title {
     font-size: 2.5rem;
     font-weight: 600;
@@ -47,9 +51,7 @@
     margin-bottom: 2rem;
 }
 
-/*
-  🟢 2) CONTACT INFO CARD
-*/
+/* 3) CONTACT INFO CARD -------------------------------------------- */
 .contact-info-card {
     background: linear-gradient(135deg, #34C749 0%, #28A745 100%);
     color: white;
@@ -95,7 +97,7 @@
     left: -40px;
 }
 
-/* Items de información de contacto */
+/* 4) CONTACT INFO ITEMS ------------------------------------------- */
 .contact-details {
     margin-bottom: 2rem;
     flex-grow: 1;
@@ -153,7 +155,7 @@
     line-height: 1.4;
 }
 
-/* Social media links */
+/* Redes sociales */
 .social-links {
     margin-top: auto;
 }
@@ -179,9 +181,7 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/*
-  📝 3) CONTACT FORM CARD
-*/
+/* 5) CONTACT FORM CARD -------------------------------------------- */
 .contact-form-card {
     background-color: white;
     border-radius: 16px;
@@ -197,7 +197,7 @@
     margin-bottom: 1.5rem;
 }
 
-/* Form controls styling */
+/* Elementos del formulario */
 .form-control,
 .form-select {
     padding: 12px 15px;
@@ -219,7 +219,7 @@ textarea.form-control {
     resize: none;
 }
 
-/* Estilos para los mensajes de error */
+/* Estilos para mensajes de error */
 .invalid-feedback {
     font-size: 0.75rem;
     margin-top: 5px;
@@ -258,10 +258,16 @@ textarea.form-control {
     font-size: 0.95rem;
 }
 
-/* Animaciones */
+/* 6) ANIMATIONS --------------------------------------------------- */
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Texto de política de privacidad */
@@ -282,11 +288,8 @@ textarea.form-control {
     text-decoration: underline;
 }
 
-/*
-  📱 4) RESPONSIVE ADJUSTMENTS
-*/
-
-/* Mobile adjustments (Extra Small & Small) */
+/* 7) RESPONSIVE ADJUSTMENTS --------------------------------------- */
+/* Mobile (XS, SM) */
 @media (max-width: 767px) {
     .contact-page-container {
         padding-top: 60px;
@@ -319,7 +322,7 @@ textarea.form-control {
     }
 }
 
-/* Medium devices (tablets) */
+/* Tablets (MD) */
 @media (min-width: 768px) and (max-width: 991px) {
     .contact-info-card,
     .contact-form-card {
@@ -327,12 +330,11 @@ textarea.form-control {
     }
 }
 
-/* Large devices and up (desktops) */
+/* Desktops (LG+) */
 @media (min-width: 992px) {
     .contact-content-wrapper {
         align-items: stretch;
     }
-
     .contact-form-card,
     .contact-info-card {
         height: 100%;
