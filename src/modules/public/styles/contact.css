@@ -1,0 +1,120 @@
+/*
+   ✉️ CONTACT PAGE CSS - Cactilia
+*/
+
+/* 🔄 Import global styles to reuse variables */
+@import url('../../../../src/styles/global.css');
+
+/*
+  🌍 1) GENERAL STYLES
+*/
+.contact-page {
+    padding-top: 75px;
+    min-height: calc(100vh - 150px);
+}
+
+/*
+  🟢 2) CONTACT INFO CARD
+*/
+.contact-info-card {
+    background-color: var(--green-3);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 24px rgba(52, 199, 73, 0.15);
+}
+
+.contact-info-item {
+    transition: transform 0.3s ease;
+}
+
+.contact-info-item:hover {
+    transform: translateX(5px);
+}
+
+.icon-container {
+    width: 36px;
+    height: 36px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-container i {
+    color: white;
+    font-size: 1rem;
+}
+
+.social-icons {
+    margin-top: auto;
+}
+
+.social-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+    background-color: white;
+    color: var(--green-3);
+    transform: translateY(-3px);
+}
+
+/*
+  📝 3) CONTACT FORM
+*/
+.contact-form-container {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Radio buttons for subject selection */
+.subject-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.subject-option {
+    margin-bottom: 0;
+}
+
+.subject-option .form-check-input:checked {
+    background-color: var(--green-3);
+    border-color: var(--green-3);
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+    .subject-options {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-info-card {
+        margin-bottom: 20px;
+    }
+}
+
+/* Desktop enhancements */
+@media (min-width: 992px) {
+    .contact-form-container {
+        border-radius: 8px;
+        padding: 25px;
+    }
+
+    .contact-info-card {
+        border-radius: 8px;
+        padding: 30px;
+    }
+}

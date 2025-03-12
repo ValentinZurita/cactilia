@@ -2,10 +2,10 @@ import { Routes, Route } from "react-router-dom";
 import { HomePage } from "../pages/HomePage.jsx";
 import { ShopPage } from "../../shop/pages/ShopPage.jsx";
 import { CartPage } from "../../user/pages/CartPage.jsx";
+import { ContactPage } from "../pages/ContactPage.jsx"; // Importamos la página de contacto
 import { AuthRoutes } from "../../auth/router/AuthRoutes.jsx";
 import { PublicLayout } from '../../../layout/PublicLayout.jsx';
 import { RequireAuth } from '../../auth/components/RequireAuth.jsx';
-import { ProfileLayout } from '../../user/components/profile/ProfileLayout';
 import {
   OverviewPage,
   OrdersPage,
@@ -13,6 +13,7 @@ import {
   PaymentsPage,
   SettingsPage
 } from '../../user/pages';
+import { ProfileLayout } from '../../user/components/profile/index.js'
 
 export const PublicRoutes = () => {
   return (
@@ -22,6 +23,7 @@ export const PublicRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/contacto" element={<ContactPage />} /> {/* Nueva ruta para contacto */}
         <Route path="/auth/*" element={<AuthRoutes />} />
 
         {/* Rutas protegidas del perfil de usuario */}
