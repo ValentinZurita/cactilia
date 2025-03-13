@@ -3,7 +3,7 @@ import { useContactPageContent } from '../hooks/useContactPageContent';
 import { Logo } from '../../../shared/components/logo/Logo.jsx';
 import '../styles/contact.css';
 import { ContactForm } from '../components/contact/index.js';
-import { CONTACT_INFO } from '../../../shared/constants/index.js';
+import { CONTACT_INFO, SOCIAL_MEDIA_LINKS } from '../../../shared/constants/index.js'
 
 /**
  * Enhanced Contact Page component that uses the customizable content

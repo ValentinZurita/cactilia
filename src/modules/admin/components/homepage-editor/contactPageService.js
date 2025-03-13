@@ -1,47 +1,37 @@
 // src/modules/admin/components/contact-editor/contactPageService.js
+import ContentService from '../homepage-editor/ContentService.js'
 
-// ID para el documento de la página de contacto
-import ContentService from './ContentService.js'
-
+/**
+ * Constants
+ */
+// ID for the contact page document
 const CONTACT_PAGE_ID = 'contact';
 
-// Configuración predeterminada para la página de contacto
+/**
+ * Default template for the contact page with simplified structure
+ * Removes unnecessary options and keeps only essential content
+ */
 export const DEFAULT_CONTACT_TEMPLATE = {
   pageTitle: "Contacto",
-  pageDescription: "Formulario de contacto y datos de contacto de Cactilia.",
+  pageDescription: "Información de contacto y formulario de Cactilia.",
   sections: {
     header: {
       title: "Contáctanos",
-      subtitle: "Estamos aquí para ayudarte. Envíanos un mensaje y te responderemos lo antes posible.",
-      backgroundImage: '',
-      showBackground: true
+      subtitle: "Estamos aquí para ayudarte. Envíanos un mensaje y te responderemos lo antes posible."
     },
     contactInfo: {
-      showContactInfo: true,
       customPhone: "",
       customEmail: "",
       customAddress: "",
-      customHours: "Lunes a Viernes: 9am - 6pm",
-      useDefaultInfo: true,
-      showSocialMedia: true
+      customHours: "Lunes a Viernes: 9am - 6pm"
     },
     form: {
-      showForm: true,
-      title: "Envíanos un mensaje",
-      showNameField: true,
-      showEmailField: true,
-      showPhoneField: true,
-      showSubjectField: true,
-      showMessageField: true,
       subjectOptions: [
         "Consulta general",
         "Soporte técnico",
         "Ventas",
         "Otro"
-      ],
-      buttonText: "Enviar mensaje",
-      buttonColor: "#34C749",
-      privacyText: "Al enviar este formulario, aceptas nuestra política de privacidad."
+      ]
     },
     map: {
       showMap: true,
@@ -74,7 +64,8 @@ export const DEFAULT_CONTACT_TEMPLATE = {
 };
 
 /**
- * Retrieves contact page configuration
+ * Retrieves contact page configuration from Firestore
+ *
  * @param {string} [version='draft'] - Version to get ('draft' or 'published')
  * @returns {Promise<Object>} - Operation result
  */
@@ -101,7 +92,8 @@ export const getContactPageContent = async (version = 'draft') => {
 };
 
 /**
- * Saves contact page configuration (draft)
+ * Saves contact page configuration to Firestore (draft)
+ *
  * @param {Object} data - Configuration data to save
  * @returns {Promise<Object>} - Operation result
  */
@@ -131,6 +123,7 @@ export const saveContactPageContent = async (data) => {
 /**
  * Publishes contact page configuration
  * Copies draft to published collection
+ *
  * @returns {Promise<Object>} - Operation result
  */
 export const publishContactPageContent = async () => {
@@ -147,6 +140,7 @@ export const publishContactPageContent = async () => {
 
 /**
  * Resets contact page configuration to default template
+ *
  * @returns {Promise<Object>} - Operation result
  */
 export const resetContactPageContent = async () => {

@@ -1,4 +1,4 @@
-// src/modules/admin/routes/AdminRoutes.jsx (versión actualizada)
+// src/modules/admin/routes/AdminRoutes.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AdminLayout } from '../../../layout/AdminLayout.jsx'
 import {
