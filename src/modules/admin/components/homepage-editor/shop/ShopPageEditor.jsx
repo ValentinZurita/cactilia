@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ShopBannerEditor } from './ShopBannerEditor';
-import { DEFAULT_SHOP_TEMPLATE } from './shopPageService';
-import { getShopPageContent, saveShopPageContent, publishShopPageContent } from './shopPageService';
-import { EditorActionBar } from './EditorActionBar.jsx'
-import { EditorToolbar } from './EditorToolbar.jsx'
-import { AlertMessage } from './AlertMessage.jsx'
+import { ShopBannerEditor } from './ShopBannerEditor.jsx';
+import { DEFAULT_SHOP_TEMPLATE } from './shopPageService.js';
+import { getShopPageContent, saveShopPageContent, publishShopPageContent } from './shopPageService.js';
+import { EditorActionBar } from '../shared/EditorActionBar.jsx'
+import { EditorToolbar } from '../shared/EditorToolbar.jsx'
+import { AlertMessage } from '../shared/AlertMessage.jsx'
 import { ShopBannerPreview } from './ShopBannePreview.jsx'
 
 /**

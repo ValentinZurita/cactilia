@@ -1,6 +1,6 @@
 // src/modules/admin/components/contact-editor/ContactPageManagementPage.jsx
 import React from 'react';
-import ContactPageEditor from './ContactPageEditor';
+import ContactPageEditor from './ContactPageEditor.jsx';
 
 /**
  * Contact Page Management Page

@@ -1,5 +1,5 @@
-import { ContentService } from './ContentService';
-import { DEFAULT_TEMPLATE } from './templateData';
+import { ContentService } from '../shared/ContentService.js';
+import { DEFAULT_TEMPLATE } from './templateData.js';
 
 // ID para el documento de la página de inicio
 const HOME_PAGE_ID = 'home';

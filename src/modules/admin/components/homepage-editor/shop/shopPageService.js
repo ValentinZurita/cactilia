@@ -1,4 +1,4 @@
-import { ContentService } from './ContentService';
+import { ContentService } from '../shared/ContentService.js';
 
 // ID para el documento de la página de tienda
 const SHOP_PAGE_ID = 'shop';

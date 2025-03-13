@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getCollectionImages } from '../../services/collectionsService';
-import { heroImages } from '../../../../shared/constants/images';
+import { getCollectionImages } from '../../../services/collectionsService.js';
+import { heroImages } from '../../../../../shared/constants/images.js';
 
 /**
  * Componente de vista previa para el banner de la tienda

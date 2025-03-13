@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MediaSelector } from '../media/index.js';
+import { MediaSelector } from '../../media/index.js';
 
 /**
  * Editor para la sección de Carrusel de Granja

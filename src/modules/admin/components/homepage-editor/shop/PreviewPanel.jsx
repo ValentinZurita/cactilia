@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { heroImages } from '../../../../shared/constants/images.js';
-import { HeroSection, HomeCarousel, HomeSection, ProductCarousel } from '../../../public/components/home-page/index.js';
+import { heroImages } from '../../../../../shared/constants/images.js';
+import { HeroSection, HomeCarousel, HomeSection, ProductCarousel } from '../../../../public/components/home-page/index.js';
 
 // Constantes para datos de ejemplo
 const sampleProducts = Array(6).fill(null).map((_, i) => ({

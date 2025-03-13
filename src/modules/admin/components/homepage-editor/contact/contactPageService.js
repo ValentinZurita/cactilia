@@ -1,5 +1,5 @@
 // src/modules/admin/components/contact-editor/contactPageService.js
-import ContentService from '../homepage-editor/ContentService.js'
+import ContentService from '../shared/ContentService.js'
 
 /**
  * Constants

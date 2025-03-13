@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { HeroSectionEditor } from './HeroSectionEditor';
-import { FarmCarouselEditor } from './FarmCarouselEditor';
-import { ProductCategoriesEditor } from './ProductCategoriesEditor';
-import { DEFAULT_TEMPLATE } from './templateData';
-import { getHomePageContent, saveHomePageContent, publishHomePageContent } from './homepageService';
+import { HeroSectionEditor } from './HeroSectionEditor.jsx';
+import { FarmCarouselEditor } from './FarmCarouselEditor.jsx';
+import { ProductCategoriesEditor } from '../shop/ProductCategoriesEditor.jsx';
+import { DEFAULT_TEMPLATE } from './templateData.js';
+import { getHomePageContent, saveHomePageContent, publishHomePageContent } from './homepageService.js';
 import { FeaturedProductsEditor } from './FeaturedProducstEditor.jsx';
-import { EditorActionBar } from './EditorActionBar.jsx'
-import { EditorToolbar } from './EditorToolbar.jsx'
-import { AlertMessage } from './AlertMessage.jsx'
+import { EditorActionBar } from '../shared/EditorActionBar.jsx'
+import { EditorToolbar } from '../shared/EditorToolbar.jsx'
+import { AlertMessage } from '../shared/AlertMessage.jsx'
 
 
 /**
