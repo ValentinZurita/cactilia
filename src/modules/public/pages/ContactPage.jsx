@@ -1,48 +1,60 @@
-// src/modules/public/pages/ContactPage.jsx (versión actualizada)
+// src/modules/public/pages/ContactPage.jsx
 import { useContactPageContent } from '../hooks/useContactPageContent';
 import { Logo } from '../../../shared/components/logo/Logo.jsx';
 import '../styles/contact.css';
-import { ContactForm, ContactInfo } from '../components/contact/index.js';
-import { SocialMediaLinks } from '../../../shared/components/footer/index.js';
+import { ContactForm } from '../components/contact/index.js';
 import { CONTACT_INFO } from '../../../shared/constants/index.js';
 
 /**
- * Página de Contacto con contenido personalizable:
- * Carga la configuración personalizada desde Firestore y muestra los elementos según
- * la configuración del administrador.
+ * Enhanced Contact Page component that uses the customizable content
+ * managed through the admin interface
  *
- * @returns {JSX.Element} - Retorna la estructura de la página de contacto.
+ * @returns {JSX.Element}
  */
 export const ContactPage = () => {
-  // Cargar contenido personalizado de la página
+  // Load customized content for the page
   const { pageContent, loading, getSection } = useContactPageContent();
 
-  // Obtener configuración de cada sección
+  // Get configuration for each section
   const headerConfig = getSection('header');
   const contactInfoConfig = getSection('contactInfo');
   const formConfig = getSection('form');
   const mapConfig = getSection('map');
+  const socialMediaConfig = getSection('socialMedia');
 
-  // Obtener información de contacto (predeterminada o personalizada)
+  // Get contact information (default or custom)
   const getContactDetails = () => {
     if (contactInfoConfig.useDefaultInfo !== false) {
       return {
         phone: CONTACT_INFO.phone,
         email: CONTACT_INFO.email,
-        address: CONTACT_INFO.address
+        address: CONTACT_INFO.address,
+        hours: 'Lunes a Viernes: 9am - 6pm'
       };
     }
     return {
       phone: contactInfoConfig.customPhone || CONTACT_INFO.phone,
       email: contactInfoConfig.customEmail || CONTACT_INFO.email,
-      address: contactInfoConfig.customAddress || CONTACT_INFO.address
+      address: contactInfoConfig.customAddress || CONTACT_INFO.address,
+      hours: contactInfoConfig.customHours || 'Lunes a Viernes: 9am - 6pm'
     };
   };
 
+  // Get visible social media items
+  const getVisibleSocialMedia = () => {
+    if (socialMediaConfig?.items && Array.isArray(socialMediaConfig.items)) {
+      return socialMediaConfig.items.filter(item => item.visible !== false);
+    }
+
+    // If no custom configuration, use defaults from constants
+    return SOCIAL_MEDIA_LINKS;
+  };
+
   const contactDetails = getContactDetails();
+  const visibleSocialMedia = getVisibleSocialMedia();
 
   /**
-   * Renderiza la sección de encabezado (título y subtítulo).
+   * Renders the heading section (title and subtitle)
    */
   const renderHeadingSection = () => (
     <div className="row mb-4 mb-md-5">
@@ -56,7 +68,7 @@ export const ContactPage = () => {
   );
 
   /**
-   * Renderiza la tarjeta con la información de contacto y enlaces a redes sociales.
+   * Renders the contact information card with social media links
    */
   const renderContactInfoCard = () => (
     <div className="contact-info-card">
@@ -68,7 +80,7 @@ export const ContactPage = () => {
         </p>
       </div>
 
-      {/* Información de contacto personalizada */}
+      {/* Contact details */}
       <div className="contact-details">
         <div className="contact-info-item">
           <div className="icon-container">
@@ -103,20 +115,32 @@ export const ContactPage = () => {
           </div>
           <div className="info-content">
             <h6 className="info-title">Horario</h6>
-            <p className="info-text">Lunes a Viernes: 9am - 6pm</p>
+            <p className="info-text">{contactDetails.hours}</p>
           </div>
         </div>
       </div>
 
-      {/* Redes sociales */}
-      {contactInfoConfig.showSocialMedia !== false && (
+      {/* Social media links */}
+      {contactInfoConfig.showSocialMedia !== false && visibleSocialMedia.length > 0 && (
         <div className="social-links mt-4">
           <h5 className="text-white-50 fw-light mb-3">Síguenos</h5>
-          <SocialMediaLinks />
+          <div className="d-flex">
+            {visibleSocialMedia.map((social, index) => (
+              <a
+                key={index}
+                href={social.url}
+                className="text-white social-icon me-2"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <i className={`bi ${social.icon}`}></i>
+              </a>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Decoración */}
+      {/* Decorative elements */}
       <div className="contact-card-decoration">
         <div className="decoration-circle"></div>
         <div className="decoration-circle"></div>
@@ -125,11 +149,12 @@ export const ContactPage = () => {
   );
 
   /**
-   * Renderiza la tarjeta que contiene el formulario de contacto.
+   * Renders the contact form card
    */
   const renderContactFormCard = () => (
     <div className="contact-form-card">
       <h3 className="mb-4">{formConfig.title || 'Envíanos un mensaje'}</h3>
+
       <ContactForm
         showName={formConfig.showNameField !== false}
         showEmail={formConfig.showEmailField !== false}
@@ -139,12 +164,13 @@ export const ContactPage = () => {
         buttonText={formConfig.buttonText || 'Enviar mensaje'}
         buttonColor={formConfig.buttonColor || '#34C749'}
         privacyText={formConfig.privacyText}
+        subjectOptions={formConfig.subjectOptions}
       />
     </div>
   );
 
   /**
-   * Renderiza el mapa de Google
+   * Renders the Google Maps iframe
    */
   const renderMap = () => {
     if (!mapConfig.embedUrl) return null;
@@ -167,7 +193,7 @@ export const ContactPage = () => {
     );
   };
 
-  // Mostrar spinner mientras carga el contenido
+  // Show loading spinner while content is being fetched
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
@@ -179,24 +205,24 @@ export const ContactPage = () => {
   }
 
   /**
-   * Render principal de la página.
+   * Main render method for the page
    */
   return (
     <div className="contact-page-container">
       <div className="container">
-        {/* Sección de encabezado */}
+        {/* Header section */}
         {renderHeadingSection()}
 
-        {/* Contenido de la página */}
+        {/* Main content area */}
         <div className="row contact-content-wrapper">
-          {/* Tarjeta de información de contacto */}
+          {/* Contact info card */}
           {contactInfoConfig.showContactInfo !== false && (
             <div className="col-lg-5 mb-4 mb-lg-0">
               {renderContactInfoCard()}
             </div>
           )}
 
-          {/* Tarjeta del formulario de contacto */}
+          {/* Contact form card */}
           {formConfig.showForm !== false && (
             <div className={`col-lg-${contactInfoConfig.showContactInfo !== false ? '7' : '12'}`}>
               {renderContactFormCard()}
@@ -205,7 +231,7 @@ export const ContactPage = () => {
         </div>
       </div>
 
-      {/* Mapa */}
+      {/* Map section */}
       {mapConfig.showMap !== false && renderMap()}
     </div>
   );

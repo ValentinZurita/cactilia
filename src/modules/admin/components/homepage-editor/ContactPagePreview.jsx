@@ -1,46 +1,67 @@
-// src/modules/admin/components/contact-editor/ContactPagePreview.jsx
 import React from 'react';
 import { CONTACT_INFO, SOCIAL_MEDIA_LINKS } from '../../../../shared/constants/index.js';
 
 /**
- * Componente que muestra una vista previa simplificada de la página de contacto
+ * Enhanced preview component for the contact page with support for all customizable elements
  *
- * @param {Object} config - Configuración de la página de contacto
+ * @param {Object} props
+ * @param {Object} props.config - Page configuration
  * @returns {JSX.Element}
  */
 export const ContactPagePreview = ({ config }) => {
   if (!config) return null;
 
-  // Obtener datos de las secciones
+  // Get section data
   const header = config.header || {};
   const contactInfo = config.contactInfo || {};
   const form = config.form || {};
   const map = config.map || {};
+  const socialMedia = config.socialMedia || {};
 
-  // Obtener información de contacto (predeterminada o personalizada)
+  // Get contact details (default or custom)
   const getContactDetails = () => {
     if (contactInfo.useDefaultInfo !== false) {
       return {
         phone: CONTACT_INFO.phone,
         email: CONTACT_INFO.email,
-        address: CONTACT_INFO.address
+        address: CONTACT_INFO.address,
+        hours: 'Lunes a Viernes: 9am - 6pm'
       };
     }
     return {
       phone: contactInfo.customPhone || CONTACT_INFO.phone,
       email: contactInfo.customEmail || CONTACT_INFO.email,
-      address: contactInfo.customAddress || CONTACT_INFO.address
+      address: contactInfo.customAddress || CONTACT_INFO.address,
+      hours: contactInfo.customHours || 'Lunes a Viernes: 9am - 6pm'
     };
   };
 
+  // Get subject options
+  const getSubjectOptions = () => {
+    if (form.subjectOptions && Array.isArray(form.subjectOptions)) {
+      return form.subjectOptions;
+    }
+    return ["Consulta general", "Soporte técnico", "Ventas", "Otro"];
+  };
+
+  // Get social media items
+  const getSocialMediaItems = () => {
+    if (socialMedia.items && Array.isArray(socialMedia.items)) {
+      return socialMedia.items.filter(item => item.visible !== false);
+    }
+    return SOCIAL_MEDIA_LINKS;
+  };
+
   const contactDetails = getContactDetails();
+  const subjectOptions = getSubjectOptions();
+  const socialMediaItems = getSocialMediaItems();
 
   return (
     <div className="contact-page-preview">
       <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">Vista Previa</h6>
 
       <div className="preview-container">
-        {/* Sección de encabezado */}
+        {/* Header section */}
         <div className="preview-section mb-4">
           <div
             className="header-preview p-4 text-center rounded"
@@ -54,7 +75,7 @@ export const ContactPagePreview = ({ config }) => {
               color: header.backgroundImage ? 'white' : '#333'
             }}
           >
-            {/* Overlay para imágenes oscuras */}
+            {/* Overlay for dark images */}
             {header.backgroundImage && (
               <div
                 style={{
@@ -77,16 +98,16 @@ export const ContactPagePreview = ({ config }) => {
           </div>
         </div>
 
-        {/* Contenido principal */}
+        {/* Main content */}
         <div className="preview-section mb-4">
           <div className="row g-4">
-            {/* Columna de información de contacto */}
+            {/* Contact info column */}
             {contactInfo.showContactInfo !== false && (
               <div className="col-md-5">
                 <div className="contact-info-preview p-4 bg-success text-white h-100 rounded">
                   <h4 className="mb-4">¡Hablemos!</h4>
 
-                  {/* Teléfono */}
+                  {/* Phone */}
                   <div className="contact-info-item d-flex mb-3">
                     <div className="contact-icon me-3">
                       <i className="bi bi-telephone-fill"></i>
@@ -108,7 +129,7 @@ export const ContactPagePreview = ({ config }) => {
                     </div>
                   </div>
 
-                  {/* Dirección */}
+                  {/* Address */}
                   <div className="contact-info-item d-flex mb-3">
                     <div className="contact-icon me-3">
                       <i className="bi bi-geo-alt-fill"></i>
@@ -119,12 +140,23 @@ export const ContactPagePreview = ({ config }) => {
                     </div>
                   </div>
 
-                  {/* Redes sociales */}
-                  {contactInfo.showSocialMedia !== false && (
+                  {/* Hours */}
+                  <div className="contact-info-item d-flex mb-3">
+                    <div className="contact-icon me-3">
+                      <i className="bi bi-clock-fill"></i>
+                    </div>
+                    <div>
+                      <h6 className="mb-1">Horario</h6>
+                      <p className="mb-0">{contactDetails.hours}</p>
+                    </div>
+                  </div>
+
+                  {/* Social media */}
+                  {contactInfo.showSocialMedia !== false && socialMediaItems.length > 0 && (
                     <div className="social-links mt-4">
                       <h6 className="mb-2">Síguenos</h6>
                       <div className="d-flex">
-                        {SOCIAL_MEDIA_LINKS.map((social, index) => (
+                        {socialMediaItems.map((social, index) => (
                           <div key={index} className="social-icon me-2">
                             <i className={`bi ${social.icon}`}></i>
                           </div>
@@ -136,14 +168,14 @@ export const ContactPagePreview = ({ config }) => {
               </div>
             )}
 
-            {/* Columna del formulario */}
+            {/* Form column */}
             {form.showForm !== false && (
               <div className={`col-md-${contactInfo.showContactInfo !== false ? '7' : '12'}`}>
                 <div className="form-preview p-4 bg-white border rounded">
                   <h4 className="mb-4">{form.title || 'Envíanos un mensaje'}</h4>
 
                   <div className="row g-3">
-                    {/* Nombre */}
+                    {/* Name */}
                     {form.showNameField !== false && (
                       <div className="col-md-6">
                         <div className="form-control-preview p-2 bg-light rounded">Nombre</div>
@@ -157,28 +189,36 @@ export const ContactPagePreview = ({ config }) => {
                       </div>
                     )}
 
-                    {/* Teléfono */}
+                    {/* Phone */}
                     {form.showPhoneField !== false && (
                       <div className="col-md-6">
                         <div className="form-control-preview p-2 bg-light rounded">Teléfono</div>
                       </div>
                     )}
 
-                    {/* Asunto */}
+                    {/* Subject */}
                     {form.showSubjectField !== false && (
                       <div className="col-md-6">
-                        <div className="form-control-preview p-2 bg-light rounded">Asunto</div>
+                        <div className="form-control-preview p-2 bg-light rounded position-relative">
+                          Asunto
+                          <small className="d-block text-muted mt-1" style={{ fontSize: '0.7rem' }}>
+                            {subjectOptions.length > 0
+                              ? `Opciones: ${subjectOptions.slice(0, 2).join(', ')}${subjectOptions.length > 2 ? '...' : ''}`
+                              : 'Sin opciones configuradas'}
+                          </small>
+                        </div>
                       </div>
                     )}
 
-                    {/* Mensaje */}
+                    {/* Message */}
                     {form.showMessageField !== false && (
                       <div className="col-12">
-                        <div className="form-control-preview p-2 bg-light rounded" style={{ height: '80px' }}>Mensaje</div>
+                        <div className="form-control-preview p-2 bg-light rounded" style={{ height: '80px' }}>Mensaje
+                        </div>
                       </div>
                     )}
 
-                    {/* Botón de enviar */}
+                    {/* Button */}
                     <div className="col-12">
                       <button
                         className="btn w-100 mt-3"
@@ -191,7 +231,7 @@ export const ContactPagePreview = ({ config }) => {
                         {form.buttonText || 'Enviar mensaje'}
                       </button>
 
-                      {/* Texto de privacidad */}
+                      {/* Privacy text */}
                       {form.privacyText && (
                         <p className="text-muted text-center small mt-2">
                           {form.privacyText}
@@ -205,10 +245,11 @@ export const ContactPagePreview = ({ config }) => {
           </div>
         </div>
 
-        {/* Sección del mapa */}
+        {/* Map section */}
         {map.showMap !== false && (
           <div className="preview-section">
-            <div className="map-preview rounded overflow-hidden" style={{ height: '200px', backgroundColor: '#e9e9e9' }}>
+            <div className="map-preview rounded overflow-hidden"
+                 style={{ height: '200px', backgroundColor: '#e9e9e9' }}>
               {map.embedUrl ? (
                 <iframe
                   src={map.embedUrl}
@@ -240,4 +281,4 @@ export const ContactPagePreview = ({ config }) => {
       </div>
     </div>
   );
-};
+}
