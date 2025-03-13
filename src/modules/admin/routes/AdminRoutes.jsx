@@ -11,9 +11,9 @@ import {
   MediaUploadPage,
 } from '../pages/index.js'
 import { RequireAdminAuth } from '../components/login/index.js'
-import { HomePageManagementPage } from '../components/homepage-editor/homepage/HomePageManagementPage.jsx'
-import { ShopPageManagementPage } from '../components/homepage-editor/shop/ShopPageManagementPage.jsx'
-import ContactPageManagementPage from '../components/homepage-editor/contact/ContactPageManagementPage.jsx'
+import { HomePageManagementPage } from '../components/content/homepage/HomePageManagementPage.jsx'
+import { ShopPageManagementPage } from '../components/content/shop/ShopPageManagementPage.jsx'
+import ContactPageManagementPage from '../components/content/contact/ContactPageManagementPage.jsx'
 
 export const AdminRoutes = () => {
   return (

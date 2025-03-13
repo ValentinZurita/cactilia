@@ -4,7 +4,7 @@ import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMess
 import { useProducts, useModal, useCart } from '../hooks/index.js';
 import { heroImages } from '../../../shared/constants';
 import { getCollectionImages } from '../../admin/services/collectionsService';
-import { getShopPageContent } from '../../admin/components/homepage-editor/shop/shopPageService.js'
+import { getShopPageContent } from '../../admin/components/content/shop/shopPageService.js'
 
 export const ShopPage = () => {
   // Estado para el banner personalizado

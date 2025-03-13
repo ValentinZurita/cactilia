@@ -33,23 +33,12 @@ export function EditorActionBar({
   return (
     <div className="sticky-action-bar card shadow-sm" style={stickyBarStyle}>
       <div className="card-body py-3">
-        <div className="action-buttons">
-          <div className="row g-3">
-            {/*
-              En pantallas pequeñas (móviles), los botones principales
-              aparecerán a la derecha (order-md-2).
-            */}
-            <div className="col-12 col-md-6 order-md-2">
-              {renderPrimaryActions()}
-            </div>
-
-            {/*
-              En pantallas pequeñas, este botón (Restaurar) irá al final (order-md-1),
-              para que en desktop quede a la izquierda.
-            */}
-            <div className="col-12 col-md-6 order-md-1">
-              {renderResetButton()}
-            </div>
+        <div className="row g-3">
+          <div className="col-12 col-md-6 order-md-2">
+            {renderPrimaryActions()}
+          </div>
+          <div className="col-12 col-md-6 order-md-1">
+            {renderResetButton()}
           </div>
         </div>
       </div>

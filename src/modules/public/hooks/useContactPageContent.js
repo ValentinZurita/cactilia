@@ -1,7 +1,7 @@
 // src/modules/public/hooks/useContactPageContent.js
 import { useState, useEffect } from 'react';
-import { ContentService } from '../../admin/components/homepage-editor/shared/ContentService.js';
-import { DEFAULT_CONTACT_TEMPLATE } from '../../admin/components/homepage-editor/contact/contactPageService.js'
+import { ContentService } from '../../admin/components/content/shared/ContentService.js';
+import { DEFAULT_CONTACT_TEMPLATE } from '../../admin/components/content/contact/contactPageService.js'
 
 /**
  * Hook para cargar el contenido personalizado de la página de contacto

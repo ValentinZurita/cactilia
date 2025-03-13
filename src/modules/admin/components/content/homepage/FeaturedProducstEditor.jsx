@@ -1,4 +1,4 @@
-// src/modules/admin/components/homepage-editor/FeaturedProductsEditor.jsx
+// src/modules/admin/components/content/FeaturedProductsEditor.jsx
 import { useState } from 'react';
 
 /**
