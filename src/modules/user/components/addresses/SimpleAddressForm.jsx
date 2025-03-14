@@ -1,63 +1,157 @@
 import React, { useState, useEffect } from 'react';
 import { SimpleModal } from '../shared/SimpleModal';
 
-// Lista de estados mexicanos
+/**
+ * Lista de estados de la República Mexicana.
+ * Se declara como constante para mantener limpia la lógica dentro del componente.
+ */
 const ESTADOS_MEXICANOS = [
-  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
-  'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Estado de México',
-  'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit',
-  'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
-  'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+  'Aguascalientes',
+  'Baja California',
+  'Baja California Sur',
+  'Campeche',
+  'Chiapas',
+  'Chihuahua',
+  'Ciudad de México',
+  'Coahuila',
+  'Colima',
+  'Durango',
+  'Estado de México',
+  'Guanajuato',
+  'Guerrero',
+  'Hidalgo',
+  'Jalisco',
+  'Michoacán',
+  'Morelos',
+  'Nayarit',
+  'Nuevo León',
+  'Oaxaca',
+  'Puebla',
+  'Querétaro',
+  'Quintana Roo',
+  'San Luis Potosí',
+  'Sinaloa',
+  'Sonora',
+  'Tabasco',
+  'Tamaulipas',
+  'Tlaxcala',
+  'Veracruz',
+  'Yucatán',
+  'Zacatecas',
 ];
 
 /**
- * Formulario mejorado para agregar o editar direcciones en México
- * Incluye campos específicos para direcciones mexicanas
- *
- * El parámetro 'size' en SimpleModal controla el tamaño:
- * - 'sm': pequeño (40% del ancho)
- * - 'md': mediano (60% del ancho) - valor por defecto
- * - 'lg': grande (80% del ancho)
+ * Estructura por defecto para el formulario de dirección.
+ * Incluye todos los campos en blanco o false.
  */
-export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loading = false }) => {
-  // Estado para los datos del formulario
-  const [formData, setFormData] = useState({
-    name: '',
-    street: '',
-    numExt: '',
-    numInt: '',
-    colonia: '',
-    city: '',
-    state: '',
-    zip: '',
-    references: '',
-    isDefault: false
-  });
+const DEFAULT_FORM_DATA = {
+  name: '',
+  street: '',
+  numExt: '',
+  numInt: '',
+  colonia: '',
+  city: '',
+  state: '',
+  zip: '',
+  references: '',
+  isDefault: false,
+};
 
-  // Estado para errores de validación
+/**
+ * Extrae, si es posible, el número exterior e interior de la cadena 'street' original.
+ * Esto permite mantener compatibilidad con direcciones que incluyan toda la
+ * información en un solo campo (por ejemplo, "Calle #123, Int. 4B").
+ *
+ * @param {string} originalStreet - Texto que contiene la calle y, potencialmente, número(s).
+ * @returns {object} - Objeto con { street, numExt, numInt } extraídos o vacíos si no aplica.
+ */
+function parseStreetData(originalStreet) {
+  // Valor inicial en caso de que no se detecten patrones
+  let street = originalStreet || '';
+  let numExt = '';
+  let numInt = '';
+
+  // Intentar extraer números si están en formato "Calle #Ext, #Int"
+  const streetMatch = street.match(/(.*?)(?:\s+#?(\d+)(?:\s*,\s*#?(\d+))?)?$/);
+  if (streetMatch) {
+    street = streetMatch[1]?.trim() || '';
+    numExt = streetMatch[2] || '';
+    numInt = streetMatch[3] || '';
+  }
+
+  return { street, numExt, numInt };
+}
+
+/**
+ * Valida los campos del formulario de dirección, devolviendo un objeto
+ * donde cada clave corresponde a un campo con error y su valor es
+ * el mensaje de error.
+ *
+ * @param {object} formData - Objeto con los datos del formulario a validar.
+ * @returns {object} - Objeto con los errores encontrados. Vacío si no hay errores.
+ */
+function validateFormData(formData) {
+  const errors = {};
+
+  // Validar campos requeridos
+  if (!formData.name.trim()) errors.name = 'El nombre es requerido';
+  if (!formData.street.trim()) errors.street = 'La calle es requerida';
+  if (!formData.numExt.trim()) errors.numExt = 'El número exterior es requerido';
+  if (!formData.colonia.trim()) errors.colonia = 'La colonia es requerida';
+  if (!formData.city.trim()) errors.city = 'La ciudad es requerida';
+  if (!formData.state.trim()) errors.state = 'El estado es requerido';
+  if (!formData.zip.trim()) errors.zip = 'El código postal es requerido';
+
+  // Validar formato de código postal (5 dígitos para México)
+  if (formData.zip && !/^\d{5}$/.test(formData.zip.trim())) {
+    errors.zip = 'El código postal debe tener 5 dígitos';
+  }
+
+  return errors;
+}
+
+/**
+ * Formulario mejorado para agregar o editar direcciones en México.
+ * Incluye campos específicos para direcciones mexicanas y validación
+ * básica del formato de Código Postal.
+ *
+ * @param {object} props - Propiedades recibidas para el componente.
+ * @param {boolean} props.isOpen - Indica si el modal está abierto.
+ * @param {function} props.onClose - Función para cerrar el modal.
+ * @param {function} props.onSave - Función para guardar los datos de la dirección.
+ * @param {object|null} [props.address=null] - Objeto con la dirección a editar (nulo para nueva).
+ * @param {boolean} [props.loading=false] - Indica si hay un proceso de guardado en curso.
+ */
+export function SimpleAddressForm({
+                                    isOpen,
+                                    onClose,
+                                    onSave,
+                                    address = null,
+                                    loading = false,
+                                  }) {
+  // Estado local para el formulario
+  const [formData, setFormData] = useState({ ...DEFAULT_FORM_DATA });
+  // Estado local para los errores de validación
   const [errors, setErrors] = useState({});
 
-  // Actualizar formulario cuando se recibe una dirección para editar
+  /**
+   * Actualiza el formulario cuando se abre el modal:
+   * - Si hay una dirección existente, parseamos la calle y completamos campos.
+   * - Si no hay dirección, inicializamos los campos en blanco.
+   */
   useEffect(() => {
     if (isOpen) {
+      // Limpiar errores al abrir el formulario
+      setErrors({});
+
       if (address) {
-        // Extraer número exterior e interior de la calle si vienen juntos
-        let street = address.street || '';
-        let numExt = '';
-        let numInt = '';
-
-        // Intentar extraer números si están en formato "Calle #Ext, #Int"
-        const streetMatch = street.match(/(.*?)(?:\s+#?(\d+)(?:\s*,\s*#?(\d+))?)?$/);
-
-        if (streetMatch) {
-          street = streetMatch[1]?.trim() || '';
-          numExt = streetMatch[2] || '';
-          numInt = streetMatch[3] || '';
-        }
+        // Intentar extraer número exterior e interior de la calle
+        const { street = '' } = address;
+        const { street: parsedStreet, numExt, numInt } = parseStreetData(street);
 
         setFormData({
           name: address.name || '',
-          street: street,
+          street: address.street ? parsedStreet : '',
           numExt: address.numExt || numExt || '',
           numInt: address.numInt || numInt || '',
           colonia: address.colonia || '',
@@ -65,123 +159,107 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
           state: address.state || '',
           zip: address.zip || '',
           references: address.references || '',
-          isDefault: address.isDefault || false
+          isDefault: address.isDefault || false,
         });
       } else {
-        // Resetear formulario para agregar nueva dirección
-        setFormData({
-          name: '',
-          street: '',
-          numExt: '',
-          numInt: '',
-          colonia: '',
-          city: '',
-          state: '',
-          zip: '',
-          references: '',
-          isDefault: false
-        });
+        // Nueva dirección: valores por defecto
+        setFormData({ ...DEFAULT_FORM_DATA });
       }
-
-      // Limpiar errores al abrir el formulario
-      setErrors({});
     }
-  }, [address, isOpen]);
+  }, [isOpen, address]);
 
-  // Manejar cambios en los campos del formulario
-  const handleChange = (e) => {
+  /**
+   * Maneja los cambios en los campos del formulario.
+   * Si el campo modificado tenía un error, este se limpia.
+   */
+  function handleChange(e) {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
 
-    // Limpiar error del campo cuando el usuario lo modifica
+    // Limpiar error del campo al modificarlo
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: null }));
     }
-  };
+  }
 
-  // Validar formulario antes de enviarlo
-  const validateForm = () => {
-    const newErrors = {};
+  /**
+   * Maneja el envío del formulario: primero realiza la validación;
+   * si no hay errores, llama a la función onSave con la información
+   * compilada de la dirección.
+   */
+  function handleSubmit() {
+    const foundErrors = validateFormData(formData);
+    setErrors(foundErrors);
 
-    // Validar campos requeridos
-    if (!formData.name.trim()) newErrors.name = 'El nombre es requerido';
-    if (!formData.street.trim()) newErrors.street = 'La calle es requerida';
-    if (!formData.numExt.trim()) newErrors.numExt = 'El número exterior es requerido';
-    if (!formData.colonia.trim()) newErrors.colonia = 'La colonia es requerida';
-    if (!formData.city.trim()) newErrors.city = 'La ciudad es requerida';
-    if (!formData.state.trim()) newErrors.state = 'El estado es requerido';
-    if (!formData.zip.trim()) newErrors.zip = 'El código postal es requerido';
-
-    // Validar formato de código postal (5 dígitos para México)
-    if (formData.zip && !/^\d{5}$/.test(formData.zip.trim())) {
-      newErrors.zip = 'El código postal debe tener 5 dígitos';
+    // Si hay errores, no continuamos
+    if (Object.keys(foundErrors).length > 0) {
+      return;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Manejar envío del formulario
-  const handleSubmit = () => {
-    if (!validateForm()) return;
-
-    // Preparar datos para guardar
-    // Combinar calle con números para compatibilidad con el formato existente
+    // Preparar datos finales para guardar
     const addressToSave = {
       ...formData,
-      // Mantener el formato original si es necesario para compatibilidad
-      street: formData.street + (formData.numExt ? ` #${formData.numExt}` : '') +
-        (formData.numInt ? `, Int. ${formData.numInt}` : ''),
-      id: address?.id
+      // Mantener formato original si es necesario para compatibilidad
+      street: `${formData.street}${formData.numExt ? ` #${formData.numExt}` : ''}${
+        formData.numInt ? `, Int. ${formData.numInt}` : ''
+      }`,
+      id: address?.id, // Conservar el ID si estamos editando
     };
 
     onSave(addressToSave);
-  };
+  }
 
-  // Pie del modal con botones
-  const modalFooter = (
-    <>
-      <button
-        type="button"
-        className="btn btn-outline-secondary"
-        onClick={onClose}
-        disabled={loading}
-      >
-        Cancelar
-      </button>
-      <button
-        type="button"
-        className="btn btn-success"
-        onClick={handleSubmit}
-        disabled={loading}
-      >
-        {loading ? (
-          <>
-            <span className="spinner-border spinner-border-sm me-2"></span>
-            Guardando...
-          </>
-        ) : (
-          address ? 'Actualizar' : 'Guardar'
-        )}
-      </button>
-    </>
-  );
+  /**
+   * Construye el JSX para el pie de modal (botones de acción).
+   */
+  function renderModalFooter() {
+    return (
+      <>
+        <button
+          type="button"
+          className="btn btn-outline-secondary"
+          onClick={onClose}
+          disabled={loading}
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          className="btn btn-success"
+          onClick={handleSubmit}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2"></span>
+              Guardando...
+            </>
+          ) : (
+            address ? 'Actualizar' : 'Guardar'
+          )}
+        </button>
+      </>
+    );
+  }
 
+  // Render principal del componente
   return (
     <SimpleModal
       isOpen={isOpen}
       onClose={onClose}
       title={address ? 'Editar dirección' : 'Agregar dirección'}
-      footer={modalFooter}
-      size="md" // Añadimos el parámetro de tamaño
+      footer={renderModalFooter()}
+      size="md" // tamaño del modal
     >
       <div>
         {/* Nombre de la dirección */}
         <div className="mb-3">
-          <label htmlFor="address-name" className="form-label">Nombre de la dirección</label>
+          <label htmlFor="address-name" className="form-label">
+            Nombre de la dirección
+          </label>
           <input
             type="text"
             className={`form-control ${errors.name ? 'is-invalid' : ''}`}
@@ -198,7 +276,9 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
 
         {/* Calle */}
         <div className="mb-3">
-          <label htmlFor="address-street" className="form-label">Calle</label>
+          <label htmlFor="address-street" className="form-label">
+            Calle
+          </label>
           <input
             type="text"
             className={`form-control ${errors.street ? 'is-invalid' : ''}`}
@@ -216,7 +296,9 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
         {/* Fila con Número Exterior e Interior */}
         <div className="row">
           <div className="col-md-6 mb-3">
-            <label htmlFor="address-numExt" className="form-label">Número Exterior</label>
+            <label htmlFor="address-numExt" className="form-label">
+              Número Exterior
+            </label>
             <input
               type="text"
               className={`form-control ${errors.numExt ? 'is-invalid' : ''}`}
@@ -230,7 +312,9 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
             {errors.numExt && <div className="invalid-feedback">{errors.numExt}</div>}
           </div>
           <div className="col-md-6 mb-3">
-            <label htmlFor="address-numInt" className="form-label">Número Interior (opcional)</label>
+            <label htmlFor="address-numInt" className="form-label">
+              Número Interior (opcional)
+            </label>
             <input
               type="text"
               className={`form-control ${errors.numInt ? 'is-invalid' : ''}`}
@@ -247,7 +331,9 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
 
         {/* Colonia */}
         <div className="mb-3">
-          <label htmlFor="address-colonia" className="form-label">Colonia</label>
+          <label htmlFor="address-colonia" className="form-label">
+            Colonia
+          </label>
           <input
             type="text"
             className={`form-control ${errors.colonia ? 'is-invalid' : ''}`}
@@ -263,7 +349,9 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
 
         {/* Ciudad */}
         <div className="mb-3">
-          <label htmlFor="address-city" className="form-label">Ciudad</label>
+          <label htmlFor="address-city" className="form-label">
+            Ciudad
+          </label>
           <input
             type="text"
             className={`form-control ${errors.city ? 'is-invalid' : ''}`}
@@ -281,7 +369,9 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
         {/* Fila con Estado y Código Postal */}
         <div className="row">
           <div className="col-md-6 mb-3">
-            <label htmlFor="address-state" className="form-label">Estado</label>
+            <label htmlFor="address-state" className="form-label">
+              Estado
+            </label>
             <select
               className={`form-select ${errors.state ? 'is-invalid' : ''}`}
               id="address-state"
@@ -293,13 +383,17 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
             >
               <option value="">Selecciona un estado</option>
               {ESTADOS_MEXICANOS.map((estado) => (
-                <option key={estado} value={estado}>{estado}</option>
+                <option key={estado} value={estado}>
+                  {estado}
+                </option>
               ))}
             </select>
             {errors.state && <div className="invalid-feedback">{errors.state}</div>}
           </div>
           <div className="col-md-6 mb-3">
-            <label htmlFor="address-zip" className="form-label">Código Postal</label>
+            <label htmlFor="address-zip" className="form-label">
+              Código Postal
+            </label>
             <input
               type="text"
               className={`form-control ${errors.zip ? 'is-invalid' : ''}`}
@@ -318,7 +412,9 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
 
         {/* Referencias para llegar (opcional) */}
         <div className="mb-3">
-          <label htmlFor="address-references" className="form-label">Referencias (opcional)</label>
+          <label htmlFor="address-references" className="form-label">
+            Referencias (opcional)
+          </label>
           <textarea
             className="form-control"
             id="address-references"
@@ -328,7 +424,7 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
             onChange={handleChange}
             disabled={loading}
             placeholder="Entre calles, señas particulares u otras referencias para encontrar la dirección"
-          ></textarea>
+          />
         </div>
 
         {/* Checkbox para dirección predeterminada */}
@@ -349,4 +445,4 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
       </div>
     </SimpleModal>
   );
-};
+}
