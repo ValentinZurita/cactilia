@@ -227,10 +227,36 @@
     box-shadow: 0 0 0 0.25rem rgba(52, 199, 73, 0.25);
 }
 
-/* Estilo para los checkbox */
+/* Estilo para los checkbox - MEJORADO */
+.form-check {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.form-check-input {
+    margin-top: 0 !important;
+    margin-right: 0.5rem !important;
+    width: 1.2rem !important;
+    height: 1.2rem !important;
+    cursor: pointer;
+    border: 1.5px solid #ccc;
+}
+
 .form-check-input:checked {
-    background-color: var(--green-3);
-    border-color: var(--green-3);
+    background-color: var(--green-3) !important;
+    border-color: var(--green-3) !important;
+}
+
+.form-check-input:focus {
+    border-color: rgba(52, 199, 73, 0.4) !important;
+    box-shadow: 0 0 0 0.15rem rgba(52, 199, 73, 0.25) !important;
+}
+
+.form-check-label {
+    font-size: 0.9rem;
+    color: #555;
+    cursor: pointer;
 }
 
 /* Animación para mostrar los items de dirección */
@@ -247,4 +273,65 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Ajustes para el SimpleModal - para dar más espacio y "respiración" */
+
+/* Ajusta el ancho del modal en diferentes tamaños de pantalla */
+.simple-modal {
+    max-width: 95% !important; /* Respeta los márgenes */
+}
+
+/* Desktop: modal más centrado y con mejor tamaño */
+@media (min-width: 768px) {
+    .simple-modal {
+        max-width: 600px !important; /* Limita el ancho máximo en desktop */
+        width: 80% !important; /* Ancho relativo pero no extremo */
+    }
+
+    /* Tamaños específicos según el prop 'size' */
+    .simple-modal.sm {
+        max-width: 400px !important;
+        width: 50% !important;
+    }
+
+    .simple-modal.lg {
+        max-width: 800px !important;
+        width: 90% !important;
+    }
+}
+
+/* Tablets */
+@media (min-width: 576px) and (max-width: 767px) {
+    .simple-modal {
+        max-width: 500px !important;
+        width: 85% !important;
+    }
+}
+
+/* Móviles */
+@media (max-width: 575px) {
+    .simple-modal {
+        width: 90% !important;
+        margin: 10px auto !important;
+    }
+}
+
+/* Ajusta el contenido interior del modal */
+.simple-modal .modal-body {
+    padding: 15px 20px !important;
+    max-height: 80vh !important; /* Altura máxima para evitar que se salga de pantalla */
+    overflow-y: auto !important; /* Permite scroll si el contenido es muy largo */
+}
+
+/* Mejora el espacio interior de los inputs */
+.simple-modal .form-control,
+.simple-modal .form-select {
+    padding: 8px 12px !important;
+}
+
+/* Mejora el espaciado del footer del modal */
+.simple-modal .modal-footer {
+    padding: 12px 20px !important;
+    gap: 10px !important;
 }

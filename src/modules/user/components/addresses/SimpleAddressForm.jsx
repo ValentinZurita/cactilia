@@ -13,6 +13,11 @@ const ESTADOS_MEXICANOS = [
 /**
  * Formulario mejorado para agregar o editar direcciones en México
  * Incluye campos específicos para direcciones mexicanas
+ *
+ * El parámetro 'size' en SimpleModal controla el tamaño:
+ * - 'sm': pequeño (40% del ancho)
+ * - 'md': mediano (60% del ancho) - valor por defecto
+ * - 'lg': grande (80% del ancho)
  */
 export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loading = false }) => {
   // Estado para los datos del formulario
@@ -171,6 +176,7 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
       onClose={onClose}
       title={address ? 'Editar dirección' : 'Agregar dirección'}
       footer={modalFooter}
+      size="md" // Añadimos el parámetro de tamaño
     >
       <div>
         {/* Nombre de la dirección */}

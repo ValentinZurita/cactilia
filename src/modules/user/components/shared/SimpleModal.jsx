@@ -1,7 +1,15 @@
 import React, { useEffect } from 'react';
 
 /**
- * Un componente de modal simple sin usar ReactDOM.createPortal
+ * Un componente de modal simple mejorado
+ * Ahora con soporte para diferentes tamaños
+ *
+ * @param {boolean} isOpen - Indica si el modal está abierto
+ * @param {Function} onClose - Función para cerrar el modal
+ * @param {string} title - Título del modal
+ * @param {React.ReactNode} children - Contenido del modal
+ * @param {React.ReactNode} footer - Pie del modal con botones
+ * @param {string} size - Tamaño del modal ('sm', 'md', 'lg')
  */
 export const SimpleModal = ({
                               isOpen,
@@ -29,14 +37,6 @@ export const SimpleModal = ({
     }
   };
 
-  // Determinar la clase de tamaño
-  const sizeClasses = {
-    sm: 'w-75 w-sm-50 w-md-25',
-    md: 'w-100 w-sm-75 w-md-50',
-    lg: 'w-100 w-sm-100 w-md-75',
-    xl: 'w-100'
-  };
-
   return (
     <div
       className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
@@ -47,8 +47,12 @@ export const SimpleModal = ({
       onClick={handleBackdropClick}
     >
       <div
-        className={`bg-white rounded shadow-lg ${sizeClasses[size] || sizeClasses.md}`}
-        style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+        className={`bg-white rounded shadow-lg simple-modal ${size}`}
+        style={{
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Cabecera */}
@@ -63,13 +67,13 @@ export const SimpleModal = ({
         </div>
 
         {/* Cuerpo */}
-        <div className="p-3" style={{ overflowY: 'auto' }}>
+        <div className="p-3 modal-body">
           {children}
         </div>
 
         {/* Pie */}
         {footer && (
-          <div className="p-3 border-top d-flex justify-content-end gap-2">
+          <div className="p-3 border-top d-flex justify-content-end gap-2 modal-footer">
             {footer}
           </div>
         )}
