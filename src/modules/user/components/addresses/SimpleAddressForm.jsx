@@ -1,17 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { SimpleModal } from '../shared/SimpleModal';
 
+// Lista de estados mexicanos
+const ESTADOS_MEXICANOS = [
+  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+  'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Estado de México',
+  'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit',
+  'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
+  'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+];
+
 /**
- * Formulario simplificado para agregar o editar direcciones
+ * Formulario mejorado para agregar o editar direcciones en México
+ * Incluye campos específicos para direcciones mexicanas
  */
 export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loading = false }) => {
   // Estado para los datos del formulario
   const [formData, setFormData] = useState({
     name: '',
     street: '',
+    numExt: '',
+    numInt: '',
+    colonia: '',
     city: '',
     state: '',
     zip: '',
+    references: '',
     isDefault: false
   });
 
@@ -22,12 +36,30 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
   useEffect(() => {
     if (isOpen) {
       if (address) {
+        // Extraer número exterior e interior de la calle si vienen juntos
+        let street = address.street || '';
+        let numExt = '';
+        let numInt = '';
+
+        // Intentar extraer números si están en formato "Calle #Ext, #Int"
+        const streetMatch = street.match(/(.*?)(?:\s+#?(\d+)(?:\s*,\s*#?(\d+))?)?$/);
+
+        if (streetMatch) {
+          street = streetMatch[1]?.trim() || '';
+          numExt = streetMatch[2] || '';
+          numInt = streetMatch[3] || '';
+        }
+
         setFormData({
           name: address.name || '',
-          street: address.street || '',
+          street: street,
+          numExt: address.numExt || numExt || '',
+          numInt: address.numInt || numInt || '',
+          colonia: address.colonia || '',
           city: address.city || '',
           state: address.state || '',
           zip: address.zip || '',
+          references: address.references || '',
           isDefault: address.isDefault || false
         });
       } else {
@@ -35,9 +67,13 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
         setFormData({
           name: '',
           street: '',
+          numExt: '',
+          numInt: '',
+          colonia: '',
           city: '',
           state: '',
           zip: '',
+          references: '',
           isDefault: false
         });
       }
@@ -67,10 +103,17 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
 
     // Validar campos requeridos
     if (!formData.name.trim()) newErrors.name = 'El nombre es requerido';
-    if (!formData.street.trim()) newErrors.street = 'La dirección es requerida';
+    if (!formData.street.trim()) newErrors.street = 'La calle es requerida';
+    if (!formData.numExt.trim()) newErrors.numExt = 'El número exterior es requerido';
+    if (!formData.colonia.trim()) newErrors.colonia = 'La colonia es requerida';
     if (!formData.city.trim()) newErrors.city = 'La ciudad es requerida';
     if (!formData.state.trim()) newErrors.state = 'El estado es requerido';
     if (!formData.zip.trim()) newErrors.zip = 'El código postal es requerido';
+
+    // Validar formato de código postal (5 dígitos para México)
+    if (formData.zip && !/^\d{5}$/.test(formData.zip.trim())) {
+      newErrors.zip = 'El código postal debe tener 5 dígitos';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -80,10 +123,17 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
   const handleSubmit = () => {
     if (!validateForm()) return;
 
-    onSave({
+    // Preparar datos para guardar
+    // Combinar calle con números para compatibilidad con el formato existente
+    const addressToSave = {
       ...formData,
+      // Mantener el formato original si es necesario para compatibilidad
+      street: formData.street + (formData.numExt ? ` #${formData.numExt}` : '') +
+        (formData.numInt ? `, Int. ${formData.numInt}` : ''),
       id: address?.id
-    });
+    };
+
+    onSave(addressToSave);
   };
 
   // Pie del modal con botones
@@ -134,15 +184,15 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
             value={formData.name}
             onChange={handleChange}
             disabled={loading}
-            placeholder="Ej. Casa, Oficina, etc."
+            placeholder="Ej. Casa, Oficina, Casa de mis padres"
             autoComplete="off"
           />
           {errors.name && <div className="invalid-feedback">{errors.name}</div>}
         </div>
 
-        {/* Calle y número */}
+        {/* Calle */}
         <div className="mb-3">
-          <label htmlFor="address-street" className="form-label">Dirección</label>
+          <label htmlFor="address-street" className="form-label">Calle</label>
           <input
             type="text"
             className={`form-control ${errors.street ? 'is-invalid' : ''}`}
@@ -151,10 +201,58 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
             value={formData.street}
             onChange={handleChange}
             disabled={loading}
-            placeholder="Calle, número, colonia"
+            placeholder="Nombre de la calle"
             autoComplete="street-address"
           />
           {errors.street && <div className="invalid-feedback">{errors.street}</div>}
+        </div>
+
+        {/* Fila con Número Exterior e Interior */}
+        <div className="row">
+          <div className="col-md-6 mb-3">
+            <label htmlFor="address-numExt" className="form-label">Número Exterior</label>
+            <input
+              type="text"
+              className={`form-control ${errors.numExt ? 'is-invalid' : ''}`}
+              id="address-numExt"
+              name="numExt"
+              value={formData.numExt}
+              onChange={handleChange}
+              disabled={loading}
+              placeholder="Ej. 123"
+            />
+            {errors.numExt && <div className="invalid-feedback">{errors.numExt}</div>}
+          </div>
+          <div className="col-md-6 mb-3">
+            <label htmlFor="address-numInt" className="form-label">Número Interior (opcional)</label>
+            <input
+              type="text"
+              className={`form-control ${errors.numInt ? 'is-invalid' : ''}`}
+              id="address-numInt"
+              name="numInt"
+              value={formData.numInt}
+              onChange={handleChange}
+              disabled={loading}
+              placeholder="Ej. 4B"
+            />
+            {errors.numInt && <div className="invalid-feedback">{errors.numInt}</div>}
+          </div>
+        </div>
+
+        {/* Colonia */}
+        <div className="mb-3">
+          <label htmlFor="address-colonia" className="form-label">Colonia</label>
+          <input
+            type="text"
+            className={`form-control ${errors.colonia ? 'is-invalid' : ''}`}
+            id="address-colonia"
+            name="colonia"
+            value={formData.colonia}
+            onChange={handleChange}
+            disabled={loading}
+            placeholder="Nombre de la colonia"
+          />
+          {errors.colonia && <div className="invalid-feedback">{errors.colonia}</div>}
         </div>
 
         {/* Ciudad */}
@@ -178,17 +276,20 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
         <div className="row">
           <div className="col-md-6 mb-3">
             <label htmlFor="address-state" className="form-label">Estado</label>
-            <input
-              type="text"
-              className={`form-control ${errors.state ? 'is-invalid' : ''}`}
+            <select
+              className={`form-select ${errors.state ? 'is-invalid' : ''}`}
               id="address-state"
               name="state"
               value={formData.state}
               onChange={handleChange}
               disabled={loading}
-              placeholder="Estado/Provincia"
               autoComplete="address-level1"
-            />
+            >
+              <option value="">Selecciona un estado</option>
+              {ESTADOS_MEXICANOS.map((estado) => (
+                <option key={estado} value={estado}>{estado}</option>
+              ))}
+            </select>
             {errors.state && <div className="invalid-feedback">{errors.state}</div>}
           </div>
           <div className="col-md-6 mb-3">
@@ -201,11 +302,27 @@ export const SimpleAddressForm = ({ isOpen, onClose, onSave, address = null, loa
               value={formData.zip}
               onChange={handleChange}
               disabled={loading}
-              placeholder="Código Postal"
+              placeholder="Código Postal (5 dígitos)"
               autoComplete="postal-code"
+              maxLength="5"
             />
             {errors.zip && <div className="invalid-feedback">{errors.zip}</div>}
           </div>
+        </div>
+
+        {/* Referencias para llegar (opcional) */}
+        <div className="mb-3">
+          <label htmlFor="address-references" className="form-label">Referencias (opcional)</label>
+          <textarea
+            className="form-control"
+            id="address-references"
+            name="references"
+            rows="2"
+            value={formData.references}
+            onChange={handleChange}
+            disabled={loading}
+            placeholder="Entre calles, señas particulares u otras referencias para encontrar la dirección"
+          ></textarea>
         </div>
 
         {/* Checkbox para dirección predeterminada */}

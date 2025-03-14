@@ -1,96 +1,39 @@
-import { useState } from 'react';
-import { AddItemButton, SectionTitle } from '../components/shared/index.js';
+import { AddItemButton, SectionTitle } from '../components/shared/index.js'
 import { useAddresses } from '../hooks/useAddresses';
 import '../styles/profileAddresses.css';
 import '../styles/sharedComponents.css';
 import { AddressesList, SimpleAddressForm } from '../components/addresses/index.js'
 
 /**
- * Página de gestión de direcciones del usuario
- * Permite agregar, editar, eliminar y establecer direcciones predeterminadas
+ * Página mejorada de gestión de direcciones del usuario
+ * Incluye soporte para direcciones mexicanas con campos adicionales
  */
 export const AddressesPage = () => {
-  // Usar los hooks para direcciones y modal
+  // Usar los hooks mejorados para direcciones
   const {
     addresses,
     loading,
     error,
     submitting,
+    selectedAddress,
+    showForm,
     saveAddress,
-    deleteAddress,
-    setDefaultAddress
+    confirmDeleteAddress,
+    setDefaultAddress,
+    openAddForm,
+    openEditForm,
+    closeForm
   } = useAddresses();
 
-  // Estado para controlar la visibilidad del modal
-  const [showModal, setShowModal] = useState(false);
-
-  // Estado para almacenar la dirección que se está editando
-  const [editingAddress, setEditingAddress] = useState(null);
-
-  /**
-   * Abre el modal para agregar una nueva dirección
-   */
-  const handleAddAddress = () => {
-    setEditingAddress(null);
-    setShowModal(true);
-  };
-
-  /**
-   * Abre el modal para editar una dirección existente
-   *
-   * @param {Object} address - Dirección a editar
-   */
-  const handleEditAddress = (address) => {
-    setEditingAddress(address);
-    setShowModal(true);
-  };
-
-  /**
-   * Cierra el modal
-   */
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
-
-  /**
-   * Controla el guardado de una dirección (nueva o existente)
-   *
-   * @param {Object} addressData - Datos de la dirección
-   */
-  const handleSaveAddress = async (addressData) => {
-    const result = await saveAddress(addressData);
-
-    if (result.ok) {
-      setShowModal(false);
-      setEditingAddress(null);
-    }
-  };
-
-  /**
-   * Confirma y maneja la eliminación de una dirección
-   *
-   * @param {string} addressId - ID de la dirección a eliminar
-   */
-  const handleDeleteAddress = async (addressId) => {
-    // Confirmar eliminación
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta dirección?')) {
-      await deleteAddress(addressId);
-    }
-  };
-
-  /**
-   * Establece una dirección como predeterminada
-   *
-   * @param {string} addressId - ID de la dirección a establecer como predeterminada
-   */
-  const handleSetDefault = async (addressId) => {
-    await setDefaultAddress(addressId);
-  };
-
   return (
-    <div>
+    <div className="addresses-container">
       {/* Título de sección */}
       <SectionTitle title="Mis Direcciones" />
+
+      {/* Descripción sobre las direcciones */}
+      <p className="text-muted mb-4">
+        Administra tus direcciones de envío para recibir tus pedidos. Puedes agregar, editar y eliminar tus direcciones.
+      </p>
 
       {/* Mensaje de error si existe */}
       {error && (
@@ -103,25 +46,25 @@ export const AddressesPage = () => {
       {/* Lista de direcciones */}
       <AddressesList
         addresses={addresses}
-        onSetDefault={handleSetDefault}
-        onDelete={handleDeleteAddress}
-        onEdit={handleEditAddress}
+        onSetDefault={setDefaultAddress}
+        onDelete={confirmDeleteAddress}
+        onEdit={openEditForm}
         loading={loading}
       />
 
       {/* Botón para agregar nueva dirección */}
       <AddItemButton
-        onClick={handleAddAddress}
+        onClick={openAddForm}
         label="Agregar dirección"
         icon="plus"
       />
 
-      {/* Modal para agregar/editar direcciones */}
+      {/* Modal para agregar/editar direcciones - usando el formulario mejorado */}
       <SimpleAddressForm
-        isOpen={showModal}
-        onClose={handleCloseModal}
-        onSave={handleSaveAddress}
-        address={editingAddress}
+        isOpen={showForm}
+        onClose={closeForm}
+        onSave={saveAddress}
+        address={selectedAddress}
         loading={submitting}
       />
     </div>

@@ -11,8 +11,8 @@ import {
 } from '../services/addressService';
 
 /**
- * Hook personalizado para gestionar direcciones de usuario
- * Proporciona todas las funciones necesarias para CRUD de direcciones
+ * Hook personalizado mejorado para gestionar direcciones de usuario
+ * Soporta campos adicionales para direcciones mexicanas
  *
  * @returns {Object} - Estados y funciones para gestionar direcciones
  */
@@ -26,6 +26,8 @@ export const useAddresses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [showForm, setShowForm] = useState(false);
 
   /**
    * Cargar direcciones del usuario desde Firestore
@@ -68,6 +70,31 @@ export const useAddresses = () => {
   useEffect(() => {
     loadAddresses();
   }, [loadAddresses]);
+
+  /**
+   * Abrir formulario para agregar una nueva dirección
+   */
+  const openAddForm = () => {
+    setSelectedAddress(null);
+    setShowForm(true);
+  };
+
+  /**
+   * Abrir formulario para editar una dirección existente
+   * @param {Object} address - Dirección a editar
+   */
+  const openEditForm = (address) => {
+    setSelectedAddress(address);
+    setShowForm(true);
+  };
+
+  /**
+   * Cerrar formulario de direcciones
+   */
+  const closeForm = () => {
+    setShowForm(false);
+    setSelectedAddress(null);
+  };
 
   /**
    * Agregar o actualizar una dirección
@@ -137,6 +164,9 @@ export const useAddresses = () => {
           type: 'error',
           text: result.error || 'Error al guardar la dirección'
         }));
+      } else {
+        // Cerrar el formulario si la operación fue exitosa
+        closeForm();
       }
 
       return result;
@@ -155,7 +185,22 @@ export const useAddresses = () => {
   };
 
   /**
-   * Eliminar una dirección
+   * Confirma antes de eliminar una dirección
+   *
+   * @param {string} addressId - ID de la dirección a eliminar
+   */
+  const confirmDeleteAddress = (addressId) => {
+    // Obtener el nombre de la dirección para mostrar en la confirmación
+    const addressToDelete = addresses.find(addr => addr.id === addressId);
+    const addressName = addressToDelete?.name || 'esta dirección';
+
+    if (window.confirm(`¿Estás seguro de que deseas eliminar ${addressName}? Esta acción no se puede deshacer.`)) {
+      deleteAddress(addressId);
+    }
+  };
+
+  /**
+   * Elimina una dirección
    *
    * @param {string} addressId - ID de la dirección a eliminar
    * @returns {Promise<{ok: boolean, error: string}>}
@@ -210,7 +255,7 @@ export const useAddresses = () => {
   };
 
   /**
-   * Establecer una dirección como predeterminada
+   * Establece una dirección como predeterminada
    *
    * @param {string} addressId - ID de la dirección a establecer como predeterminada
    * @returns {Promise<{ok: boolean, error: string}>}
@@ -263,9 +308,15 @@ export const useAddresses = () => {
     loading,
     error,
     submitting,
+    selectedAddress,
+    showForm,
     loadAddresses,
     saveAddress,
     deleteAddress,
-    setDefaultAddress
+    confirmDeleteAddress,
+    setDefaultAddress,
+    openAddForm,
+    openEditForm,
+    closeForm
   };
 };

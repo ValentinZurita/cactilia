@@ -129,3 +129,122 @@
     margin-top: 20px;
     margin-bottom: 30px;
 }
+
+/*
+   Estilos adicionales para el módulo de direcciones mexicanas
+   Se integra con los estilos existentes manteniendo la coherencia visual
+*/
+
+/* Mejoras al container de dirección - formato más ordenado */
+.address-details {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+/* Destacar el nombre de la colonia */
+.address-details .colonia {
+    font-weight: 500;
+    color: #555;
+}
+
+/* Estilo para referencias */
+.address-details .references {
+    font-style: italic;
+    font-size: 0.8rem;
+    color: #777;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Estilos para formulario de dirección mexicana */
+.mexican-address-form .form-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+/* Reduce el espacio entre elementos del formulario en móvil */
+@media (max-width: 767px) {
+    .mexican-address-form .mb-3 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .mexican-address-form .row {
+        margin-bottom: 0;
+    }
+}
+
+/* Mejoras para el campo de código postal */
+.mexican-address-form .postal-code-input {
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+/* Estilo para las referencias - área de texto más compacta */
+.references-textarea {
+    font-size: 0.85rem;
+    min-height: 60px;
+    resize: vertical;
+}
+
+/* Mejoras para el badge de dirección predeterminada */
+.address-default-badge,
+.action-item-default-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background-color: var(--green-3);
+    color: white;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.9;
+}
+
+.address-default-badge i,
+.action-item-default-badge i {
+    color: white;
+    font-size: 0.7rem;
+}
+
+/* Animación suave para botones del formulario */
+.modal-footer .btn {
+    transition: all 0.2s ease;
+}
+
+.modal-footer .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Mejora de estilo para el select de estados */
+.form-select:focus {
+    border-color: rgba(52, 199, 73, 0.4);
+    box-shadow: 0 0 0 0.25rem rgba(52, 199, 73, 0.25);
+}
+
+/* Estilo para los checkbox */
+.form-check-input:checked {
+    background-color: var(--green-3);
+    border-color: var(--green-3);
+}
+
+/* Animación para mostrar los items de dirección */
+.address-item {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

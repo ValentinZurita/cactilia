@@ -2,8 +2,8 @@ import { collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, g
 import { FirebaseDB } from '../../../firebase/firebaseConfig';
 
 /**
- * Servicio para gestionar direcciones de usuario en Firestore
- * Proporciona métodos para cargar, guardar, actualizar y eliminar direcciones
+ * Servicio mejorado para gestionar direcciones de usuario en Firestore
+ * Soporta campos adicionales para direcciones mexicanas
  */
 
 const ADDRESSES_COLLECTION = 'addresses';
@@ -28,9 +28,36 @@ export const getUserAddresses = async (userId) => {
     // Transformar documentos en objetos de dirección
     const addresses = [];
     querySnapshot.forEach((doc) => {
+      const data = doc.data();
+
+      // Procesamos la calle para extraer número exterior e interior si están en formato antiguo
+      let street = data.street || '';
+      let numExt = data.numExt || '';
+      let numInt = data.numInt || '';
+
+      // Si no tiene campos separados pero tiene calle en formato antiguo
+      // intentamos extraer los números
+      if (!data.numExt && street) {
+        const streetMatch = street.match(/(.*?)(?:\s+#?(\d+)(?:\s*,\s*Int\.\s*(\S+))?)?$/);
+        if (streetMatch) {
+          // Solo actualizamos si podemos extraer datos válidos
+          if (streetMatch[1]?.trim()) {
+            street = streetMatch[1].trim();
+            numExt = streetMatch[2] || '';
+            numInt = streetMatch[3] || '';
+          }
+        }
+      }
+
       addresses.push({
         id: doc.id,
-        ...doc.data()
+        ...data,
+        // Asegurar que siempre tenga los campos nuevos
+        street,
+        numExt,
+        numInt,
+        colonia: data.colonia || '',
+        references: data.references || ''
       });
     });
 
