@@ -11,7 +11,7 @@ import React, { useEffect } from 'react';
  * @param {React.ReactNode} footer - Pie del modal con botones
  * @param {string} size - Tamaño del modal ('sm', 'md', 'lg')
  */
-export const SimpleModal = ({
+export const AddressModal = ({
                               isOpen,
                               onClose,
                               title,

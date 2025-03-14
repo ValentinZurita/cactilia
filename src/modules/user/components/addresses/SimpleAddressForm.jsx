@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SimpleModal } from '../shared/SimpleModal';
+import { AddressModal } from './AddressModal.jsx';
 
 /**
  * Lista de estados de la República Mexicana.
@@ -247,7 +247,7 @@ export function SimpleAddressForm({
 
   // Render principal del componente
   return (
-    <SimpleModal
+    <AddressModal
       isOpen={isOpen}
       onClose={onClose}
       title={address ? 'Editar dirección' : 'Agregar dirección'}
@@ -443,6 +443,6 @@ export function SimpleAddressForm({
           </label>
         </div>
       </div>
-    </SimpleModal>
+    </AddressModal>
   );
 }
