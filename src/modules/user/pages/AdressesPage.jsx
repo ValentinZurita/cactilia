@@ -3,8 +3,7 @@ import { AddItemButton, SectionTitle } from '../components/shared/index.js';
 import { useAddresses } from '../hooks/useAddresses';
 import '../styles/profileAddresses.css';
 import '../styles/sharedComponents.css';
-import { AddressesList,  } from '../components/addresses/index.js';
-import { SimpleAddressForm } from '../components/addresses/SimpleAddressForm.jsx'
+import { AddressesList, SimpleAddressForm } from '../components/addresses/index.js'
 
 /**
  * Página de gestión de direcciones del usuario

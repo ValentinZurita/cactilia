@@ -7,5 +7,3 @@ export * from './GenericItemList.jsx';
 export * from './FeedbackForm.jsx';
 export * from './GenericItemList.jsx';
 export * from './GlobalMessages.jsx';
-export * from './Modal.jsx';
-export * from './ModalPortal.jsx';
