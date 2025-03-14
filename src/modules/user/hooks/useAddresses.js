@@ -1,114 +1,271 @@
-import { useCallback } from 'react';
-import { useItemsCollection } from './useItemsCollection';
+import { useState, useEffect, useCallback } from 'react';
+import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
+import {
+  getUserAddresses,
+  addAddress,
+  deleteAddress as deleteAddressService,
+  setDefaultAddress as setDefaultAddressService,
+  updateAddress
+} from '../services/addressService';
 
 /**
- * Hook refactorizado para manejar direcciones utilizando el hook genérico
+ * Hook personalizado para gestionar direcciones de usuario
+ * Proporciona todas las funciones necesarias para CRUD de direcciones
  *
- * @returns {Object} - Métodos y estado para manejar direcciones
+ * @returns {Object} - Estados y funciones para gestionar direcciones
  */
 export const useAddresses = () => {
-  // Usar Redux para enviar mensajes globales (reemplazando useMessages)
+  // Obtener datos del usuario autenticado desde Redux
+  const { uid, status } = useSelector(state => state.auth);
   const dispatch = useDispatch();
 
-  // Validación específica para direcciones
-  const validateAddress = useCallback((address) => {
-    if (!address.name || !address.street || !address.city || !address.state || !address.zip) {
-      return {
-        valid: false,
-        error: 'Todos los campos son obligatorios'
-      };
+  // Estados para gestionar direcciones
+  const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  /**
+   * Cargar direcciones del usuario desde Firestore
+   */
+  const loadAddresses = useCallback(async () => {
+    // Solo cargar direcciones si el usuario está autenticado
+    if (status !== 'authenticated' || !uid) {
+      setLoading(false);
+      return;
     }
-    return { valid: true };
-  }, []);
 
-  // Datos iniciales (en una implementación real vendrían de Firebase)
-  const initialAddresses = [
-    {
-      id: '1',
-      name: 'Casa',
-      street: 'Av. Siempre Viva 742',
-      city: 'CDMX',
-      state: 'CDMX',
-      zip: '01234',
-      isDefault: true
-    },
-    {
-      id: '2',
-      name: 'Oficina',
-      street: 'Av. Reforma 222, Piso 3',
-      city: 'CDMX',
-      state: 'CDMX',
-      zip: '06600',
-      isDefault: false
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await getUserAddresses(uid);
+
+      if (result.ok) {
+        setAddresses(result.data);
+      } else {
+        setError(result.error || 'Error al cargar direcciones');
+        dispatch(addMessage({
+          type: 'error',
+          text: 'No se pudieron cargar tus direcciones'
+        }));
+      }
+    } catch (err) {
+      console.error('Error en useAddresses:', err);
+      setError('Error al cargar las direcciones');
+      dispatch(addMessage({
+        type: 'error',
+        text: 'Error al cargar direcciones'
+      }));
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [uid, status, dispatch]);
 
-  // Usar el hook genérico con la configuración para direcciones
-  const addressCollection = useItemsCollection({
-    initialItems: initialAddresses,
-    itemType: 'dirección',
-    validateItem: validateAddress
-  });
+  // Cargar direcciones al montar el componente o cuando cambia el usuario
+  useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
 
-  // Métodos específicos o personalizados para direcciones
-  const setDefaultAddress = useCallback((addressId) => {
-    const result = addressCollection.setDefaultItem(addressId);
-    if (result) {
+  /**
+   * Agregar o actualizar una dirección
+   *
+   * @param {Object} addressData - Datos de la dirección
+   * @returns {Promise<{ok: boolean, error: string}>}
+   */
+  const saveAddress = async (addressData) => {
+    if (!uid) {
       dispatch(addMessage({
-        type: 'success',
-        text: 'Dirección establecida como predeterminada'
+        type: 'error',
+        text: 'Debes iniciar sesión para guardar direcciones'
       }));
+      return { ok: false, error: 'No autenticado' };
     }
-    return result;
-  }, [addressCollection.setDefaultItem, dispatch]);
 
-  const deleteAddress = useCallback((addressId) => {
-    const result = addressCollection.deleteItem(addressId);
-    if (result) {
+    setSubmitting(true);
+
+    try {
+      let result;
+
+      // Determinar si estamos agregando o actualizando según si tiene ID
+      if (addressData.id) {
+        // Actualizar dirección existente
+        result = await updateAddress(addressData.id, addressData, uid);
+
+        if (result.ok) {
+          // Actualizar la dirección en el estado local
+          setAddresses(prev =>
+            prev.map(address =>
+              address.id === addressData.id ? { ...addressData, id: address.id } : address
+            )
+          );
+
+          dispatch(addMessage({
+            type: 'success',
+            text: 'Dirección actualizada correctamente'
+          }));
+        }
+      } else {
+        // Agregar nueva dirección
+        result = await addAddress(uid, addressData);
+
+        if (result.ok) {
+          // Si no hay direcciones, marcar esta como predeterminada
+          const shouldBeDefault = addresses.length === 0 || addressData.isDefault;
+
+          // Agregar la nueva dirección al estado local
+          const newAddress = {
+            ...addressData,
+            id: result.id,
+            isDefault: shouldBeDefault
+          };
+
+          setAddresses(prev => [...prev, newAddress]);
+
+          dispatch(addMessage({
+            type: 'success',
+            text: 'Dirección agregada correctamente'
+          }));
+        }
+      }
+
+      if (!result.ok) {
+        setError(result.error || 'Error al guardar la dirección');
+        dispatch(addMessage({
+          type: 'error',
+          text: result.error || 'Error al guardar la dirección'
+        }));
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error guardando dirección:', err);
+      const errorMsg = 'Error al guardar la dirección';
+      setError(errorMsg);
       dispatch(addMessage({
-        type: 'success',
-        text: 'Dirección eliminada correctamente'
+        type: 'error',
+        text: errorMsg
       }));
+      return { ok: false, error: errorMsg };
+    } finally {
+      setSubmitting(false);
     }
-    return result;
-  }, [addressCollection.deleteItem, dispatch]);
+  };
 
-  const editAddress = useCallback((address) => {
-    // En una implementación real, aquí se mostraría un modal o se navegaría a un formulario
-    console.log('Editando dirección:', address);
+  /**
+   * Eliminar una dirección
+   *
+   * @param {string} addressId - ID de la dirección a eliminar
+   * @returns {Promise<{ok: boolean, error: string}>}
+   */
+  const deleteAddress = async (addressId) => {
+    // Verificar que no sea la dirección predeterminada
+    const addressToDelete = addresses.find(addr => addr.id === addressId);
 
-    // Simulación de edición
-    setTimeout(() => {
+    if (addressToDelete?.isDefault) {
+      const errorMsg = 'No puedes eliminar la dirección predeterminada';
       dispatch(addMessage({
-        type: 'info',
-        text: 'Funcionalidad de edición en desarrollo'
+        type: 'error',
+        text: errorMsg
       }));
-    }, 500);
-  }, [dispatch]);
+      return { ok: false, error: errorMsg };
+    }
 
-  const addAddress = useCallback(() => {
-    // En una implementación real, aquí se mostraría un modal o se navegaría a un formulario
-    console.log('Añadiendo nueva dirección');
+    try {
+      setLoading(true);
 
-    // Simulación de adición
-    setTimeout(() => {
+      const result = await deleteAddressService(addressId);
+
+      if (result.ok) {
+        // Eliminar la dirección del estado local
+        setAddresses(prev => prev.filter(address => address.id !== addressId));
+
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Dirección eliminada correctamente'
+        }));
+      } else {
+        setError(result.error || 'Error al eliminar la dirección');
+        dispatch(addMessage({
+          type: 'error',
+          text: result.error || 'Error al eliminar la dirección'
+        }));
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error eliminando dirección:', err);
+      const errorMsg = 'Error al eliminar la dirección';
+      setError(errorMsg);
       dispatch(addMessage({
-        type: 'info',
-        text: 'Funcionalidad de añadir dirección en desarrollo'
+        type: 'error',
+        text: errorMsg
       }));
-    }, 500);
-  }, [dispatch]);
+      return { ok: false, error: errorMsg };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Retornar la combinación del hook genérico con funcionalidades específicas
+  /**
+   * Establecer una dirección como predeterminada
+   *
+   * @param {string} addressId - ID de la dirección a establecer como predeterminada
+   * @returns {Promise<{ok: boolean, error: string}>}
+   */
+  const setDefaultAddress = async (addressId) => {
+    try {
+      setLoading(true);
+
+      const result = await setDefaultAddressService(uid, addressId);
+
+      if (result.ok) {
+        // Actualizar el estado local
+        setAddresses(prev =>
+          prev.map(address => ({
+            ...address,
+            isDefault: address.id === addressId
+          }))
+        );
+
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Dirección predeterminada actualizada'
+        }));
+      } else {
+        setError(result.error || 'Error al establecer dirección predeterminada');
+        dispatch(addMessage({
+          type: 'error',
+          text: result.error || 'Error al establecer dirección predeterminada'
+        }));
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error estableciendo dirección predeterminada:', err);
+      const errorMsg = 'Error al establecer dirección predeterminada';
+      setError(errorMsg);
+      dispatch(addMessage({
+        type: 'error',
+        text: errorMsg
+      }));
+      return { ok: false, error: errorMsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Retornar los estados y funciones necesarios
   return {
-    addresses: addressCollection.items,
-    loading: addressCollection.loading,
-    error: addressCollection.error,
-    setDefaultAddress,
+    addresses,
+    loading,
+    error,
+    submitting,
+    loadAddresses,
+    saveAddress,
     deleteAddress,
-    editAddress,
-    addAddress
+    setDefaultAddress
   };
 };

@@ -1,7 +1,7 @@
 import { EditorActionBar } from '../shared/EditorActionBar.jsx';
 import { EditorToolbar } from '../shared/EditorToolbar.jsx';
 import { AlertMessage } from '../shared/AlertMessage.jsx';
-import { useContactPageEditor } from './useContactPageEditor.jsx';
+import { useContactPageEditor } from './useContactPageEditor.js';
 import { HeaderSectionEditor } from './HeaderSectionEditor.jsx';
 import { ContactInfoEditor } from './ContactInfoEditor.jsx';
 import { FormFieldsEditor } from './FormFieldsEditor.jsx';
