@@ -3,6 +3,7 @@ import { useAddresses } from '../hooks/useAddresses';
 import '../styles/profileAddresses.css';
 import '../styles/sharedComponents.css';
 import { AddressesList, SimpleAddressForm } from '../components/addresses/index.js'
+import { ConfirmationModal } from '../components/shared/ConfirmationModal.jsx';
 
 /**
  * Página mejorada de gestión de direcciones del usuario
@@ -17,13 +18,27 @@ export const AddressesPage = () => {
     submitting,
     selectedAddress,
     showForm,
+    showConfirmModal,
+    addressToDelete,
+    isProcessing,
     saveAddress,
+    deleteAddress,
     confirmDeleteAddress,
+    cancelDeleteAddress,
     setDefaultAddress,
     openAddForm,
     openEditForm,
     closeForm
   } = useAddresses();
+
+  /**
+   * Formatear la dirección para mostrar en el modal
+   */
+  const getAddressDetails = () => {
+    if (!addressToDelete) return null;
+
+    return addressToDelete.name || 'esta dirección';
+  };
 
   return (
     <div className="addresses-container">
@@ -66,6 +81,30 @@ export const AddressesPage = () => {
         onSave={saveAddress}
         address={selectedAddress}
         loading={submitting}
+      />
+
+      {/* Modal de confirmación para eliminar dirección */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={cancelDeleteAddress}
+        onConfirm={deleteAddress}
+        title="Eliminar dirección"
+        message={getAddressDetails()}
+        detail={
+          <p>
+            ¿Estás seguro de que deseas eliminar esta dirección? Esta acción no se puede deshacer.
+            <br /><br />
+            <span className="text-muted small">
+              Solo puedes eliminar direcciones que no estén establecidas como predeterminadas.
+            </span>
+          </p>
+        }
+        confirmText="Eliminar dirección"
+        cancelText="Cancelar"
+        icon="bi-geo-alt"
+        iconColor="danger"
+        confirmColor="danger"
+        loading={isProcessing}
       />
     </div>
   );

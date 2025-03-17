@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
@@ -28,6 +28,14 @@ export const useAddresses = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showForm, setShowForm] = useState(false);
+
+  // Estados para el modal de confirmación
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Referencia para evitar operaciones duplicadas
+  const operationInProgressRef = useRef(false);
 
   /**
    * Cargar direcciones del usuario desde Firestore
@@ -185,52 +193,76 @@ export const useAddresses = () => {
   };
 
   /**
-   * Confirma antes de eliminar una dirección
+   * Iniciar el proceso de confirmación de eliminación
    *
    * @param {string} addressId - ID de la dirección a eliminar
    */
   const confirmDeleteAddress = (addressId) => {
-    // Obtener el nombre de la dirección para mostrar en la confirmación
-    const addressToDelete = addresses.find(addr => addr.id === addressId);
-    const addressName = addressToDelete?.name || 'esta dirección';
+    // Obtener la dirección completa para mostrar en el modal
+    const address = addresses.find(addr => addr.id === addressId);
 
-    if (window.confirm(`¿Estás seguro de que deseas eliminar ${addressName}? Esta acción no se puede deshacer.`)) {
-      deleteAddress(addressId);
+    if (!address) {
+      dispatch(addMessage({
+        type: 'error',
+        text: 'Dirección no encontrada'
+      }));
+      return;
     }
+
+    // Verificar si es la dirección predeterminada
+    if (address.isDefault) {
+      dispatch(addMessage({
+        type: 'error',
+        text: 'No puedes eliminar la dirección predeterminada'
+      }));
+      return;
+    }
+
+    // Establecer la dirección que se va a eliminar
+    setAddressToDelete(address);
+
+    // Mostrar el modal de confirmación
+    setShowConfirmModal(true);
   };
 
   /**
-   * Elimina una dirección
+   * Cancelar la eliminación
+   */
+  const cancelDeleteAddress = () => {
+    setShowConfirmModal(false);
+    setAddressToDelete(null);
+    setIsProcessing(false);
+  };
+
+  /**
+   * Elimina una dirección después de la confirmación
    *
-   * @param {string} addressId - ID de la dirección a eliminar
    * @returns {Promise<{ok: boolean, error: string}>}
    */
-  const deleteAddress = async (addressId) => {
-    // Verificar que no sea la dirección predeterminada
-    const addressToDelete = addresses.find(addr => addr.id === addressId);
+  const deleteAddress = async () => {
+    if (!addressToDelete) return;
 
-    if (addressToDelete?.isDefault) {
-      const errorMsg = 'No puedes eliminar la dirección predeterminada';
-      dispatch(addMessage({
-        type: 'error',
-        text: errorMsg
-      }));
-      return { ok: false, error: errorMsg };
-    }
+    // Evitar operaciones duplicadas
+    if (operationInProgressRef.current) return;
+    operationInProgressRef.current = true;
+
+    setIsProcessing(true);
 
     try {
-      setLoading(true);
-
-      const result = await deleteAddressService(addressId);
+      const result = await deleteAddressService(addressToDelete.id);
 
       if (result.ok) {
         // Eliminar la dirección del estado local
-        setAddresses(prev => prev.filter(address => address.id !== addressId));
+        setAddresses(prev => prev.filter(address => address.id !== addressToDelete.id));
 
         dispatch(addMessage({
           type: 'success',
           text: 'Dirección eliminada correctamente'
         }));
+
+        // Cerrar el modal
+        setShowConfirmModal(false);
+        setAddressToDelete(null);
       } else {
         setError(result.error || 'Error al eliminar la dirección');
         dispatch(addMessage({
@@ -250,6 +282,8 @@ export const useAddresses = () => {
       }));
       return { ok: false, error: errorMsg };
     } finally {
+      setIsProcessing(false);
+      operationInProgressRef.current = false;
       setLoading(false);
     }
   };
@@ -310,10 +344,14 @@ export const useAddresses = () => {
     submitting,
     selectedAddress,
     showForm,
+    showConfirmModal,
+    addressToDelete,
+    isProcessing,
     loadAddresses,
     saveAddress,
     deleteAddress,
     confirmDeleteAddress,
+    cancelDeleteAddress,
     setDefaultAddress,
     openAddForm,
     openEditForm,

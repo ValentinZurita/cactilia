@@ -48,9 +48,33 @@ class ConfirmationModalContent extends Component {
       children
     } = this.props;
 
-    // Clases CSS simplificadas
-    const iconColorClass = `text-${iconColor}`;
-    const confirmButtonClass = `btn-${confirmColor}`;
+    // Obtener clases apropiadas para el botón de confirmar según el color
+    const getConfirmButtonClass = () => {
+      switch (confirmColor) {
+        case 'danger':
+          return 'btn-danger confirmation-btn-danger';
+        case 'success':
+          return 'btn-success confirmation-btn-success';
+        case 'warning':
+          return 'btn-warning confirmation-btn-warning';
+        default:
+          return 'btn-green-3 confirmation-btn-primary';
+      }
+    };
+
+    // Obtener clases para el icono según el color
+    const getIconColorClass = () => {
+      switch (iconColor) {
+        case 'danger':
+          return 'text-danger confirmation-icon-danger';
+        case 'success':
+          return 'text-success confirmation-icon-success';
+        case 'warning':
+          return 'text-warning confirmation-icon-warning';
+        default:
+          return 'text-green-3 confirmation-icon-primary';
+      }
+    };
 
     return (
       <div
@@ -70,6 +94,7 @@ class ConfirmationModalContent extends Component {
               className="confirmation-modal-close"
               onClick={onClose}
               disabled={loading}
+              aria-label="Cerrar"
             >
               ×
             </button>
@@ -78,12 +103,20 @@ class ConfirmationModalContent extends Component {
           <div className="confirmation-modal-body">
             <div className="confirmation-content">
               {/* Icono y mensaje principal */}
-              <div className="d-flex mb-3">
-                <div className="confirmation-icon-container me-3">
-                  <i className={`bi ${icon} ${iconColorClass} confirmation-icon`}></i>
+              <div className="confirmation-main-message">
+                <div className={`confirmation-icon-container ${iconColor}`}>
+                  <i className={`bi ${icon} ${getIconColorClass()}`}></i>
                 </div>
                 <div className="confirmation-message">
-                  {message}
+                  {message && (
+                    <h6 className="confirmation-message-title">
+                      {typeof message === 'string' ? (
+                        <span>¿Deseas eliminar <strong>{message}</strong>?</span>
+                      ) : (
+                        message
+                      )}
+                    </h6>
+                  )}
                 </div>
               </div>
 
@@ -102,7 +135,7 @@ class ConfirmationModalContent extends Component {
             <div className="confirmation-actions">
               <button
                 type="button"
-                className="btn btn-outline-secondary"
+                className="btn btn-outline-secondary confirmation-btn-cancel"
                 onClick={onClose}
                 disabled={loading}
               >
@@ -110,15 +143,15 @@ class ConfirmationModalContent extends Component {
               </button>
               <button
                 type="button"
-                className={`btn ${confirmButtonClass}`}
+                className={`btn ${getConfirmButtonClass()}`}
                 onClick={onConfirm}
                 disabled={loading}
               >
                 {loading ? (
-                  <>
+                  <span className="confirmation-loading-state">
                     <span className="spinner-border spinner-border-sm me-2"></span>
                     Procesando...
-                  </>
+                  </span>
                 ) : (
                   confirmText
                 )}
