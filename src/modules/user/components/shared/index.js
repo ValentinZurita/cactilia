@@ -4,6 +4,5 @@ export * from './SectionTitle.jsx';
 export * from './ActionItemCard.jsx';
 export * from './AddItemButton.jsx';
 export * from './GenericItemList.jsx';
-export * from './FeedbackForm.jsx';
 export * from './GenericItemList.jsx';
 export * from './GlobalMessages.jsx';
