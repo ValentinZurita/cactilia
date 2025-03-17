@@ -1,0 +1,204 @@
+/* PaymentFormModal.css */
+.payment-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.payment-modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.payment-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.payment-modal-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.payment-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #777;
+    padding: 0;
+    line-height: 1;
+}
+
+.payment-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.payment-form-group {
+    margin-bottom: 20px;
+}
+
+.payment-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+.payment-form-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    height: 45px;
+}
+
+/* Improved card element container */
+.payment-card-element {
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    min-height: 45px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    transition: border-color 0.2s;
+}
+
+/* Highlight the card element on focus to make it more obvious it's interactive */
+.payment-card-element:hover {
+    border-color: #aab7c4;
+}
+
+.payment-card-element:focus-within {
+    border-color: #66afe9;
+    outline: 0;
+    box-shadow: 0 0 0 2px rgba(102, 175, 233, 0.25);
+}
+
+.payment-text-muted {
+    color: #777;
+    font-size: 0.8rem;
+    display: block;
+    margin-top: 5px;
+}
+
+/* Success indicator */
+.payment-card-complete {
+    color: #66bb6a;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.payment-card-complete i {
+    margin-right: 5px;
+}
+
+.payment-form-check {
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+}
+
+.payment-form-checkbox {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+}
+
+.payment-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.payment-btn-cancel {
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    background-color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.payment-btn-save {
+    padding: 10px 15px;
+    border: none;
+    background-color: #34C749; /* Green-3 color from your system */
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 150px;
+}
+
+.payment-btn-save:hover {
+    background-color: #28A745; /* Green-1 color from your system */
+}
+
+.payment-btn-save:disabled {
+    background-color: #a0e0ad;
+    cursor: not-allowed;
+}
+
+.payment-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: payment-spin 1s linear infinite;
+}
+
+.payment-alert-error {
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    background-color: #f9f0f0;
+    border-left: 4px solid #dc3545;
+    color: #a94442;
+}
+
+/* Helper section with test card info */
+.payment-test-cards {
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #34C749;
+}
+
+@keyframes payment-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

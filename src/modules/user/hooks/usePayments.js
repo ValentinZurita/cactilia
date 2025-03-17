@@ -1,98 +1,180 @@
-import { useState, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useState, useCallback, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
+import {
+  getUserPaymentMethods,
+  deletePaymentMethod,
+  setDefaultPaymentMethod
+} from '../services/paymentService';
 
 /**
- * Hook personalizado para manejar la lógica de métodos de pago
- *
- * @returns {Object} - Métodos y estado para manejar métodos de pago
+ * Custom hook for managing payment methods
+ * Connects to Stripe via Firebase functions
  */
 export const usePayments = () => {
   const dispatch = useDispatch();
+  const { uid, status } = useSelector(state => state.auth);
 
-  // Datos de ejemplo - vendrían de Firebase en implementación real
-  const [paymentMethods, setPaymentMethods] = useState([
-    {
-      id: '1',
-      type: 'visa',
-      cardNumber: '**** **** **** 4242',
-      cardHolder: 'Valentin A. Perez',
-      expiryDate: '12/28',
-      isDefault: true
-    },
-    {
-      id: '2',
-      type: 'mastercard',
-      cardNumber: '**** **** **** 5678',
-      cardHolder: 'Valentin A. Perez',
-      expiryDate: '09/27',
-      isDefault: false
-    }
-  ]);
+  // States for managing payment methods
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  /**
-   * Establece un método de pago como predeterminado
-   * @param {string} id - ID del método de pago
-   */
-  const setDefaultPayment = useCallback((id) => {
-    setPaymentMethods(paymentMethods.map(method => ({
-      ...method,
-      isDefault: method.id === id
-    })));
+  // Load payment methods from Firestore
+  useEffect(() => {
+    const loadPaymentMethods = async () => {
+      // Only load if user is authenticated
+      if (status !== 'authenticated' || !uid) {
+        setLoading(false);
+        return;
+      }
 
-    dispatch(addMessage({
-      type: 'success',
-      text: 'Método de pago establecido como predeterminado'
-    }));
-  }, [paymentMethods, dispatch]);
+      setLoading(true);
+      setError(null);
 
-  /**
-   * Elimina un método de pago
-   * @param {string} id - ID del método de pago
-   */
-  const deletePayment = useCallback((id) => {
-    if (window.confirm('¿Estás seguro de eliminar este método de pago?')) {
-      setPaymentMethods(paymentMethods.filter(method => method.id !== id));
+      try {
+        const result = await getUserPaymentMethods(uid);
 
+        if (result.ok) {
+          setPaymentMethods(result.data);
+        } else {
+          setError(result.error || 'Error loading payment methods');
+          dispatch(addMessage({
+            type: 'error',
+            text: 'Failed to load payment methods'
+          }));
+        }
+      } catch (err) {
+        console.error('Error in usePayments:', err);
+        setError('Error loading payment methods');
+        dispatch(addMessage({
+          type: 'error',
+          text: 'Failed to load payment methods'
+        }));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPaymentMethods();
+  }, [uid, status, dispatch, refreshTrigger]);
+
+  // Refresh payment methods list
+  const refreshPaymentMethods = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  // Set a payment method as default
+  const setDefaultPayment = useCallback(async (id) => {
+    if (!id) return;
+
+    setLoading(true);
+
+    try {
+      const result = await setDefaultPaymentMethod(uid, id);
+
+      if (result.ok) {
+        // Update the local state
+        setPaymentMethods(prevMethods =>
+          prevMethods.map(method => ({
+            ...method,
+            isDefault: method.id === id
+          }))
+        );
+
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Default payment method updated'
+        }));
+      } else {
+        throw new Error(result.error || 'Failed to update default payment method');
+      }
+    } catch (err) {
+      console.error('Error setting default payment method:', err);
       dispatch(addMessage({
-        type: 'success',
-        text: 'Método de pago eliminado correctamente'
+        type: 'error',
+        text: err.message || 'Failed to update default payment method'
       }));
+    } finally {
+      setLoading(false);
+    }
+  }, [uid, dispatch]);
+
+  // Delete a payment method
+  const deletePayment = useCallback(async (id) => {
+    // Find the payment method to get the Stripe payment method ID
+    const paymentMethod = paymentMethods.find(method => method.id === id);
+
+    if (!paymentMethod) {
+      dispatch(addMessage({
+        type: 'error',
+        text: 'Payment method not found'
+      }));
+      return;
+    }
+
+    // Confirm deletion
+    if (window.confirm('Are you sure you want to delete this payment method?')) {
+      setLoading(true);
+
+      try {
+        const result = await deletePaymentMethod(
+          id,
+          paymentMethod.stripePaymentMethodId
+        );
+
+        if (result.ok) {
+          // Update the local state
+          setPaymentMethods(prevMethods =>
+            prevMethods.filter(method => method.id !== id)
+          );
+
+          dispatch(addMessage({
+            type: 'success',
+            text: 'Payment method deleted successfully'
+          }));
+        } else {
+          throw new Error(result.error || 'Failed to delete payment method');
+        }
+      } catch (err) {
+        console.error('Error deleting payment method:', err);
+        dispatch(addMessage({
+          type: 'error',
+          text: err.message || 'Failed to delete payment method'
+        }));
+      } finally {
+        setLoading(false);
+      }
     }
   }, [paymentMethods, dispatch]);
 
-  /**
-   * Edita un método de pago existente
-   * @param {Object} payment - Método de pago a editar
-   */
-  const editPayment = useCallback((payment) => {
-    // TODO aquí iría la lógica para mostrar un modal o formulario de edición
-    console.log('Editando método de pago:', payment);
-
-    dispatch(addMessage({
-      type: 'info',
-      text: 'Funcionalidad de edición en desarrollo'
-    }));
-  }, [dispatch]);
-
-  /**
-   * Añade un nuevo método de pago
-   */
+  // Open the form to add a new payment method
   const addPayment = useCallback(() => {
-    // TODO aquí iría la lógica para mostrar un modal o formulario de nuevo método de pago
-    console.log('Añadiendo nuevo método de pago');
+    setShowForm(true);
+  }, []);
 
-    dispatch(addMessage({
-      type: 'info',
-      text: 'Funcionalidad de añadir método de pago en desarrollo'
-    }));
-  }, [dispatch]);
+  // Close the form
+  const closeForm = useCallback(() => {
+    setShowForm(false);
+  }, []);
+
+  // Handle success after adding a payment method
+  const handlePaymentAdded = useCallback(() => {
+    refreshPaymentMethods();
+  }, [refreshPaymentMethods]);
 
   return {
     paymentMethods,
+    loading,
+    error,
+    showForm,
     setDefaultPayment,
     deletePayment,
-    editPayment,
-    addPayment
+    addPayment,
+    closeForm,
+    handlePaymentAdded,
+    refreshPaymentMethods
   };
 };

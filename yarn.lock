@@ -982,6 +982,18 @@
   resolved "https://registry.yarnpkg.com/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.31.0.tgz#7a2d89a82cf0388d60304964217dd7beac6de645"
   integrity sha512-ul8rnCsUumNln5YWwz0ted2ZHFhzhRRnkpBZ+YRuHoRAlUji9KChpOUOndY7uykrPEPXVbHLlsdo6v5yXo/TXw==
 
+"@stripe/react-stripe-js@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@stripe/react-stripe-js/-/react-stripe-js-3.4.0.tgz#4d931975bba1f792aec451a75d31bcbfbe83f921"
+  integrity sha512-5m0vProlV2qyB7qXHSn25Ao79BjgJW/oiv2ynJ645dpdjeR7fyeb+KSrA4Esk7jqy+aKmdyn70TAIN0BVgh0MA==
+  dependencies:
+    prop-types "^15.7.2"
+
+"@stripe/stripe-js@^6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@stripe/stripe-js/-/stripe-js-6.0.0.tgz#7a2a244c133885f1694059f1f7b34536846517e7"
+  integrity sha512-Q8dbgLhXqtSCGflO8KaEQxM6/b3nHyPnX45300jxjUxS1acnBV5x7VRpWw0GDYgxAElIhlarPw0txXdeMzMC7Q==
+
 "@types/babel__core@^7.20.5":
   version "7.20.5"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.20.5.tgz#3df15f27ba85319caa07ba08d0721889bb39c017"
