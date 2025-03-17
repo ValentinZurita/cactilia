@@ -6,6 +6,7 @@ import {
   deletePaymentMethod,
   setDefaultPaymentMethod
 } from '../services/paymentService';
+import { useFirebaseFunctionsMock } from '../services/mockFirebaseFunctions.js'
 
 /**
  * Custom hook for managing payment methods
@@ -21,6 +22,10 @@ export const usePayments = () => {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  if (process.env.NODE_ENV !== 'production') {
+    useFirebaseFunctionsMock();
+  }
 
   // Load payment methods from Firestore
   useEffect(() => {
