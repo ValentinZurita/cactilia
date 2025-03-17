@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
+import { login } from '../../../store/auth/authSlice';
+import { updateUserData, updateUserPassword, updateProfilePhoto, getUserData } from '../services/userService';
 
 /**
  * Hook personalizado para manejar la lógica de la página de configuración
@@ -11,13 +13,13 @@ export const useSettings = () => {
   const dispatch = useDispatch();
 
   // Obtener datos del usuario desde Redux store
-  const { displayName, email, photoURL } = useSelector((state) => state.auth);
+  const { uid, displayName, email, photoURL, phoneNumber: reduxPhoneNumber } = useSelector((state) => state.auth);
 
   // Estados para los formularios
   const [profileData, setProfileData] = useState({
     displayName: displayName || '',
     email: email || '',
-    phoneNumber: ''
+    phoneNumber: reduxPhoneNumber || ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -26,9 +28,42 @@ export const useSettings = () => {
     confirmPassword: ''
   });
 
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(photoURL || '');
+
+  // Estados para loading
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(false);
+
   // Estado para mensajes de éxito/error (locales al componente)
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
+  // Cargar datos del usuario al montar el componente
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (uid) {
+        try {
+          const result = await getUserData(uid);
+
+          if (result.ok && result.data) {
+            // Actualizar formulario con datos adicionales de Firestore que no están en Redux
+            setProfileData(prevData => ({
+              ...prevData,
+              displayName: result.data.displayName || prevData.displayName,
+              phoneNumber: result.data.phoneNumber || prevData.phoneNumber,
+              // Otros campos que se obtengan de Firestore pero no estén en Redux
+            }));
+          }
+        } catch (error) {
+          console.error('Error cargando datos del usuario:', error);
+        }
+      }
+    };
+
+    loadUserData();
+  }, [uid]);
 
   /**
    * Manejar cambios en el formulario de perfil
@@ -53,37 +88,147 @@ export const useSettings = () => {
   }, []);
 
   /**
+   * Manejar cambio de foto de perfil
+   */
+  const handlePhotoChange = useCallback((e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      setSelectedPhoto(file);
+
+      // Crear URL para vista previa
+      const previewURL = URL.createObjectURL(file);
+      setPhotoPreview(previewURL);
+    }
+  }, []);
+
+  /**
+   * Subir y actualizar foto de perfil
+   */
+  const handlePhotoUpload = useCallback(async () => {
+    if (!selectedPhoto) return;
+
+    setPhotoLoading(true);
+
+    try {
+      const result = await updateProfilePhoto(uid, selectedPhoto);
+
+      if (result.ok) {
+        // Actualizar el estado en Redux
+        dispatch(login({
+          uid,
+          displayName,
+          email,
+          photoURL: result.photoURL
+        }));
+
+        // Mostrar mensaje de éxito
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Foto de perfil actualizada con éxito',
+          autoHide: true,
+          duration: 3000
+        }));
+
+        // Limpiar estado de selección
+        setSelectedPhoto(null);
+      } else {
+        dispatch(addMessage({
+          type: 'error',
+          text: result.error || 'Error al actualizar la foto de perfil',
+          autoHide: true,
+          duration: 4000
+        }));
+      }
+    } catch (error) {
+      console.error('Error al subir la foto:', error);
+      dispatch(addMessage({
+        type: 'error',
+        text: 'Error al subir la foto',
+        autoHide: true,
+        duration: 4000
+      }));
+    } finally {
+      setPhotoLoading(false);
+    }
+  }, [selectedPhoto, uid, displayName, email, dispatch]);
+
+  /**
    * Manejar envío del formulario de perfil
    */
-  const handleProfileSubmit = useCallback((e) => {
+  const handleProfileSubmit = useCallback(async (e) => {
     e.preventDefault();
-    // En implementación real, aquí se actualizaría el perfil en Firebase
+    setProfileLoading(true);
+    setProfileMessage({ type: '', text: '' });
 
-    // Mensaje local para el formulario
-    setProfileMessage({
-      type: 'success',
-      text: 'Perfil actualizado correctamente'
-    });
+    try {
+      // Preparar datos a actualizar
+      const dataToUpdate = {
+        displayName: profileData.displayName,
+        phoneNumber: profileData.phoneNumber,
+      };
 
-    // Mensaje global para notificar al usuario
-    dispatch(addMessage({
-      type: 'success',
-      text: 'Tu perfil ha sido actualizado',
-      autoHide: true,
-      duration: 3000
-    }));
+      // Actualizar perfil en Firebase
+      const result = await updateUserData(uid, dataToUpdate);
 
-    // Ocultar mensaje local después de 3 segundos
-    setTimeout(() => {
-      setProfileMessage({ type: '', text: '' });
-    }, 3000);
-  }, [dispatch]);
+      if (result.ok) {
+        // Actualizar el estado en Redux
+        dispatch(login({
+          uid,
+          displayName: profileData.displayName,
+          email,
+          photoURL
+        }));
+
+        // Mensaje local para el formulario
+        setProfileMessage({
+          type: 'success',
+          text: 'Perfil actualizado correctamente'
+        });
+
+        // Mensaje global para notificar al usuario
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Tu perfil ha sido actualizado',
+          autoHide: true,
+          duration: 3000
+        }));
+      } else {
+        setProfileMessage({
+          type: 'error',
+          text: result.error || 'Error al actualizar el perfil'
+        });
+
+        dispatch(addMessage({
+          type: 'error',
+          text: result.error || 'Error al actualizar el perfil',
+          autoHide: true,
+          duration: 4000
+        }));
+      }
+    } catch (error) {
+      console.error('Error actualizando perfil:', error);
+      setProfileMessage({
+        type: 'error',
+        text: 'Error al actualizar el perfil'
+      });
+    } finally {
+      setProfileLoading(false);
+
+      // Ocultar mensaje local después de 3 segundos
+      setTimeout(() => {
+        setProfileMessage({ type: '', text: '' });
+      }, 3000);
+    }
+  }, [profileData, uid, email, photoURL, dispatch]);
 
   /**
    * Manejar envío del formulario de contraseña
    */
-  const handlePasswordSubmit = useCallback((e) => {
+  const handlePasswordSubmit = useCallback(async (e) => {
     e.preventDefault();
+    setPasswordLoading(true);
+    setPasswordMessage({ type: '', text: '' });
 
     // Validación básica
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -91,6 +236,7 @@ export const useSettings = () => {
         type: 'error',
         text: 'Las contraseñas no coinciden'
       });
+      setPasswordLoading(false);
       return;
     }
 
@@ -99,36 +245,60 @@ export const useSettings = () => {
         type: 'error',
         text: 'La contraseña debe tener al menos 6 caracteres'
       });
+      setPasswordLoading(false);
       return;
     }
 
-    // En implementación real, aquí se actualizaría la contraseña en Firebase
+    try {
+      // Actualizar contraseña en Firebase
+      const result = await updateUserPassword(
+        passwordData.currentPassword,
+        passwordData.newPassword
+      );
 
-    // Mensaje local para el formulario
-    setPasswordMessage({
-      type: 'success',
-      text: 'Contraseña actualizada correctamente'
-    });
+      if (result.ok) {
+        // Mensaje local para el formulario
+        setPasswordMessage({
+          type: 'success',
+          text: 'Contraseña actualizada correctamente'
+        });
 
-    // Mensaje global para notificar al usuario
-    dispatch(addMessage({
-      type: 'success',
-      text: 'Tu contraseña ha sido actualizada',
-      autoHide: true,
-      duration: 3000
-    }));
+        // Mensaje global para notificar al usuario
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Tu contraseña ha sido actualizada',
+          autoHide: true,
+          duration: 3000
+        }));
 
-    // Limpiar formulario
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
+        // Limpiar formulario
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        setPasswordMessage({
+          type: 'error',
+          text: result.error || 'Error al actualizar la contraseña'
+        });
+      }
+    } catch (error) {
+      console.error('Error actualizando contraseña:', error);
+      setPasswordMessage({
+        type: 'error',
+        text: 'Error al actualizar la contraseña'
+      });
+    } finally {
+      setPasswordLoading(false);
 
-    // Ocultar mensaje después de 3 segundos
-    setTimeout(() => {
-      setPasswordMessage({ type: '', text: '' });
-    }, 3000);
+      // Ocultar mensaje de éxito después de 3 segundos (solo si es éxito)
+      if (passwordMessage.type === 'success') {
+        setTimeout(() => {
+          setPasswordMessage({ type: '', text: '' });
+        }, 3000);
+      }
+    }
   }, [passwordData, dispatch]);
 
   return {
@@ -137,12 +307,18 @@ export const useSettings = () => {
     passwordData,
     profileMessage,
     passwordMessage,
-    photoURL,
+    photoURL: photoPreview,
+    selectedPhoto,
+    profileLoading,
+    passwordLoading,
+    photoLoading,
 
     // Manejadores
     handleProfileChange,
     handlePasswordChange,
     handleProfileSubmit,
-    handlePasswordSubmit
+    handlePasswordSubmit,
+    handlePhotoChange,
+    handlePhotoUpload
   };
 };

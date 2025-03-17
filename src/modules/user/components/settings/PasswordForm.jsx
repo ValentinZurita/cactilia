@@ -4,6 +4,7 @@
  * @param {Object} props - Propiedades del componente
  * @param {Object} props.passwordData - Datos del formulario de contraseña
  * @param {Object} props.passwordMessage - Mensaje de éxito/error
+ * @param {boolean} props.passwordLoading - Estado de carga del formulario
  * @param {Function} props.handlePasswordChange - Manejador de cambios en el formulario
  * @param {Function} props.handlePasswordSubmit - Manejador de envío del formulario
  * @returns {JSX.Element}
@@ -11,11 +12,10 @@
 export const PasswordForm = ({
                                passwordData,
                                passwordMessage,
+                               passwordLoading,
                                handlePasswordChange,
                                handlePasswordSubmit
                              }) => {
-
-
   return (
     <form onSubmit={handlePasswordSubmit}>
 
@@ -29,7 +29,7 @@ export const PasswordForm = ({
 
       {/* Contraseña actual */}
       <div className="settings-form-group">
-        <label className="settings-label">Contraseña actual</label>
+        <label className="settings-label" htmlFor="currentPassword">Contraseña actual</label>
         <div className="input-group">
           <span className="input-group-text bg-white">
             <i className="bi bi-lock"></i>
@@ -37,17 +37,19 @@ export const PasswordForm = ({
           <input
             type="password"
             className="form-control"
+            id="currentPassword"
             name="currentPassword"
             value={passwordData.currentPassword}
             onChange={handlePasswordChange}
             required
+            disabled={passwordLoading}
           />
         </div>
       </div>
 
       {/* Nueva contraseña */}
       <div className="settings-form-group">
-        <label className="settings-label">Nueva contraseña</label>
+        <label className="settings-label" htmlFor="newPassword">Nueva contraseña</label>
         <div className="input-group">
           <span className="input-group-text bg-white">
             <i className="bi bi-key"></i>
@@ -55,11 +57,13 @@ export const PasswordForm = ({
           <input
             type="password"
             className="form-control"
+            id="newPassword"
             name="newPassword"
             value={passwordData.newPassword}
             onChange={handlePasswordChange}
             required
             minLength={6}
+            disabled={passwordLoading}
           />
         </div>
         <div className="form-text">
@@ -69,7 +73,7 @@ export const PasswordForm = ({
 
       {/* Confirmar contraseña */}
       <div className="settings-form-group">
-        <label className="settings-label">Confirmar nueva contraseña</label>
+        <label className="settings-label" htmlFor="confirmPassword">Confirmar nueva contraseña</label>
         <div className="input-group">
           <span className="input-group-text bg-white">
             <i className="bi bi-check-lg"></i>
@@ -77,18 +81,37 @@ export const PasswordForm = ({
           <input
             type="password"
             className="form-control"
+            id="confirmPassword"
             name="confirmPassword"
             value={passwordData.confirmPassword}
             onChange={handlePasswordChange}
             required
             minLength={6}
+            disabled={passwordLoading}
           />
         </div>
+        {passwordData.newPassword && passwordData.confirmPassword &&
+          passwordData.newPassword !== passwordData.confirmPassword && (
+            <div className="form-text text-danger">
+              Las contraseñas no coinciden
+            </div>
+          )}
       </div>
 
       {/* Botón actualizar */}
-      <button type="submit" className="btn btn-green-3 text-white">
-        Actualizar Contraseña
+      <button
+        type="submit"
+        className="btn btn-green-3 text-white"
+        disabled={passwordLoading || (passwordData.newPassword !== passwordData.confirmPassword)}
+      >
+        {passwordLoading ? (
+          <>
+            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Actualizando...
+          </>
+        ) : (
+          'Actualizar Contraseña'
+        )}
       </button>
     </form>
   );

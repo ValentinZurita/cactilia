@@ -15,10 +15,16 @@ export const SettingsPage = () => {
     profileMessage,
     passwordMessage,
     photoURL,
+    selectedPhoto,
+    profileLoading,
+    passwordLoading,
+    photoLoading,
     handleProfileChange,
     handlePasswordChange,
     handleProfileSubmit,
-    handlePasswordSubmit
+    handlePasswordSubmit,
+    handlePhotoChange,
+    handlePhotoUpload
   } = useSettings();
 
   return (
@@ -32,8 +38,13 @@ export const SettingsPage = () => {
           profileData={profileData}
           profileMessage={profileMessage}
           photoURL={photoURL}
+          profileLoading={profileLoading}
+          photoLoading={photoLoading}
+          selectedPhoto={selectedPhoto}
           handleProfileChange={handleProfileChange}
           handleProfileSubmit={handleProfileSubmit}
+          handlePhotoChange={handlePhotoChange}
+          handlePhotoUpload={handlePhotoUpload}
         />
       </ProfileCard>
 
@@ -42,6 +53,7 @@ export const SettingsPage = () => {
         <PasswordForm
           passwordData={passwordData}
           passwordMessage={passwordMessage}
+          passwordLoading={passwordLoading}
           handlePasswordChange={handlePasswordChange}
           handlePasswordSubmit={handlePasswordSubmit}
         />

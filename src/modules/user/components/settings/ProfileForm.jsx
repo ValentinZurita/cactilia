@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+
 /**
  * Componente para el formulario de información personal
  *
@@ -5,22 +7,37 @@
  * @param {Object} props.profileData - Datos del perfil del usuario
  * @param {Object} props.profileMessage - Mensaje de éxito/error
  * @param {string} props.photoURL - URL de la foto de perfil
+ * @param {boolean} props.profileLoading - Estado de carga del formulario
+ * @param {boolean} props.photoLoading - Estado de carga de la foto
+ * @param {Object} props.selectedPhoto - Archivo de foto seleccionado
  * @param {Function} props.handleProfileChange - Manejador de cambios en el formulario
  * @param {Function} props.handleProfileSubmit - Manejador de envío del formulario
+ * @param {Function} props.handlePhotoChange - Manejador de cambio de foto
+ * @param {Function} props.handlePhotoUpload - Manejador de subida de foto
  * @returns {JSX.Element}
  */
 export const ProfileForm = ({
                               profileData,
                               profileMessage,
                               photoURL,
+                              profileLoading,
+                              photoLoading,
+                              selectedPhoto,
                               handleProfileChange,
-                              handleProfileSubmit
+                              handleProfileSubmit,
+                              handlePhotoChange,
+                              handlePhotoUpload
                             }) => {
+  // Referencia al input de archivo para activarlo con el botón personalizado
+  const fileInputRef = useRef(null);
 
+  // Manejador para el botón de cambiar foto
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
 
   return (
     <div className="row">
-
       {/* Avatar del usuario */}
       <div className="col-lg-4 mb-4 mb-lg-0 text-center">
         <div className="settings-avatar-container">
@@ -29,11 +46,50 @@ export const ProfileForm = ({
             alt="Usuario"
             className="rounded-circle user-avatar-lg"
           />
-          <button className="btn-change-photo">
-            <i className="bi bi-camera"></i>
+          <button
+            type="button"
+            className="btn-change-photo"
+            onClick={triggerFileInput}
+            disabled={photoLoading}
+          >
+            {photoLoading ? (
+              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            ) : (
+              <i className="bi bi-camera"></i>
+            )}
           </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="d-none"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            disabled={photoLoading}
+          />
         </div>
         <p className="mt-2 text-muted small">Haz clic para cambiar tu foto</p>
+
+        {/* Botón para subir foto, solo visible cuando hay una seleccionada */}
+        {selectedPhoto && (
+          <button
+            type="button"
+            className="btn btn-sm btn-success mt-2"
+            onClick={handlePhotoUpload}
+            disabled={photoLoading}
+          >
+            {photoLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Subiendo...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-cloud-arrow-up me-1"></i>
+                Guardar foto
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Formulario de perfil */}
@@ -50,23 +106,27 @@ export const ProfileForm = ({
 
           {/* Nombre */}
           <div className="settings-form-group">
-            <label className="settings-label">Nombre</label>
+            <label className="settings-label" htmlFor="displayName">Nombre</label>
             <input
               type="text"
               className="form-control"
+              id="displayName"
               name="displayName"
               value={profileData.displayName}
               onChange={handleProfileChange}
               required
+              disabled={profileLoading}
+              placeholder="Tu nombre completo"
             />
           </div>
 
           {/* Email (deshabilitado) */}
           <div className="settings-form-group">
-            <label className="settings-label">Email</label>
+            <label className="settings-label" htmlFor="email">Email</label>
             <input
               type="email"
               className="form-control bg-light"
+              id="email"
               name="email"
               value={profileData.email}
               disabled
@@ -78,7 +138,7 @@ export const ProfileForm = ({
 
           {/* Teléfono */}
           <div className="settings-form-group">
-            <label className="settings-label">Teléfono</label>
+            <label className="settings-label" htmlFor="phoneNumber">Teléfono</label>
             <div className="input-group">
               <span className="input-group-text bg-white">
                 <i className="bi bi-telephone"></i>
@@ -86,17 +146,30 @@ export const ProfileForm = ({
               <input
                 type="tel"
                 className="form-control"
+                id="phoneNumber"
                 name="phoneNumber"
                 value={profileData.phoneNumber}
                 onChange={handleProfileChange}
                 placeholder="(Opcional)"
+                disabled={profileLoading}
               />
             </div>
           </div>
 
           {/* Botón guardar */}
-          <button type="submit" className="btn btn-green-3 text-white">
-            Guardar Cambios
+          <button
+            type="submit"
+            className="btn btn-green-3 text-white"
+            disabled={profileLoading}
+          >
+            {profileLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Guardando...
+              </>
+            ) : (
+              'Guardar Cambios'
+            )}
           </button>
 
         </form>
