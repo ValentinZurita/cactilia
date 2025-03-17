@@ -68,27 +68,44 @@ export const ProfileForm = ({
           />
         </div>
         <p className="mt-2 text-muted small">Haz clic para cambiar tu foto</p>
+        <p className="text-muted small">
+          <i className="bi bi-info-circle me-1"></i>
+          Formatos: JPG, PNG, GIF (máx. 2MB)
+        </p>
 
         {/* Botón para subir foto, solo visible cuando hay una seleccionada */}
         {selectedPhoto && (
-          <button
-            type="button"
-            className="btn btn-sm btn-success mt-2"
-            onClick={handlePhotoUpload}
-            disabled={photoLoading}
-          >
-            {photoLoading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Subiendo...
-              </>
-            ) : (
-              <>
-                <i className="bi bi-cloud-arrow-up me-1"></i>
-                Guardar foto
-              </>
-            )}
-          </button>
+          <>
+            <div className="mb-2 small">
+              <span className="badge bg-light text-dark">
+                {selectedPhoto.name.length > 20
+                  ? selectedPhoto.name.substring(0, 17) + '...'
+                  : selectedPhoto.name
+                }
+              </span>
+              <span className="ms-2 text-muted">
+                {(selectedPhoto.size / (1024 * 1024)).toFixed(2)} MB
+              </span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-success mt-1"
+              onClick={handlePhotoUpload}
+              disabled={photoLoading}
+            >
+              {photoLoading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Subiendo...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-cloud-arrow-up me-1"></i>
+                  Guardar foto
+                </>
+              )}
+            </button>
+          </>
         )}
       </div>
 

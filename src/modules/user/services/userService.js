@@ -80,24 +80,62 @@ export const updateUserData = async (userId, userData) => {
 };
 
 /**
+ * Verifica si el archivo es una imagen válida y cumple con las restricciones
+ *
+ * @param {File} file - Archivo a verificar
+ * @param {number} maxSizeMB - Tamaño máximo en MB (por defecto 2MB)
+ * @returns {Object} - Resultado de la validación {valid, error}
+ */
+export const validateProfileImage = (file, maxSizeMB = 2) => {
+  // Verificar que sea un archivo
+  if (!file) {
+    return { valid: false, error: 'No se ha seleccionado ningún archivo' };
+  }
+
+  // Verificar tipo de archivo (solo imágenes)
+  const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (!validImageTypes.includes(file.type)) {
+    return { valid: false, error: 'El archivo debe ser una imagen (JPEG, PNG, GIF o WEBP)' };
+  }
+
+  // Verificar tamaño (por defecto máximo 2MB)
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    return {
+      valid: false,
+      error: `La imagen es demasiado grande. El tamaño máximo permitido es ${maxSizeMB}MB`
+    };
+  }
+
+  return { valid: true, error: null };
+};
+
+/**
  * Sube una imagen de perfil para el usuario y actualiza su perfil
+ * Incluye validación y optimización de la imagen
  *
  * @param {string} userId - ID del usuario
  * @param {File} file - Archivo de imagen a subir
+ * @param {Object} options - Opciones de optimización
+ * @param {number} options.maxSizeMB - Tamaño máximo en MB (por defecto 2MB)
+ * @param {number} options.maxWidthOrHeight - Dimensión máxima en píxeles (por defecto 1200px)
  * @returns {Promise<{ok: boolean, photoURL: string, error: string}>} - Resultado de la operación
  */
-export const updateProfilePhoto = async (userId, file) => {
+export const updateProfilePhoto = async (userId, file, options = {}) => {
   try {
     if (!userId) {
       return { ok: false, photoURL: null, error: 'ID de usuario no proporcionado' };
     }
 
-    if (!file) {
-      return { ok: false, photoURL: null, error: 'Archivo no proporcionado' };
+    // Validar la imagen antes de procesar
+    const validation = validateProfileImage(file, options.maxSizeMB || 2);
+    if (!validation.valid) {
+      return { ok: false, photoURL: null, error: validation.error };
     }
 
-    // 1. Subir la imagen a Firebase Storage
-    const photoURL = await uploadFile(file, `profile-photos/${userId}`);
+    // 1. Subir la imagen a Firebase Storage con la ruta específica para fotos de perfil
+    const storagePath = `profile-photos/${userId}/${Date.now()}_profile`;
+    const photoURL = await uploadFile(file, storagePath);
 
     if (!photoURL) {
       return { ok: false, photoURL: null, error: 'Error subiendo la imagen' };

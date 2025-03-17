@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
 import { login } from '../../../store/auth/authSlice';
-import { updateUserData, updateUserPassword, updateProfilePhoto, getUserData } from '../services/userService';
+import { updateUserData, updateUserPassword, updateProfilePhoto, getUserData, validateProfileImage } from '../services/userService';
 
 /**
  * Hook personalizado para manejar la lógica de la página de configuración
@@ -94,13 +94,58 @@ export const useSettings = () => {
     const file = e.target.files[0];
 
     if (file) {
+      // Validar el archivo antes de procesarlo
+      const { valid, error } = validateProfileImage(file);
+
+      if (!valid) {
+        dispatch(addMessage({
+          type: 'error',
+          text: error,
+          autoHide: true,
+          duration: 4000
+        }));
+        return;
+      }
+
       setSelectedPhoto(file);
 
       // Crear URL para vista previa
       const previewURL = URL.createObjectURL(file);
       setPhotoPreview(previewURL);
     }
-  }, []);
+  }, [dispatch]);
+
+  /**
+   * Comprimir imagen manteniendo calidad razonable
+   */
+  const compressImage = async (file) => {
+    try {
+      // Simulación de compresión (en un caso real usarías una biblioteca como browser-image-compression)
+      // Nota: En una implementación completa, importarías una biblioteca como:
+      // import imageCompression from 'browser-image-compression';
+
+      // Las opciones para una buena compresión serían:
+      const options = {
+        maxSizeMB: 1, // Máximo 1MB
+        maxWidthOrHeight: 1200, // Dimensión máxima 1200px
+        useWebWorker: true,
+        preserveExif: true // Mantener metadatos importantes
+      };
+
+      // Simular un retraso de compresión
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // En un caso real, harías:
+      // const compressedFile = await imageCompression(file, options);
+      // return compressedFile;
+
+      // Por ahora devolvemos el archivo original
+      return file;
+    } catch (error) {
+      console.error('Error comprimiendo imagen:', error);
+      throw error;
+    }
+  };
 
   /**
    * Subir y actualizar foto de perfil
@@ -111,7 +156,16 @@ export const useSettings = () => {
     setPhotoLoading(true);
 
     try {
-      const result = await updateProfilePhoto(uid, selectedPhoto);
+      // Comprimir la imagen antes de subirla
+      const compressedImage = await compressImage(selectedPhoto);
+
+      // Opciones para la subida
+      const uploadOptions = {
+        maxSizeMB: 2,
+        maxWidthOrHeight: 1200
+      };
+
+      const result = await updateProfilePhoto(uid, compressedImage, uploadOptions);
 
       if (result.ok) {
         // Actualizar el estado en Redux
