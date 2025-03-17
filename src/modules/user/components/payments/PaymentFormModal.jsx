@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addMessage } from '../../../../store/messages/messageSlice';
 import '../../styles/paymentFormModal.css';
 
@@ -25,8 +25,8 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
 
   // Referencias para manejar la limpieza segura
   const isSubmittingRef = useRef(false);
-  const cardElementRef = useRef(null);
-  const modalRef = useRef(null);
+  const formRef = useRef(null);
+  const { uid } = useSelector(state => state.auth);
 
   // Hooks de Stripe
   const stripe = useStripe();
@@ -71,35 +71,13 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     };
   }, [isOpen]);
 
-  // Si el modal no está abierto, renderizamos un contenedor oculto
-  // pero mantenemos el CardElement montado para evitar errores
-  if (!isOpen) {
-    return (
-      <div style={{ display: 'none' }}>
-        <div style={{ position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }}>
-          <CardElement onChange={(e) => {
-            // Mantenemos la referencia actualizada incluso cuando está oculto
-            cardElementRef.current = e.complete ? elements.getElement(CardElement) : null;
-          }} />
-        </div>
-      </div>
-    );
-  }
+  // Si el modal no está abierto, no renderizamos nada
+  if (!isOpen) return null;
 
   // Manejar cambios en el elemento de tarjeta
   const handleCardChange = (event) => {
     setCardComplete(event.complete);
-    if (event.complete) {
-      cardElementRef.current = elements.getElement(CardElement);
-    } else {
-      cardElementRef.current = null;
-    }
-
-    if (event.error) {
-      setError(event.error.message);
-    } else {
-      setError(null);
-    }
+    setError(event.error ? event.error.message : null);
   };
 
   // Manejar envío del formulario con seguridad
@@ -107,7 +85,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
 
     // Evitar envíos duplicados
-    if (isSubmittingRef.current) {
+    if (isSubmittingRef.current || loading) {
       return;
     }
 
@@ -127,8 +105,8 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    // Obtener el elemento CardElement actual
-    const cardElement = cardElementRef.current || elements.getElement(CardElement);
+    // Obtener el elemento CardElement actual - debe hacerse ANTES de cambiar el estado
+    const cardElement = elements.getElement(CardElement);
 
     if (!cardElement) {
       setError("No se pudo acceder al formulario de tarjeta. Por favor, intente de nuevo.");
@@ -174,13 +152,14 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       await savePaymentMethod({
         setupIntentId,
         paymentMethodId: setupIntent.payment_method,
-        isDefault
+        isDefault,
+        cardHolder: cardHolder, // Guardar como cardHolder para mantener consistencia
+        userId: uid
       });
 
       // 4. Limpiar el formulario y mostrar mensaje de éxito
-      if (cardElement) {
-        cardElement.clear();
-      }
+      setCardHolder('');
+      setIsDefault(false);
 
       dispatch(addMessage({
         type: 'success',
@@ -206,6 +185,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       // Permitir un nuevo intento
       isSubmittingRef.current = false;
     } finally {
+      // Es importante reiniciar estos estados incluso si hay error
       setLoading(false);
     }
   };
@@ -249,9 +229,6 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     <div
       className="payment-modal-backdrop"
       onClick={handleSafeClose}
-      ref={modalRef}
-      // Eliminar aria-hidden para evitar problemas de accesibilidad
-      tabIndex="-1"
       role="dialog"
       aria-modal="true"
       aria-labelledby="payment-modal-title"
@@ -275,7 +252,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
 
         <div className="payment-modal-body">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} ref={formRef}>
             {/* Mensaje de error */}
             {error && (
               <div className="payment-alert-error" role="alert">

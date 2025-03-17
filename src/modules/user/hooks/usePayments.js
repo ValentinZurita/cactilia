@@ -32,43 +32,45 @@ export const usePayments = () => {
   }
 
   // Cargar métodos de pago desde Firestore
-  useEffect(() => {
-    const loadPaymentMethods = async () => {
-      // Solo cargar si el usuario está autenticado
-      if (status !== 'authenticated' || !uid) {
-        setLoading(false);
-        return;
-      }
+  const loadPaymentMethods = useCallback(async () => {
+    // Solo cargar si el usuario está autenticado
+    if (status !== 'authenticated' || !uid) {
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      try {
-        const result = await getUserPaymentMethods(uid);
+    try {
+      const result = await getUserPaymentMethods(uid);
 
-        if (result.ok) {
-          setPaymentMethods(result.data);
-        } else {
-          setError(result.error || 'Error al cargar métodos de pago');
-          dispatch(addMessage({
-            type: 'error',
-            text: 'No se pudieron cargar tus métodos de pago'
-          }));
-        }
-      } catch (err) {
-        console.error('Error en usePayments:', err);
-        setError('Error al cargar los métodos de pago');
+      if (result.ok) {
+        console.log('Métodos de pago cargados:', result.data);
+        setPaymentMethods(result.data);
+      } else {
+        setError(result.error || 'Error al cargar métodos de pago');
         dispatch(addMessage({
           type: 'error',
-          text: 'Error al cargar métodos de pago'
+          text: 'No se pudieron cargar tus métodos de pago'
         }));
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Error en usePayments:', err);
+      setError('Error al cargar los métodos de pago');
+      dispatch(addMessage({
+        type: 'error',
+        text: 'Error al cargar métodos de pago'
+      }));
+    } finally {
+      setLoading(false);
+    }
+  }, [uid, status, dispatch]);
 
+  // Cargar métodos de pago cuando cambia el trigger de actualización
+  useEffect(() => {
     loadPaymentMethods();
-  }, [uid, status, dispatch, refreshTrigger]);
+  }, [loadPaymentMethods, refreshTrigger]);
 
   // Actualizar la lista de métodos de pago
   const refreshPaymentMethods = useCallback(() => {
@@ -189,7 +191,10 @@ export const usePayments = () => {
 
   // Manejar el éxito después de agregar un método de pago
   const handlePaymentAdded = useCallback(() => {
-    refreshPaymentMethods();
+    // Pequeño retraso para asegurar que Firestore ya tenga los datos actualizados
+    setTimeout(() => {
+      refreshPaymentMethods();
+    }, 500);
   }, [refreshPaymentMethods]);
 
   return {
@@ -202,6 +207,7 @@ export const usePayments = () => {
     addPayment,
     closeForm,
     handlePaymentAdded,
-    refreshPaymentMethods
+    refreshPaymentMethods,
+    loadPaymentMethods
   };
 };

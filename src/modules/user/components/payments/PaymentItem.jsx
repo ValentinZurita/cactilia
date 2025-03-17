@@ -34,6 +34,8 @@ export const PaymentItem = ({ payment, onSetDefault, onDelete, onEdit }) => {
     return type.charAt(0).toUpperCase() + type.slice(1);
   };
 
+  // Obtener el nombre del titular, comprobando ambas posibles propiedades
+  const holderName = payment.cardholderName || payment.cardHolder || null;
 
   return (
 
@@ -50,6 +52,9 @@ export const PaymentItem = ({ payment, onSetDefault, onDelete, onEdit }) => {
           <div className="payment-info">
             <h5 className="card-type">{formatCardType(payment.type)}</h5>
             <div className="card-number">{payment.cardNumber}</div>
+            {holderName && (
+              <div className="card-holder">{holderName}</div>
+            )}
             <div className="expiry-date">Vence: {payment.expiryDate}</div>
           </div>
         </div>
@@ -64,7 +69,7 @@ export const PaymentItem = ({ payment, onSetDefault, onDelete, onEdit }) => {
       </div>
 
       <div className="payment-actions">
-        
+
         {/* Botón Editar */}
         <button
           className="payment-action-btn edit"

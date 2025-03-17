@@ -33,8 +33,7 @@ export const PaymentsPage = () => {
   // Estado local para controlar si Stripe está listo
   const [stripeReady, setStripeReady] = useState(false);
 
-  // Mantener Elements montado incluso cuando el modal está cerrado
-  // Esto previene el error de "elemento no montado"
+  // Estado para controlar si se muestra el formulario de Elements
   const [elementsVisible, setElementsVisible] = useState(false);
 
   // Verificar cuando Stripe esté listo
@@ -49,14 +48,14 @@ export const PaymentsPage = () => {
     }
   }, []);
 
-  // Cuando se solicita abrir el formulario, también mostramos Elements
+  // Efectos para manejar la visibilidad del formulario de Elements
   useEffect(() => {
     if (showForm) {
       setElementsVisible(true);
     }
   }, [showForm]);
 
-  // Manejar el cierre seguro del modal
+  // Manejar el cierre del formulario
   const handleSafeClose = () => {
     closeForm();
     // No ocultamos Elements inmediatamente para permitir
@@ -64,6 +63,16 @@ export const PaymentsPage = () => {
     setTimeout(() => {
       setElementsVisible(false);
     }, 500);
+  };
+
+  // Manejar cuando se agrega un método de pago exitosamente
+  const handleSuccess = () => {
+    handlePaymentAdded();
+    // Podemos dejar el tiempo suficiente para que Stripe termine
+    // cualquier operación pendiente
+    setTimeout(() => {
+      setElementsVisible(false);
+    }, 1000);
   };
 
   // Opciones mejoradas para Stripe Elements
@@ -119,20 +128,16 @@ export const PaymentsPage = () => {
       {/* Nota de seguridad */}
       <SecurityNote />
 
-      {/*
-        Renderizar Elements SIEMPRE que elementsVisible sea true,
-        incluso si el modal no está visible. Esto previene que se
-        desmonte mientras se está usando.
-      */}
-      {elementsVisible && stripeReady ? (
+      {/* Renderizar Elements cuando sea necesario */}
+      {elementsVisible && stripeReady && (
         <Elements stripe={stripePromise} options={stripeElementsOptions}>
           <PaymentFormModal
             isOpen={showForm}
             onClose={handleSafeClose}
-            onSuccess={handlePaymentAdded}
+            onSuccess={handleSuccess}
           />
         </Elements>
-      ) : null}
+      )}
 
       {/* Mensaje de carga si Stripe no está listo */}
       {showForm && !stripeReady && (

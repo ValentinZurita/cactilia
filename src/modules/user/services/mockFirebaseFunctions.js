@@ -29,24 +29,32 @@ export const mockCreateSetupIntent = async () => {
  * Simulación de función Cloud para guardar un método de pago
  * Para pruebas en desarrollo local sin necesidad de backend
  */
-export const mockSavePaymentMethod = async (userId, paymentData) => {
+export const mockSavePaymentMethod = async (data) => {
   try {
+    const userId = data.userId || 'mock-user';
+
     if (!userId) {
       throw new Error('Se requiere el ID de usuario');
     }
 
+    // Extraer el nombre del titular de la tarjeta (verificar ambas posibilidades)
+    const cardHolder = data.cardHolder || data.cardholderName || null;
+    console.log('📝 [DEV] Nombre del titular:', cardHolder);
+
     // Simulamos un método de pago con datos básicos
     const mockPaymentMethod = {
-      id: `pm_mock_${Date.now()}`,
       userId,
       type: 'visa',
       cardNumber: '•••• •••• •••• 4242',
+      cardHolder, // Guardamos siempre como cardHolder para mantener consistencia
       expiryDate: '12/25',
-      stripePaymentMethodId: paymentData.paymentMethodId || `pm_mock_${Date.now()}`,
-      isDefault: paymentData.isDefault || false,
+      stripePaymentMethodId: data.paymentMethodId || `pm_mock_${Date.now()}`,
+      isDefault: data.isDefault || false,
       createdAt: new Date(),
       updatedAt: new Date()
     };
+
+    console.log('📝 [DEV] Método de pago a guardar:', mockPaymentMethod);
 
     // Guardamos en Firestore
     const paymentMethodsRef = collection(FirebaseDB, 'payment_methods');
@@ -87,6 +95,21 @@ export const mockDetachPaymentMethod = async (paymentMethodId) => {
 };
 
 /**
+ * Simulación de función Cloud para actualizar el método de pago predeterminado
+ * Para pruebas en desarrollo local sin necesidad de backend
+ */
+export const mockUpdateDefaultPaymentMethod = async (data) => {
+  const paymentMethodId = data.paymentMethodId;
+  console.log('📝 [DEV] Estableciendo método de pago predeterminado:', paymentMethodId);
+
+  return {
+    data: {
+      success: true
+    }
+  };
+};
+
+/**
  * Hook para sobrescribir temporalmente las funciones de Firebase
  * Solo para desarrollo y pruebas
  */
@@ -109,9 +132,11 @@ export const useFirebaseFunctionsMock = () => {
         case 'createSetupIntent':
           return mockCreateSetupIntent();
         case 'savePaymentMethod':
-          return mockSavePaymentMethod(data.userId, data);
+          return mockSavePaymentMethod(data);
         case 'detachPaymentMethod':
           return mockDetachPaymentMethod(data.paymentMethodId);
+        case 'updateDefaultPaymentMethod':
+          return mockUpdateDefaultPaymentMethod(data);
         default:
           console.warn(`⚠️ [DEV] Función no implementada: ${name}`);
           return Promise.resolve({ data: null });
