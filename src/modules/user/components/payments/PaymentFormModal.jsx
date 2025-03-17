@@ -15,7 +15,7 @@ import '../../styles/paymentFormModal.css';
  * @param {Function} props.onSuccess - Función a llamar cuando se agrega el método de pago exitosamente
  * @returns {JSX.Element|null} Componente de formulario modal
  */
-export const StablePaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
+export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
   // Estados locales
   const [cardHolder, setCardHolder] = useState('');
   const [isDefault, setIsDefault] = useState(false);

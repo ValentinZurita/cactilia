@@ -6,7 +6,7 @@ import { usePayments } from '../hooks/usePayments.js';
 import '../styles/profilePayments.css';
 import '../styles/sharedComponents.css';
 import { PaymentsList, SecurityNote } from '../components/payments/index.js';
-import { StablePaymentFormModal } from '../components/payments/StablePaymentFormModal';
+import { PaymentFormModal } from '../components/payments/PaymentFormModal.jsx';
 
 // Cargar Stripe solo una vez (fuera del componente para que no se reinicie)
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
@@ -126,7 +126,7 @@ export const PaymentsPage = () => {
       */}
       {elementsVisible && stripeReady ? (
         <Elements stripe={stripePromise} options={stripeElementsOptions}>
-          <StablePaymentFormModal
+          <PaymentFormModal
             isOpen={showForm}
             onClose={handleSafeClose}
             onSuccess={handlePaymentAdded}
