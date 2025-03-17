@@ -1,0 +1,239 @@
+/* Estilos para el modal de confirmación reutilizable */
+
+/* Fondo del modal */
+.confirmation-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Contenido del modal */
+.confirmation-modal-content {
+    background-color: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 480px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Cabecera del modal */
+.confirmation-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.confirmation-modal-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.confirmation-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #777;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.confirmation-modal-close:hover {
+    color: #333;
+}
+
+.confirmation-modal-close:focus {
+    outline: none;
+    color: #000;
+}
+
+/* Cuerpo del modal */
+.confirmation-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* Contenedor de mensajes */
+.confirmation-content {
+    flex: 1;
+}
+
+/* Icono de confirmación */
+.confirmation-icon-container {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.confirmation-icon {
+    font-size: 1.8rem;
+}
+
+/* Mensaje principal */
+.confirmation-message {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #333;
+}
+
+/* Detalles adicionales */
+.confirmation-detail {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #666;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 12px;
+    border-left: 3px solid #dee2e6;
+}
+
+/* Acciones del modal */
+.confirmation-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Botones de acción */
+.confirmation-actions .btn {
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.confirmation-actions .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.confirmation-actions .btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Botón de cancelar */
+.confirmation-actions .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    background-color: transparent;
+}
+
+.confirmation-actions .btn-outline-secondary:hover {
+    color: white;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* Estilos para botones de diferentes colores */
+.confirmation-actions .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.confirmation-actions .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.confirmation-actions .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.confirmation-actions .btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.confirmation-actions .btn-primary {
+    background-color: #34C749; /* Usando verde-3 de tus variables */
+    border-color: #34C749;
+}
+
+.confirmation-actions .btn-primary:hover {
+    background-color: #28A745; /* Usando verde-1 de tus variables */
+    border-color: #28A745;
+}
+
+.confirmation-actions .btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Spinner */
+.confirmation-actions .spinner-border {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* Mejoras para dispositivos móviles */
+@media (max-width: 576px) {
+    .confirmation-modal-content {
+        width: 95%;
+        max-height: 85vh;
+    }
+
+    .confirmation-modal-header {
+        padding: 12px 16px;
+    }
+
+    .confirmation-modal-body {
+        padding: 16px;
+    }
+
+    .confirmation-icon {
+        font-size: 1.5rem;
+    }
+
+    .confirmation-message {
+        font-size: 0.95rem;
+    }
+
+    .confirmation-detail {
+        font-size: 0.85rem;
+        padding: 10px;
+    }
+
+    .confirmation-actions .btn {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+    }
+}

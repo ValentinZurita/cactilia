@@ -9,9 +9,10 @@ import { EmptyState } from '../shared/index.js'
  * @param {Function} props.onSetDefault - Función para establecer como predeterminado
  * @param {Function} props.onDelete - Función para eliminar
  * @param {Function} props.onEdit - Función para editar
+ * @param {boolean} props.loading - Indica si está cargando
  * @returns {JSX.Element}
  */
-export const PaymentsList = ({ payments, onSetDefault, onDelete, onEdit }) => {
+export const PaymentsList = ({ payments, onSetDefault, onDelete, onEdit, loading = false }) => {
   if (payments.length === 0) {
     return (
       <EmptyState

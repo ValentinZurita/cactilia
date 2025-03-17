@@ -10,7 +10,7 @@ import { useFirebaseFunctionsMock } from '../services/mockFirebaseFunctions.js'
 
 /**
  * Custom hook mejorado para gestión de métodos de pago
- * Incluye protecciones para operaciones concurrentes
+ * Incluye protecciones para operaciones concurrentes y modal de confirmación
  */
 export const usePayments = () => {
   const dispatch = useDispatch();
@@ -25,6 +25,12 @@ export const usePayments = () => {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Estados para el modal de confirmación
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmData, setConfirmData] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Usar mocks en desarrollo
   if (process.env.NODE_ENV !== 'production') {
@@ -121,9 +127,16 @@ export const usePayments = () => {
     }
   }, [uid, dispatch, refreshPaymentMethods]);
 
-  // Eliminar un método de pago
-  const deletePayment = useCallback(async (id) => {
-    // Buscar el método de pago para obtener el ID de Stripe
+  // Confirmar acción con el modal (función genérica)
+  const confirmWithModal = useCallback((action, data) => {
+    setConfirmAction(action);
+    setConfirmData(data);
+    setShowConfirmModal(true);
+  }, []);
+
+  // Iniciar confirmación para eliminar un método de pago
+  const confirmDeletePayment = useCallback((id) => {
+    // Buscar el método de pago para obtener detalles
     const paymentMethod = paymentMethods.find(method => method.id === id);
 
     if (!paymentMethod) {
@@ -134,48 +147,89 @@ export const usePayments = () => {
       return;
     }
 
+    // Si es el método predeterminado, no permitir eliminación
+    if (paymentMethod.isDefault) {
+      dispatch(addMessage({
+        type: 'error',
+        text: 'No puedes eliminar el método de pago predeterminado'
+      }));
+      return;
+    }
+
+    confirmWithModal('deletePayment', paymentMethod);
+  }, [paymentMethods, dispatch, confirmWithModal]);
+
+  // Procesar la eliminación de un método de pago
+  const deletePaymentHandler = useCallback(async (paymentMethod) => {
+    if (!paymentMethod) return;
+
     // Evitar operaciones duplicadas
     if (operationInProgressRef.current) return;
+    operationInProgressRef.current = true;
 
-    // Confirmar eliminación
-    if (window.confirm('¿Estás seguro de que deseas eliminar este método de pago?')) {
-      operationInProgressRef.current = true;
-      setLoading(true);
+    // Actualizar estado de procesamiento
+    setIsProcessing(true);
 
-      try {
-        const result = await deletePaymentMethod(
-          id,
-          paymentMethod.stripePaymentMethodId
+    try {
+      const result = await deletePaymentMethod(
+        paymentMethod.id,
+        paymentMethod.stripePaymentMethodId
+      );
+
+      if (result.ok) {
+        // Actualizar el estado local
+        setPaymentMethods(prevMethods =>
+          prevMethods.filter(method => method.id !== paymentMethod.id)
         );
 
-        if (result.ok) {
-          // Actualizar el estado local
-          setPaymentMethods(prevMethods =>
-            prevMethods.filter(method => method.id !== id)
-          );
-
-          dispatch(addMessage({
-            type: 'success',
-            text: 'Método de pago eliminado correctamente'
-          }));
-        } else {
-          throw new Error(result.error || 'Error al eliminar método de pago');
-        }
-      } catch (err) {
-        console.error('Error eliminando método de pago:', err);
         dispatch(addMessage({
-          type: 'error',
-          text: err.message || 'Error al eliminar método de pago'
+          type: 'success',
+          text: 'Método de pago eliminado correctamente'
         }));
 
-        // Recargar para asegurar que los datos estén sincronizados
-        refreshPaymentMethods();
-      } finally {
-        setLoading(false);
-        operationInProgressRef.current = false;
+        // Cerrar el modal
+        setShowConfirmModal(false);
+        setConfirmData(null);
+        setConfirmAction(null);
+      } else {
+        throw new Error(result.error || 'Error al eliminar método de pago');
       }
+    } catch (err) {
+      console.error('Error eliminando método de pago:', err);
+      dispatch(addMessage({
+        type: 'error',
+        text: err.message || 'Error al eliminar método de pago'
+      }));
+
+      // Recargar para asegurar que los datos estén sincronizados
+      refreshPaymentMethods();
+    } finally {
+      setIsProcessing(false);
+      operationInProgressRef.current = false;
     }
-  }, [paymentMethods, dispatch, refreshPaymentMethods]);
+  }, [dispatch, refreshPaymentMethods]);
+
+  // Manejar la acción confirmada
+  const handleConfirmedAction = useCallback(() => {
+    if (!confirmAction || !confirmData) return;
+
+    switch(confirmAction) {
+      case 'deletePayment':
+        deletePaymentHandler(confirmData);
+        break;
+      // Puedes agregar más casos aquí para otras acciones
+      default:
+        console.warn(`Acción no implementada: ${confirmAction}`);
+        setShowConfirmModal(false);
+    }
+  }, [confirmAction, confirmData, deletePaymentHandler]);
+
+  // Cancelar la confirmación
+  const cancelConfirmation = useCallback(() => {
+    setShowConfirmModal(false);
+    setConfirmData(null);
+    setConfirmAction(null);
+  }, []);
 
   // Abrir el formulario para agregar un nuevo método de pago
   const addPayment = useCallback(() => {
@@ -202,8 +256,14 @@ export const usePayments = () => {
     loading,
     error,
     showForm,
+    showConfirmModal,
+    confirmData,
+    confirmAction,
+    isProcessing,
     setDefaultPayment,
-    deletePayment,
+    confirmDeletePayment,
+    handleConfirmedAction,
+    cancelConfirmation,
     addPayment,
     closeForm,
     handlePaymentAdded,

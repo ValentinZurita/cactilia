@@ -7,6 +7,7 @@ import '../styles/profilePayments.css';
 import '../styles/sharedComponents.css';
 import { PaymentsList, SecurityNote } from '../components/payments/index.js';
 import { PaymentFormModal } from '../components/payments/PaymentFormModal.jsx';
+import { ConfirmationModal } from '../components/shared/ConfirmationModal.jsx';
 
 // Cargar Stripe solo una vez (fuera del componente para que no se reinicie)
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
@@ -23,8 +24,13 @@ export const PaymentsPage = () => {
     loading,
     error,
     showForm,
+    showConfirmModal,
+    confirmData,
+    isProcessing,
     setDefaultPayment,
-    deletePayment,
+    confirmDeletePayment, // Esta es la función que debemos pasar correctamente
+    handleConfirmedAction,
+    cancelConfirmation,
     addPayment,
     closeForm,
     handlePaymentAdded
@@ -92,6 +98,20 @@ export const PaymentsPage = () => {
     ],
   };
 
+  // Obtener detalles formateados del método de pago para el modal
+  const getPaymentDetails = () => {
+    if (!confirmData) return null;
+
+    // Formatear los últimos 4 dígitos
+    const cardNumber = confirmData.cardNumber || '';
+    const lastFourDigits = cardNumber.trim().split(' ').pop() || 'xxxx';
+
+    // Formatear el tipo de tarjeta
+    const cardType = confirmData.type ? confirmData.type.charAt(0).toUpperCase() + confirmData.type.slice(1) : 'tarjeta';
+
+    return `${cardType} que termina en ${lastFourDigits}`;
+  };
+
   return (
     <div className="payments-container">
       {/* Título de sección */}
@@ -114,7 +134,7 @@ export const PaymentsPage = () => {
       <PaymentsList
         payments={paymentMethods}
         onSetDefault={setDefaultPayment}
-        onDelete={deletePayment}
+        onDelete={confirmDeletePayment} // CORRECCIÓN: Pasando la función correcta
         loading={loading}
       />
 
@@ -127,6 +147,31 @@ export const PaymentsPage = () => {
 
       {/* Nota de seguridad */}
       <SecurityNote />
+
+      {/* Modal de confirmación para eliminar método de pago */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={cancelConfirmation}
+        onConfirm={handleConfirmedAction}
+        title="Eliminar método de pago"
+        message={getPaymentDetails()}
+        detail={
+          <p>
+            Si no deseas que este método de pago aparezca en tu lista de opciones de pago,
+            haz clic en "Confirmar eliminar". <br/><br/>
+            <span className="text-muted small">
+              Deshabilitar este método de pago no cancelará ninguna de tus órdenes abiertas
+              ni fallará ninguna configuración de pagos automáticos que utilicen este método.
+            </span>
+          </p>
+        }
+        confirmText="Confirmar eliminar"
+        cancelText="Cancelar"
+        icon="bi-credit-card-2-front"
+        iconColor="danger"
+        confirmColor="danger"
+        loading={isProcessing}
+      />
 
       {/* Renderizar Elements cuando sea necesario */}
       {elementsVisible && stripeReady && (
