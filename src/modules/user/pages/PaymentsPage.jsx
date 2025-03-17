@@ -6,9 +6,9 @@ import { usePayments } from '../hooks/usePayments.js';
 import '../styles/profilePayments.css';
 import '../styles/sharedComponents.css';
 import { PaymentsList, SecurityNote } from '../components/payments/index.js';
-import { ImprovedPaymentFormModal } from '../components/payments/ImprovedPaymentFormModal';
+import { StablePaymentFormModal } from '../components/payments/StablePaymentFormModal';
 
-// Cargar Stripe solo una vez
+// Cargar Stripe solo una vez (fuera del componente para que no se reinicie)
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 /**
@@ -33,6 +33,10 @@ export const PaymentsPage = () => {
   // Estado local para controlar si Stripe está listo
   const [stripeReady, setStripeReady] = useState(false);
 
+  // Mantener Elements montado incluso cuando el modal está cerrado
+  // Esto previene el error de "elemento no montado"
+  const [elementsVisible, setElementsVisible] = useState(false);
+
   // Verificar cuando Stripe esté listo
   useEffect(() => {
     if (stripePromise) {
@@ -44,6 +48,23 @@ export const PaymentsPage = () => {
       });
     }
   }, []);
+
+  // Cuando se solicita abrir el formulario, también mostramos Elements
+  useEffect(() => {
+    if (showForm) {
+      setElementsVisible(true);
+    }
+  }, [showForm]);
+
+  // Manejar el cierre seguro del modal
+  const handleSafeClose = () => {
+    closeForm();
+    // No ocultamos Elements inmediatamente para permitir
+    // que cualquier operación pendiente se complete
+    setTimeout(() => {
+      setElementsVisible(false);
+    }, 500);
+  };
 
   // Opciones mejoradas para Stripe Elements
   const stripeElementsOptions = {
@@ -98,16 +119,20 @@ export const PaymentsPage = () => {
       {/* Nota de seguridad */}
       <SecurityNote />
 
-      {/* Renderizar Elements solo cuando el formulario está abierto y Stripe está listo */}
-      {showForm && stripeReady && (
+      {/*
+        Renderizar Elements SIEMPRE que elementsVisible sea true,
+        incluso si el modal no está visible. Esto previene que se
+        desmonte mientras se está usando.
+      */}
+      {elementsVisible && stripeReady ? (
         <Elements stripe={stripePromise} options={stripeElementsOptions}>
-          <ImprovedPaymentFormModal
+          <StablePaymentFormModal
             isOpen={showForm}
-            onClose={closeForm}
+            onClose={handleSafeClose}
             onSuccess={handlePaymentAdded}
           />
         </Elements>
-      )}
+      ) : null}
 
       {/* Mensaje de carga si Stripe no está listo */}
       {showForm && !stripeReady && (

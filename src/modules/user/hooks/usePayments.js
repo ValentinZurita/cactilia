@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
 import {
@@ -9,28 +9,32 @@ import {
 import { useFirebaseFunctionsMock } from '../services/mockFirebaseFunctions.js'
 
 /**
- * Custom hook for managing payment methods
- * Connects to Stripe via Firebase functions
+ * Custom hook mejorado para gestión de métodos de pago
+ * Incluye protecciones para operaciones concurrentes
  */
 export const usePayments = () => {
   const dispatch = useDispatch();
   const { uid, status } = useSelector(state => state.auth);
 
-  // States for managing payment methods
+  // Referencia para evitar operaciones duplicadas
+  const operationInProgressRef = useRef(false);
+
+  // Estados para gestionar métodos de pago
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Usar mocks en desarrollo
   if (process.env.NODE_ENV !== 'production') {
     useFirebaseFunctionsMock();
   }
 
-  // Load payment methods from Firestore
+  // Cargar métodos de pago desde Firestore
   useEffect(() => {
     const loadPaymentMethods = async () => {
-      // Only load if user is authenticated
+      // Solo cargar si el usuario está autenticado
       if (status !== 'authenticated' || !uid) {
         setLoading(false);
         return;
@@ -45,18 +49,18 @@ export const usePayments = () => {
         if (result.ok) {
           setPaymentMethods(result.data);
         } else {
-          setError(result.error || 'Error loading payment methods');
+          setError(result.error || 'Error al cargar métodos de pago');
           dispatch(addMessage({
             type: 'error',
-            text: 'Failed to load payment methods'
+            text: 'No se pudieron cargar tus métodos de pago'
           }));
         }
       } catch (err) {
-        console.error('Error in usePayments:', err);
-        setError('Error loading payment methods');
+        console.error('Error en usePayments:', err);
+        setError('Error al cargar los métodos de pago');
         dispatch(addMessage({
           type: 'error',
-          text: 'Failed to load payment methods'
+          text: 'Error al cargar métodos de pago'
         }));
       } finally {
         setLoading(false);
@@ -66,14 +70,18 @@ export const usePayments = () => {
     loadPaymentMethods();
   }, [uid, status, dispatch, refreshTrigger]);
 
-  // Refresh payment methods list
+  // Actualizar la lista de métodos de pago
   const refreshPaymentMethods = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
 
-  // Set a payment method as default
+  // Establecer un método de pago como predeterminado
   const setDefaultPayment = useCallback(async (id) => {
     if (!id) return;
+
+    // Evitar operaciones duplicadas
+    if (operationInProgressRef.current) return;
+    operationInProgressRef.current = true;
 
     setLoading(true);
 
@@ -81,7 +89,7 @@ export const usePayments = () => {
       const result = await setDefaultPaymentMethod(uid, id);
 
       if (result.ok) {
-        // Update the local state
+        // Actualizar el estado local para una respuesta más rápida
         setPaymentMethods(prevMethods =>
           prevMethods.map(method => ({
             ...method,
@@ -91,37 +99,45 @@ export const usePayments = () => {
 
         dispatch(addMessage({
           type: 'success',
-          text: 'Default payment method updated'
+          text: 'Método de pago predeterminado actualizado'
         }));
       } else {
-        throw new Error(result.error || 'Failed to update default payment method');
+        throw new Error(result.error || 'Error al actualizar método de pago predeterminado');
       }
     } catch (err) {
-      console.error('Error setting default payment method:', err);
+      console.error('Error estableciendo método de pago predeterminado:', err);
       dispatch(addMessage({
         type: 'error',
-        text: err.message || 'Failed to update default payment method'
+        text: err.message || 'Error al actualizar método de pago predeterminado'
       }));
+
+      // Recargar para asegurar que los datos estén sincronizados
+      refreshPaymentMethods();
     } finally {
       setLoading(false);
+      operationInProgressRef.current = false;
     }
-  }, [uid, dispatch]);
+  }, [uid, dispatch, refreshPaymentMethods]);
 
-  // Delete a payment method
+  // Eliminar un método de pago
   const deletePayment = useCallback(async (id) => {
-    // Find the payment method to get the Stripe payment method ID
+    // Buscar el método de pago para obtener el ID de Stripe
     const paymentMethod = paymentMethods.find(method => method.id === id);
 
     if (!paymentMethod) {
       dispatch(addMessage({
         type: 'error',
-        text: 'Payment method not found'
+        text: 'Método de pago no encontrado'
       }));
       return;
     }
 
-    // Confirm deletion
-    if (window.confirm('Are you sure you want to delete this payment method?')) {
+    // Evitar operaciones duplicadas
+    if (operationInProgressRef.current) return;
+
+    // Confirmar eliminación
+    if (window.confirm('¿Estás seguro de que deseas eliminar este método de pago?')) {
+      operationInProgressRef.current = true;
       setLoading(true);
 
       try {
@@ -131,41 +147,47 @@ export const usePayments = () => {
         );
 
         if (result.ok) {
-          // Update the local state
+          // Actualizar el estado local
           setPaymentMethods(prevMethods =>
             prevMethods.filter(method => method.id !== id)
           );
 
           dispatch(addMessage({
             type: 'success',
-            text: 'Payment method deleted successfully'
+            text: 'Método de pago eliminado correctamente'
           }));
         } else {
-          throw new Error(result.error || 'Failed to delete payment method');
+          throw new Error(result.error || 'Error al eliminar método de pago');
         }
       } catch (err) {
-        console.error('Error deleting payment method:', err);
+        console.error('Error eliminando método de pago:', err);
         dispatch(addMessage({
           type: 'error',
-          text: err.message || 'Failed to delete payment method'
+          text: err.message || 'Error al eliminar método de pago'
         }));
+
+        // Recargar para asegurar que los datos estén sincronizados
+        refreshPaymentMethods();
       } finally {
         setLoading(false);
+        operationInProgressRef.current = false;
       }
     }
-  }, [paymentMethods, dispatch]);
+  }, [paymentMethods, dispatch, refreshPaymentMethods]);
 
-  // Open the form to add a new payment method
+  // Abrir el formulario para agregar un nuevo método de pago
   const addPayment = useCallback(() => {
     setShowForm(true);
   }, []);
 
-  // Close the form
+  // Cerrar el formulario de forma segura
   const closeForm = useCallback(() => {
-    setShowForm(false);
+    if (!operationInProgressRef.current) {
+      setShowForm(false);
+    }
   }, []);
 
-  // Handle success after adding a payment method
+  // Manejar el éxito después de agregar un método de pago
   const handlePaymentAdded = useCallback(() => {
     refreshPaymentMethods();
   }, [refreshPaymentMethods]);
