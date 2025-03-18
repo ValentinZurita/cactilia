@@ -20,11 +20,13 @@ export const MobileProfileMenu = () => {
   useEffect(() => {
     // Actualiza la sección activa cuando cambia la URL
     const path = window.location.pathname;
-    if (path.includes('/orders')) setActiveSection('orders');
-    else if (path.includes('/addresses')) setActiveSection('addresses');
-    else if (path.includes('/payments')) setActiveSection('payments');
-    else if (path.includes('/settings')) setActiveSection('settings');
-    else setActiveSection('orders'); // Default to orders instead of overview
+
+    // Extraer la sección de la URL del perfil
+    // Por ejemplo, de "/profile/orders" extrae "orders"
+    if (path.startsWith('/profile/')) {
+      const section = path.split('/')[2] || 'orders';
+      setActiveSection(section);
+    }
   }, [window.location.pathname]);
 
   // Función para navegar a una sección
@@ -81,8 +83,6 @@ export const MobileProfileMenu = () => {
           <span>Admin</span>
         </div>
       )}
-
-
     </div>
   );
 };
