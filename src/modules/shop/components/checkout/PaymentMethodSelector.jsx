@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { PaymentFormModal } from '../../../user/components/payments/PaymentFormModal.jsx'
 
-// Cargar Stripe (esto debería estar en un contexto superior en una implementación real)
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 /**
  * PaymentMethodSelector - Componente para seleccionar método de pago
@@ -25,20 +21,9 @@ export const PaymentMethodSelector = ({
                                       }) => {
   // Estado local para mostrar formulario de nuevo método
   const [showForm, setShowForm] = useState(false);
-  // Estado para controlar si Stripe está listo
-  const [stripeReady, setStripeReady] = useState(false);
 
-  // Verificar cuando Stripe esté listo
-  useEffect(() => {
-    if (stripePromise) {
-      stripePromise.then(() => {
-        setStripeReady(true);
-      }).catch(err => {
-        console.error("Error inicializando Stripe:", err);
-        setStripeReady(false);
-      });
-    }
-  }, []);
+  // Usar el contexto de Stripe
+  const { stripeReady } = useStripe();
 
   // Efecto para seleccionar el método predeterminado cuando se cargan
   useEffect(() => {
@@ -179,14 +164,12 @@ export const PaymentMethodSelector = ({
 
       {/* Modal para agregar método de pago */}
       {showForm && stripeReady && (
-        <Elements stripe={stripePromise}>
           <PaymentFormModal
             isOpen={showForm}
             onClose={() => setShowForm(false)}
             onSuccess={handlePaymentAdded}
           />
-        </Elements>
       )}
     </div>
-  );
+  )
 };

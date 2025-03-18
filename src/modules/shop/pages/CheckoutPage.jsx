@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
 // Componentes de checkout
@@ -16,8 +15,6 @@ import '../styles/checkout.css';
 // Hooks
 import { useCart } from '../../user/hooks/useCart.js';
 
-// Cargar Stripe (esto debería estar en un contexto superior en una implementación real)
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 // Mock de datos de direcciones y pagos para pruebas
 const mockAddresses = [
@@ -189,8 +186,9 @@ export const CheckoutPage = () => {
 
   return (
     <div className="container checkout-page my-5">
-      <h1 className="checkout-title mb-4">Finalizar Compra</h1>
 
+      {/* Título */}
+      <h1 className="checkout-title mb-4">Finalizar Compra</h1>
       {error && (
         <div className="alert alert-danger" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -199,6 +197,7 @@ export const CheckoutPage = () => {
       )}
 
       <div className="row">
+
         {/* Columna izquierda: Formulario de checkout */}
         <div className="col-lg-8">
           <div className="checkout-section">
