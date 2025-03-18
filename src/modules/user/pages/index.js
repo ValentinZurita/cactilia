@@ -5,4 +5,4 @@ export * from './PaymentsPage.jsx';
 export * from './SettingsPage.jsx';
 export * from './CartPage.jsx';
 export * from './UserProfilePage.jsx';
-export * from './PaymentsPage.jsx';
+export * from './OrderDetailPage.jsx';

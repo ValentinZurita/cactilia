@@ -4,41 +4,43 @@ import {
   AddressesPage,
   OrdersPage,
   PaymentsPage,
-  SettingsPage
-} from '../pages/index.js'
-import { ProfileLayout } from '../components/profile/index.js'
+  SettingsPage,
+  CartPage,
+  OrderDetailPage
+} from '../pages/index.js';
+import { ProfileLayout } from '../components/profile/index.js';
 
 /**
  * UserRoutes
  *
- * Defines routes for the user profile section
- * All routes are protected with RequireAuth
+ * Define las rutas para la sección de usuario
+ * Todas las rutas están protegidas con RequireAuth
  */
 export const UserRoutes = () => {
   return (
     <Routes>
+      {/* Página de carrito */}
+      <Route path="/cart" element={<CartPage />} />
 
-      {/* Default route - redirect to orders */}
-      <Route
-        path="/"
-        element={<RequireAuth><Navigate to="/profile/orders" replace /></RequireAuth>}
-      />
+      {/* Checkout */}
+      {/*<Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />*/}
 
-      {/* Profile routes */}
+      {/* Rutas del perfil */}
       <Route
         path="/profile"
         element={<RequireAuth><ProfileLayout /></RequireAuth>}
       >
-        {/* Default profile route - redirect to orders with 'replace' */}
+        {/* Ruta por defecto - redireccionar a órdenes con 'replace' */}
         <Route index element={<Navigate to="orders" replace />} />
 
-        {/* Individual profile sections */}
+        {/* Secciones individuales del perfil */}
         <Route path="orders" element={<OrdersPage />} />
+        <Route path="orders/:orderId" element={<OrderDetailPage />} />
         <Route path="addresses" element={<AddressesPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="settings" element={<SettingsPage />} />
 
-        {/* Redirect all other paths to orders */}
+        {/* Redireccionar otras rutas a órdenes */}
         <Route path="*" element={<Navigate to="orders" replace />} />
       </Route>
     </Routes>

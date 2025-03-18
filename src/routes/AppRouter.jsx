@@ -1,15 +1,26 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AuthRoutes } from '../modules/auth/router/AuthRoutes.jsx'
-import { AdminRoutes } from '../modules/admin/routes/AdminRoutes.jsx'
-import { PublicRoutes } from '../modules/public/router/PublicRoutes.jsx'
+import { AuthRoutes } from '../modules/auth/router/AuthRoutes.jsx';
+import { AdminRoutes } from '../modules/admin/routes/AdminRoutes.jsx';
+import { PublicRoutes } from '../modules/public/router/PublicRoutes.jsx';
+import { ShopRoutes } from '../modules/shop/router/ShopRoutes.jsx';
+import { UserRoutes } from '../modules/user/router/UserRoutes.jsx';
 
 export const AppRouter = () => {
   return (
     <Routes>
-      {/* Módulo público (contiene HOME, SHOP, CART y el outlet para AUTH) */}
+      {/* Módulo público */}
       <Route path="/*" element={<PublicRoutes />} />
 
-      {/* Módulo admin (rutas separadas) */}
+      {/* Módulo de autenticación */}
+      <Route path="/auth/*" element={<AuthRoutes />} />
+
+      {/* Módulo de tienda */}
+      <Route path="/shop/*" element={<ShopRoutes />} />
+
+      {/* Módulo de usuario */}
+      <Route path="/profile/*" element={<UserRoutes />} />
+
+      {/* Módulo admin */}
       <Route path="/admin/*" element={<AdminRoutes />} />
 
       {/* Redirección por defecto */}
