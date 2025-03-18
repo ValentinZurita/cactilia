@@ -83,10 +83,10 @@ export const updateUserData = async (userId, userData) => {
  * Verifica si el archivo es una imagen válida y cumple con las restricciones
  *
  * @param {File} file - Archivo a verificar
- * @param {number} maxSizeMB - Tamaño máximo en MB (por defecto 2MB)
+ * @param {number} maxSizeMB - Tamaño máximo en MB (por defecto 1.5MB)
  * @returns {Object} - Resultado de la validación {valid, error}
  */
-export const validateProfileImage = (file, maxSizeMB = 2) => {
+export const validateProfileImage = (file, maxSizeMB = 1.5) => {
   // Verificar que sea un archivo
   if (!file) {
     return { valid: false, error: 'No se ha seleccionado ningún archivo' };

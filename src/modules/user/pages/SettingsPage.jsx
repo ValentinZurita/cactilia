@@ -1,28 +1,23 @@
 import { SectionTitle, ProfileCard } from '../components/shared/index.js';
-import { ProfileForm, PasswordForm, PrivacyPreferences } from '../components/settings/index.js';
+import { ProfileForm, PrivacyPreferences } from '../components/settings/index.js';
 import { useSettings } from '../hooks/useSettings.js';
 import '../styles/profileSettings.css';
 
 /**
  * SettingsPage - Página refactorizada para gestionar configuración del perfil
- * Implementa un enfoque modular con componentes y hooks personalizados
+ * Implementa un enfoque modular con componentes simplificado
  */
 export const SettingsPage = () => {
   // Utilizamos el hook personalizado para manejar toda la lógica
   const {
     profileData,
-    passwordData,
     profileMessage,
-    passwordMessage,
     photoURL,
     selectedPhoto,
     profileLoading,
-    passwordLoading,
     photoLoading,
     handleProfileChange,
-    handlePasswordChange,
     handleProfileSubmit,
-    handlePasswordSubmit,
     handlePhotoChange,
     handlePhotoUpload
   } = useSettings();
@@ -48,18 +43,7 @@ export const SettingsPage = () => {
         />
       </ProfileCard>
 
-      {/* Cambio de contraseña */}
-      <ProfileCard title="Cambiar Contraseña">
-        <PasswordForm
-          passwordData={passwordData}
-          passwordMessage={passwordMessage}
-          passwordLoading={passwordLoading}
-          handlePasswordChange={handlePasswordChange}
-          handlePasswordSubmit={handlePasswordSubmit}
-        />
-      </ProfileCard>
-
-      {/* Preferencias de privacidad */}
+      {/* Preferencias - simplificadas */}
       <ProfileCard title="Preferencias">
         <PrivacyPreferences />
       </ProfileCard>

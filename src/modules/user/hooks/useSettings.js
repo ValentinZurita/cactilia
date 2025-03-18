@@ -2,10 +2,11 @@ import { useState, useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
 import { login } from '../../../store/auth/authSlice';
-import { updateUserData, updateUserPassword, updateProfilePhoto, getUserData, validateProfileImage } from '../services/userService';
+import { updateUserData, updateProfilePhoto, getUserData, validateProfileImage } from '../services/userService';
 
 /**
  * Hook personalizado para manejar la lógica de la página de configuración
+ * Versión simplificada sin manejo de contraseñas
  *
  * @returns {Object} - Estados y funciones para gestionar la configuración del usuario
  */
@@ -22,23 +23,15 @@ export const useSettings = () => {
     phoneNumber: reduxPhoneNumber || ''
   });
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(photoURL || '');
 
   // Estados para loading
   const [profileLoading, setProfileLoading] = useState(false);
-  const [passwordLoading, setPasswordLoading] = useState(false);
   const [photoLoading, setPhotoLoading] = useState(false);
 
   // Estado para mensajes de éxito/error (locales al componente)
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
-  const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
 
   // Cargar datos del usuario al montar el componente
   useEffect(() => {
@@ -71,17 +64,6 @@ export const useSettings = () => {
   const handleProfileChange = useCallback((e) => {
     const { name, value } = e.target;
     setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
-
-  /**
-   * Manejar cambios en el formulario de contraseña
-   */
-  const handlePasswordChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -126,7 +108,7 @@ export const useSettings = () => {
 
       // Las opciones para una buena compresión serían:
       const options = {
-        maxSizeMB: 1, // Máximo 1MB
+        maxSizeMB: 1, // Máximo 1MB después de compresión
         maxWidthOrHeight: 1200, // Dimensión máxima 1200px
         useWebWorker: true,
         preserveExif: true // Mantener metadatos importantes
@@ -161,7 +143,7 @@ export const useSettings = () => {
 
       // Opciones para la subida
       const uploadOptions = {
-        maxSizeMB: 2,
+        maxSizeMB: 1.5,
         maxWidthOrHeight: 1200
       };
 
@@ -276,102 +258,18 @@ export const useSettings = () => {
     }
   }, [profileData, uid, email, photoURL, dispatch]);
 
-  /**
-   * Manejar envío del formulario de contraseña
-   */
-  const handlePasswordSubmit = useCallback(async (e) => {
-    e.preventDefault();
-    setPasswordLoading(true);
-    setPasswordMessage({ type: '', text: '' });
-
-    // Validación básica
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordMessage({
-        type: 'error',
-        text: 'Las contraseñas no coinciden'
-      });
-      setPasswordLoading(false);
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      setPasswordMessage({
-        type: 'error',
-        text: 'La contraseña debe tener al menos 6 caracteres'
-      });
-      setPasswordLoading(false);
-      return;
-    }
-
-    try {
-      // Actualizar contraseña en Firebase
-      const result = await updateUserPassword(
-        passwordData.currentPassword,
-        passwordData.newPassword
-      );
-
-      if (result.ok) {
-        // Mensaje local para el formulario
-        setPasswordMessage({
-          type: 'success',
-          text: 'Contraseña actualizada correctamente'
-        });
-
-        // Mensaje global para notificar al usuario
-        dispatch(addMessage({
-          type: 'success',
-          text: 'Tu contraseña ha sido actualizada',
-          autoHide: true,
-          duration: 3000
-        }));
-
-        // Limpiar formulario
-        setPasswordData({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        });
-      } else {
-        setPasswordMessage({
-          type: 'error',
-          text: result.error || 'Error al actualizar la contraseña'
-        });
-      }
-    } catch (error) {
-      console.error('Error actualizando contraseña:', error);
-      setPasswordMessage({
-        type: 'error',
-        text: 'Error al actualizar la contraseña'
-      });
-    } finally {
-      setPasswordLoading(false);
-
-      // Ocultar mensaje de éxito después de 3 segundos (solo si es éxito)
-      if (passwordMessage.type === 'success') {
-        setTimeout(() => {
-          setPasswordMessage({ type: '', text: '' });
-        }, 3000);
-      }
-    }
-  }, [passwordData, dispatch]);
-
   return {
     // Estados
     profileData,
-    passwordData,
     profileMessage,
-    passwordMessage,
     photoURL: photoPreview,
     selectedPhoto,
     profileLoading,
-    passwordLoading,
     photoLoading,
 
     // Manejadores
     handleProfileChange,
-    handlePasswordChange,
     handleProfileSubmit,
-    handlePasswordSubmit,
     handlePhotoChange,
     handlePhotoUpload
   };

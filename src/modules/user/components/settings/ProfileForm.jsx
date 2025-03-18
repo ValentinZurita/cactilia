@@ -42,7 +42,7 @@ export const ProfileForm = ({
       <div className="col-lg-4 mb-4 mb-lg-0 text-center">
         <div className="settings-avatar-container">
           <img
-            src={photoURL || 'https://via.placeholder.com/100'}
+            src={photoURL || 'https://via.placeholder.com/150x150?text=Usuario'}
             alt="Usuario"
             className="rounded-circle user-avatar-lg"
           />
@@ -68,10 +68,6 @@ export const ProfileForm = ({
           />
         </div>
         <p className="mt-2 text-muted small">Haz clic para cambiar tu foto</p>
-        <p className="text-muted small">
-          <i className="bi bi-info-circle me-1"></i>
-          Formatos: JPG, PNG, GIF (máx. 2MB)
-        </p>
 
         {/* Botón para subir foto, solo visible cuando hay una seleccionada */}
         {selectedPhoto && (
@@ -87,6 +83,10 @@ export const ProfileForm = ({
                 {(selectedPhoto.size / (1024 * 1024)).toFixed(2)} MB
               </span>
             </div>
+            <p className="text-muted small">
+              <i className="bi bi-info-circle me-1"></i>
+              Formatos: JPG, PNG, GIF (máx. 1.5MB)
+            </p>
             <button
               type="button"
               className="btn btn-sm btn-success mt-1"
