@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PaymentFormModal } from '../../../user/components/payments/PaymentFormModal.jsx'
+import { useStripe } from '@stripe/react-stripe-js'
 
 
 /**
@@ -22,8 +23,18 @@ export const PaymentMethodSelector = ({
   // Estado local para mostrar formulario de nuevo método
   const [showForm, setShowForm] = useState(false);
 
-  // Usar el contexto de Stripe
-  const { stripeReady } = useStripe();
+  // Estado para controlar si Stripe está listo
+  const [stripeReady, setStripeReady] = useState(false);
+
+  // Usar hooks de Stripe
+  const stripe = useStripe();
+
+  // Verificar cuando Stripe esté listo
+  useEffect(() => {
+    if (stripe) {
+      setStripeReady(true);
+    }
+  }, [stripe]);
 
   // Efecto para seleccionar el método predeterminado cuando se cargan
   useEffect(() => {
