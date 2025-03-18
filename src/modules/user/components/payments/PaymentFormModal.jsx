@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useDispatch, useSelector } from 'react-redux';
 import { addMessage } from '../../../../store/messages/messageSlice';
@@ -189,18 +190,31 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <div
-      className="payment-modal-backdrop"
-      onClick={handleSafeClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="payment-modal-title"
-    >
+    !isOpen ? null : ReactDOM.createPortal(
       <div
-        className="payment-modal-content"
-        onClick={handleModalContentClick}
-        role="document"
+        className="payment-modal-backdrop"
+        onClick={handleSafeClose}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="payment-modal-title"
+        style={{
+          zIndex: 3000, // Asegurar un z-index alto
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
       >
+        <div
+          className="payment-modal-content"
+          onClick={handleModalContentClick}
+          role="document"
+          style={{ position: 'relative' }} // Asegurar posicionamiento correcto
+        >
         <div className="payment-modal-header">
           <h5 className="payment-modal-title" id="payment-modal-title">Agregar Método de Pago</h5>
           <button
@@ -311,6 +325,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
           </form>
         </div>
       </div>
-    </div>
-  );
+    </div>,
+      document.body
+    ));
 }

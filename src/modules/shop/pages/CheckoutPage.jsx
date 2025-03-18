@@ -214,19 +214,19 @@ export const CheckoutPage = () => {
             />
           </div>
 
+          {/* Método de Pago */}
           <div className="checkout-section">
             <h2 className="section-title">
               <span className="step-number">2</span>
               Método de Pago
             </h2>
-            <Elements stripe={stripePromise}>
-              <PaymentMethodSelector
-                paymentMethods={paymentMethods}
-                selectedPaymentId={selectedPaymentId}
-                onPaymentSelect={handlePaymentChange}
-                loading={paymentsLoading}
-              />
-            </Elements>
+            {/* El componente Elements ya maneja internamente la carga de Stripe */}
+            <PaymentMethodSelector
+              paymentMethods={paymentMethods}
+              selectedPaymentId={selectedPaymentId}
+              onPaymentSelect={handlePaymentChange}
+              loading={paymentsLoading}
+            />
           </div>
 
           {/* Información fiscal (opcional) */}
