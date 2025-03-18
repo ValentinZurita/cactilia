@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
 
 /**
  * Un componente de modal simple mejorado
- * Ahora con soporte para diferentes tamaños
+ * Ahora con soporte para diferentes tamaños y usando ReactPortal
  *
  * @param {boolean} isOpen - Indica si el modal está abierto
  * @param {Function} onClose - Función para cerrar el modal
@@ -12,13 +13,13 @@ import React, { useEffect } from 'react';
  * @param {string} size - Tamaño del modal ('sm', 'md', 'lg')
  */
 export const AddressModal = ({
-                              isOpen,
-                              onClose,
-                              title,
-                              children,
-                              footer,
-                              size = 'md'
-                            }) => {
+                               isOpen,
+                               onClose,
+                               title,
+                               children,
+                               footer,
+                               size = 'md'
+                             }) => {
   // Si el modal no está abierto, no renderizar nada
   if (!isOpen) return null;
 
@@ -37,12 +38,13 @@ export const AddressModal = ({
     }
   };
 
-  return (
+  // Usar ReactPortal para renderizar el modal en document.body
+  return ReactDOM.createPortal(
     <div
       className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 1050
+        zIndex: 3000  // Aumentar el z-index para asegurar que esté por encima de todo
       }}
       onClick={handleBackdropClick}
     >
@@ -51,7 +53,8 @@ export const AddressModal = ({
         style={{
           maxHeight: '90vh',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          position: 'relative' // Asegurar posicionamiento correcto
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -78,6 +81,7 @@ export const AddressModal = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body // ¡Importante! Renderizar en document.body
   );
 };

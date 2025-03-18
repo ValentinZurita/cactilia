@@ -134,6 +134,9 @@ export function SimpleAddressForm({
   // Estado local para los errores de validación
   const [errors, setErrors] = useState({});
 
+  // Si el modal no está abierto, no renderizamos nada
+  if (!isOpen) return null;
+
   /**
    * Actualiza el formulario cuando se abre el modal:
    * - Si hay una dirección existente, parseamos la calle y completamos campos.
