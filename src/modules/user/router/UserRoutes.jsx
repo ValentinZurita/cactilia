@@ -1,25 +1,37 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { RequireAuth } from '../../auth/components/RequireAuth';
 import {
   AddressesPage,
   OrdersPage,
   PaymentsPage,
   SettingsPage,
+  CartPage,
   OrderDetailPage
 } from '../pages/index.js';
 import { ProfileLayout } from '../components/profile/index.js';
+import { CheckoutPage } from '../../shop/pages';
 
 /**
- * UserProfileRoutes
+ * UserRoutes
  *
- * Define las rutas para la sección de perfil de usuario dentro del PublicLayout
- * No es necesario RequireAuth aquí porque ya está aplicado en AppRouter
+ * Define las rutas para la sección de usuario
+ * Todas las rutas están protegidas con RequireAuth
  */
-export const UserProfileRoutes = () => {
+export const UserRoutes = () => {
   return (
     <Routes>
-      {/* Rutas del perfil usando ProfileLayout como contenedor */}
-      <Route path="/" element={<ProfileLayout />}>
-        {/* Ruta por defecto - redireccionar a órdenes */}
+      {/* Página de carrito - disponible sin autenticación */}
+      <Route path="/cart" element={<CartPage />} />
+
+      {/* Checkout - requiere autenticación */}
+      <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
+
+      {/* Rutas del perfil - requieren autenticación */}
+      <Route
+        path="/profile"
+        element={<RequireAuth><ProfileLayout /></RequireAuth>}
+      >
+        {/* Ruta por defecto - redireccionar a órdenes con 'replace' */}
         <Route index element={<Navigate to="orders" replace />} />
 
         {/* Secciones individuales del perfil */}

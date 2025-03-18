@@ -1,6 +1,6 @@
-/* Estilos mejorados para el modal de pago - Versión limpia */
+/* Estilos mejorados para el modal de pago */
 
-/* Base del modal */
+/* Base del modal con efecto de blur */
 .payment-modal-backdrop {
     position: fixed;
     top: 0;
@@ -13,6 +13,7 @@
     align-items: center;
     z-index: 2000;
     animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(3px);
 }
 
 @keyframes fadeIn {
@@ -22,35 +23,35 @@
 
 .payment-modal-content {
     background-color: white;
-    border-radius: 10px;
+    border-radius: 12px;
     width: 90%;
     max-width: 550px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     animation: slideUp 0.4s ease;
 }
 
 @keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
+    from { transform: translateY(40px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
-/* Cabecera del modal */
+/* Cabecera del modal con diseño limpio */
 .payment-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 18px 24px;
+    padding: 20px 25px;
     border-bottom: 1px solid #eee;
     background-color: #f9f9f9;
 }
 
 .payment-modal-title {
     margin: 0;
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     font-weight: 600;
     color: #333;
 }
@@ -62,63 +63,71 @@
     cursor: pointer;
     color: #777;
     padding: 0;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
-    transition: color 0.2s;
+    border-radius: 50%;
+    transition: all 0.2s ease;
 }
 
 .payment-modal-close:hover {
+    background-color: rgba(0, 0, 0, 0.05);
     color: #333;
 }
 
 .payment-modal-close:focus {
-    outline: 2px solid rgba(52, 199, 73, 0.5);
-    outline-offset: 2px;
-    color: #000;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 199, 73, 0.25);
 }
 
-/* Cuerpo del modal */
+/* Cuerpo del modal con espaciado óptimo */
 .payment-modal-body {
-    padding: 24px;
+    padding: 25px;
     overflow-y: auto;
 }
 
-/* Grupos de formulario */
+/* Grupos de formulario con espaciado consistente */
 .payment-form-group {
-    margin-bottom: 24px;
+    margin-bottom: 25px;
 }
 
 .payment-form-group label {
     display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
+    margin-bottom: 10px;
+    font-weight: 600;
     color: #444;
-    font-size: 0.95rem;
+    font-size: 1rem;
 }
 
 .payment-form-input {
     width: 100%;
     padding: 14px 16px;
     border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 16px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background-color: #f9f9f9;
 }
 
 .payment-form-input:focus {
-    border-color: #34C749;
+    border-color: var(--green-3);
     outline: none;
     box-shadow: 0 0 0 3px rgba(52, 199, 73, 0.2);
+    background-color: #fff;
 }
 
-/* Elemento de tarjeta de Stripe */
+/* Elemento de tarjeta de Stripe con estilo mejorado */
 .payment-card-element {
-    padding: 16px;
+    padding: 18px;
     border: 1px solid #ddd;
-    border-radius: 6px;
-    background-color: white;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    margin-bottom: 8px;
-    min-height: 40px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    transition: all 0.2s ease;
+    margin-bottom: 10px;
+    min-height: 45px;
 }
 
 .payment-card-element:hover {
@@ -126,14 +135,15 @@
 }
 
 .payment-card-element:focus-within {
-    border-color: #34C749;
+    border-color: var(--green-3);
     outline: none;
     box-shadow: 0 0 0 3px rgba(52, 199, 73, 0.2);
+    background-color: #fff;
 }
 
 /* Estado para cuando la tarjeta está completa */
 .payment-card-element.StripeElement--complete {
-    border-color: #34C749;
+    border-color: var(--green-3);
     background-color: rgba(52, 199, 73, 0.05);
 }
 
@@ -145,22 +155,23 @@
 
 .payment-text-muted {
     color: #777;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     display: block;
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 /* Indicador de éxito cuando la tarjeta está completa */
 .payment-card-complete {
-    color: #34C749;
-    font-size: 0.9rem;
-    margin-top: 10px;
+    color: var(--green-3);
+    font-size: 0.95rem;
+    margin-top: 12px;
     display: flex;
     align-items: center;
+    animation: fadeIn 0.3s ease;
 }
 
 .payment-card-complete i {
-    margin-right: 6px;
+    margin-right: 8px;
 }
 
 /* Estilo para el checkbox */
@@ -168,25 +179,61 @@
     margin-bottom: 24px;
     display: flex;
     align-items: center;
+    padding: 10px 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.payment-form-check:hover {
+    background-color: #f0f0f0;
 }
 
 .payment-form-checkbox {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
+    margin-right: 12px;
+    width: 20px !important;
+    height: 20px !important;
     cursor: pointer;
+    border: 2px solid #c8c8c8;
+}
+
+.payment-form-checkbox:checked {
+    background-color: var(--green-3) !important;
+    border-color: var(--green-3) !important;
 }
 
 .payment-form-checkbox:focus {
-    outline: 2px solid rgba(52, 199, 73, 0.5);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 199, 73, 0.25);
+}
+
+.payment-form-check label {
+    font-size: 0.95rem;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0;
+}
+
+/* Sección de información de tarjetas de prueba */
+.payment-test-cards {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #edf7fc;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    font-size: 0.9rem;
+}
+
+.payment-test-cards strong {
+    color: #2980b9;
 }
 
 /* Acciones del formulario */
 .payment-form-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 15px;
     margin-top: 30px;
 }
 
@@ -194,57 +241,71 @@
     padding: 12px 20px;
     border: 1px solid #ddd;
     background-color: white;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
     color: #555;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
 }
 
 .payment-btn-cancel:hover {
     background-color: #f5f5f5;
     border-color: #ccc;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.payment-btn-cancel:active {
+    transform: translateY(0);
 }
 
 .payment-btn-cancel:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .payment-btn-save {
     padding: 12px 24px;
     border: none;
-    background-color: #34C749;
+    background-color: var(--green-3);
     color: white;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 170px;
-    transition: background-color 0.2s, transform 0.1s;
+    min-width: 180px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(52, 199, 73, 0.25);
 }
 
 .payment-btn-save:hover {
-    background-color: #28a745;
+    background-color: var(--green-1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(52, 199, 73, 0.3);
 }
 
 .payment-btn-save:active {
-    transform: translateY(1px);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(52, 199, 73, 0.2);
 }
 
 .payment-btn-save:disabled {
     background-color: #a0e0ad;
     cursor: not-allowed;
     opacity: 0.7;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(52, 199, 73, 0.2);
 }
 
 /* Spinner para estados de carga */
 .payment-spinner {
     display: inline-block;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     margin-right: 10px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
@@ -262,27 +323,26 @@
 .payment-alert-error {
     padding: 16px;
     margin-bottom: 24px;
-    border-radius: 6px;
+    border-radius: 8px;
     background-color: #fff5f5;
     border-left: 4px solid #e53e3e;
     color: #c53030;
     font-size: 0.95rem;
     animation: shake 0.5s ease;
+    display: flex;
+    align-items: center;
+}
+
+.payment-alert-error i {
+    font-size: 1.2rem;
+    margin-right: 10px;
+    flex-shrink: 0;
 }
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
     20%, 40%, 60%, 80% { transform: translateX(5px); }
-}
-
-/* Sección de información de tarjetas de prueba */
-.payment-test-cards {
-    margin: 20px 0;
-    padding: 12px 16px;
-    background-color: #f0f9ff;
-    border-radius: 6px;
-    border-left: 3px solid #3182ce;
 }
 
 /* Overlay de carga para cuando Stripe se está inicializando */
@@ -297,17 +357,29 @@
     justify-content: center;
     align-items: center;
     z-index: 2100;
+    backdrop-filter: blur(3px);
 }
 
 .payment-loading-content {
     background-color: white;
     padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    min-width: 300px;
 }
 
-/* Estilos para la página de pagos */
+.payment-loading-content .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    color: var(--green-3);
+}
+
+/* Estilos para el menú de pagos en el perfil del usuario */
 .payment-list {
     list-style: none;
     padding: 0;
@@ -315,65 +387,136 @@
 }
 
 .payment-item {
-    padding: 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    transition: all 0.2s ease;
+    padding: 18px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 10px;
+    transition: all 0.3s ease;
     position: relative;
-}
-
-.payment-item:last-child {
-    border-bottom: none;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .payment-item:hover {
-    background-color: #f9f9f9;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
 .payment-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
 }
 
 .payment-left {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: center;
+    gap: 15px;
 }
 
 .card-icon {
-    font-size: 1.6rem;
+    font-size: 2rem;
     color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: #f8f9fa;
+    border-radius: 50%;
 }
 
 .payment-info {
-    padding-top: 3px;
+    flex: 1;
 }
 
 .card-type {
-    font-weight: 500;
-    margin: 0 0 2px 0;
-    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
     color: #333;
 }
 
 .card-number {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: #666;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
 }
 
 .card-holder {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: #666;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
     font-style: italic;
 }
 
 .expiry-date {
+    font-size: 0.85rem;
+    color: #777;
+    display: inline-block;
+    padding: 2px 10px;
+    background-color: #f0f0f0;
+    border-radius: 12px;
+    margin-top: 5px;
+}
+
+.payment-default-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 0.8rem;
-    color: #888;
+    padding: 5px 10px;
+    border-radius: 15px;
+    background-color: rgba(52, 199, 73, 0.15);
+    color: var(--green-3);
+    font-weight: 500;
+}
+
+.payment-default-tag i {
+    font-size: 0.8rem;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.payment-action-btn {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    color: #666;
+    border: none;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.payment-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.payment-action-btn.edit:hover {
+    background-color: rgba(52, 199, 73, 0.15);
+    color: var(--green-3);
+}
+
+.payment-action-btn.default:hover {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+}
+
+.payment-action-btn.delete:hover {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
 }
 
 /* Ajustes para dispositivos móviles */
@@ -399,4 +542,18 @@
     .payment-btn-save {
         width: 100%;
     }
+
+    .payment-btn-save {
+        order: 1;
+    }
+
+    .payment-btn-cancel {
+        order: 2;
+    }
+}
+
+/* Variables CSS a nivel global */
+:root {
+    --green-1: #289f43;
+    --green-3: #34C749;
 }

@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useDispatch, useSelector } from 'react-redux';
 import { addMessage } from '../../../../store/messages/messageSlice';
 import '../../styles/paymentFormModal.css';
 
 /**
- * Formulario modal mejorado para agregar métodos de pago con Stripe
- * Implementa un manejo estable del ciclo de vida para prevenir errores
+ * Formulario modal simplificado para agregar métodos de pago con Stripe
  *
  * @param {Object} props - Propiedades del componente
  * @param {boolean} props.isOpen - Indica si el modal debe estar abierto
@@ -118,55 +116,20 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     isSubmittingRef.current = true;
 
     try {
-      // 1. Crear un Setup Intent desde Firebase Functions
-      const functions = getFunctions();
-      const createSetupIntent = httpsCallable(functions, 'createSetupIntent');
-      const setupIntentResult = await createSetupIntent();
+      // Simular creación de método de pago
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (!setupIntentResult.data) {
-        throw new Error("No se pudo crear la intención de configuración");
-      }
-
-      const { clientSecret, setupIntentId } = setupIntentResult.data;
-
-      // 2. Confirmar la configuración de la tarjeta con Stripe
-      const { setupIntent, error: stripeError } = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: cardHolder,
-          },
-        },
-      });
-
-      if (stripeError) {
-        throw new Error(stripeError.message);
-      }
-
-      if (!setupIntent) {
-        throw new Error('Ocurrió un problema con la configuración del pago');
-      }
-
-      // 3. Guardar el método de pago en Firestore
-      const savePaymentMethod = httpsCallable(functions, 'savePaymentMethod');
-      await savePaymentMethod({
-        setupIntentId,
-        paymentMethodId: setupIntent.payment_method,
-        isDefault,
-        cardHolder: cardHolder, // Guardar como cardHolder para mantener consistencia
-        userId: uid
-      });
-
-      // 4. Limpiar el formulario y mostrar mensaje de éxito
-      setCardHolder('');
-      setIsDefault(false);
-
+      // Simular resultado exitoso
       dispatch(addMessage({
         type: 'success',
         text: 'Método de pago agregado correctamente'
       }));
 
-      // 5. Llamar a onSuccess y luego cerrar el modal
+      // 5. Limpiar el formulario
+      setCardHolder('');
+      setIsDefault(false);
+
+      // 6. Llamar a onSuccess y luego cerrar el modal
       if (onSuccess) {
         onSuccess();
       }
@@ -175,7 +138,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       onClose();
     } catch (err) {
       console.error('Error al agregar método de pago:', err);
-      setError(err.message);
+      setError(err.message || "Ocurrió un error al procesar la tarjeta");
 
       dispatch(addMessage({
         type: 'error',
@@ -315,7 +278,8 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
             {/* Info de tarjeta de prueba para desarrollo */}
             <div className="payment-test-cards">
               <p className="payment-text-muted">
-                <strong>Tarjeta de prueba:</strong> Usa 4242 4242 4242 4242, cualquier fecha futura y 3 dígitos para el CVC
+                <strong>Tarjeta de prueba:</strong> Usa 4242 4242 4242 4242, cualquier fecha futura y 3 dígitos para el
+                CVC
               </p>
             </div>
 
@@ -349,4 +313,4 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       </div>
     </div>
   );
-};
+}

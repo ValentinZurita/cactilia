@@ -1,15 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
+import { useStripe, useElements } from '@stripe/react-stripe-js';
 import { addMessage } from '../../../store/messages/messageSlice';
 import { clearCartWithSync } from '../../../store/cart/cartThunk';
-import { useCart } from './useCart';
-import {
-  processOrder,
-  confirmOrderPayment,
-  requestInvoice
-} from '../services/orderService';
+import { useCart } from '../../user/hooks/useCart';
 
 /**
  * Hook personalizado para manejar el proceso de checkout
@@ -38,6 +33,51 @@ export const useCheckout = () => {
     clearCart
   } = useCart();
 
+  // Mock de direcciones y métodos de pago para pruebas
+  const mockAddresses = [
+    {
+      id: 'addr1',
+      name: 'Casa',
+      street: 'Calle Principal 123',
+      numExt: '456',
+      colonia: 'Centro',
+      city: 'Ciudad de México',
+      state: 'CDMX',
+      zip: '01000',
+      isDefault: true
+    },
+    {
+      id: 'addr2',
+      name: 'Oficina',
+      street: 'Av. Reforma',
+      numExt: '222',
+      colonia: 'Juárez',
+      city: 'Ciudad de México',
+      state: 'CDMX',
+      zip: '06600',
+      isDefault: false
+    }
+  ];
+
+  const mockPaymentMethods = [
+    {
+      id: 'pay1',
+      type: 'visa',
+      cardNumber: '•••• •••• •••• 4242',
+      expiryDate: '12/25',
+      isDefault: true,
+      stripePaymentMethodId: 'pm_mock_1'
+    },
+    {
+      id: 'pay2',
+      type: 'mastercard',
+      cardNumber: '•••• •••• •••• 5555',
+      expiryDate: '10/24',
+      isDefault: false,
+      stripePaymentMethodId: 'pm_mock_2'
+    }
+  ];
+
   // Estados para el checkout
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -51,6 +91,8 @@ export const useCheckout = () => {
   const [orderId, setOrderId] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
+  const [addresses, setAddresses] = useState(mockAddresses);
+  const [paymentMethods, setPaymentMethods] = useState(mockPaymentMethods);
 
   // Verificar que el usuario esté autenticado
   useEffect(() => {
@@ -87,16 +129,16 @@ export const useCheckout = () => {
   }, []);
 
   // Manejar cambio de dirección
-  const handleAddressChange = useCallback((addressId, addresses) => {
+  const handleAddressChange = useCallback((addressId) => {
     setSelectedAddressId(addressId);
     updateSelectedAddress(addresses, addressId);
-  }, [updateSelectedAddress]);
+  }, [updateSelectedAddress, addresses]);
 
   // Manejar cambio de método de pago
-  const handlePaymentChange = useCallback((paymentId, paymentMethods) => {
+  const handlePaymentChange = useCallback((paymentId) => {
     setSelectedPaymentId(paymentId);
     updateSelectedPayment(paymentMethods, paymentId);
-  }, [updateSelectedPayment]);
+  }, [updateSelectedPayment, paymentMethods]);
 
   // Manejar cambio en requerimiento de factura
   const handleInvoiceChange = useCallback((requires) => {
@@ -140,11 +182,6 @@ export const useCheckout = () => {
       return false;
     }
 
-    if (!stripe || !elements) {
-      setError('El sistema de pago no está listo. Por favor, recarga la página.');
-      return false;
-    }
-
     setError(null);
     return true;
   }, [
@@ -154,9 +191,7 @@ export const useCheckout = () => {
     selectedPayment,
     requiresInvoice,
     fiscalData,
-    hasOutOfStockItems,
-    stripe,
-    elements
+    hasOutOfStockItems
   ]);
 
   // Preparar los datos de la orden
@@ -241,31 +276,12 @@ export const useCheckout = () => {
       // Preparar datos de la orden
       const orderData = prepareOrderData();
 
-      // Procesar orden y crear intento de pago
-      const result = await processOrder(orderData, selectedPayment.stripePaymentMethodId);
+      // Simular procesamiento de orden para pruebas
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      if (!result.ok) {
-        throw new Error(result.error || 'Error al procesar la orden');
-      }
-
-      // Guardar el orderId y clientSecret para confirmar el pago
-      setOrderId(result.orderId);
-      setClientSecret(result.clientSecret);
-
-      // Confirmar el pago con Stripe
-      const confirmResult = await stripe.confirmCardPayment(result.clientSecret);
-
-      if (confirmResult.error) {
-        throw new Error(confirmResult.error.message);
-      }
-
-      // Actualizar el estado de la orden en el servidor
-      await confirmOrderPayment(result.orderId, confirmResult.paymentIntent.id);
-
-      // Si requiere factura, solicitarla
-      if (requiresInvoice && fiscalData) {
-        await requestInvoice(result.orderId, fiscalData);
-      }
+      // Crear un ID de orden simulado
+      const simulatedOrderId = `order_${Date.now()}`;
+      setOrderId(simulatedOrderId);
 
       // Mostrar mensaje de éxito
       dispatch(addMessage({
@@ -298,10 +314,6 @@ export const useCheckout = () => {
   }, [
     validateCheckoutData,
     prepareOrderData,
-    stripe,
-    selectedPayment,
-    requiresInvoice,
-    fiscalData,
     dispatch
   ]);
 
@@ -316,6 +328,8 @@ export const useCheckout = () => {
     error,
     orderId,
     isProcessing,
+    addresses,
+    paymentMethods,
 
     // Manejadores
     handleAddressChange,

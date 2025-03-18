@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 
+// Componentes de checkout
 import { CheckoutSummary } from '../components/checkout/CheckoutSummary';
 import { AddressSelector } from '../components/checkout/AddressSelector';
 import { PaymentMethodSelector } from '../components/checkout/PaymentMethodSelector';
@@ -9,7 +12,57 @@ import { BillingInfoForm } from '../components/checkout/BillingInfoForm';
 import { CheckoutButton } from '../components/checkout/CheckoutButton';
 import { OrderConfirmation } from '../components/checkout/OrderConfirmation';
 import '../styles/checkout.css';
-import { useCart } from '../../user/hooks/useCart.js'
+
+// Hooks
+import { useCart } from '../../user/hooks/useCart.js';
+
+// Cargar Stripe (esto debería estar en un contexto superior en una implementación real)
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
+
+// Mock de datos de direcciones y pagos para pruebas
+const mockAddresses = [
+  {
+    id: 'addr1',
+    name: 'Casa',
+    street: 'Calle Principal 123',
+    numExt: '456',
+    colonia: 'Centro',
+    city: 'Ciudad de México',
+    state: 'CDMX',
+    zip: '01000',
+    isDefault: true
+  },
+  {
+    id: 'addr2',
+    name: 'Oficina',
+    street: 'Av. Reforma',
+    numExt: '222',
+    colonia: 'Juárez',
+    city: 'Ciudad de México',
+    state: 'CDMX',
+    zip: '06600',
+    isDefault: false
+  }
+];
+
+const mockPaymentMethods = [
+  {
+    id: 'pay1',
+    type: 'visa',
+    cardNumber: '•••• •••• •••• 4242',
+    expiryDate: '12/25',
+    isDefault: true,
+    stripePaymentMethodId: 'pm_mock_1'
+  },
+  {
+    id: 'pay2',
+    type: 'mastercard',
+    cardNumber: '•••• •••• •••• 5555',
+    expiryDate: '10/24',
+    isDefault: false,
+    stripePaymentMethodId: 'pm_mock_2'
+  }
+];
 
 /**
  * CheckoutPage - Página principal para el proceso de pago
@@ -40,9 +93,11 @@ export const CheckoutPage = () => {
   const [orderId, setOrderId] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Custom hooks para direcciones y métodos de pago
-  const { addresses, loading: addressesLoading } = useAddresses();
-  const { paymentMethods, loading: paymentsLoading } = usePayments();
+  // Mock hooks para pruebas
+  const [addresses, setAddresses] = useState(mockAddresses);
+  const [addressesLoading, setAddressesLoading] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState(mockPaymentMethods);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
 
   // Verificar que el usuario esté autenticado
   useEffect(() => {
@@ -164,12 +219,14 @@ export const CheckoutPage = () => {
               <span className="step-number">2</span>
               Método de Pago
             </h2>
-            <PaymentMethodSelector
-              paymentMethods={paymentMethods}
-              selectedPaymentId={selectedPaymentId}
-              onPaymentSelect={handlePaymentChange}
-              loading={paymentsLoading}
-            />
+            <Elements stripe={stripePromise}>
+              <PaymentMethodSelector
+                paymentMethods={paymentMethods}
+                selectedPaymentId={selectedPaymentId}
+                onPaymentSelect={handlePaymentChange}
+                loading={paymentsLoading}
+              />
+            </Elements>
           </div>
 
           {/* Información fiscal (opcional) */}

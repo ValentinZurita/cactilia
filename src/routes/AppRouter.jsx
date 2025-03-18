@@ -3,33 +3,28 @@ import { AuthRoutes } from '../modules/auth/router/AuthRoutes.jsx';
 import { AdminRoutes } from '../modules/admin/routes/AdminRoutes.jsx';
 import { PublicRoutes } from '../modules/public/router/PublicRoutes.jsx';
 import { ShopRoutes } from '../modules/shop/router/ShopRoutes.jsx';
-import { CartPage } from '../modules/user/pages/CartPage.jsx';
-import { PublicLayout } from '../layout/PublicLayout.jsx';
-import { RequireAuth } from '../modules/auth/components/RequireAuth.jsx';
-import { UserProfileRoutes } from '../modules/user/router/UserRoutes.jsx'
+import { UserRoutes } from '../modules/user/router/UserRoutes.jsx';
+import { CheckoutPage } from '../modules/shop/pages';
 
 export const AppRouter = () => {
   return (
     <Routes>
-      {/* Rutas para el módulo público - Incluye PublicLayout */}
-      <Route element={<PublicLayout />}>
-        {/* Módulo público */}
-        <Route path="/*" element={<PublicRoutes />} />
+      {/* Módulo público */}
+      <Route path="/*" element={<PublicRoutes />} />
 
-        {/* Módulo de autenticación */}
-        <Route path="/auth/*" element={<AuthRoutes />} />
+      {/* Módulo de autenticación */}
+      <Route path="/auth/*" element={<AuthRoutes />} />
 
-        {/* Módulo de tienda */}
-        <Route path="/shop/*" element={<ShopRoutes />} />
+      {/* Módulo de tienda */}
+      <Route path="/shop/*" element={<ShopRoutes />} />
 
-        {/* Carrito */}
-        <Route path="/cart" element={<CartPage />} />
+      {/* Checkout directo (para facilitar el acceso) */}
+      <Route path="/checkout" element={<CheckoutPage />} />
 
-        {/* Perfil de usuario - Con Navbar y Footer del PublicLayout */}
-        <Route path="/profile/*" element={<RequireAuth><UserProfileRoutes /></RequireAuth>} />
-      </Route>
+      {/* Módulo de usuario (incluye checkout y carrito) */}
+      <Route path="/*" element={<UserRoutes />} />
 
-      {/* Módulo admin - Sin PublicLayout */}
+      {/* Módulo admin */}
       <Route path="/admin/*" element={<AdminRoutes />} />
 
       {/* Redirección por defecto */}

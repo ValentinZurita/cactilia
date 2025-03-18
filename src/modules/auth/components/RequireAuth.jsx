@@ -1,25 +1,31 @@
-import { useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
-
+import { Navigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 /**
- * Component that checks if the user is authenticated
- * If the user is not authenticated, it redirects to the login page
- *
- * @param {Object} children - Children components
- *
- * @returns {Object} - Redirect to login page or children components
+ * Componente para proteger rutas que requieren autenticación
+ * Redirige a la página de login si el usuario no está autenticado
  */
-
-
 export const RequireAuth = ({ children }) => {
-  const { status } = useSelector((state) => state.auth);
+  const { status } = useSelector(state => state.auth);
+  const location = useLocation();
 
-
-  // If the user is not authenticated, redirect to the login page
-  if (status !== "authenticated") {
-    return <Navigate to="/auth/login" />;
+  // Si está verificando la autenticación, mostrar un spinner
+  if (status === 'checking') {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
   }
 
+  // Si no está autenticado, redirigir al login con la ruta actual como returnUrl
+  if (status !== 'authenticated') {
+    const returnPath = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/auth/login?returnUrl=${returnPath}`} replace />;
+  }
+
+  // Si está autenticado, mostrar el contenido protegido
   return children;
 };
