@@ -276,7 +276,7 @@ export const CheckoutPage = () => {
               isFreeShipping={isFreeShipping}
             />
 
-            <div className="mt-4">
+            <div className="mt-4 px-3">
               <CheckoutButton
                 onCheckout={handleProcessOrder}
                 isProcessing={isProcessing}

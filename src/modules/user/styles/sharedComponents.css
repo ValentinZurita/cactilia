@@ -1,128 +1,143 @@
-/* Estilos para componentes compartidos */
+/* Estilos mejorados para componentes compartidos */
 
-/* Elementos genéricos */
-.generic-item-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-/* ActionItemCard */
+/* Estilos para el ActionItemCard */
 .action-item {
-    padding: 14px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    transition: all 0.2s ease;
     position: relative;
-}
-
-.action-item:last-child {
-    border-bottom: none;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .action-item:hover {
-    background-color: #f9f9f9;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
 .action-item-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
 }
 
 .action-item-main {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 15px;
 }
 
 .action-item-icon {
-    font-size: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    background-color: #f8f9fa;
+    border-radius: 50%;
     color: #666;
+    font-size: 1.6rem;
+    flex-shrink: 0;
 }
 
 .action-item-info {
-    padding-top: 3px;
+    flex: 1;
 }
 
 .action-item-title {
-    font-weight: 500;
-    margin: 0 0 2px 0;
-    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
     color: #333;
 }
 
 .action-item-subtitle {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: #666;
-    margin-bottom: 2px;
+    margin-bottom: 5px;
+    line-height: 1.4;
 }
 
 .action-item-default-badge {
-    font-size: 0.7rem;
-    padding: 3px 8px;
-    border-radius: 12px;
-    background-color: #f0f0f0;
-    color: #666;
-    font-weight: 500;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    background-color: rgba(52, 199, 73, 0.15);
+    color: var(--green-3);
+    font-weight: 500;
 }
 
 .action-item-default-badge i {
-    color: var(--green-3);
-    font-size: 0.7rem;
+    font-size: 0.8rem;
 }
 
 .action-item-content {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 10px;
-    line-height: 1.4;
+    font-size: 0.95rem;
+    color: #555;
+    margin: 10px 0 15px;
+    line-height: 1.5;
+    padding: 0 5px;
 }
 
 .action-item-actions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
+    justify-content: flex-end;
 }
 
 .action-item-btn {
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background-color: #f0f0f0;
-    color: #777;
+    background-color: #f8f9fa;
+    color: #666;
     border: none;
-    transition: all 0.2s ease;
-    font-size: 0.8rem;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
 }
 
 .action-item-btn:hover {
-    background-color: #e3e3e3;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .action-item-btn.edit:hover {
+    background-color: rgba(52, 199, 73, 0.15);
     color: var(--green-3);
 }
 
 .action-item-btn.default:hover {
+    background-color: rgba(255, 193, 7, 0.15);
     color: #ffc107;
 }
 
 .action-item-btn.delete:hover {
+    background-color: rgba(220, 53, 69, 0.15);
     color: #dc3545;
 }
 
-/* AddItemButton */
+/* Botón para agregar nuevo elemento (AddItemButton) */
+.add-item-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 25px 0 35px;
+}
+
 .add-item-btn {
     position: relative;
-    margin: 20px auto;
-    width: 48px;
-    height: 48px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background-color: var(--green-3);
     color: white;
@@ -130,47 +145,214 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    transition: all 0.2s ease;
+    font-size: 1.8rem;
+    box-shadow: 0 4px 12px rgba(52, 199, 73, 0.25);
+    transition: all 0.3s ease;
     z-index: 10;
+    overflow: hidden;
+}
+
+.add-item-btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .add-item-btn:hover {
-    transform: scale(1.05);
+    transform: translateY(-5px) scale(1.05);
     background-color: var(--green-1);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 20px rgba(52, 199, 73, 0.35);
 }
 
-.add-item-container {
+.add-item-btn:hover::before {
+    opacity: 1;
+}
+
+.add-item-btn:active {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 5px 15px rgba(52, 199, 73, 0.3);
+}
+
+.add-item-container small {
+    margin-top: 12px;
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Estado vacío estilizado (EmptyState) */
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    margin: 30px 0;
+}
+
+.empty-state-icon {
+    font-size: 3.5rem;
+    color: #ccc;
+    margin-bottom: 20px;
+    display: inline-block;
+}
+
+.empty-state-title {
+    font-size: 1.5rem;
+    color: #555;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.empty-state-message {
+    color: #777;
+    margin-bottom: 25px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state-action {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: var(--green-3);
+    color: white;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.empty-state-action:hover {
+    background-color: var(--green-1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(52, 199, 73, 0.25);
+}
+
+/* Mensajes flotantes globales */
+.global-messages-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    max-width: 350px;
+    z-index: 2000;
     display: flex;
     flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.global-messages-container .alert {
+    pointer-events: auto;
+    margin-bottom: 0;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    margin-top: 20px;
-    margin-bottom: 30px;
+    animation: slideInRight 0.3s ease-out;
+    transform-origin: right center;
 }
 
-/* FeedbackForm */
-.feedback-form {
-    width: 100%;
+.global-messages-container .alert-success {
+    background-color: #f0f9f0;
+    border-left: 4px solid var(--green-3);
+    color: #3c763d;
 }
 
-.feedback-form-content {
-    margin-bottom: 20px;
+.global-messages-container .alert-danger {
+    background-color: #fff2f2;
+    border-left: 4px solid #dc3545;
+    color: #a94442;
 }
 
-/* Animaciones para mensajes de retroalimentación */
-@keyframes fadeInDown {
+.global-messages-container .alert-info {
+    background-color: #f0f7fa;
+    border-left: 4px solid #17a2b8;
+    color: #0c5460;
+}
+
+.global-messages-container .alert-warning {
+    background-color: #fff9e6;
+    border-left: 4px solid #ffc107;
+    color: #8a6d3b;
+}
+
+@keyframes slideInRight {
     from {
+        transform: translateX(100%);
         opacity: 0;
-        transform: translateY(-10px);
     }
     to {
+        transform: translateX(0);
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
-.alert {
-    animation: fadeInDown 0.3s ease;
+.global-messages-container .alert.removing {
+    animation: slideOutRight 0.3s ease-out forwards;
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.global-messages-container .btn-close {
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    margin-left: 15px;
+}
+
+.global-messages-container .btn-close:hover {
+    opacity: 1;
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 768px) {
+    .action-item {
+        padding: 15px;
+    }
+
+    .action-item-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.4rem;
+    }
+
+    .add-item-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .global-messages-container {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+}
+
+/* Variables CSS a nivel global */
+:root {
+    --green-1: #289f43;
+    --green-3: #34C749;
 }
