@@ -14,7 +14,8 @@ exports.setCustomClaims = setCustomClaims;
 exports.deleteUserByUID = deleteUserByUID;
 exports.getUserDetailsByUID = getUserDetailsByUID;
 
-// Exportar las funciones de Stripe
+// Exportar las funciones de stripe
 exports.createSetupIntent = createSetupIntent;
 exports.savePaymentMethod = savePaymentMethod;
 exports.detachPaymentMethod = detachPaymentMethod;
+
