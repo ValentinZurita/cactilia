@@ -1,3 +1,4 @@
+// src/modules/user/hooks/usePayments.js
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessage } from '../../../store/messages/messageSlice';
@@ -6,40 +7,58 @@ import {
   deletePaymentMethod,
   setDefaultPaymentMethod
 } from '../services/paymentService';
-import { useFirebaseFunctionsMock } from '../services/mockFirebaseFunctions.js'
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
+import { useFirebaseFunctionsMock } from '../services/mockFirebaseFunctions.js';
 
 /**
- * Custom hook mejorado para gestión de métodos de pago
- * Incluye protecciones para operaciones concurrentes y modal de confirmación
+ * Custom hook for payment methods management
  */
 export const usePayments = () => {
   const dispatch = useDispatch();
   const { uid, status } = useSelector(state => state.auth);
 
-  // Referencia para evitar operaciones duplicadas
+  // Get Firebase Functions instance
+  const functions = getFunctions();
+  const hasConnected = useRef(false);
+
+  // Connect to emulator in development
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && !hasConnected.current) {
+      try {
+        connectFunctionsEmulator(functions, "localhost", 5001);
+        console.log("Connected to Firebase Functions emulator in usePayments");
+        hasConnected.current = true;
+      } catch (e) {
+        // Already connected, ignore
+        console.log("Emulator connection error (can be ignored if already connected):", e);
+      }
+    }
+  }, []);
+
+  // Operation in progress reference to prevent duplicates
   const operationInProgressRef = useRef(false);
 
-  // Estados para gestionar métodos de pago
+  // States for payment methods
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Estados para el modal de confirmación
+  // States for confirmation modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Usar mocks en desarrollo
+  // Use mocks in development
   if (process.env.NODE_ENV !== 'production') {
     useFirebaseFunctionsMock();
   }
 
-  // Cargar métodos de pago desde Firestore
+  // Load payment methods from Firestore
   const loadPaymentMethods = useCallback(async () => {
-    // Solo cargar si el usuario está autenticado
+    // Only load if user is authenticated
     if (status !== 'authenticated' || !uid) {
       setLoading(false);
       return;
@@ -52,42 +71,42 @@ export const usePayments = () => {
       const result = await getUserPaymentMethods(uid);
 
       if (result.ok) {
-        console.log('Métodos de pago cargados:', result.data);
+        console.log('Payment methods loaded:', result.data);
         setPaymentMethods(result.data);
       } else {
-        setError(result.error || 'Error al cargar métodos de pago');
+        setError(result.error || 'Error loading payment methods');
         dispatch(addMessage({
           type: 'error',
-          text: 'No se pudieron cargar tus métodos de pago'
+          text: 'Could not load your payment methods'
         }));
       }
     } catch (err) {
-      console.error('Error en usePayments:', err);
-      setError('Error al cargar los métodos de pago');
+      console.error('Error in usePayments:', err);
+      setError('Error loading payment methods');
       dispatch(addMessage({
         type: 'error',
-        text: 'Error al cargar métodos de pago'
+        text: 'Error loading payment methods'
       }));
     } finally {
       setLoading(false);
     }
   }, [uid, status, dispatch]);
 
-  // Cargar métodos de pago cuando cambia el trigger de actualización
+  // Load payment methods when refresh trigger changes
   useEffect(() => {
     loadPaymentMethods();
   }, [loadPaymentMethods, refreshTrigger]);
 
-  // Actualizar la lista de métodos de pago
+  // Refresh payment methods
   const refreshPaymentMethods = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
 
-  // Establecer un método de pago como predeterminado
+  // Set a payment method as default
   const setDefaultPayment = useCallback(async (id) => {
     if (!id) return;
 
-    // Evitar operaciones duplicadas
+    // Prevent duplicate operations
     if (operationInProgressRef.current) return;
     operationInProgressRef.current = true;
 
@@ -97,7 +116,7 @@ export const usePayments = () => {
       const result = await setDefaultPaymentMethod(uid, id);
 
       if (result.ok) {
-        // Actualizar el estado local para una respuesta más rápida
+        // Update local state for faster response
         setPaymentMethods(prevMethods =>
           prevMethods.map(method => ({
             ...method,
@@ -107,19 +126,19 @@ export const usePayments = () => {
 
         dispatch(addMessage({
           type: 'success',
-          text: 'Método de pago predeterminado actualizado'
+          text: 'Default payment method updated'
         }));
       } else {
-        throw new Error(result.error || 'Error al actualizar método de pago predeterminado');
+        throw new Error(result.error || 'Error updating default payment method');
       }
     } catch (err) {
-      console.error('Error estableciendo método de pago predeterminado:', err);
+      console.error('Error setting default payment method:', err);
       dispatch(addMessage({
         type: 'error',
-        text: err.message || 'Error al actualizar método de pago predeterminado'
+        text: err.message || 'Error updating default payment method'
       }));
 
-      // Recargar para asegurar que los datos estén sincronizados
+      // Reload to ensure data is synced
       refreshPaymentMethods();
     } finally {
       setLoading(false);
@@ -127,31 +146,31 @@ export const usePayments = () => {
     }
   }, [uid, dispatch, refreshPaymentMethods]);
 
-  // Confirmar acción con el modal (función genérica)
+  // Confirm action with modal (generic function)
   const confirmWithModal = useCallback((action, data) => {
     setConfirmAction(action);
     setConfirmData(data);
     setShowConfirmModal(true);
   }, []);
 
-  // Iniciar confirmación para eliminar un método de pago
+  // Initiate confirmation to delete a payment method
   const confirmDeletePayment = useCallback((id) => {
-    // Buscar el método de pago para obtener detalles
+    // Find payment method to get details
     const paymentMethod = paymentMethods.find(method => method.id === id);
 
     if (!paymentMethod) {
       dispatch(addMessage({
         type: 'error',
-        text: 'Método de pago no encontrado'
+        text: 'Payment method not found'
       }));
       return;
     }
 
-    // Si es el método predeterminado, no permitir eliminación
+    // Don't allow deleting default payment method
     if (paymentMethod.isDefault) {
       dispatch(addMessage({
         type: 'error',
-        text: 'No puedes eliminar el método de pago predeterminado'
+        text: 'Cannot delete default payment method'
       }));
       return;
     }
@@ -159,57 +178,60 @@ export const usePayments = () => {
     confirmWithModal('deletePayment', paymentMethod);
   }, [paymentMethods, dispatch, confirmWithModal]);
 
-  // Procesar la eliminación de un método de pago
+  // Process payment method deletion
   const deletePaymentHandler = useCallback(async (paymentMethod) => {
     if (!paymentMethod) return;
 
-    // Evitar operaciones duplicadas
+    // Prevent duplicate operations
     if (operationInProgressRef.current) return;
     operationInProgressRef.current = true;
 
-    // Actualizar estado de procesamiento
+    // Update processing state
     setIsProcessing(true);
 
     try {
+      // Call the deletePaymentMethod function which needs to be updated
+      // to use the functions object properly
       const result = await deletePaymentMethod(
         paymentMethod.id,
-        paymentMethod.stripePaymentMethodId
+        paymentMethod.stripePaymentMethodId,
+        functions
       );
 
       if (result.ok) {
-        // Actualizar el estado local
+        // Update local state
         setPaymentMethods(prevMethods =>
           prevMethods.filter(method => method.id !== paymentMethod.id)
         );
 
         dispatch(addMessage({
           type: 'success',
-          text: 'Método de pago eliminado correctamente'
+          text: 'Payment method deleted successfully'
         }));
 
-        // Cerrar el modal
+        // Close the modal
         setShowConfirmModal(false);
         setConfirmData(null);
         setConfirmAction(null);
       } else {
-        throw new Error(result.error || 'Error al eliminar método de pago');
+        throw new Error(result.error || 'Error deleting payment method');
       }
     } catch (err) {
-      console.error('Error eliminando método de pago:', err);
+      console.error('Error deleting payment method:', err);
       dispatch(addMessage({
         type: 'error',
-        text: err.message || 'Error al eliminar método de pago'
+        text: err.message || 'Error deleting payment method'
       }));
 
-      // Recargar para asegurar que los datos estén sincronizados
+      // Reload to ensure data is synced
       refreshPaymentMethods();
     } finally {
       setIsProcessing(false);
       operationInProgressRef.current = false;
     }
-  }, [dispatch, refreshPaymentMethods]);
+  }, [dispatch, refreshPaymentMethods, functions]);
 
-  // Manejar la acción confirmada
+  // Handle confirmed action
   const handleConfirmedAction = useCallback(() => {
     if (!confirmAction || !confirmData) return;
 
@@ -217,35 +239,35 @@ export const usePayments = () => {
       case 'deletePayment':
         deletePaymentHandler(confirmData);
         break;
-      // Puedes agregar más casos aquí para otras acciones
+      // Add more cases here for other actions
       default:
-        console.warn(`Acción no implementada: ${confirmAction}`);
+        console.warn(`Action not implemented: ${confirmAction}`);
         setShowConfirmModal(false);
     }
   }, [confirmAction, confirmData, deletePaymentHandler]);
 
-  // Cancelar la confirmación
+  // Cancel confirmation
   const cancelConfirmation = useCallback(() => {
     setShowConfirmModal(false);
     setConfirmData(null);
     setConfirmAction(null);
   }, []);
 
-  // Abrir el formulario para agregar un nuevo método de pago
+  // Open form to add a new payment method
   const addPayment = useCallback(() => {
     setShowForm(true);
   }, []);
 
-  // Cerrar el formulario de forma segura
+  // Close form safely
   const closeForm = useCallback(() => {
     if (!operationInProgressRef.current) {
       setShowForm(false);
     }
   }, []);
 
-  // Manejar el éxito después de agregar un método de pago
+  // Handle success after adding a payment method
   const handlePaymentAdded = useCallback(() => {
-    // Pequeño retraso para asegurar que Firestore ya tenga los datos actualizados
+    // Small delay to ensure Firestore has updated data
     setTimeout(() => {
       refreshPaymentMethods();
     }, 500);

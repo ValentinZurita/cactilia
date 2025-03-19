@@ -1,3 +1,4 @@
+// src/modules/user/pages/PaymentsPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -8,17 +9,21 @@ import '../styles/sharedComponents.css';
 import { PaymentsList, SecurityNote } from '../components/payments/index.js';
 import { PaymentFormModal } from '../components/payments/PaymentFormModal.jsx';
 import { ConfirmationModal } from '../components/shared/ConfirmationModal.jsx';
+import { getFirebaseFunctions } from '../../../utils/firebaseFunctions';
 
-// Cargar Stripe solo una vez (fuera del componente para que no se reinicie)
+// Load Stripe once (outside component to avoid reinitialization)
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 /**
- * Página mejorada para gestionar métodos de pago con Stripe
- *
- * @returns {JSX.Element} Componente de página de pagos
+ * Enhanced page for managing payment methods with Stripe
  */
 export const PaymentsPage = () => {
-  // Obtener métodos y estado del hook personalizado
+  // Initialize Firebase Functions once at component mount
+  useEffect(() => {
+    getFirebaseFunctions();
+  }, []);
+
+  // Get methods and state from custom hook
   const {
     paymentMethods,
     loading,
@@ -28,7 +33,7 @@ export const PaymentsPage = () => {
     confirmData,
     isProcessing,
     setDefaultPayment,
-    confirmDeletePayment, // Esta es la función que debemos pasar correctamente
+    confirmDeletePayment,
     handleConfirmedAction,
     cancelConfirmation,
     addPayment,
@@ -36,52 +41,50 @@ export const PaymentsPage = () => {
     handlePaymentAdded
   } = usePayments();
 
-  // Estado local para controlar si Stripe está listo
+  // Local state for Stripe readiness
   const [stripeReady, setStripeReady] = useState(false);
 
-  // Estado para controlar si se muestra el formulario de Elements
+  // State to control if Elements is visible
   const [elementsVisible, setElementsVisible] = useState(false);
 
-  // Verificar cuando Stripe esté listo
+  // Check when Stripe is ready
   useEffect(() => {
     if (stripePromise) {
       stripePromise.then(() => {
         setStripeReady(true);
       }).catch(err => {
-        console.error("Error inicializando Stripe:", err);
+        console.error("Error initializing Stripe:", err);
         setStripeReady(false);
       });
     }
   }, []);
 
-  // Efectos para manejar la visibilidad del formulario de Elements
+  // Effects to handle Elements visibility
   useEffect(() => {
     if (showForm) {
       setElementsVisible(true);
     }
   }, [showForm]);
 
-  // Manejar el cierre del formulario
+  // Handle form closure
   const handleSafeClose = () => {
     closeForm();
-    // No ocultamos Elements inmediatamente para permitir
-    // que cualquier operación pendiente se complete
+    // Don't hide Elements immediately to allow pending operations to complete
     setTimeout(() => {
       setElementsVisible(false);
     }, 500);
   };
 
-  // Manejar cuando se agrega un método de pago exitosamente
+  // Handle successful payment method addition
   const handleSuccess = () => {
     handlePaymentAdded();
-    // Podemos dejar el tiempo suficiente para que Stripe termine
-    // cualquier operación pendiente
+    // Allow time for Stripe to finish any pending operations
     setTimeout(() => {
       setElementsVisible(false);
     }, 1000);
   };
 
-  // Opciones mejoradas para Stripe Elements
+  // Enhanced options for Stripe Elements
   const stripeElementsOptions = {
     locale: 'es',
     appearance: {
@@ -98,31 +101,31 @@ export const PaymentsPage = () => {
     ],
   };
 
-  // Obtener detalles formateados del método de pago para el modal
+  // Get formatted payment method details for the modal
   const getPaymentDetails = () => {
     if (!confirmData) return null;
 
-    // Formatear los últimos 4 dígitos
+    // Format the last 4 digits
     const cardNumber = confirmData.cardNumber || '';
     const lastFourDigits = cardNumber.trim().split(' ').pop() || 'xxxx';
 
-    // Formatear el tipo de tarjeta
-    const cardType = confirmData.type ? confirmData.type.charAt(0).toUpperCase() + confirmData.type.slice(1) : 'tarjeta';
+    // Format card type
+    const cardType = confirmData.type ? confirmData.type.charAt(0).toUpperCase() + confirmData.type.slice(1) : 'card';
 
-    return `${cardType} que termina en ${lastFourDigits}`;
+    return `${cardType} ending in ${lastFourDigits}`;
   };
 
   return (
     <div className="payments-container">
-      {/* Título de sección */}
-      <SectionTitle title="Métodos de Pago" />
+      {/* Section title */}
+      <SectionTitle title="Payment Methods" />
 
-      {/* Descripción sobre métodos de pago */}
+      {/* Description about payment methods */}
       <p className="text-muted mb-4">
-        Administra tus métodos de pago para realizar compras de manera segura y rápida.
+        Manage your payment methods to make purchases securely and quickly.
       </p>
 
-      {/* Mensaje de error general */}
+      {/* General error message */}
       {error && (
         <div className="alert alert-danger mb-3">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -130,50 +133,50 @@ export const PaymentsPage = () => {
         </div>
       )}
 
-      {/* Lista de métodos de pago */}
+      {/* Payment methods list */}
       <PaymentsList
         payments={paymentMethods}
         onSetDefault={setDefaultPayment}
-        onDelete={confirmDeletePayment} // CORRECCIÓN: Pasando la función correcta
+        onDelete={confirmDeletePayment}
         loading={loading}
       />
 
-      {/* Botón para agregar método de pago */}
+      {/* Button to add payment method */}
       <AddItemButton
         onClick={addPayment}
-        label="Agregar método de pago"
+        label="Add payment method"
         icon="plus"
       />
 
-      {/* Nota de seguridad */}
+      {/* Security note */}
       <SecurityNote />
 
-      {/* Modal de confirmación para eliminar método de pago */}
+      {/* Confirmation modal for deleting payment method */}
       <ConfirmationModal
         isOpen={showConfirmModal}
         onClose={cancelConfirmation}
         onConfirm={handleConfirmedAction}
-        title="Eliminar método de pago"
+        title="Delete payment method"
         message={getPaymentDetails()}
         detail={
           <p>
-            Si no deseas que este método de pago aparezca en tu lista de opciones de pago,
-            haz clic en "Confirmar eliminar". <br/><br/>
+            If you don't want this payment method to appear in your list of payment options,
+            click "Confirm delete". <br/><br/>
             <span className="text-muted small">
-              Deshabilitar este método de pago no cancelará ninguna de tus órdenes abiertas
-              ni fallará ninguna configuración de pagos automáticos que utilicen este método.
+              Disabling this payment method won't cancel any of your open orders
+              or fail any automatic payment settings using this method.
             </span>
           </p>
         }
-        confirmText="Confirmar eliminar"
-        cancelText="Cancelar"
+        confirmText="Confirm delete"
+        cancelText="Cancel"
         icon="bi-credit-card-2-front"
         iconColor="danger"
         confirmColor="danger"
         loading={isProcessing}
       />
 
-      {/* Renderizar Elements cuando sea necesario */}
+      {/* Render Elements when needed */}
       {elementsVisible && stripeReady && (
         <Elements stripe={stripePromise} options={stripeElementsOptions}>
           <PaymentFormModal
@@ -184,14 +187,14 @@ export const PaymentsPage = () => {
         </Elements>
       )}
 
-      {/* Mensaje de carga si Stripe no está listo */}
+      {/* Loading message if Stripe isn't ready */}
       {showForm && !stripeReady && (
         <div className="payment-loading-overlay">
           <div className="payment-loading-content">
             <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Cargando...</span>
+              <span className="visually-hidden">Loading...</span>
             </div>
-            <p className="mt-2">Inicializando pasarela de pago...</p>
+            <p className="mt-2">Initializing payment gateway...</p>
           </div>
         </div>
       )}

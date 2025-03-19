@@ -2,18 +2,15 @@
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 
-// Definir la clave secreta de Stripe como un parámetro secreto
+// Define Stripe secret key as a secret parameter
 const stripeSecretParam = defineSecret("STRIPE_SECRET_KEY");
 
-// No inicializar Stripe aquí, sino en cada función
-// Así lo inicializamos en tiempo de ejecución
-
 /**
- * Obtiene o crea un cliente de Stripe para un usuario
+ * Get or create a Stripe customer for a user
  */
 async function getOrCreateCustomer(uid, stripeInstance) {
   try {
-    // Buscar si ya existe un customerID
+    // Look for existing customerId
     const userSnapshot = await admin.firestore()
       .collection('users')
       .doc(uid)
@@ -21,7 +18,7 @@ async function getOrCreateCustomer(uid, stripeInstance) {
 
     let stripeCustomerId = userSnapshot.exists ? userSnapshot.data().stripeCustomerId : null;
 
-    // Si no existe, crear nuevo cliente en Stripe
+    // If it doesn't exist, create a new Stripe customer
     if (!stripeCustomerId) {
       const user = await admin.auth().getUser(uid);
 
@@ -35,7 +32,7 @@ async function getOrCreateCustomer(uid, stripeInstance) {
 
       stripeCustomerId = customer.id;
 
-      // Guardar ID en Firestore
+      // Save ID to Firestore
       await admin.firestore()
         .collection('users')
         .doc(uid)
@@ -44,13 +41,13 @@ async function getOrCreateCustomer(uid, stripeInstance) {
 
     return stripeCustomerId;
   } catch (error) {
-    console.error("Error al obtener/crear cliente Stripe:", error);
+    console.error("Error getting/creating Stripe customer:", error);
     throw error;
   }
 }
 
 /**
- * Registra un intento de pago en Firestore para seguimiento
+ * Log a payment intent in Firestore for tracking
  */
 async function logPaymentIntent(paymentIntentId, userId, amount, status) {
   try {
@@ -65,13 +62,13 @@ async function logPaymentIntent(paymentIntentId, userId, amount, status) {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
   } catch (error) {
-    console.error("Error al registrar intento de pago:", error);
-    // No lanzamos error para que no interrumpa el flujo principal
+    console.error("Error logging payment intent:", error);
+    // Don't throw to avoid interrupting the main flow
   }
 }
 
 /**
- * Actualiza el estado de un intento de pago en Firestore
+ * Update a payment intent status in Firestore
  */
 async function updatePaymentIntentStatus(paymentIntentId, status) {
   try {
@@ -83,7 +80,7 @@ async function updatePaymentIntentStatus(paymentIntentId, status) {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
   } catch (error) {
-    console.error("Error al actualizar estado del intento de pago:", error);
+    console.error("Error updating payment intent status:", error);
   }
 }
 

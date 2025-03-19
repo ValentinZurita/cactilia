@@ -1,38 +1,51 @@
+// src/modules/user/components/payments/PaymentFormModal.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useDispatch, useSelector } from 'react-redux';
 import { addMessage } from '../../../../store/messages/messageSlice';
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 import '../../styles/paymentFormModal.css';
 
 /**
- * Formulario modal simplificado para agregar métodos de pago con Stripe
- *
- * @param {Object} props - Propiedades del componente
- * @param {boolean} props.isOpen - Indica si el modal debe estar abierto
- * @param {Function} props.onClose - Función para cerrar el modal
- * @param {Function} props.onSuccess - Función a llamar cuando se agrega el método de pago exitosamente
- * @returns {JSX.Element|null} Componente de formulario modal
+ * Simplified modal form for adding payment methods with Stripe
  */
 export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
-  // Estados locales
+  // Local states
   const [cardHolder, setCardHolder] = useState('');
   const [isDefault, setIsDefault] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [cardComplete, setCardComplete] = useState(false);
 
-  // Referencias para manejar la limpieza segura
+  // References for safe cleanup
   const isSubmittingRef = useRef(false);
   const formRef = useRef(null);
   const { uid } = useSelector(state => state.auth);
 
-  // Hooks de Stripe
+  // Get Firebase Functions instance
+  const functionsRef = useRef(getFunctions());
+  const hasConnectedRef = useRef(false);
+
+  // Connect to emulator in development
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && !hasConnectedRef.current) {
+      try {
+        connectFunctionsEmulator(functionsRef.current, "localhost", 5001);
+        console.log("Connected to Firebase Functions emulator in PaymentFormModal");
+        hasConnectedRef.current = true;
+      } catch (e) {
+        console.log("Emulator connection error (can be ignored if already connected):", e);
+      }
+    }
+  }, []);
+
+  // Stripe hooks
   const stripe = useStripe();
   const elements = useElements();
   const dispatch = useDispatch();
 
-  // Efecto para limpiar el formulario cuando se abre
+  // Clean form when opened
   useEffect(() => {
     if (isOpen) {
       setCardHolder('');
@@ -43,7 +56,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     }
   }, [isOpen]);
 
-  // Manejo de evento keydown para cerrar con Escape
+  // Handle Escape key to close
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen && !loading) {
@@ -60,7 +73,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     };
   }, [isOpen, loading, onClose]);
 
-  // Prevenir scroll cuando el modal está abierto
+  // Prevent scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -70,45 +83,45 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     };
   }, [isOpen]);
 
-  // Si el modal no está abierto, no renderizamos nada
+  // If modal is not open, render nothing
   if (!isOpen) return null;
 
-  // Manejar cambios en el elemento de tarjeta
+  // Handle card element changes
   const handleCardChange = (event) => {
     setCardComplete(event.complete);
     setError(event.error ? event.error.message : null);
   };
 
-  // Manejar envío del formulario con seguridad
+  // Handle form submission safely
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Evitar envíos duplicados
+    // Avoid duplicate submissions
     if (isSubmittingRef.current || loading) {
       return;
     }
 
-    // Validaciones iniciales
+    // Initial validations
     if (!stripe || !elements) {
-      setError("Stripe no está inicializado. Por favor, espere un momento e intente de nuevo.");
+      setError("Stripe is not initialized. Please wait a moment and try again.");
       return;
     }
 
     if (!cardComplete) {
-      setError("Por favor, complete los datos de su tarjeta");
+      setError("Please complete your card details");
       return;
     }
 
     if (!cardHolder.trim()) {
-      setError("Por favor, ingrese el nombre del titular de la tarjeta");
+      setError("Please enter the cardholder's name");
       return;
     }
 
-    // Obtener el elemento CardElement actual - debe hacerse ANTES de cambiar el estado
+    // Get the CardElement - must be done BEFORE changing state
     const cardElement = elements.getElement(CardElement);
 
     if (!cardElement) {
-      setError("No se pudo acceder al formulario de tarjeta. Por favor, intente de nuevo.");
+      setError("Could not access card form. Please try again.");
       return;
     }
 
@@ -117,56 +130,91 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     isSubmittingRef.current = true;
 
     try {
-      // Simular creación de método de pago
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Create SetupIntent via Cloud Function
+      const createSetupIntent = httpsCallable(functionsRef.current, 'createSetupIntent');
+      const setupResponse = await createSetupIntent({});
 
-      // Simular resultado exitoso
+      if (!setupResponse.data?.clientSecret) {
+        throw new Error("Failed to create setup intent");
+      }
+
+      // Confirm the setup with Stripe
+      const { setupIntent, error: setupError } = await stripe.confirmCardSetup(
+        setupResponse.data.clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: cardHolder
+            }
+          }
+        }
+      );
+
+      if (setupError) {
+        throw new Error(setupError.message);
+      }
+
+      if (!setupIntent || !setupIntent.payment_method) {
+        throw new Error("Setup failed. Please try again.");
+      }
+
+      // Save the payment method via Cloud Function
+      const savePaymentMethod = httpsCallable(functionsRef.current, 'savePaymentMethod');
+      await savePaymentMethod({
+        setupIntentId: setupIntent.id,
+        paymentMethodId: setupIntent.payment_method,
+        isDefault: isDefault,
+        cardHolder: cardHolder
+      });
+
+      // Show success message
       dispatch(addMessage({
         type: 'success',
-        text: 'Método de pago agregado correctamente'
+        text: 'Payment method added successfully'
       }));
 
-      // 5. Limpiar el formulario
+      // Clear the form
       setCardHolder('');
       setIsDefault(false);
 
-      // 6. Llamar a onSuccess y luego cerrar el modal
+      // Call onSuccess and close modal
       if (onSuccess) {
         onSuccess();
       }
 
-      // Es seguro cerrar ahora
+      // Safe to close now
       onClose();
     } catch (err) {
-      console.error('Error al agregar método de pago:', err);
-      setError(err.message || "Ocurrió un error al procesar la tarjeta");
+      console.error('Error adding payment method:', err);
+      setError(err.message || "An error occurred while processing the card");
 
       dispatch(addMessage({
         type: 'error',
-        text: 'Hubo un problema al agregar tu método de pago'
+        text: 'There was a problem adding your payment method'
       }));
 
-      // Permitir un nuevo intento
+      // Allow a new attempt
       isSubmittingRef.current = false;
     } finally {
-      // Es importante reiniciar estos estados incluso si hay error
+      // Reset these states even if there's an error
       setLoading(false);
     }
   };
 
-  // Prevenir que el modal se cierre al hacer clic dentro
+  // Prevent modal from closing when clicking inside
   const handleModalContentClick = (e) => {
     e.stopPropagation();
   };
 
-  // Solo cerrar si no está en proceso de envío
+  // Only close if not in submission process
   const handleSafeClose = () => {
     if (!loading && !isSubmittingRef.current) {
       onClose();
     }
   };
 
-  // Configuración mejorada para el elemento de tarjeta
+  // Enhanced options for card element
   const cardElementOptions = {
     style: {
       base: {
@@ -189,39 +237,26 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     hidePostalCode: true
   };
 
-  return (
-    !isOpen ? null : ReactDOM.createPortal(
+  return ReactDOM.createPortal(
+    <div
+      className="payment-modal-backdrop"
+      onClick={handleSafeClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-modal-title"
+    >
       <div
-        className="payment-modal-backdrop"
-        onClick={handleSafeClose}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="payment-modal-title"
-        style={{
-          zIndex: 3000, // Asegurar un z-index alto
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}
+        className="payment-modal-content"
+        onClick={handleModalContentClick}
+        role="document"
       >
-        <div
-          className="payment-modal-content"
-          onClick={handleModalContentClick}
-          role="document"
-          style={{ position: 'relative' }} // Asegurar posicionamiento correcto
-        >
         <div className="payment-modal-header">
-          <h5 className="payment-modal-title" id="payment-modal-title">Agregar Método de Pago</h5>
+          <h5 className="payment-modal-title" id="payment-modal-title">Add Payment Method</h5>
           <button
             type="button"
             className="payment-modal-close"
             onClick={handleSafeClose}
-            aria-label="Cerrar"
+            aria-label="Close"
             disabled={loading}
           >
             ×
@@ -230,7 +265,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
 
         <div className="payment-modal-body">
           <form onSubmit={handleSubmit} ref={formRef}>
-            {/* Mensaje de error */}
+            {/* Error message */}
             {error && (
               <div className="payment-alert-error" role="alert">
                 <i className="bi bi-exclamation-triangle me-2"></i>
@@ -238,15 +273,15 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
             )}
 
-            {/* Nombre del titular */}
+            {/* Cardholder name */}
             <div className="payment-form-group">
-              <label htmlFor="cardHolder">Nombre del titular de la tarjeta</label>
+              <label htmlFor="cardHolder">Cardholder name</label>
               <input
                 type="text"
                 id="cardHolder"
                 value={cardHolder}
                 onChange={(e) => setCardHolder(e.target.value)}
-                placeholder="Nombre completo como aparece en la tarjeta"
+                placeholder="Full name as it appears on card"
                 required
                 className="payment-form-input"
                 disabled={loading}
@@ -254,9 +289,9 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
               />
             </div>
 
-            {/* Elemento de tarjeta de Stripe */}
+            {/* Stripe card element */}
             <div className="payment-form-group">
-              <label>Datos de la tarjeta</label>
+              <label>Card details</label>
               <div className="payment-card-element">
                 <CardElement
                   options={cardElementOptions}
@@ -265,16 +300,16 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
                 />
               </div>
               <small className="payment-text-muted">
-                Ingrese el número de tarjeta, fecha de expiración y código CVC.
+                Enter card number, expiration date, and CVC.
               </small>
               {cardComplete && (
                 <div className="payment-card-complete">
-                  <i className="bi bi-check-circle-fill"></i> Información de tarjeta completa
+                  <i className="bi bi-check-circle-fill"></i> Card information complete
                 </div>
               )}
             </div>
 
-            {/* Checkbox para establecer como predeterminado */}
+            {/* Default payment checkbox */}
             <div className="payment-form-check">
               <input
                 type="checkbox"
@@ -285,19 +320,18 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
                 disabled={loading}
               />
               <label htmlFor="defaultPayment">
-                Establecer como método de pago predeterminado
+                Set as default payment method
               </label>
             </div>
 
-            {/* Info de tarjeta de prueba para desarrollo */}
+            {/* Test card info for development */}
             <div className="payment-test-cards">
               <p className="payment-text-muted">
-                <strong>Tarjeta de prueba:</strong> Usa 4242 4242 4242 4242, cualquier fecha futura y 3 dígitos para el
-                CVC
+                <strong>Test card:</strong> Use 4242 4242 4242 4242, any future date, and 3 digits for CVC
               </p>
             </div>
 
-            {/* Acciones del formulario */}
+            {/* Form actions */}
             <div className="payment-form-actions">
               <button
                 type="button"
@@ -305,7 +339,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
                 onClick={handleSafeClose}
                 disabled={loading}
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 type="submit"
@@ -315,10 +349,10 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
                 {loading ? (
                   <>
                     <span className="payment-spinner"></span>
-                    Procesando...
+                    Processing...
                   </>
                 ) : (
-                  'Agregar Método de Pago'
+                  'Add Payment Method'
                 )}
               </button>
             </div>
@@ -326,6 +360,6 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
       </div>
     </div>,
-      document.body
-    ));
-}
+    document.body
+  );
+};

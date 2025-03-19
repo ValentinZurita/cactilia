@@ -1,15 +1,29 @@
+// src/modules/user/services/paymentService.js
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, getDoc } from 'firebase/firestore'
 import { FirebaseDB } from '../../../firebase/firebaseConfig';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 
 // Collection name for payment methods
 const PAYMENT_METHODS_COLLECTION = 'payment_methods';
 
+// Helper function to get configured Firebase Functions
+const getConfiguredFunctions = () => {
+  const functions = getFunctions();
+
+  // This is safe to call multiple times as it will check if already connected
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      connectFunctionsEmulator(functions, "localhost", 5001);
+    } catch (e) {
+      // Already connected, ignore
+    }
+  }
+
+  return functions;
+};
+
 /**
  * Get all payment methods for a user
- *
- * @param {string} userId - User ID
- * @returns {Promise<{ok: boolean, data: Array, error: string}>}
  */
 export const getUserPaymentMethods = async (userId) => {
   try {
@@ -41,11 +55,6 @@ export const getUserPaymentMethods = async (userId) => {
 
 /**
  * Save a new payment method token to Firestore
- * Note: This only stores the token - the actual card details are stored by Stripe
- *
- * @param {string} userId - User ID
- * @param {Object} paymentData - Payment method data with Stripe token
- * @returns {Promise<{ok: boolean, id: string, error: string}>}
  */
 export const savePaymentMethod = async (userId, paymentData) => {
   try {
@@ -89,12 +98,8 @@ export const savePaymentMethod = async (userId, paymentData) => {
 
 /**
  * Delete a payment method
- *
- * @param {string} paymentMethodId - Firestore ID of the payment method
- * @param {string} stripePaymentMethodId - Stripe payment method ID
- * @returns {Promise<{ok: boolean, error: string}>}
  */
-export const deletePaymentMethod = async (paymentMethodId, stripePaymentMethodId) => {
+export const deletePaymentMethod = async (paymentMethodId, stripePaymentMethodId, functionsInstance = null) => {
   try {
     if (!paymentMethodId) {
       return { ok: false, error: 'Payment method ID not provided' };
@@ -120,7 +125,8 @@ export const deletePaymentMethod = async (paymentMethodId, stripePaymentMethodId
 
     // Call Cloud Function to detach the payment method from Stripe
     if (stripePaymentMethodId) {
-      const functions = getFunctions();
+      // Get functions instance from parameter or create a new one
+      const functions = functionsInstance || getConfiguredFunctions();
       const detachPaymentMethod = httpsCallable(functions, 'detachPaymentMethod');
       await detachPaymentMethod({ paymentMethodId: stripePaymentMethodId });
     }
@@ -137,10 +143,6 @@ export const deletePaymentMethod = async (paymentMethodId, stripePaymentMethodId
 
 /**
  * Set a payment method as default
- *
- * @param {string} userId - User ID
- * @param {string} paymentMethodId - ID of the payment method to set as default
- * @returns {Promise<{ok: boolean, error: string}>}
  */
 export const setDefaultPaymentMethod = async (userId, paymentMethodId) => {
   try {
@@ -159,7 +161,7 @@ export const setDefaultPaymentMethod = async (userId, paymentMethodId) => {
     });
 
     // Call Cloud Function to update default payment method in Stripe
-    const functions = getFunctions();
+    const functions = getConfiguredFunctions();
     const updateDefaultPaymentMethod = httpsCallable(functions, 'updateDefaultPaymentMethod');
     await updateDefaultPaymentMethod({ paymentMethodId });
 
@@ -173,9 +175,6 @@ export const setDefaultPaymentMethod = async (userId, paymentMethodId) => {
 
 /**
  * Helper function to reset all default payment methods for a user
- *
- * @param {string} userId - User ID
- * @returns {Promise<void>}
  */
 const resetDefaultPaymentMethods = async (userId) => {
   const paymentMethodsRef = collection(FirebaseDB, PAYMENT_METHODS_COLLECTION);

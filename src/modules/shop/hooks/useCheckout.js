@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+// src/modules/shop/hooks/useCheckout.js
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { FirebaseDB } from '../../../firebase/firebaseConfig';
 import { addMessage } from '../../../store/messages/messageSlice';
@@ -10,20 +11,40 @@ import { clearCartWithSync } from '../../../store/cart/cartThunk';
 import { useCart } from '../../user/hooks/useCart';
 
 /**
- * Hook personalizado para manejar el proceso de checkout
- * Gestiona la selección de dirección, método de pago, y procesamiento de la orden
+ * Custom hook to handle the checkout process
+ * Manages selection of address, payment method, and order processing
  */
 export const useCheckout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const stripe = useStripe();
   const elements = useElements();
+
+  // Get Firebase Functions instance
   const functions = getFunctions();
 
-  // Obtener información del usuario desde Redux
+  // Connect to emulator in development
+  if (process.env.NODE_ENV !== 'production') {
+    // Use a ref to track if we've already connected to avoid "already connected" errors
+    const hasConnected = useRef(false);
+
+    useEffect(() => {
+      if (!hasConnected.current) {
+        try {
+          connectFunctionsEmulator(functions, "localhost", 5001);
+          console.log("Connected to Firebase Functions emulator");
+          hasConnected.current = true;
+        } catch (e) {
+          console.log("Emulator connection error (can be ignored if already connected):", e);
+        }
+      }
+    }, []);
+  }
+
+  // Get user information from Redux store
   const { uid, status } = useSelector(state => state.auth);
 
-  // Obtener información del carrito
+  // Get cart information
   const {
     items,
     subtotal,
@@ -34,7 +55,7 @@ export const useCheckout = () => {
     hasOutOfStockItems,
   } = useCart();
 
-  // Estados para el checkout
+  // Checkout states
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
@@ -52,21 +73,21 @@ export const useCheckout = () => {
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [loadingPayments, setLoadingPayments] = useState(true);
 
-  // Verificar que el usuario esté autenticado
+  // Verify user is authenticated
   useEffect(() => {
     if (status !== 'authenticated') {
       navigate('/auth/login?redirect=checkout');
     }
   }, [status, navigate]);
 
-  // Verificar que haya productos en el carrito
+  // Verify cart has items
   useEffect(() => {
     if (items.length === 0 && status === 'authenticated') {
       navigate('/shop');
     }
   }, [items, status, navigate]);
 
-  // Cargar direcciones del usuario
+  // Load user addresses
   useEffect(() => {
     const loadUserAddresses = async () => {
       if (status !== 'authenticated' || !uid) return;
@@ -79,14 +100,14 @@ export const useCheckout = () => {
         if (result.ok) {
           setAddresses(result.data);
         } else {
-          console.error("Error al cargar direcciones:", result.error);
+          console.error("Error loading addresses:", result.error);
           dispatch(addMessage({
             type: 'error',
-            text: 'No se pudieron cargar tus direcciones de envío'
+            text: 'Could not load your shipping addresses'
           }));
         }
       } catch (error) {
-        console.error("Error al cargar direcciones:", error);
+        console.error("Error loading addresses:", error);
       } finally {
         setLoadingAddresses(false);
       }
@@ -95,7 +116,7 @@ export const useCheckout = () => {
     loadUserAddresses();
   }, [uid, status, dispatch]);
 
-  // Cargar métodos de pago del usuario
+  // Load user payment methods
   useEffect(() => {
     const loadPaymentMethods = async () => {
       if (status !== 'authenticated' || !uid) return;
@@ -108,14 +129,14 @@ export const useCheckout = () => {
         if (result.ok) {
           setPaymentMethods(result.data);
         } else {
-          console.error("Error al cargar métodos de pago:", result.error);
+          console.error("Error loading payment methods:", result.error);
           dispatch(addMessage({
             type: 'error',
-            text: 'No se pudieron cargar tus métodos de pago'
+            text: 'Could not load your payment methods'
           }));
         }
       } catch (error) {
-        console.error("Error al cargar métodos de pago:", error);
+        console.error("Error loading payment methods:", error);
       } finally {
         setLoadingPayments(false);
       }
@@ -124,7 +145,7 @@ export const useCheckout = () => {
     loadPaymentMethods();
   }, [uid, status, dispatch]);
 
-  // Actualizar la dirección seleccionada cuando cambia el ID
+  // Update selected address when ID changes
   const updateSelectedAddress = useCallback((addresses, addressId) => {
     if (!addresses || !addressId) return;
 
@@ -134,7 +155,7 @@ export const useCheckout = () => {
     }
   }, []);
 
-  // Actualizar el método de pago seleccionado cuando cambia el ID
+  // Update selected payment method when ID changes
   const updateSelectedPayment = useCallback((paymentMethods, paymentId) => {
     if (!paymentMethods || !paymentId) return;
 
@@ -144,62 +165,62 @@ export const useCheckout = () => {
     }
   }, []);
 
-  // Manejar cambio de dirección
+  // Handle address change
   const handleAddressChange = useCallback((addressId) => {
     setSelectedAddressId(addressId);
     updateSelectedAddress(addresses, addressId);
   }, [updateSelectedAddress, addresses]);
 
-  // Manejar cambio de método de pago
+  // Handle payment method change
   const handlePaymentChange = useCallback((paymentId) => {
     setSelectedPaymentId(paymentId);
     updateSelectedPayment(paymentMethods, paymentId);
   }, [updateSelectedPayment, paymentMethods]);
 
-  // Manejar cambio en requerimiento de factura
+  // Handle invoice requirement change
   const handleInvoiceChange = useCallback((requires) => {
     setRequiresInvoice(requires);
 
-    // Si ya no requiere factura, limpiar los datos fiscales
+    // If no longer requires invoice, clear fiscal data
     if (!requires) {
       setFiscalData(null);
     }
   }, []);
 
-  // Manejar datos fiscales
+  // Handle fiscal data change
   const handleFiscalDataChange = useCallback((data) => {
     setFiscalData(data);
   }, []);
 
-  // Manejar notas del pedido
+  // Handle order notes change
   const handleNotesChange = useCallback((e) => {
     setOrderNotes(e.target.value);
   }, []);
 
-  // Validar que todo esté completo para procesar la orden
+  // Validate checkout data is complete
   const validateCheckoutData = useCallback(() => {
     if (!selectedAddressId || !selectedAddress) {
-      setError('Debes seleccionar una dirección de envío');
+      setError('You must select a shipping address');
       return false;
     }
 
     if (!selectedPaymentId || !selectedPayment) {
-      setError('Debes seleccionar un método de pago');
+      setError('You must select a payment method');
       return false;
     }
 
     if (requiresInvoice && (!fiscalData || !fiscalData.rfc)) {
-      setError('Los datos fiscales son requeridos para la factura');
+      setError('Fiscal data is required for invoicing');
       return false;
     }
 
     if (hasOutOfStockItems) {
-      setError('Hay productos sin stock en tu carrito');
+      setError('There are out-of-stock items in your cart');
       return false;
     }
 
     if (!stripe || !elements) {
-      setError('El sistema de pagos no está listo. Por favor, intenta de nuevo.');
+      setError('Payment system is not ready. Please try again.');
       return false;
     }
 
@@ -217,18 +238,18 @@ export const useCheckout = () => {
     elements
   ]);
 
-  // Preparar los datos de la orden
+  // Prepare order data
   const prepareOrderData = useCallback(() => {
-    // Crear copia de la información de la dirección
+    // Create a copy of shipping address information
     const shippingInfo = {
       addressId: selectedAddressId,
       address: { ...selectedAddress },
       method: 'standard',
       cost: isFreeShipping ? 0 : shipping,
-      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 7 días después
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 7 days later
     };
 
-    // Crear copia limitada de la información del método de pago (por seguridad)
+    // Create a limited copy of payment method information (for security)
     const paymentInfo = {
       methodId: selectedPaymentId,
       method: {
@@ -240,13 +261,13 @@ export const useCheckout = () => {
       stripePaymentMethodId: selectedPayment.stripePaymentMethodId
     };
 
-    // Información de facturación
+    // Billing information
     const billingInfo = {
       requiresInvoice,
       fiscalData: requiresInvoice ? fiscalData : null
     };
 
-    // Datos completos de la orden
+    // Complete order data
     return {
       userId: uid,
       items: items.map(item => ({
@@ -287,9 +308,9 @@ export const useCheckout = () => {
     items
   ]);
 
-  // Procesar la orden
+  // Process order
   const handleProcessOrder = useCallback(async () => {
-    // Validar datos
+    // Validate data
     if (!validateCheckoutData()) {
       return;
     }
@@ -298,25 +319,25 @@ export const useCheckout = () => {
     setStep(2);
 
     try {
-      // 1. Preparar datos de la orden
+      // 1. Prepare order data
       const orderData = prepareOrderData();
 
-      // 2. Crear PaymentIntent en Stripe a través de nuestra Cloud Function
+      // 2. Create PaymentIntent in Stripe through our Cloud Function
       const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
       const paymentResponse = await createPaymentIntent({
-        amount: Math.round(orderData.totals.total * 100), // Convertir a centavos y redondear
+        amount: Math.round(orderData.totals.total * 100), // Convert to cents and round
         paymentMethodId: orderData.payment.stripePaymentMethodId,
-        description: `Pedido en Cactilia`
+        description: `Order at Cactilia`
       });
 
       if (!paymentResponse.data || !paymentResponse.data.clientSecret) {
-        throw new Error("No se pudo crear el intento de pago");
+        throw new Error("Could not create payment intent");
       }
 
       const { clientSecret, paymentIntentId } = paymentResponse.data;
       setClientSecret(clientSecret);
 
-      // 3. Guardar la orden en Firestore con el ID del PaymentIntent
+      // 3. Save order to Firestore with PaymentIntent ID
       const orderToSave = {
         ...orderData,
         payment: {
@@ -330,7 +351,7 @@ export const useCheckout = () => {
       const orderRef = await addDoc(collection(FirebaseDB, 'orders'), orderToSave);
       setOrderId(orderRef.id);
 
-      // 4. Confirmar el pago con Stripe
+      // 4. Confirm payment with Stripe
       const { error: stripeError } = await stripe.confirmCardPayment(
         clientSecret, {
           payment_method: orderData.payment.stripePaymentMethodId
@@ -341,7 +362,7 @@ export const useCheckout = () => {
         throw new Error(stripeError.message);
       }
 
-      // 5. Confirmar el resultado del pago mediante nuestra Cloud Function
+      // 5. Confirm payment result via Cloud Function
       const confirmOrderPayment = httpsCallable(functions, 'confirmOrderPayment');
       const confirmResult = await confirmOrderPayment({
         orderId: orderRef.id,
@@ -349,29 +370,29 @@ export const useCheckout = () => {
       });
 
       if (!confirmResult.data || !confirmResult.data.success) {
-        throw new Error("Error al confirmar el pago");
+        throw new Error("Error confirming payment");
       }
 
-      // 6. Mostrar mensaje de éxito y limpiar el carrito
+      // 6. Show success message and clear cart
       dispatch(addMessage({
         type: 'success',
-        text: '¡Pago completado con éxito! Tu pedido ha sido procesado.',
+        text: 'Payment completed successfully! Your order has been processed.',
         autoHide: true,
         duration: 5000
       }));
 
       dispatch(clearCartWithSync());
 
-      // 7. Cambiar a paso de confirmación
+      // 7. Change to confirmation step
       setStep(3);
 
     } catch (err) {
-      console.error('Error al procesar la orden:', err);
-      setError(err.message || 'Error al procesar tu orden. Por favor, intenta de nuevo.');
+      console.error('Error processing order:', err);
+      setError(err.message || 'Error processing your order. Please try again.');
 
       dispatch(addMessage({
         type: 'error',
-        text: err.message || 'Error al procesar el pago.',
+        text: err.message || 'Error processing payment.',
         autoHide: true,
         duration: 5000
       }));
@@ -390,7 +411,7 @@ export const useCheckout = () => {
   ]);
 
   return {
-    // Estados
+    // States
     selectedAddressId,
     selectedPaymentId,
     requiresInvoice,
@@ -405,7 +426,7 @@ export const useCheckout = () => {
     loadingAddresses,
     loadingPayments,
 
-    // Manejadores
+    // Handlers
     handleAddressChange,
     handlePaymentChange,
     handleInvoiceChange,
@@ -413,7 +434,7 @@ export const useCheckout = () => {
     handleNotesChange,
     handleProcessOrder,
 
-    // Selectores auxiliares
+    // Helper selectors
     updateSelectedAddress,
     updateSelectedPayment
   };
