@@ -1,23 +1,29 @@
 // functions/payment/paymentMethods.js
-const functions = require("firebase-functions");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const { stripe, getOrCreateCustomer } = require("./stripeService");
+const { stripeSecretParam, getOrCreateCustomer } = require("./stripeService");
 
 /**
  * Cloud Function para crear un Setup Intent
  */
-exports.createSetupIntent = functions.https.onCall(async (data, context) => {
+exports.createSetupIntent = onCall({
+  region: "us-central1",
+  secrets: [stripeSecretParam]
+}, async (request) => {
   // Verificar autenticación
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       "unauthenticated",
       "Debes iniciar sesión para crear un setup intent"
     );
   }
 
   try {
+    // Inicializar Stripe con el secreto
+    const stripe = require("stripe")(stripeSecretParam.value());
+
     // Obtener o crear cliente Stripe
-    const stripeCustomerId = await getOrCreateCustomer(context.auth.uid);
+    const stripeCustomerId = await getOrCreateCustomer(request.auth.uid, stripe);
 
     // Crear un SetupIntent
     const setupIntent = await stripe.setupIntents.create({
@@ -31,37 +37,43 @@ exports.createSetupIntent = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("Error creando setup intent:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new HttpsError("internal", error.message);
   }
 });
 
 /**
  * Cloud Function para guardar un método de pago
  */
-exports.savePaymentMethod = functions.https.onCall(async (data, context) => {
+exports.savePaymentMethod = onCall({
+  region: "us-central1",
+  secrets: [stripeSecretParam]
+}, async (request) => {
   // Verificar autenticación
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       "unauthenticated",
       "Debes iniciar sesión para guardar un método de pago"
     );
   }
 
-  const { setupIntentId, paymentMethodId, isDefault = false, cardHolder } = data;
+  const { setupIntentId, paymentMethodId, isDefault = false, cardHolder } = request.data;
 
   if (!setupIntentId || !paymentMethodId) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "Se requieren ID de setup intent y método de pago"
     );
   }
 
   try {
+    // Inicializar Stripe con el secreto
+    const stripe = require("stripe")(stripeSecretParam.value());
+
     // Verificar que el setup intent se completó correctamente
     const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
 
     if (setupIntent.status !== 'succeeded') {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "failed-precondition",
         "El setup intent no se ha completado correctamente"
       );
@@ -71,7 +83,7 @@ exports.savePaymentMethod = functions.https.onCall(async (data, context) => {
     const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
 
     // Obtener o crear cliente Stripe
-    const stripeCustomerId = await getOrCreateCustomer(context.auth.uid);
+    const stripeCustomerId = await getOrCreateCustomer(request.auth.uid, stripe);
 
     // Si debe ser el método predeterminado, actualizar en Stripe
     if (isDefault) {
@@ -84,7 +96,7 @@ exports.savePaymentMethod = functions.https.onCall(async (data, context) => {
       // Actualizar todos los métodos de pago existentes a no predeterminados
       const existingMethods = await admin.firestore()
         .collection('payment_methods')
-        .where('userId', '==', context.auth.uid)
+        .where('userId', '==', request.auth.uid)
         .where('isDefault', '==', true)
         .get();
 
@@ -97,7 +109,7 @@ exports.savePaymentMethod = functions.https.onCall(async (data, context) => {
 
     // Guardar método de pago en Firestore
     const paymentMethodData = {
-      userId: context.auth.uid,
+      userId: request.auth.uid,
       stripePaymentMethodId: paymentMethod.id,
       type: paymentMethod.card.brand.toLowerCase(),
       cardNumber: `**** **** **** ${paymentMethod.card.last4}`,
@@ -117,43 +129,49 @@ exports.savePaymentMethod = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("Error guardando método de pago:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new HttpsError("internal", error.message);
   }
 });
 
 /**
  * Cloud Function para eliminar un método de pago
  */
-exports.detachPaymentMethod = functions.https.onCall(async (data, context) => {
+exports.detachPaymentMethod = onCall({
+  region: "us-central1",
+  secrets: [stripeSecretParam]
+}, async (request) => {
   // Verificar autenticación
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       "unauthenticated",
       "Debes iniciar sesión para eliminar un método de pago"
     );
   }
 
-  const { paymentMethodId, stripePaymentMethodId } = data;
+  const { paymentMethodId, stripePaymentMethodId } = request.data;
 
   if (!paymentMethodId || !stripePaymentMethodId) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "Se requieren IDs del método de pago"
     );
   }
 
   try {
+    // Inicializar Stripe con el secreto
+    const stripe = require("stripe")(stripeSecretParam.value());
+
     // Verificar que el método existe y pertenece al usuario
     const methodRef = admin.firestore().collection('payment_methods').doc(paymentMethodId);
     const methodDoc = await methodRef.get();
 
     if (!methodDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Método de pago no encontrado");
+      throw new HttpsError("not-found", "Método de pago no encontrado");
     }
 
     const methodData = methodDoc.data();
-    if (methodData.userId !== context.auth.uid) {
-      throw new functions.https.HttpsError(
+    if (methodData.userId !== request.auth.uid) {
+      throw new HttpsError(
         "permission-denied",
         "No tienes permiso para eliminar este método de pago"
       );
@@ -161,7 +179,7 @@ exports.detachPaymentMethod = functions.https.onCall(async (data, context) => {
 
     // No permitir eliminar el método predeterminado
     if (methodData.isDefault) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "failed-precondition",
         "No puedes eliminar el método de pago predeterminado"
       );
@@ -176,6 +194,6 @@ exports.detachPaymentMethod = functions.https.onCall(async (data, context) => {
     return { success: true };
   } catch (error) {
     console.error("Error eliminando método de pago:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new HttpsError("internal", error.message);
   }
 });

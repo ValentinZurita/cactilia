@@ -20,7 +20,6 @@ import { calculateCartTotals, getOutOfStockItems } from '../../shop/utils/cartUt
  * Custom hook to interact with the cart
  * Provides methods to add, remove, update items and get cart info
  */
-
 export const useCart = () => {
   const dispatch = useDispatch();
 
@@ -97,8 +96,8 @@ export const useCart = () => {
     // Cart actions
     addToCart,
     removeFromCart,
-    increaseQuantity,
-    decreaseQuantity,
+    increaseQuantity: increaseQuantity,
+    decreaseQuantity: decreaseQuantity,
     clearCart,
     loadCart,
     isInCart,

@@ -1,30 +1,34 @@
 import React from 'react';
-import { formatPrice } from '../../utils/cartUtilis.js'
-
+import { formatPrice } from '../../utils/cartUtilis.js';
+import { useCart } from '../../../user/hooks/useCart.js';
 
 /**
  * CheckoutSummary - Componente que muestra el resumen del pedido
  * Incluye lista de productos, subtotal, impuestos, envío y total
- *
- * @param {Object} props - Propiedades del componente
- * @param {Array} props.items - Lista de productos en el carrito
- * @param {number} props.subtotal - Subtotal del pedido (sin impuestos)
- * @param {number} props.taxes - Impuestos aplicados
- * @param {number} props.shipping - Costo de envío
- * @param {number} props.finalTotal - Total final a pagar
- * @param {boolean} props.isFreeShipping - Si el envío es gratis
  */
-export const CheckoutSummary = ({
-                                  items = [],
-                                  subtotal,
-                                  taxes,
-                                  shipping,
-                                  finalTotal,
-                                  isFreeShipping
-                                }) => {
+export const CheckoutSummary = () => {
+  // Usar nuestro hook personalizado para obtener la información del carrito
+  const {
+    items,
+    subtotal,
+    taxes,
+    shipping,
+    finalTotal,
+    isFreeShipping,
+    hasOutOfStockItems
+  } = useCart();
+
   return (
     <div className="checkout-summary">
       <h3 className="summary-title mb-4">Resumen del Pedido</h3>
+
+      {/* Advertencia de productos sin stock */}
+      {hasOutOfStockItems && (
+        <div className="alert alert-warning mb-3">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          Hay productos sin stock en tu carrito que no podrán ser procesados.
+        </div>
+      )}
 
       {/* Lista de productos */}
       <div className="product-list mb-4">
@@ -48,6 +52,9 @@ export const CheckoutSummary = ({
                   {formatPrice(item.price * item.quantity)}
                 </span>
               </div>
+              {item.stock === 0 && (
+                <span className="badge bg-danger text-white mt-1">Sin stock</span>
+              )}
             </div>
           </div>
         ))}

@@ -1,3 +1,7 @@
+/**
+ * Archivo principal para Firebase Functions (2da generación)
+ */
+
 const admin = require("firebase-admin");
 
 // ⚠️ Evitar inicialización duplicada
@@ -5,18 +9,23 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
+// Importar funciones de autenticación
+const authFunctions = require("./auth/setCustomClaims");
+
+// Importar función de prueba
+const { basicTest } = require("./payment/test-function");
+
 // Importar funciones de pago
 const paymentIntents = require('./payment/paymentIntents');
 const paymentMethods = require('./payment/paymentMethods');
-const orderEmails = require('./notifications/orderEmails');
 
-// Importar la función desde setCustomClaims.js
-const { setCustomClaims, deleteUserByUID, getUserDetailsByUID } = require("./auth/setCustomClaims");
+// Exportar las funciones explícitamente
+exports.setCustomClaims = authFunctions.setCustomClaims;
+exports.deleteUser = authFunctions.deleteUser;
+exports.getUsersDetail = authFunctions.getUsersDetail;
 
-// Exportar la función
-exports.setCustomClaims = setCustomClaims;
-exports.deleteUserByUID = deleteUserByUID;
-exports.getUserDetailsByUID = getUserDetailsByUID;
+// Exportar función de prueba básica
+exports.basicTest = basicTest;
 
 // Exportar funciones de pago
 exports.createPaymentIntent = paymentIntents.createPaymentIntent;
@@ -27,7 +36,8 @@ exports.createSetupIntent = paymentMethods.createSetupIntent;
 exports.savePaymentMethod = paymentMethods.savePaymentMethod;
 exports.detachPaymentMethod = paymentMethods.detachPaymentMethod;
 
-// Exportar funciones de notificaciones
-exports.sendOrderConfirmationEmail = orderEmails.sendOrderConfirmationEmail;
-exports.sendOrderStatusUpdateEmail = orderEmails.sendOrderStatusUpdateEmail;
-exports.sendInvoiceEmail = orderEmails.sendInvoiceEmail;
+// Exportar funciones de notificaciones (comentadas por ahora)
+// const orderEmails = require('./notifications/orderEmails');
+// exports.sendOrderConfirmationEmail = orderEmails.sendOrderConfirmationEmail;
+// exports.sendOrderStatusUpdateEmail = orderEmails.sendOrderStatusUpdateEmail;
+// exports.sendInvoiceEmail = orderEmails.sendInvoiceEmail;

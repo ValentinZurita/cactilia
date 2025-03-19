@@ -1,5 +1,5 @@
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const functions = require("firebase-functions");
 
 // ✅ Evitar inicialización duplicada
 if (!admin.apps.length) {
@@ -13,20 +13,20 @@ const VALID_ROLES = ["user", "admin", "superadmin"];
  * Cloud Function para asignar Custom Claims (Roles de Usuario)
  * Se ejecuta cuando se llama desde el cliente con Firebase Callable Functions.
  */
-exports.setCustomClaims = functions.https.onCall(async (data, context) => {
-  const { uid, role } = data;
+exports.setCustomClaims = onCall({ region: "us-central1" }, async (request) => {
+  const { uid, role } = request.data;
 
   // ✅ Verificar si el usuario está autenticado
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       "unauthenticated",
       "El usuario debe estar autenticado para asignar roles."
     );
   }
 
   // ✅ Verificar que el usuario tiene permisos de Super Admin
-  if (!context.auth.token || context.auth.token.role !== "superadmin") {
-    throw new functions.https.HttpsError(
+  if (!request.auth.token || request.auth.token.role !== "superadmin") {
+    throw new HttpsError(
       "permission-denied",
       "Solo los superadmins pueden asignar roles."
     );
@@ -34,7 +34,7 @@ exports.setCustomClaims = functions.https.onCall(async (data, context) => {
 
   // ✅ Validar que se envió UID y rol
   if (!uid || !role) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "Se requiere un UID y un rol válido."
     );
@@ -42,7 +42,7 @@ exports.setCustomClaims = functions.https.onCall(async (data, context) => {
 
   // ✅ Validar que el rol sea permitido
   if (!VALID_ROLES.includes(role)) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       `El rol "${role}" no es válido. Roles permitidos: ${VALID_ROLES.join(", ")}.`
     );
@@ -61,7 +61,7 @@ exports.setCustomClaims = functions.https.onCall(async (data, context) => {
     return { success: true, message: `✅ Rol "${role}" asignado a ${uid} y tokens revocados.` };
   } catch (error) {
     console.error("❌ Error asignando Custom Claims:", error);
-    throw new functions.https.HttpsError("internal", "Error al asignar el rol.");
+    throw new HttpsError("internal", "Error al asignar el rol.");
   }
 });
 
@@ -69,20 +69,20 @@ exports.setCustomClaims = functions.https.onCall(async (data, context) => {
  * Cloud Function para eliminar usuarios
  * Elimina un usuario tanto en Auth como en Firestore
  */
-exports.deleteUser = functions.https.onCall(async (data, context) => {
-  const { uid } = data;
+exports.deleteUser = onCall({ region: "us-central1" }, async (request) => {
+  const { uid } = request.data;
 
   // ✅ Verificar si el usuario está autenticado
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       "unauthenticated",
       "El usuario debe estar autenticado para eliminar usuarios."
     );
   }
 
   // ✅ Verificar que el usuario tiene permisos de Super Admin
-  if (!context.auth.token || context.auth.token.role !== "superadmin") {
-    throw new functions.https.HttpsError(
+  if (!request.auth.token || request.auth.token.role !== "superadmin") {
+    throw new HttpsError(
       "permission-denied",
       "Solo los superadmins pueden eliminar usuarios."
     );
@@ -90,7 +90,7 @@ exports.deleteUser = functions.https.onCall(async (data, context) => {
 
   // ✅ Validar que se envió UID
   if (!uid) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "Se requiere un UID válido."
     );
@@ -109,7 +109,7 @@ exports.deleteUser = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("❌ Error eliminando usuario:", error);
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "internal",
       "Error al eliminar el usuario."
     );
@@ -120,19 +120,19 @@ exports.deleteUser = functions.https.onCall(async (data, context) => {
  * Cloud Function para obtener datos detallados de los usuarios
  * Obtiene información tanto de Auth como de Firestore
  */
-exports.getUsersDetail = functions.https.onCall(async (data, context) => {
+exports.getUsersDetail = onCall({ region: "us-central1" }, async (request) => {
   // ✅ Verificar si el usuario está autenticado
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       "unauthenticated",
       "El usuario debe estar autenticado para obtener detalles de usuarios."
     );
   }
 
   // ✅ Verificar que el usuario tiene permisos de Admin
-  if (!context.auth.token ||
-    (context.auth.token.role !== "admin" && context.auth.token.role !== "superadmin")) {
-    throw new functions.https.HttpsError(
+  if (!request.auth.token ||
+    (request.auth.token.role !== "admin" && request.auth.token.role !== "superadmin")) {
+    throw new HttpsError(
       "permission-denied",
       "Solo los administradores pueden obtener detalles de usuarios."
     );
@@ -175,7 +175,7 @@ exports.getUsersDetail = functions.https.onCall(async (data, context) => {
     return { success: true, users };
   } catch (error) {
     console.error("❌ Error obteniendo usuarios:", error);
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "internal",
       "Error al obtener detalles de los usuarios."
     );

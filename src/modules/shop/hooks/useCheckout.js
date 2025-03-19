@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { FirebaseDB } from '../../../firebase/firebaseConfig';
 import { addMessage } from '../../../store/messages/messageSlice';
 import { clearCartWithSync } from '../../../store/cart/cartThunk';
 import { useCart } from '../../user/hooks/useCart';
@@ -9,14 +12,13 @@ import { useCart } from '../../user/hooks/useCart';
 /**
  * Hook personalizado para manejar el proceso de checkout
  * Gestiona la selección de dirección, método de pago, y procesamiento de la orden
- *
- * @returns {Object} - Estados y funciones para el checkout
  */
 export const useCheckout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const stripe = useStripe();
   const elements = useElements();
+  const functions = getFunctions();
 
   // Obtener información del usuario desde Redux
   const { uid, status } = useSelector(state => state.auth);
@@ -30,53 +32,7 @@ export const useCheckout = () => {
     finalTotal,
     isFreeShipping,
     hasOutOfStockItems,
-    clearCart
   } = useCart();
-
-  // Mock de direcciones y métodos de pago para pruebas
-  const mockAddresses = [
-    {
-      id: 'addr1',
-      name: 'Casa',
-      street: 'Calle Principal 123',
-      numExt: '456',
-      colonia: 'Centro',
-      city: 'Ciudad de México',
-      state: 'CDMX',
-      zip: '01000',
-      isDefault: true
-    },
-    {
-      id: 'addr2',
-      name: 'Oficina',
-      street: 'Av. Reforma',
-      numExt: '222',
-      colonia: 'Juárez',
-      city: 'Ciudad de México',
-      state: 'CDMX',
-      zip: '06600',
-      isDefault: false
-    }
-  ];
-
-  const mockPaymentMethods = [
-    {
-      id: 'pay1',
-      type: 'visa',
-      cardNumber: '•••• •••• •••• 4242',
-      expiryDate: '12/25',
-      isDefault: true,
-      stripePaymentMethodId: 'pm_mock_1'
-    },
-    {
-      id: 'pay2',
-      type: 'mastercard',
-      cardNumber: '•••• •••• •••• 5555',
-      expiryDate: '10/24',
-      isDefault: false,
-      stripePaymentMethodId: 'pm_mock_2'
-    }
-  ];
 
   // Estados para el checkout
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -91,8 +47,10 @@ export const useCheckout = () => {
   const [orderId, setOrderId] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
-  const [addresses, setAddresses] = useState(mockAddresses);
-  const [paymentMethods, setPaymentMethods] = useState(mockPaymentMethods);
+  const [addresses, setAddresses] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [loadingPayments, setLoadingPayments] = useState(true);
 
   // Verificar que el usuario esté autenticado
   useEffect(() => {
@@ -107,6 +65,64 @@ export const useCheckout = () => {
       navigate('/shop');
     }
   }, [items, status, navigate]);
+
+  // Cargar direcciones del usuario
+  useEffect(() => {
+    const loadUserAddresses = async () => {
+      if (status !== 'authenticated' || !uid) return;
+
+      setLoadingAddresses(true);
+      try {
+        const { getUserAddresses } = await import('../../user/services/addressService');
+        const result = await getUserAddresses(uid);
+
+        if (result.ok) {
+          setAddresses(result.data);
+        } else {
+          console.error("Error al cargar direcciones:", result.error);
+          dispatch(addMessage({
+            type: 'error',
+            text: 'No se pudieron cargar tus direcciones de envío'
+          }));
+        }
+      } catch (error) {
+        console.error("Error al cargar direcciones:", error);
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    loadUserAddresses();
+  }, [uid, status, dispatch]);
+
+  // Cargar métodos de pago del usuario
+  useEffect(() => {
+    const loadPaymentMethods = async () => {
+      if (status !== 'authenticated' || !uid) return;
+
+      setLoadingPayments(true);
+      try {
+        const { getUserPaymentMethods } = await import('../../user/services/paymentService');
+        const result = await getUserPaymentMethods(uid);
+
+        if (result.ok) {
+          setPaymentMethods(result.data);
+        } else {
+          console.error("Error al cargar métodos de pago:", result.error);
+          dispatch(addMessage({
+            type: 'error',
+            text: 'No se pudieron cargar tus métodos de pago'
+          }));
+        }
+      } catch (error) {
+        console.error("Error al cargar métodos de pago:", error);
+      } finally {
+        setLoadingPayments(false);
+      }
+    };
+
+    loadPaymentMethods();
+  }, [uid, status, dispatch]);
 
   // Actualizar la dirección seleccionada cuando cambia el ID
   const updateSelectedAddress = useCallback((addresses, addressId) => {
@@ -182,6 +198,11 @@ export const useCheckout = () => {
       return false;
     }
 
+    if (!stripe || !elements) {
+      setError('El sistema de pagos no está listo. Por favor, intenta de nuevo.');
+      return false;
+    }
+
     setError(null);
     return true;
   }, [
@@ -191,7 +212,9 @@ export const useCheckout = () => {
     selectedPayment,
     requiresInvoice,
     fiscalData,
-    hasOutOfStockItems
+    hasOutOfStockItems,
+    stripe,
+    elements
   ]);
 
   // Preparar los datos de la orden
@@ -213,7 +236,8 @@ export const useCheckout = () => {
         last4: selectedPayment.cardNumber.split(' ').pop(),
         brand: selectedPayment.type
       },
-      status: 'pending'
+      status: 'pending',
+      stripePaymentMethodId: selectedPayment.stripePaymentMethodId
     };
 
     // Información de facturación
@@ -226,11 +250,10 @@ export const useCheckout = () => {
     return {
       userId: uid,
       items: items.map(item => ({
-        productId: item.id,
+        id: item.id,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        total: item.price * item.quantity,
         image: item.image
       })),
       shipping: shippingInfo,
@@ -244,6 +267,8 @@ export const useCheckout = () => {
         total: finalTotal
       },
       notes: orderNotes,
+      status: 'pending',
+      createdAt: new Date()
     };
   }, [
     selectedAddressId,
@@ -273,17 +298,61 @@ export const useCheckout = () => {
     setStep(2);
 
     try {
-      // Preparar datos de la orden
+      // 1. Preparar datos de la orden
       const orderData = prepareOrderData();
 
-      // Simular procesamiento de orden para pruebas
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 2. Crear PaymentIntent en Stripe a través de nuestra Cloud Function
+      const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
+      const paymentResponse = await createPaymentIntent({
+        amount: Math.round(orderData.totals.total * 100), // Convertir a centavos y redondear
+        paymentMethodId: orderData.payment.stripePaymentMethodId,
+        description: `Pedido en Cactilia`
+      });
 
-      // Crear un ID de orden simulado
-      const simulatedOrderId = `order_${Date.now()}`;
-      setOrderId(simulatedOrderId);
+      if (!paymentResponse.data || !paymentResponse.data.clientSecret) {
+        throw new Error("No se pudo crear el intento de pago");
+      }
 
-      // Mostrar mensaje de éxito
+      const { clientSecret, paymentIntentId } = paymentResponse.data;
+      setClientSecret(clientSecret);
+
+      // 3. Guardar la orden en Firestore con el ID del PaymentIntent
+      const orderToSave = {
+        ...orderData,
+        payment: {
+          ...orderData.payment,
+          paymentIntentId
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const orderRef = await addDoc(collection(FirebaseDB, 'orders'), orderToSave);
+      setOrderId(orderRef.id);
+
+      // 4. Confirmar el pago con Stripe
+      const { error: stripeError } = await stripe.confirmCardPayment(
+        clientSecret, {
+          payment_method: orderData.payment.stripePaymentMethodId
+        }
+      );
+
+      if (stripeError) {
+        throw new Error(stripeError.message);
+      }
+
+      // 5. Confirmar el resultado del pago mediante nuestra Cloud Function
+      const confirmOrderPayment = httpsCallable(functions, 'confirmOrderPayment');
+      const confirmResult = await confirmOrderPayment({
+        orderId: orderRef.id,
+        paymentIntentId
+      });
+
+      if (!confirmResult.data || !confirmResult.data.success) {
+        throw new Error("Error al confirmar el pago");
+      }
+
+      // 6. Mostrar mensaje de éxito y limpiar el carrito
       dispatch(addMessage({
         type: 'success',
         text: '¡Pago completado con éxito! Tu pedido ha sido procesado.',
@@ -291,11 +360,11 @@ export const useCheckout = () => {
         duration: 5000
       }));
 
-      // Limpiar el carrito
       dispatch(clearCartWithSync());
 
-      // Cambiar a paso de confirmación
+      // 7. Cambiar a paso de confirmación
       setStep(3);
+
     } catch (err) {
       console.error('Error al procesar la orden:', err);
       setError(err.message || 'Error al procesar tu orden. Por favor, intenta de nuevo.');
@@ -314,7 +383,10 @@ export const useCheckout = () => {
   }, [
     validateCheckoutData,
     prepareOrderData,
-    dispatch
+    dispatch,
+    functions,
+    stripe,
+    FirebaseDB
   ]);
 
   return {
@@ -330,6 +402,8 @@ export const useCheckout = () => {
     isProcessing,
     addresses,
     paymentMethods,
+    loadingAddresses,
+    loadingPayments,
 
     // Manejadores
     handleAddressChange,

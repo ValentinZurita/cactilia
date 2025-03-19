@@ -1,12 +1,17 @@
 // functions/payment/stripeService.js
-const functions = require("firebase-functions");
+const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
-const stripe = require("stripe")(functions.config().stripe.secret);
+
+// Definir la clave secreta de Stripe como un parámetro secreto
+const stripeSecretParam = defineSecret("STRIPE_SECRET_KEY");
+
+// No inicializar Stripe aquí, sino en cada función
+// Así lo inicializamos en tiempo de ejecución
 
 /**
  * Obtiene o crea un cliente de Stripe para un usuario
  */
-async function getOrCreateCustomer(uid) {
+async function getOrCreateCustomer(uid, stripeInstance) {
   try {
     // Buscar si ya existe un customerID
     const userSnapshot = await admin.firestore()
@@ -20,7 +25,7 @@ async function getOrCreateCustomer(uid) {
     if (!stripeCustomerId) {
       const user = await admin.auth().getUser(uid);
 
-      const customer = await stripe.customers.create({
+      const customer = await stripeInstance.customers.create({
         email: user.email,
         name: user.displayName || '',
         metadata: {
@@ -83,7 +88,7 @@ async function updatePaymentIntentStatus(paymentIntentId, status) {
 }
 
 module.exports = {
-  stripe,
+  stripeSecretParam,
   getOrCreateCustomer,
   logPaymentIntent,
   updatePaymentIntentStatus

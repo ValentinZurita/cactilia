@@ -1,40 +1,46 @@
 // functions/payment/paymentIntents.js
-const functions = require("firebase-functions");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const { stripe, getOrCreateCustomer, logPaymentIntent, updatePaymentIntentStatus } = require("./stripeService");
+const { stripeSecretParam, getOrCreateCustomer, logPaymentIntent, updatePaymentIntentStatus } = require("./stripeService");
 
 /**
  * Cloud Function para crear un Payment Intent de Stripe
  */
-exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
+exports.createPaymentIntent = onCall({
+  region: "us-central1",
+  secrets: [stripeSecretParam]
+}, async (request) => {
   // Verificar autenticación
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       "unauthenticated",
       "Debes iniciar sesión para realizar pagos"
     );
   }
 
-  const { amount, paymentMethodId, description = "Compra en Cactilia" } = data;
+  const { amount, paymentMethodId, description = "Compra en Cactilia" } = request.data;
 
   // Validar datos
   if (!amount || amount <= 0) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "El monto debe ser mayor a cero"
     );
   }
 
   if (!paymentMethodId) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "Se requiere un método de pago"
     );
   }
 
   try {
+    // Inicializar Stripe con el secreto
+    const stripe = require("stripe")(stripeSecretParam.value());
+
     // Obtener o crear cliente Stripe
-    const stripeCustomerId = await getOrCreateCustomer(context.auth.uid);
+    const stripeCustomerId = await getOrCreateCustomer(request.auth.uid, stripe);
 
     // Crear un Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -46,14 +52,14 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
       confirmation_method: 'manual',
       setup_future_usage: 'off_session', // Permite usar este método para pagos futuros
       metadata: {
-        firebaseUserId: context.auth.uid
+        firebaseUserId: request.auth.uid
       }
     });
 
     // Registrar intento de pago
     await logPaymentIntent(
       paymentIntent.id,
-      context.auth.uid,
+      request.auth.uid,
       amount,
       paymentIntent.status
     );
@@ -65,40 +71,46 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("Error creando Payment Intent:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new HttpsError("internal", error.message);
   }
 });
 
 /**
  * Cloud Function para confirmar el pago de una orden
  */
-exports.confirmOrderPayment = functions.https.onCall(async (data, context) => {
+exports.confirmOrderPayment = onCall({
+  region: "us-central1",
+  secrets: [stripeSecretParam]
+}, async (request) => {
   // Verificar autenticación
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       "unauthenticated",
       "Debes iniciar sesión para confirmar pagos"
     );
   }
 
-  const { orderId, paymentIntentId } = data;
+  const { orderId, paymentIntentId } = request.data;
 
   // Validar datos
   if (!orderId) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "Se requiere un ID de orden"
     );
   }
 
   if (!paymentIntentId) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "Se requiere un ID de Payment Intent"
     );
   }
 
   try {
+    // Inicializar Stripe con el secreto
+    const stripe = require("stripe")(stripeSecretParam.value());
+
     // Obtener la orden
     const orderRef = admin.firestore().collection('orders').doc(orderId);
     const orderSnap = await orderRef.get();
@@ -110,8 +122,8 @@ exports.confirmOrderPayment = functions.https.onCall(async (data, context) => {
     const orderData = orderSnap.data();
 
     // Verificar que la orden pertenezca al usuario autenticado
-    if (orderData.userId !== context.auth.uid) {
-      throw new functions.https.HttpsError(
+    if (orderData.userId !== request.auth.uid) {
+      throw new HttpsError(
         "permission-denied",
         "No tienes permiso para confirmar esta orden"
       );
@@ -169,7 +181,7 @@ exports.confirmOrderPayment = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("Error confirmando pago:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    throw new HttpsError("internal", error.message);
   }
 });
 
