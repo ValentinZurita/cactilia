@@ -9,6 +9,8 @@ import { FirebaseDB } from '../../../firebase/firebaseConfig';
 import { addMessage } from '../../../store/messages/messageSlice';
 import { clearCartWithSync } from '../../../store/cart/cartThunk';
 import { useCart } from '../../user/hooks/useCart';
+import { mockCreatePaymentIntent, mockConfirmOrderPayment, shouldUseMocks } from '../../user/services/stripeMock.js';
+
 
 /**
  * Custom hook to handle the checkout process
@@ -323,19 +325,33 @@ export const useCheckout = () => {
       const orderData = prepareOrderData();
 
       // 2. Create PaymentIntent in Stripe through our Cloud Function
-      const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
-      const paymentResponse = await createPaymentIntent({
-        amount: Math.round(orderData.totals.total * 100), // Convert to cents and round
-        paymentMethodId: orderData.payment.stripePaymentMethodId,
-        description: `Order at Cactilia`
-      });
+      // 2. Create a Payment Intent with Stripe through our Cloud Function
+      let paymentResponse;
+      if (shouldUseMocks()) {
+        // Usar mock en desarrollo
+        console.log("Usando mock para createPaymentIntent");
+        paymentResponse = await mockCreatePaymentIntent({
+          amount: Math.round(orderData.totals.total * 100),
+          paymentMethodId: orderData.payment.stripePaymentMethodId,
+          description: `Order at Cactilia`
+        });
+      } else {
+        // Usar función real en producción
+        const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
+        paymentResponse = await createPaymentIntent({
+          amount: Math.round(orderData.totals.total * 100),
+          paymentMethodId: orderData.payment.stripePaymentMethodId,
+          description: `Order at Cactilia`
+        });
+      }
 
       if (!paymentResponse.data || !paymentResponse.data.clientSecret) {
         throw new Error("Could not create payment intent");
       }
 
+      // Extraer los datos de la respuesta
       const { clientSecret, paymentIntentId } = paymentResponse.data;
-      setClientSecret(clientSecret);
+      console.log("PaymentIntent creado:", { clientSecret, paymentIntentId });
 
       // 3. Save order to Firestore with PaymentIntent ID
       const orderToSave = {
@@ -352,25 +368,45 @@ export const useCheckout = () => {
       setOrderId(orderRef.id);
 
       // 4. Confirm payment with Stripe
-      const { error: stripeError } = await stripe.confirmCardPayment(
-        clientSecret, {
-          payment_method: orderData.payment.stripePaymentMethodId
-        }
-      );
+      let stripeConfirmation;
+      if (shouldUseMocks()) {
+        // En desarrollo, simplemente simulamos una confirmación exitosa
+        console.log("Usando mock para confirmCardPayment");
+        stripeConfirmation = {
+          paymentIntent: {
+            id: paymentIntentId,
+            status: 'succeeded'
+          },
+          error: null
+        };
+      } else {
+        // En producción, usamos la API real de Stripe
+        stripeConfirmation = await stripe.confirmCardPayment(
+          clientSecret, {
+            payment_method: orderData.payment.stripePaymentMethodId
+          }
+        );
 
-      if (stripeError) {
-        throw new Error(stripeError.message);
+        if (stripeConfirmation.error) {
+          throw new Error(stripeConfirmation.error.message);
+        }
       }
 
       // 5. Confirm payment result via Cloud Function
-      const confirmOrderPayment = httpsCallable(functions, 'confirmOrderPayment');
-      const confirmResult = await confirmOrderPayment({
-        orderId: orderRef.id,
-        paymentIntentId
-      });
-
-      if (!confirmResult.data || !confirmResult.data.success) {
-        throw new Error("Error confirming payment");
+      let confirmResult;
+      if (shouldUseMocks()) {
+        // Usar mock en desarrollo
+        console.log("Usando mock para confirmOrderPayment");
+        confirmResult = await mockConfirmOrderPayment({
+          orderId: orderRef.id,
+          paymentIntentId
+        });
+      } else {
+        const confirmOrderPayment = httpsCallable(functions, 'confirmOrderPayment');
+        confirmResult = await confirmOrderPayment({
+          orderId: orderRef.id,
+          paymentIntentId
+        });
       }
 
       // 6. Show success message and clear cart
