@@ -6,17 +6,7 @@
  */
 
 import React from 'react';
-
-/**
- * Filtros disponibles y su ícono asociado.
- * Estos identificadores deben coincidir con los estados mapeados en useOrders.
- */
-const FILTERS = [
-  { id: 'all', label: 'Todos', icon: 'bi-grid-fill' },
-  { id: 'processing', label: 'En proceso', icon: 'bi-clock-fill' },
-  { id: 'delivered', label: 'Entregados', icon: 'bi-check-circle-fill' },
-  { id: 'cancelled', label: 'Cancelados', icon: 'bi-x-circle-fill' }
-];
+import { ORDER_FILTERS } from '../../constants/orderConstants.js';
 
 /**
  * Barra de filtros para los pedidos.
@@ -29,7 +19,7 @@ const FILTERS = [
 export const OrderFilterBar = ({ activeFilter, onFilterChange }) => {
   return (
     <div className="order-filter-bar mb-4">
-      {FILTERS.map((filter) => (
+      {ORDER_FILTERS.map((filter) => (
         <button
           key={filter.id}
           className={`filter-chip ${activeFilter === filter.id ? 'active' : ''}`}

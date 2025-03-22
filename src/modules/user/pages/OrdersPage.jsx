@@ -13,6 +13,7 @@ import '../styles/profileOrders.css';
 import { OrderFilterBar, OrdersList } from '../components/orders/index.js';
 import { useOrders } from '../hooks/userOrders.js'
 
+
 export const OrdersPage = () => {
   // Obtener métodos y estado del hook personalizado
   const {

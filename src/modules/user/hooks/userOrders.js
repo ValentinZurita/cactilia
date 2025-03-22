@@ -8,25 +8,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { doc, getDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../firebase/firebaseConfig';
+
 import { addMessage } from '../../../store/messages/messageSlice';
 import { getOrderById, getUserOrders } from '../../shop/services/orderService.js';
 
-/**
- * Mapa de estados de pedido a estados de visualización.
- * Esto ayuda a traducir el estado interno de un pedido a un estado
- * más entendible para el usuario final.
- */
-const ORDER_STATUS_MAP = {
-  'pending': 'processing',
-  'payment_failed': 'cancelled',
-  'processing': 'processing',
-  'shipped': 'delivered',
-  'delivered': 'delivered',
-  'cancelled': 'cancelled',
-  'completed': 'delivered'
-};
+import { ORDER_STATUS_MAP } from '../constants/orderConstants.js';
 
 /**
  * Convierte el estado interno de un pedido a un estado de visualización.
@@ -48,7 +34,6 @@ const formatOrderDate = (timestamp) => {
   if (!timestamp) return 'Fecha no disponible';
 
   try {
-    // Manejar diferentes formatos de timestamp
     const date = timestamp.toDate
       ? timestamp.toDate()
       : timestamp.seconds
@@ -77,7 +62,7 @@ const formatOrderDate = (timestamp) => {
  * @returns {Object} - Estados y funciones para gestionar órdenes.
  */
 export const useOrders = () => {
-  // Acceso a redux
+  // Acceso a Redux
   const dispatch = useDispatch();
   const { uid, status } = useSelector(state => state.auth);
 
@@ -95,7 +80,7 @@ export const useOrders = () => {
   const [orderError, setOrderError] = useState(null);
 
   /**
-   * Cambia el filtro de estado de las órdenes (all, processing, delivered, cancelled, etc.).
+   * Cambia el filtro de estado de las órdenes (all, processing, delivered, cancelled...).
    *
    * @param {string} newFilter - Nuevo filtro seleccionado.
    */
@@ -104,7 +89,7 @@ export const useOrders = () => {
   }, []);
 
   /**
-   * Retorna la lista de órdenes, filtradas según el estado (filter).
+   * Retorna la lista de órdenes filtradas según el estado (filter).
    *
    * @returns {Array} - Lista de órdenes filtradas.
    */
@@ -112,7 +97,6 @@ export const useOrders = () => {
     if (filter === 'all') return orders;
 
     return orders.filter((order) => {
-      // Mapear los estados internos a estados de visualización
       const displayStatus = mapOrderStatusToDisplay(order.status);
       return displayStatus === filter;
     });
@@ -138,6 +122,7 @@ export const useOrders = () => {
         setOrders(result.data);
       } else {
         setError(result.error);
+
         dispatch(addMessage({
           type: 'error',
           text: 'Error al cargar tus pedidos. Por favor, intenta de nuevo.',
@@ -147,6 +132,7 @@ export const useOrders = () => {
     } catch (err) {
       console.error('Error obteniendo órdenes:', err);
       setError(err.message || 'Error al cargar pedidos');
+
       dispatch(addMessage({
         type: 'error',
         text: 'Error al cargar tus pedidos',
@@ -173,35 +159,38 @@ export const useOrders = () => {
     setOrderError(null);
 
     try {
-      console.log('Cargando detalles del pedido:', orderId);
+      const result = await getOrderById(orderId);
 
-      // Obtener directamente de Firestore
-      const orderRef = doc(FirebaseDB, 'orders', orderId);
-      const orderSnap = await getDoc(orderRef);
-
-      if (!orderSnap.exists()) {
-        console.error('Documento de pedido no encontrado');
-        setOrderError('No encontramos el pedido solicitado');
+      if (!result.ok) {
+        console.error('Error obteniendo detalle de orden:', result.error);
+        setOrderError(result.error || 'Error al cargar detalles del pedido');
         setOrder(null);
+
+        // Despachar un mensaje global para homogeneizar la UX
+        dispatch(addMessage({
+          type: 'error',
+          text: result.error || 'No encontramos el pedido solicitado',
+          autoHide: true
+        }));
         return;
       }
 
-      // Construir objeto con id e información del documento
-      const orderData = {
-        id: orderSnap.id,
-        ...orderSnap.data()
-      };
-
-      console.log('Datos del pedido cargados:', orderData);
-      setOrder(orderData);
+      setOrder(result.data);
     } catch (err) {
       console.error('Error obteniendo detalle de orden:', err);
       setOrderError(err.message || 'Error al cargar detalles del pedido');
       setOrder(null);
+
+      // También despachamos un mensaje global
+      dispatch(addMessage({
+        type: 'error',
+        text: err.message || 'Error al cargar detalles del pedido',
+        autoHide: true
+      }));
     } finally {
       setOrderLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   /**
    * Cargar las órdenes al montar el componente o cuando cambie el usuario.
@@ -211,7 +200,7 @@ export const useOrders = () => {
   }, [fetchOrders]);
 
   /**
-   * Devuelve la lista de órdenes con campos ya formateados (fecha, estado, etc.).
+   * Devuelve la lista de órdenes con campos formateados (fecha, estado, etc.).
    * Esto facilita la presentación en la interfaz de usuario.
    *
    * @returns {Array} - Lista de órdenes con campos formateados.
