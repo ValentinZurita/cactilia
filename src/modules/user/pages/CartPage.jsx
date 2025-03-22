@@ -23,7 +23,7 @@ export const CartPage = () => {
   const handleCheckout = () => {
     // Si el usuario no está autenticado, redirigir a inicio de sesión
     if (status !== 'authenticated') {
-      navigate('/auth/login?redirect=checkout');
+      navigate('/auth/login?redirect=shop/checkout');
       return;
     }
 
@@ -34,7 +34,7 @@ export const CartPage = () => {
     }
 
     // Redirigir a checkout
-    navigate('/checkout');
+    navigate('/shop/checkout');
   };
 
   // Si el carrito está vacío, mostrar componente EmptyCart

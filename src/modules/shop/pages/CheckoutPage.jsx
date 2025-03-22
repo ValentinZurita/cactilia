@@ -1,27 +1,43 @@
+/**
+ * CheckoutPage.jsx
+ *
+ * Página principal para el proceso de pago (Checkout).
+ * - Integra la selección de dirección, método de pago e información fiscal.
+ * - Muestra un resumen de pedido y un botón para procesar la compra.
+ * - Utiliza `useCheckout` para la lógica de obtención de direcciones, métodos de pago y manejo del pago.
+ *
+ * Al completar correctamente la compra, el usuario es redirigido a la ruta:
+ *   "/order-success/:orderId"
+ * donde se muestra la confirmación del pedido.
+ */
+
 import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-// Componentes de checkout
+// Importar componentes de checkout
 import { CheckoutSummary } from '../components/checkout/CheckoutSummary';
 import { AddressSelector } from '../components/checkout/AddressSelector';
 import { PaymentMethodSelector } from '../components/checkout/PaymentMethodSelector';
 import { BillingInfoForm } from '../components/checkout/BillingInfoForm';
 import { CheckoutButton } from '../components/checkout/CheckoutButton';
-import { OrderConfirmation } from '../components/checkout/OrderConfirmation';
+// Eliminamos import de OrderConfirmation, ya que iremos a la ruta separada
+// import { OrderConfirmation } from '../components/checkout/OrderConfirmation';
+
 import '../styles/checkout.css';
 
-// Hooks
+// Importar nuestro custom hook
 import { useCheckout } from '../hooks/useCheckout';
 
-// Cargar instancia de Stripe
+// Cargar instancia de Stripe con la key de entorno
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 /**
- * CheckoutPage - Página principal para el proceso de pago
- * Integra selección de dirección, método de pago, y resumen del pedido
+ * @component
+ * @returns {JSX.Element} Pantalla principal del Checkout.
  */
 export const CheckoutPage = () => {
+  // Obtenemos todo el estado y métodos necesarios del hook useCheckout
   const {
     // Estados
     selectedAddressId,
@@ -31,7 +47,6 @@ export const CheckoutPage = () => {
     orderNotes,
     step,
     error,
-    orderId,
     isProcessing,
     addresses,
     paymentMethods,
@@ -47,7 +62,7 @@ export const CheckoutPage = () => {
     handleProcessOrder,
   } = useCheckout();
 
-  // Opciones para Stripe Elements
+  // Opciones de configuración para Stripe Elements
   const stripeOptions = {
     locale: 'es',
     appearance: {
@@ -58,18 +73,16 @@ export const CheckoutPage = () => {
     },
   };
 
-  // Si está en paso de confirmación, mostrar pantalla de confirmación
-  if (step === 3) {
-    return <OrderConfirmation orderId={orderId} />;
-  }
-
+  // ------------------------------------------------------------------------
+  // Renderizado principal
+  // ------------------------------------------------------------------------
   return (
     <Elements stripe={stripePromise} options={stripeOptions}>
       <div className="container checkout-page my-5">
-        {/* Título */}
+        {/* Título de la página */}
         <h1 className="checkout-title mb-4">Finalizar Compra</h1>
 
-        {/* Mensajes de error */}
+        {/* Mensajes de error globales */}
         {error && (
           <div className="alert alert-danger" role="alert">
             <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -78,9 +91,9 @@ export const CheckoutPage = () => {
         )}
 
         <div className="row">
-          {/* Columna izquierda: Formulario de checkout */}
+          {/* Columna Izquierda: Formulario de checkout */}
           <div className="col-lg-8">
-            {/* Dirección de envío */}
+            {/* Sección: Dirección de Envío */}
             <div className="checkout-section">
               <h2 className="section-title">
                 <span className="step-number">1</span>
@@ -94,7 +107,7 @@ export const CheckoutPage = () => {
               />
             </div>
 
-            {/* Método de Pago */}
+            {/* Sección: Método de Pago */}
             <div className="checkout-section">
               <h2 className="section-title">
                 <span className="step-number">2</span>
@@ -108,7 +121,7 @@ export const CheckoutPage = () => {
               />
             </div>
 
-            {/* Información fiscal (opcional) */}
+            {/* Sección: Información Fiscal (opcional) */}
             <div className="checkout-section">
               <h2 className="section-title">
                 <span className="step-number">3</span>
@@ -122,7 +135,7 @@ export const CheckoutPage = () => {
               />
             </div>
 
-            {/* Notas adicionales */}
+            {/* Sección: Notas adicionales */}
             <div className="checkout-section">
               <h2 className="section-title">
                 <span className="step-number">4</span>
@@ -137,29 +150,33 @@ export const CheckoutPage = () => {
                   onChange={handleNotesChange}
                 ></textarea>
                 <small className="form-text text-muted">
-                  Por ejemplo: "Dejar con el portero" o "Llamar antes de entregar"
+                  Por ejemplo: "Dejar con el portero" o "Llamar antes de entregar".
                 </small>
               </div>
             </div>
           </div>
 
-          {/* Columna derecha: Resumen del pedido y botón de pago */}
+          {/* Columna Derecha: Resumen del pedido y botón de pago */}
           <div className="col-lg-4">
             <div className="checkout-summary-container">
-              {/* Componente de resumen del carrito */}
+              {/* Resumen del carrito */}
               <CheckoutSummary />
 
+              {/* Botón para procesar la compra */}
               <div className="mt-4 px-3">
-                {/* Botón para procesar la compra */}
                 <CheckoutButton
                   onCheckout={handleProcessOrder}
                   isProcessing={isProcessing}
+                  // Deshabilitar si no hay dirección o método de pago seleccionado
                   disabled={!selectedAddressId || !selectedPaymentId}
                 />
 
+                {/* Términos y condiciones */}
                 <div className="checkout-terms mt-3">
                   <small className="text-muted">
-                    Al completar tu compra, aceptas nuestros <a href="/terms" target="_blank" rel="noopener noreferrer">Términos y Condiciones</a> y <a href="/privacy" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>.
+                    Al completar tu compra, aceptas nuestros{' '}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer">Términos y Condiciones</a> y{' '}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>.
                   </small>
                 </div>
               </div>

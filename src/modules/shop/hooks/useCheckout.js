@@ -1,52 +1,89 @@
-// src/modules/shop/hooks/useCheckout.js
+/**
+ * useCheckout.js
+ *
+ * Hook personalizado para manejar el flujo de checkout:
+ * - Selección de dirección de envío
+ * - Selección de método de pago
+ * - Facturación (factura / fiscalData)
+ * - Creación de orden en Firestore
+ * - Creación/confirmación de PaymentIntent con Stripe (o mocks en dev)
+ *
+ * Finalmente, redirige a la página de confirmación con el ID del pedido.
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+
+import {
+  getFunctions,
+  httpsCallable,
+  connectFunctionsEmulator
+} from 'firebase/functions';
+import {
+  addDoc,
+  collection,
+  serverTimestamp
+} from 'firebase/firestore';
+
 import { FirebaseDB } from '../../../firebase/firebaseConfig';
 import { addMessage } from '../../../store/messages/messageSlice';
 import { clearCartWithSync } from '../../../store/cart/cartThunk';
 import { useCart } from '../../user/hooks/useCart';
-import { mockCreatePaymentIntent, mockConfirmOrderPayment, shouldUseMocks } from '../../user/services/stripeMock.js';
 
+import {
+  mockCreatePaymentIntent,
+  mockConfirmOrderPayment,
+  shouldUseMocks
+} from '../../user/services/stripeMock.js';
 
 /**
- * Custom hook to handle the checkout process
- * Manages selection of address, payment method, and order processing
+ * @function useCheckout
+ * @returns {Object} Estado y funciones para manejar el flujo de Checkout.
  */
 export const useCheckout = () => {
+  // -------------------------------------------------------------------------
+  // React/Redux/Firebase Hooks
+  // -------------------------------------------------------------------------
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const stripe = useStripe();
-  const elements = useElements();
+  const stripe = useStripe();     // Manejo de pagos con Stripe
+  const elements = useElements(); // Para manejar el form de tarjeta (Stripe Elements)
 
-  // Get Firebase Functions instance
+  // Obtener las funciones de Firebase
   const functions = getFunctions();
 
-  // Connect to emulator in development
+  // -------------------------------------------------------------------------
+  // Conectar al emulador de funciones en desarrollo
+  // -------------------------------------------------------------------------
   if (process.env.NODE_ENV !== 'production') {
-    // Use a ref to track if we've already connected to avoid "already connected" errors
     const hasConnected = useRef(false);
 
     useEffect(() => {
       if (!hasConnected.current) {
         try {
-          connectFunctionsEmulator(functions, "localhost", 5001);
-          console.log("Connected to Firebase Functions emulator");
+          connectFunctionsEmulator(functions, 'localhost', 5001);
+          console.log('Connected to Firebase Functions emulator');
           hasConnected.current = true;
         } catch (e) {
-          console.log("Emulator connection error (can be ignored if already connected):", e);
+          console.log(
+            'Emulator connection error (can be ignored if already connected):',
+            e
+          );
         }
       }
-    }, []);
+    }, [functions]);
   }
 
-  // Get user information from Redux store
+  // -------------------------------------------------------------------------
+  // Data del usuario autenticado
+  // -------------------------------------------------------------------------
   const { uid, status } = useSelector(state => state.auth);
 
-  // Get cart information
+  // -------------------------------------------------------------------------
+  // Datos del carrito
+  // -------------------------------------------------------------------------
   const {
     items,
     subtotal,
@@ -57,59 +94,84 @@ export const useCheckout = () => {
     hasOutOfStockItems,
   } = useCart();
 
-  // Checkout states
+  // -------------------------------------------------------------------------
+  // Estados locales
+  // -------------------------------------------------------------------------
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
+
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
+
   const [requiresInvoice, setRequiresInvoice] = useState(false);
   const [fiscalData, setFiscalData] = useState(null);
+
   const [orderNotes, setOrderNotes] = useState('');
-  const [step, setStep] = useState(1); // 1: checkout, 2: processing, 3: confirmation
+  const [step, setStep] = useState(1);   // 1: Formulario, 2: Procesando
   const [error, setError] = useState(null);
+
+  // ID del pedido en Firestore
   const [orderId, setOrderId] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Almacena el clientSecret de Stripe si fuera necesario
   const [clientSecret, setClientSecret] = useState(null);
+
+  // Listas de direcciones y métodos de pago del usuario
   const [addresses, setAddresses] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
+
+  // Banderas para mostrar loaders mientras se cargan direcciones y métodos de pago
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [loadingPayments, setLoadingPayments] = useState(true);
 
-  // Verify user is authenticated
+  // -------------------------------------------------------------------------
+  // Efecto: Verificar que el usuario esté autenticado
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (status !== 'authenticated') {
+      // Si no está autenticado, se redirige al login con redirect=checkout
       navigate('/auth/login?redirect=checkout');
     }
   }, [status, navigate]);
 
-  // Verify cart has items
+  // -------------------------------------------------------------------------
+  // Efecto: Verificar que el carrito tenga items
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (items.length === 0 && status === 'authenticated') {
+      // Si el carrito está vacío y el usuario sí está autenticado,
+      // lo enviamos a la página de tienda.
       navigate('/shop');
     }
   }, [items, status, navigate]);
 
-  // Load user addresses
+  // -------------------------------------------------------------------------
+  // Efecto: Cargar direcciones de envío del usuario
+  // -------------------------------------------------------------------------
   useEffect(() => {
     const loadUserAddresses = async () => {
       if (status !== 'authenticated' || !uid) return;
 
       setLoadingAddresses(true);
       try {
+        // Importación dinámica del servicio de direcciones
         const { getUserAddresses } = await import('../../user/services/addressService');
         const result = await getUserAddresses(uid);
 
         if (result.ok) {
           setAddresses(result.data);
         } else {
-          console.error("Error loading addresses:", result.error);
-          dispatch(addMessage({
-            type: 'error',
-            text: 'Could not load your shipping addresses'
-          }));
+          console.error('Error loading addresses:', result.error);
+          dispatch(
+            addMessage({
+              type: 'error',
+              text: 'Could not load your shipping addresses'
+            })
+          );
         }
       } catch (error) {
-        console.error("Error loading addresses:", error);
+        console.error('Error loading addresses:', error);
       } finally {
         setLoadingAddresses(false);
       }
@@ -118,27 +180,32 @@ export const useCheckout = () => {
     loadUserAddresses();
   }, [uid, status, dispatch]);
 
-  // Load user payment methods
+  // -------------------------------------------------------------------------
+  // Efecto: Cargar métodos de pago del usuario
+  // -------------------------------------------------------------------------
   useEffect(() => {
     const loadPaymentMethods = async () => {
       if (status !== 'authenticated' || !uid) return;
 
       setLoadingPayments(true);
       try {
+        // Importación dinámica del servicio de métodos de pago
         const { getUserPaymentMethods } = await import('../../user/services/paymentService');
         const result = await getUserPaymentMethods(uid);
 
         if (result.ok) {
           setPaymentMethods(result.data);
         } else {
-          console.error("Error loading payment methods:", result.error);
-          dispatch(addMessage({
-            type: 'error',
-            text: 'Could not load your payment methods'
-          }));
+          console.error('Error loading payment methods:', result.error);
+          dispatch(
+            addMessage({
+              type: 'error',
+              text: 'Could not load your payment methods'
+            })
+          );
         }
       } catch (error) {
-        console.error("Error loading payment methods:", error);
+        console.error('Error loading payment methods:', error);
       } finally {
         setLoadingPayments(false);
       }
@@ -147,85 +214,95 @@ export const useCheckout = () => {
     loadPaymentMethods();
   }, [uid, status, dispatch]);
 
-  // Update selected address when ID changes
-  const updateSelectedAddress = useCallback((addresses, addressId) => {
-    if (!addresses || !addressId) return;
-
-    const address = addresses.find(addr => addr.id === addressId);
+  // -------------------------------------------------------------------------
+  // Helpers: Actualizar dirección seleccionada
+  // -------------------------------------------------------------------------
+  const updateSelectedAddress = useCallback((addressesList, addressId) => {
+    if (!addressesList || !addressId) return;
+    const address = addressesList.find(addr => addr.id === addressId);
     if (address) {
       setSelectedAddress(address);
     }
   }, []);
 
-  // Update selected payment method when ID changes
-  const updateSelectedPayment = useCallback((paymentMethods, paymentId) => {
-    if (!paymentMethods || !paymentId) return;
-
-    const payment = paymentMethods.find(method => method.id === paymentId);
+  // -------------------------------------------------------------------------
+  // Helpers: Actualizar método de pago seleccionado
+  // -------------------------------------------------------------------------
+  const updateSelectedPayment = useCallback((paymentList, paymentId) => {
+    if (!paymentList || !paymentId) return;
+    const payment = paymentList.find(method => method.id === paymentId);
     if (payment) {
       setSelectedPayment(payment);
     }
   }, []);
 
-  // Handle address change
-  const handleAddressChange = useCallback((addressId) => {
-    setSelectedAddressId(addressId);
-    updateSelectedAddress(addresses, addressId);
-  }, [updateSelectedAddress, addresses]);
+  // -------------------------------------------------------------------------
+  // Manejo de cambios en dirección y método de pago
+  // -------------------------------------------------------------------------
+  const handleAddressChange = useCallback(
+    (addressId) => {
+      setSelectedAddressId(addressId);
+      updateSelectedAddress(addresses, addressId);
+    },
+    [updateSelectedAddress, addresses]
+  );
 
-  // Handle payment method change
-  const handlePaymentChange = useCallback((paymentId) => {
-    setSelectedPaymentId(paymentId);
-    updateSelectedPayment(paymentMethods, paymentId);
-  }, [updateSelectedPayment, paymentMethods]);
+  const handlePaymentChange = useCallback(
+    (paymentId) => {
+      setSelectedPaymentId(paymentId);
+      updateSelectedPayment(paymentMethods, paymentId);
+    },
+    [updateSelectedPayment, paymentMethods]
+  );
 
-  // Handle invoice requirement change
+  // -------------------------------------------------------------------------
+  // Manejo de la facturación
+  // -------------------------------------------------------------------------
   const handleInvoiceChange = useCallback((requires) => {
     setRequiresInvoice(requires);
-
-    // If no longer requires invoice, clear fiscal data
+    // Si ya no requiere factura, limpiamos los datos fiscales
     if (!requires) {
       setFiscalData(null);
     }
   }, []);
 
-  // Handle fiscal data change
   const handleFiscalDataChange = useCallback((data) => {
     setFiscalData(data);
   }, []);
 
-  // Handle order notes change
+  // -------------------------------------------------------------------------
+  // Manejo de las notas del pedido
+  // -------------------------------------------------------------------------
   const handleNotesChange = useCallback((e) => {
     setOrderNotes(e.target.value);
   }, []);
 
-  // Validate checkout data is complete
+  // -------------------------------------------------------------------------
+  // Validar que el Checkout esté completo antes de procesar
+  // -------------------------------------------------------------------------
   const validateCheckoutData = useCallback(() => {
     if (!selectedAddressId || !selectedAddress) {
       setError('You must select a shipping address');
       return false;
     }
-
     if (!selectedPaymentId || !selectedPayment) {
       setError('You must select a payment method');
       return false;
     }
-
     if (requiresInvoice && (!fiscalData || !fiscalData.rfc)) {
       setError('Fiscal data is required for invoicing');
       return false;
     }
-
     if (hasOutOfStockItems) {
       setError('There are out-of-stock items in your cart');
       return false;
     }
-
     if (!stripe || !elements) {
       setError('Payment system is not ready. Please try again.');
       return false;
     }
 
+    // Si todo pasa...
     setError(null);
     return true;
   }, [
@@ -240,36 +317,38 @@ export const useCheckout = () => {
     elements
   ]);
 
-  // Prepare order data
+  // -------------------------------------------------------------------------
+  // Preparar el objeto "orderData" para guardar en Firestore
+  // -------------------------------------------------------------------------
   const prepareOrderData = useCallback(() => {
-    // Create a copy of shipping address information
     const shippingInfo = {
       addressId: selectedAddressId,
       address: { ...selectedAddress },
       method: 'standard',
       cost: isFreeShipping ? 0 : shipping,
-      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 7 days later
+      // Ejemplo de fecha estimada a 7 días
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0],
     };
 
-    // Create a limited copy of payment method information (for security)
     const paymentInfo = {
       methodId: selectedPaymentId,
       method: {
         type: selectedPayment.type,
         last4: selectedPayment.cardNumber.split(' ').pop(),
-        brand: selectedPayment.type
+        brand: selectedPayment.type,
       },
       status: 'pending',
-      stripePaymentMethodId: selectedPayment.stripePaymentMethodId
+      stripePaymentMethodId: selectedPayment.stripePaymentMethodId,
     };
 
-    // Billing information
     const billingInfo = {
       requiresInvoice,
-      fiscalData: requiresInvoice ? fiscalData : null
+      fiscalData: requiresInvoice ? fiscalData : null,
     };
 
-    // Complete order data
+    // Objeto principal de la orden
     return {
       userId: uid,
       items: items.map(item => ({
@@ -310,68 +389,67 @@ export const useCheckout = () => {
     items
   ]);
 
-  // Process order
+  // -------------------------------------------------------------------------
+  // Procesar el pedido (creación de PaymentIntent, guardado en Firestore, etc.)
+  // -------------------------------------------------------------------------
   const handleProcessOrder = useCallback(async () => {
-    // Validate data
+    // 1. Validar los datos de checkout
     if (!validateCheckoutData()) {
       return;
     }
 
     setIsProcessing(true);
-    setStep(2);
+    setStep(2); // Cambiamos a paso 2: procesando
 
     try {
-      // 1. Prepare order data
+      // 2. Preparar los datos de la orden
       const orderData = prepareOrderData();
 
-      // 2. Create PaymentIntent in Stripe through our Cloud Function
-      // 2. Create a Payment Intent with Stripe through our Cloud Function
+      // 3. Crear PaymentIntent (mock o real)
       let paymentResponse;
       if (shouldUseMocks()) {
-        // Usar mock en desarrollo
-        console.log("Usando mock para createPaymentIntent");
+        console.log('Usando mock para createPaymentIntent');
         paymentResponse = await mockCreatePaymentIntent({
           amount: Math.round(orderData.totals.total * 100),
           paymentMethodId: orderData.payment.stripePaymentMethodId,
-          description: `Order at Cactilia`
+          description: 'Order at Cactilia',
         });
       } else {
-        // Usar función real en producción
         const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
         paymentResponse = await createPaymentIntent({
           amount: Math.round(orderData.totals.total * 100),
           paymentMethodId: orderData.payment.stripePaymentMethodId,
-          description: `Order at Cactilia`
+          description: 'Order at Cactilia',
         });
       }
 
       if (!paymentResponse.data || !paymentResponse.data.clientSecret) {
-        throw new Error("Could not create payment intent");
+        throw new Error('Could not create payment intent');
       }
 
-      // Extraer los datos de la respuesta
       const { clientSecret, paymentIntentId } = paymentResponse.data;
-      console.log("PaymentIntent creado:", { clientSecret, paymentIntentId });
+      console.log('PaymentIntent creado:', { clientSecret, paymentIntentId });
 
-      // 3. Save order to Firestore with PaymentIntent ID
+      // 4. Guardar la orden en Firestore con el paymentIntentId
       const orderToSave = {
         ...orderData,
         payment: {
           ...orderData.payment,
-          paymentIntentId
+          paymentIntentId,
         },
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       };
 
       const orderRef = await addDoc(collection(FirebaseDB, 'orders'), orderToSave);
       setOrderId(orderRef.id);
+      console.log('✅ Pedido creado exitosamente con ID:', orderRef.id);
 
-      // 4. Confirm payment with Stripe
+      // 5. Confirmar pago con Stripe
       let stripeConfirmation;
       if (shouldUseMocks()) {
-        // En desarrollo, simplemente simulamos una confirmación exitosa
-        console.log("Usando mock para confirmCardPayment");
+        // Mock de confirmación exitosa
+        console.log('Usando mock para confirmCardPayment');
         stripeConfirmation = {
           paymentIntent: {
             id: paymentIntentId,
@@ -380,23 +458,19 @@ export const useCheckout = () => {
           error: null
         };
       } else {
-        // En producción, usamos la API real de Stripe
-        stripeConfirmation = await stripe.confirmCardPayment(
-          clientSecret, {
-            payment_method: orderData.payment.stripePaymentMethodId
-          }
-        );
-
+        // Confirmación real
+        stripeConfirmation = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: orderData.payment.stripePaymentMethodId
+        });
         if (stripeConfirmation.error) {
           throw new Error(stripeConfirmation.error.message);
         }
       }
 
-      // 5. Confirm payment result via Cloud Function
+      // 6. Confirmar pago también con Cloud Function (mock o real)
       let confirmResult;
       if (shouldUseMocks()) {
-        // Usar mock en desarrollo
-        console.log("Usando mock para confirmOrderPayment");
+        console.log('Usando mock para confirmOrderPayment');
         confirmResult = await mockConfirmOrderPayment({
           orderId: orderRef.id,
           paymentIntentId
@@ -409,7 +483,7 @@ export const useCheckout = () => {
         });
       }
 
-      // 6. Show success message and clear cart
+      // 7. Mostrar mensaje de éxito, limpiar carrito y redirigir a la página de éxito
       dispatch(addMessage({
         type: 'success',
         text: 'Payment completed successfully! Your order has been processed.',
@@ -419,8 +493,11 @@ export const useCheckout = () => {
 
       dispatch(clearCartWithSync());
 
-      // 7. Change to confirmation step
-      setStep(3);
+      // IMPORTANTE: Redirigir a la ruta de éxito con el ID de la orden
+      console.log('Redirigiendo a la página de éxito...');
+      setTimeout(() => {
+        navigate(`/shop/order-success/${orderRef.id}`, { replace: true });
+      }, 100);
 
     } catch (err) {
       console.error('Error processing order:', err);
@@ -433,7 +510,7 @@ export const useCheckout = () => {
         duration: 5000
       }));
 
-      setStep(1);
+      setStep(1); // Regresamos al paso 1 (formulario) si hubo error
     } finally {
       setIsProcessing(false);
     }
@@ -443,11 +520,14 @@ export const useCheckout = () => {
     dispatch,
     functions,
     stripe,
-    FirebaseDB
+    navigate
   ]);
 
+  // -------------------------------------------------------------------------
+  // Retorno del hook
+  // -------------------------------------------------------------------------
   return {
-    // States
+    // Estados que el componente Checkout necesita
     selectedAddressId,
     selectedPaymentId,
     requiresInvoice,
@@ -462,7 +542,7 @@ export const useCheckout = () => {
     loadingAddresses,
     loadingPayments,
 
-    // Handlers
+    // Funciones manejadoras
     handleAddressChange,
     handlePaymentChange,
     handleInvoiceChange,
@@ -470,8 +550,8 @@ export const useCheckout = () => {
     handleNotesChange,
     handleProcessOrder,
 
-    // Helper selectors
+    // Helpers expuestos (por si se necesitan en pruebas)
     updateSelectedAddress,
-    updateSelectedPayment
+    updateSelectedPayment,
   };
 };

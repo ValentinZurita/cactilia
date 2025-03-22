@@ -19,7 +19,12 @@ export const OrderConfirmation = ({ orderId }) => {
   // Cargar detalles de la orden
   useEffect(() => {
     const fetchOrderDetails = async () => {
-      if (!orderId) return;
+      if (!orderId) {
+        console.log("OrderConfirmation: No se recibió orderId");
+        return;
+      }
+
+      console.log("OrderConfirmation: Cargando detalles del pedido con ID:", orderId);
 
       try {
         setLoading(true);
@@ -27,8 +32,10 @@ export const OrderConfirmation = ({ orderId }) => {
         const orderSnap = await getDoc(orderRef);
 
         if (orderSnap.exists()) {
+          console.log("Datos del pedido cargados:", orderSnap.data());
           setOrderDetails(orderSnap.data());
         } else {
+          console.error("No se encontró la información del pedido");
           setError('No se encontró la información del pedido');
         }
       } catch (err) {

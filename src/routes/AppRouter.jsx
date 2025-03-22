@@ -18,9 +18,6 @@ export const AppRouter = () => {
       {/* Módulo de tienda */}
       <Route path="/shop/*" element={<ShopRoutes />} />
 
-      {/* Checkout directo (para facilitar el acceso) */}
-      <Route path="/checkout" element={<CheckoutPage />} />
-
       {/* Módulo de usuario (incluye checkout y carrito) */}
       <Route path="/*" element={<UserRoutes />} />
 
