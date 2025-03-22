@@ -1,24 +1,17 @@
-/**
- * OrderSuccessPage.jsx - Versión mejorada
- *
- * Página independiente para mostrar la confirmación de pedido,
- * con un diseño más elaborado, mejor organización visual y elementos
- * gráficos que mejoran la experiencia del usuario.
- *
- * Ruta esperada: "/order-success/:orderId"
- */
-
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../firebase/firebaseConfig.js';
 import { formatPrice } from '../utils/cartUtilis.js';
-import '../styles/orderSuccess.css'
-// Nombre de la colección en Firestore
+import '../styles/orderSuccess.css';
+
+// Nombre de la colección de ordenes en Firestore
 const ORDERS_COLLECTION = 'orders';
 
 /**
- * Convierte timestamp a fecha legible
+ * Convierte el timestamp (Firestore o número) a fecha legible
+ * @param {Object|number} timestamp
+ * @returns {string} Fecha formateada
  */
 const formatDate = (timestamp) => {
   if (!timestamp) return 'Fecha no disponible';
@@ -42,7 +35,9 @@ const formatDate = (timestamp) => {
 };
 
 /**
- * Obtiene los detalles de un pedido
+ * Obtiene los detalles de un pedido desde Firestore.
+ * @param {string} orderId - ID del pedido.
+ * @returns {Promise<Object|null>} - Datos del pedido o null si no existe.
  */
 const fetchOrderDetails = async (orderId) => {
   console.log('OrderSuccessPage: Cargando detalles del pedido con ID:', orderId);
@@ -65,67 +60,55 @@ const fetchOrderDetails = async (orderId) => {
  * Componente para el estado de carga
  */
 const LoadingState = () => (
-  <div className="success-loading-container">
-    <div className="success-loading-content">
-      <div className="spinner-container">
-        <div className="spinner-border text-success" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-      </div>
-      <h3 className="mt-4 mb-2">Cargando detalles del pedido</h3>
-      <p className="text-muted">Estamos recuperando la información de tu compra...</p>
+  <div className="order-success-loading">
+    <div className="spinner-container">
+      <div className="spinner"></div>
     </div>
+    <h3 className="mt-4">Cargando detalles del pedido...</h3>
+    <p className="text-muted">Solo tomará unos segundos</p>
   </div>
 );
 
 /**
- * Componente para mensajes de error
+ * Componente para mostrar mensajes de error
  */
 const ErrorState = ({ error }) => (
-  <div className="success-error-container">
-    <div className="success-error-content">
-      <div className="error-icon-container">
-        <i className="bi bi-exclamation-triangle-fill text-danger"></i>
-      </div>
-      <h3 className="mt-3 mb-3">Ha ocurrido un problema</h3>
-      <p className="text-danger mb-4">{error}</p>
-      <div className="d-flex gap-3 justify-content-center">
-        <Link to="/profile/orders" className="btn btn-outline-primary">
-          <i className="bi bi-bag me-2"></i>
-          Ver mis pedidos
-        </Link>
-        <Link to="/shop" className="btn btn-green-3">
-          <i className="bi bi-shop me-2"></i>
-          Ir a la tienda
-        </Link>
-      </div>
+  <div className="order-success-error">
+    <div className="order-error-icon">
+      <i className="bi bi-exclamation-circle"></i>
+    </div>
+    <h3>No pudimos encontrar tu pedido</h3>
+    <p className="text-muted">{error}</p>
+    <div className="mt-4">
+      <Link to="/profile/orders" className="btn btn-outline-secondary">
+        <i className="bi bi-arrow-left me-2"></i>
+        Ver mis pedidos
+      </Link>
     </div>
   </div>
 );
 
 /**
- * Componente para éxito genérico cuando no hay detalles
+ * Componente para mostrar éxito sin detalles de pedido (backup)
  */
 const NoOrderDetailsState = () => (
-  <div className="success-generic-container">
-    <div className="success-header">
-      <div className="success-check-animation">
+  <div className="order-success-container">
+    <div className="order-success-header">
+      <div className="success-icon-container">
         <i className="bi bi-check-circle-fill"></i>
       </div>
       <h1>¡Pedido Confirmado!</h1>
-      <p className="lead">
-        Tu compra ha sido procesada correctamente y pronto estará en camino
-      </p>
+      <p className="lead">Gracias por tu compra. Tu pedido ha sido procesado correctamente.</p>
     </div>
 
-    <div className="success-generic-box">
-      <p className="text-center mb-4">
+    <div className="order-success-generic">
+      <div className="alert alert-info">
+        <i className="bi bi-info-circle me-2"></i>
         Te hemos enviado un correo electrónico con los detalles de tu pedido.
-        Puedes revisar el estado de tu compra en cualquier momento desde la sección "Mis Pedidos".
-      </p>
+      </div>
 
-      <div className="success-actions">
-        <Link to="/profile/orders" className="btn btn-primary">
+      <div className="generic-actions mt-5">
+        <Link to="/profile/orders" className="btn btn-success me-3">
           <i className="bi bi-bag me-2"></i>
           Ver Mis Pedidos
         </Link>
@@ -139,322 +122,345 @@ const NoOrderDetailsState = () => (
 );
 
 /**
- * Componente para mostrar un item del pedido
+ * Componente para mostrar un item de producto del pedido
  */
 const OrderItem = ({ item }) => (
-  <div className="order-success-item">
-    <div className="order-success-item-image">
+  <div className="order-product-item">
+    <div className="order-product-image">
       {item.image ? (
-        <img src={item.image} alt={item.name} className="img-fluid rounded" />
+        <img src={item.image} alt={item.name} />
       ) : (
-        <div className="placeholder-image">
+        <div className="no-image">
           <i className="bi bi-box"></i>
         </div>
       )}
     </div>
-    <div className="order-success-item-details">
-      <h6 className="item-name">{item.name}</h6>
-      <div className="item-meta">
-        <span className="item-quantity">Cantidad: {item.quantity}</span>
-        <span className="item-price">{formatPrice(item.price)}</span>
+    <div className="order-product-details">
+      <h5>{item.name}</h5>
+      <div className="order-product-meta">
+        <span className="quantity">Cantidad: {item.quantity}</span>
+        <span className="price">{formatPrice(item.price)}</span>
       </div>
     </div>
-    <div className="order-success-item-total">
+    <div className="order-product-total">
       {formatPrice(item.price * item.quantity)}
     </div>
   </div>
 );
 
 /**
- * Componente principal de la página de éxito
+ * Componente para la línea de tiempo del pedido
  */
-const OrderSuccessContent = ({ orderId, orderDetails }) => {
-  const [showAllItems, setShowAllItems] = useState(false);
-  const totalItems = orderDetails.items.length;
-  const displayItems = showAllItems ? orderDetails.items : orderDetails.items.slice(0, 3);
-  const hasMoreItems = totalItems > 3 && !showAllItems;
+const OrderTimeline = ({ status, createdAt }) => {
+  // Determinar los pasos completados según estado
+  const getStepStatus = (stepName) => {
+    const statusMap = {
+      'pending': ['confirmado'],
+      'processing': ['confirmado', 'procesando'],
+      'shipped': ['confirmado', 'procesando', 'enviado'],
+      'delivered': ['confirmado', 'procesando', 'enviado', 'entregado'],
+      'cancelled': ['confirmado', 'cancelado']
+    };
+
+    const steps = statusMap[status] || ['confirmado'];
+    return steps.includes(stepName) ? 'completed' : 'pending';
+  };
 
   return (
-    <div className="order-success-container">
-      {/* Cabecera con animación y mensaje principal */}
-      <div className="success-header">
-        <div className="success-check-animation">
-          <i className="bi bi-check-circle-fill"></i>
-        </div>
-        <h1>¡Pedido Confirmado!</h1>
-        <p className="lead">
-          ¡Gracias por tu compra! Tu pedido ha sido procesado correctamente.
-        </p>
-      </div>
+    <div className="order-timeline">
+      <h4>Estado del Pedido</h4>
 
-      {/* Número de pedido destacado */}
-      <div className="order-number-section">
-        <div className="order-number-container">
-          <div className="order-number-label">Número de Pedido</div>
-          <div className="order-number-value">{orderId}</div>
+      <div className="timeline-steps">
+        <div className={`timeline-step ${getStepStatus('confirmado')}`}>
+          <div className="timeline-icon">
+            <i className="bi bi-check-circle-fill"></i>
+          </div>
+          <div className="timeline-content">
+            <h6>Confirmado</h6>
+            <p className="small">{formatDate(createdAt)}</p>
+          </div>
         </div>
-        <p className="order-email-notice">
-          <i className="bi bi-envelope me-2"></i>
-          Te hemos enviado un correo electrónico con los detalles de tu pedido.
-        </p>
-      </div>
 
-      {/* Información principal del pedido en 2 columnas */}
-      <div className="order-success-main">
-        <div className="row">
-          {/* Columna izquierda: Detalles del pedido y productos */}
-          <div className="col-lg-8">
-            {/* Sección de resumen */}
-            <div className="order-success-section">
-              <h3 className="section-title">
-                <i className="bi bi-info-circle me-2"></i>
-                Detalles del Pedido
-              </h3>
-              <div className="order-details-grid">
-                <div className="order-detail-item">
-                  <div className="detail-label">Fecha</div>
-                  <div className="detail-value">{formatDate(orderDetails.createdAt)}</div>
-                </div>
-                <div className="order-detail-item">
-                  <div className="detail-label">Estado</div>
-                  <div className="detail-value">
-                    <span className="status-badge status-processing">
-                      <i className="bi bi-clock-fill me-1"></i>
-                      Procesando
-                    </span>
-                  </div>
-                </div>
-                <div className="order-detail-item">
-                  <div className="detail-label">Método de Pago</div>
-                  <div className="detail-value">
-                    {orderDetails.payment?.method?.brand
-                      ? `${orderDetails.payment.method.brand.toUpperCase()} terminada en ${orderDetails.payment.method.last4}`
-                      : 'Método de pago estándar'}
-                  </div>
-                </div>
-                <div className="order-detail-item">
-                  <div className="detail-label">Método de Envío</div>
-                  <div className="detail-value">
-                    {orderDetails.shipping?.method
-                      ? orderDetails.shipping.method
-                      : 'Estándar'}
-                  </div>
-                </div>
+        {status !== 'cancelled' ? (
+          <>
+            <div className={`timeline-step ${getStepStatus('procesando')}`}>
+              <div className="timeline-icon">
+                <i className="bi bi-gear-fill"></i>
+              </div>
+              <div className="timeline-content">
+                <h6>Procesando</h6>
+                <p className="small">Preparando tu pedido</p>
               </div>
             </div>
 
-            {/* Sección de productos */}
-            <div className="order-success-section">
-              <h3 className="section-title">
-                <i className="bi bi-box me-2"></i>
-                Productos
-                <span className="items-count">({totalItems})</span>
-              </h3>
-
-              <div className="order-items-container">
-                {displayItems.map((item, index) => (
-                  <OrderItem key={`${item.id}-${index}`} item={item} />
-                ))}
-
-                {hasMoreItems && (
-                  <button
-                    className="btn btn-outline-secondary btn-sm btn-show-more"
-                    onClick={() => setShowAllItems(true)}
-                  >
-                    <i className="bi bi-plus-circle me-1"></i>
-                    Ver {totalItems - 3} productos más
-                  </button>
-                )}
+            <div className={`timeline-step ${getStepStatus('enviado')}`}>
+              <div className="timeline-icon">
+                <i className="bi bi-truck"></i>
+              </div>
+              <div className="timeline-content">
+                <h6>Enviado</h6>
+                <p className="small">En camino</p>
               </div>
             </div>
 
-            {/* Sección de dirección de envío */}
-            <div className="order-success-section">
-              <h3 className="section-title">
-                <i className="bi bi-geo-alt me-2"></i>
-                Dirección de Envío
-              </h3>
-
-              {orderDetails.shipping?.address ? (
-                <div className="shipping-address-card">
-                  <h5 className="address-name">{orderDetails.shipping.address.name}</h5>
-                  <p className="address-line">
-                    {orderDetails.shipping.address.street}
-                    {orderDetails.shipping.address.numExt && ` #${orderDetails.shipping.address.numExt}`}
-                    {orderDetails.shipping.address.numInt && `, Int. ${orderDetails.shipping.address.numInt}`}
-                  </p>
-                  {orderDetails.shipping.address.colonia && (
-                    <p className="address-line">{orderDetails.shipping.address.colonia}</p>
-                  )}
-                  <p className="address-line">
-                    {orderDetails.shipping.address.city}, {orderDetails.shipping.address.state} {orderDetails.shipping.address.zip}
-                  </p>
-                  {orderDetails.shipping.address.references && (
-                    <p className="address-references">
-                      <i className="bi bi-signpost me-1"></i>
-                      {orderDetails.shipping.address.references}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-muted">No hay información de dirección disponible</p>
-              )}
-            </div>
-          </div>
-
-          {/* Columna derecha: Resumen de costos y próximos pasos */}
-          <div className="col-lg-4">
-            {/* Resumen económico */}
-            <div className="order-success-section order-summary-card">
-              <h3 className="section-title">
-                <i className="bi bi-receipt me-2"></i>
-                Resumen de Pago
-              </h3>
-
-              <div className="summary-items">
-                <div className="summary-item">
-                  <span>Subtotal:</span>
-                  <span>{formatPrice(orderDetails.totals.subtotal)}</span>
-                </div>
-                <div className="summary-item">
-                  <span>IVA (16%):</span>
-                  <span>{formatPrice(orderDetails.totals.tax)}</span>
-                </div>
-                <div className="summary-item">
-                  <span>Envío:</span>
-                  <span>
-                    {orderDetails.totals.shipping > 0
-                      ? formatPrice(orderDetails.totals.shipping)
-                      : <span className="text-success">Gratis</span>
-                    }
-                  </span>
-                </div>
-
-                {orderDetails.totals.discount > 0 && (
-                  <div className="summary-item discount-item">
-                    <span>Descuento:</span>
-                    <span className="text-success">-{formatPrice(orderDetails.totals.discount)}</span>
-                  </div>
-                )}
-
-                <div className="summary-total">
-                  <span>Total:</span>
-                  <span>{formatPrice(orderDetails.totals.total)}</span>
-                </div>
+            <div className={`timeline-step ${getStepStatus('entregado')}`}>
+              <div className="timeline-icon">
+                <i className="bi bi-house-check"></i>
               </div>
-
-              {/* Información de facturación si existe */}
-              {orderDetails.billing?.requiresInvoice && (
-                <div className="billing-info">
-                  <div className="section-subtitle">
-                    <i className="bi bi-receipt me-2"></i>
-                    Información de Facturación
-                  </div>
-
-                  {orderDetails.billing.invoiceId ? (
-                    <div className="invoice-details">
-                      <p className="invoice-id">Factura: {orderDetails.billing.invoiceId}</p>
-                      <p>RFC: {orderDetails.billing.fiscalData.rfc}</p>
-                      <p>Razón social: {orderDetails.billing.fiscalData.businessName}</p>
-                    </div>
-                  ) : (
-                    <p className="invoice-pending">
-                      <i className="bi bi-info-circle me-1"></i>
-                      Tu factura está en proceso de generación.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* ¿Qué sigue? */}
-            <div className="order-success-section next-steps-card">
-              <h3 className="section-title">
-                <i className="bi bi-arrow-right-circle me-2"></i>
-                ¿Qué sigue?
-              </h3>
-
-              <ol className="next-steps-list">
-                <li className="step-item">
-                  <span className="step-icon"><i className="bi bi-envelope-check"></i></span>
-                  <div className="step-content">
-                    <h6>Confirmación por Email</h6>
-                    <p>Recibirás un correo con los detalles de tu compra.</p>
-                  </div>
-                </li>
-                <li className="step-item">
-                  <span className="step-icon"><i className="bi bi-box-seam"></i></span>
-                  <div className="step-content">
-                    <h6>Preparación del Pedido</h6>
-                    <p>Tu pedido será procesado en las próximas 24-48 horas.</p>
-                  </div>
-                </li>
-                <li className="step-item">
-                  <span className="step-icon"><i className="bi bi-truck"></i></span>
-                  <div className="step-content">
-                    <h6>Envío</h6>
-                    <p>Recibirás una notificación con la información de seguimiento.</p>
-                  </div>
-                </li>
-                <li className="step-item">
-                  <span className="step-icon"><i className="bi bi-house-door"></i></span>
-                  <div className="step-content">
-                    <h6>Entrega</h6>
-                    <p>¡Disfruta tus productos! No olvides dejarnos tu opinión.</p>
-                  </div>
-                </li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Acciones y soporte */}
-      <div className="order-success-footer">
-        <div className="row">
-          <div className="col-md-6">
-            {/* Acciones principales */}
-            <div className="success-actions">
-              <Link to="/profile/orders" className="btn btn-primary">
-                <i className="bi bi-bag me-2"></i>
-                Ver Mis Pedidos
-              </Link>
-              <Link to="/shop" className="btn btn-outline-secondary">
-                <i className="bi bi-shop me-2"></i>
-                Seguir Comprando
-              </Link>
-            </div>
-          </div>
-          <div className="col-md-6">
-            {/* Información de soporte */}
-            <div className="support-info">
-              <h5>¿Necesitas ayuda?</h5>
-              <p>
-                Si tienes alguna pregunta sobre tu pedido, contacta a nuestro equipo de soporte:
-              </p>
-              <div className="support-contact">
-                <a href="mailto:soporte@cactilia.com" className="support-contact-item">
-                  <i className="bi bi-envelope"></i>
-                  soporte@cactilia.com
-                </a>
-                <a href="tel:+525512345678" className="support-contact-item">
-                  <i className="bi bi-telephone"></i>
-                  +52 55 1234 5678
-                </a>
+              <div className="timeline-content">
+                <h6>Entregado</h6>
+                <p className="small">Pedido completado</p>
               </div>
             </div>
+          </>
+        ) : (
+          <div className="timeline-step completed cancelled">
+            <div className="timeline-icon">
+              <i className="bi bi-x-circle-fill"></i>
+            </div>
+            <div className="timeline-content">
+              <h6>Cancelado</h6>
+              <p className="small">El pedido ha sido cancelado</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 };
 
 /**
- * Componente principal de la página de éxito de pedido
+ * Muestra la confirmación final con los detalles del pedido.
+ */
+const OrderSuccessContent = ({ orderId, orderDetails }) => {
+  const isFromCheckout = !window.location.pathname.includes('/profile/');
+
+  return (
+    <div className="order-success-container">
+      {/* Cabecera con animación de éxito */}
+      <div className="order-success-header">
+        <div className="success-icon-container">
+          <i className="bi bi-check-circle-fill"></i>
+        </div>
+        <h1>{isFromCheckout ? '¡Pedido Confirmado!' : 'Detalles del Pedido'}</h1>
+        {isFromCheckout && (
+          <p className="lead">Gracias por tu compra. Tu pedido ha sido procesado correctamente.</p>
+        )}
+      </div>
+
+      {/* Resumen principal del pedido */}
+      <div className="order-overview">
+        <div className="order-id-container">
+          <div className="order-label">Número de Pedido</div>
+          <div className="order-id">{orderId}</div>
+          <div className="order-date">
+            Fecha: {formatDate(orderDetails.createdAt)}
+          </div>
+        </div>
+
+        <div className="order-status-container">
+          <OrderTimeline
+            status={orderDetails.status}
+            createdAt={orderDetails.createdAt}
+          />
+        </div>
+      </div>
+
+      {/* Detalles de productos */}
+      <div className="order-details-section">
+        <h3>Productos</h3>
+        <div className="order-products-list">
+          {orderDetails.items.map((item, index) => (
+            <OrderItem key={`${item.id}-${index}`} item={item} />
+          ))}
+        </div>
+
+        {/* Totales */}
+        <div className="order-summary-totals">
+          <div className="totals-row">
+            <span>Subtotal:</span>
+            <span>{formatPrice(orderDetails.totals.subtotal)}</span>
+          </div>
+          <div className="totals-row">
+            <span>IVA (16%):</span>
+            <span>{formatPrice(orderDetails.totals.tax)}</span>
+          </div>
+          <div className="totals-row">
+            <span>Envío:</span>
+            <span>
+              {orderDetails.totals.shipping > 0
+                ? formatPrice(orderDetails.totals.shipping)
+                : <span className="free-shipping">Gratis</span>}
+            </span>
+          </div>
+          <div className="totals-row total">
+            <span>Total:</span>
+            <span className="total-amount">{formatPrice(orderDetails.totals.total)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Información de envío */}
+      <div className="order-info-columns">
+        <div className="order-address-section">
+          <h3>Dirección de Envío</h3>
+          <div className="order-address-card">
+            {orderDetails.shipping?.address ? (
+              <>
+                <div className="address-name">{orderDetails.shipping.address.name}</div>
+                <address>
+                  {orderDetails.shipping.address.street}
+                  {orderDetails.shipping.address.numExt && ` #${orderDetails.shipping.address.numExt}`}
+                  {orderDetails.shipping.address.numInt && `, Int. ${orderDetails.shipping.address.numInt}`}
+                  <br />
+                  {orderDetails.shipping.address.colonia && (
+                    <>
+                      {orderDetails.shipping.address.colonia}
+                      <br />
+                    </>
+                  )}
+                  {orderDetails.shipping.address.city}, {orderDetails.shipping.address.state} {orderDetails.shipping.address.zip}
+                  {orderDetails.shipping.address.references && (
+                    <>
+                      <br />
+                      <span className="references">
+                        <i className="bi bi-info-circle me-1"></i>
+                        {orderDetails.shipping.address.references}
+                      </span>
+                    </>
+                  )}
+                </address>
+                <div className="delivery-estimate">
+                  <i className="bi bi-calendar-check me-2"></i>
+                  Entrega estimada: {orderDetails.shipping.estimatedDelivery || 'En proceso de cálculo'}
+                </div>
+              </>
+            ) : (
+              <p className="text-muted">No hay información de dirección disponible</p>
+            )}
+          </div>
+        </div>
+
+        <div className="order-payment-section">
+          <h3>Información de Pago</h3>
+          <div className="order-payment-card">
+            <div className="payment-method">
+              <i className={`bi bi-credit-card-2-front me-2`}></i>
+              {orderDetails.payment?.method?.brand
+                ? `${orderDetails.payment.method.brand.toUpperCase()} terminada en ${orderDetails.payment.method.last4}`
+                : 'Método de pago estándar'}
+            </div>
+            <div className="payment-status">
+              Estado: <span className="status-badge">{orderDetails.payment?.status || 'Procesado'}</span>
+            </div>
+
+            {/* Información de facturación si aplica */}
+            {orderDetails.billing?.requiresInvoice && (
+              <div className="invoice-info mt-3">
+                <h6>
+                  <i className="bi bi-receipt me-2"></i>
+                  Factura
+                </h6>
+                {orderDetails.billing.invoiceId ? (
+                  <div className="invoice-details">
+                    <div>Folio: {orderDetails.billing.invoiceId}</div>
+                    <div>RFC: {orderDetails.billing.fiscalData.rfc}</div>
+                    <div>Razón social: {orderDetails.billing.fiscalData.businessName}</div>
+                  </div>
+                ) : (
+                  <div className="pending-invoice">
+                    <i className="bi bi-clock-history me-1"></i>
+                    Factura en proceso de generación
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Notas del pedido */}
+      {orderDetails.notes && (
+        <div className="order-notes-section">
+          <h3>Notas del Pedido</h3>
+          <div className="order-notes-content">
+            <i className="bi bi-chat-left-text me-2"></i>
+            {orderDetails.notes}
+          </div>
+        </div>
+      )}
+
+      {/* Siguientes pasos y soporte */}
+      {isFromCheckout && (
+        <div className="order-next-steps">
+          <h3>¿Qué sigue?</h3>
+          <div className="next-steps-container">
+            <div className="next-step-item">
+              <div className="step-number">1</div>
+              <div className="step-content">
+                <h5>Confirmación por correo</h5>
+                <p>Recibirás un correo de confirmación con los detalles de tu pedido en breve.</p>
+              </div>
+            </div>
+            <div className="next-step-item">
+              <div className="step-number">2</div>
+              <div className="step-content">
+                <h5>Procesamiento del pedido</h5>
+                <p>Tu pedido será procesado y preparado para envío en las próximas 24-48 horas.</p>
+              </div>
+            </div>
+            <div className="next-step-item">
+              <div className="step-number">3</div>
+              <div className="step-content">
+                <h5>Envío y seguimiento</h5>
+                <p>Cuando tu pedido sea enviado, recibirás un correo con la información de seguimiento.</p>
+              </div>
+            </div>
+            <div className="next-step-item">
+              <div className="step-number">4</div>
+              <div className="step-content">
+                <h5>Recibe tu pedido</h5>
+                <p>¡Disfruta tu compra! No olvides que puedes revisar el estado de tu pedido en cualquier momento.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Acciones */}
+      <div className="order-actions-footer">
+        <Link to="/profile/orders" className="btn btn-success me-3">
+          <i className="bi bi-bag me-2"></i>
+          {isFromCheckout ? 'Ver Mis Pedidos' : 'Volver a Mis Pedidos'}
+        </Link>
+        <Link to="/shop" className="btn btn-outline-secondary">
+          <i className="bi bi-shop me-2"></i>
+          Seguir Comprando
+        </Link>
+      </div>
+
+      {/* Soporte */}
+      <div className="customer-support">
+        <h5>¿Necesitas ayuda?</h5>
+        <p>
+          Si tienes alguna pregunta sobre tu pedido, contacta a nuestro equipo
+          de soporte en{' '}
+          <a href="mailto:soporte@cactilia.com">soporte@cactilia.com</a> o
+          llamando al <a href="tel:+525512345678">+52 55 1234 5678</a>.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Componente principal de la página de éxito de pedido.
+ * - Lee el orderId de la URL (parámetro :orderId).
+ * - Obtiene los detalles de la orden desde Firestore.
+ * - Muestra la confirmación con los detalles o error si no se encuentra.
  */
 export const OrderSuccessPage = () => {
-  const { orderId } = useParams();
+  const { orderId } = useParams();       // orderId desde la URL "/order-success/:orderId"
   const navigate = useNavigate();
 
   // Estado interno
