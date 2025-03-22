@@ -1,0 +1,673 @@
+/* ======================================================
+   ORDER SUCCESS PAGE STYLES
+   Estilos optimizados para una página de éxito de pedido
+   con diseño más profesional y experiencia visual mejorada
+======================================================== */
+
+/* ---------- CONTENEDORES PRINCIPALES ---------- */
+
+.order-success-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 1rem 5rem;
+    color: #333;
+}
+
+/* Contenedores para estados de carga y error */
+.success-loading-container,
+.success-error-container,
+.success-generic-container {
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.success-loading-content,
+.success-error-content,
+.success-generic-box {
+    max-width: 600px;
+    padding: 3rem;
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    animation: fadeInUp 0.6s ease;
+}
+
+/* ---------- CABECERA Y CONFIRMACIÓN ---------- */
+
+.success-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding: 2rem 0;
+}
+
+.success-header h1 {
+    color: #222;
+    font-weight: 700;
+    margin: 1.5rem 0 1rem;
+    font-size: 2.5rem;
+}
+
+.success-header .lead {
+    color: #666;
+    font-size: 1.2rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Animación de check */
+.success-check-animation {
+    margin: 0 auto;
+    width: 100px;
+    height: 100px;
+    background-color: rgba(52, 199, 73, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+.success-check-animation i {
+    color: var(--green-3);
+    font-size: 4rem;
+    animation: scaleCheck 0.5s ease;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(52, 199, 73, 0.4); }
+    70% { box-shadow: 0 0 0 20px rgba(52, 199, 73, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 199, 73, 0); }
+}
+
+@keyframes scaleCheck {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- NÚMERO DE PEDIDO ---------- */
+
+.order-number-section {
+    background-color: #f8f9fa;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    position: relative;
+    animation: fadeInUp 0.8s ease;
+}
+
+.order-number-container {
+    max-width: 500px;
+    margin: 0 auto 1rem;
+}
+
+.order-number-label {
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #777;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+}
+
+.order-number-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(to right, #f8f9fa, white, #f8f9fa);
+    border-radius: 0.5rem;
+    border: 1px dashed #ddd;
+    letter-spacing: 1px;
+    overflow-wrap: break-word;
+}
+
+.order-email-notice {
+    font-size: 0.95rem;
+    color: #666;
+    margin: 0;
+}
+
+.order-email-notice i {
+    color: var(--green-3);
+}
+
+/* ---------- SECCIONES DE CONTENIDO ---------- */
+
+.order-success-main {
+    animation: fadeInUp 1s ease;
+}
+
+.order-success-section {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.order-success-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1.2rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #eee;
+}
+
+.section-title i {
+    color: var(--green-3);
+}
+
+.section-subtitle {
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 1.5rem 0 1rem;
+    color: #555;
+    display: flex;
+    align-items: center;
+}
+
+/* ---------- DETALLES DEL PEDIDO ---------- */
+
+.order-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.order-detail-item {
+    position: relative;
+}
+
+.detail-label {
+    font-size: 0.85rem;
+    color: #777;
+    margin-bottom: 0.3rem;
+}
+
+.detail-value {
+    font-weight: 500;
+    color: #333;
+}
+
+/* Badge de estado */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    border-radius: 2rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-processing {
+    background-color: #fff8e1;
+    color: #f57c00;
+}
+
+.status-delivered {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+
+.status-cancelled {
+    background-color: #ffebee;
+    color: #d32f2f;
+}
+
+/* ---------- LISTA DE PRODUCTOS ---------- */
+
+.items-count {
+    font-size: 0.9rem;
+    font-weight: normal;
+    color: #777;
+    margin-left: 0.3rem;
+}
+
+.order-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.order-success-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 0.8rem;
+    background-color: #f9f9f9;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.order-success-item:hover {
+    background-color: #f5f5f5;
+    transform: translateX(3px);
+}
+
+.order-success-item-image {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin-right: 1rem;
+}
+
+.order-success-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.placeholder-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #eee;
+    color: #aaa;
+    font-size: 1.5rem;
+}
+
+.order-success-item-details {
+    flex: 1;
+}
+
+.item-name {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    font-size: 1rem;
+}
+
+.item-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.item-quantity {
+    color: #777;
+}
+
+.item-price {
+    font-weight: 500;
+}
+
+.order-success-item-total {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--green-3);
+    margin-left: 1rem;
+    min-width: 80px;
+    text-align: right;
+}
+
+.btn-show-more {
+    align-self: center;
+    margin: 0.5rem 0;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.btn-show-more:hover {
+    transform: translateY(-2px);
+}
+
+/* ---------- DIRECCIÓN DE ENVÍO ---------- */
+
+.shipping-address-card {
+    background-color: #f9f9f9;
+    border-radius: 0.8rem;
+    padding: 1.2rem;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.address-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+.address-line {
+    margin-bottom: 0.3rem;
+    color: #555;
+}
+
+.address-references {
+    margin-top: 0.8rem;
+    font-style: italic;
+    color: #777;
+    font-size: 0.9rem;
+    background-color: #f0f0f0;
+    padding: 0.5rem 0.8rem;
+    border-radius: 0.5rem;
+    display: inline-block;
+}
+
+.address-references i {
+    color: #999;
+}
+
+/* ---------- RESUMEN DE PAGO ---------- */
+
+.order-summary-card {
+    background-color: #fcfcfc;
+}
+
+.summary-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95rem;
+    color: #666;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #333;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.discount-item {
+    color: #28a745;
+}
+
+.billing-info {
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px dashed #ddd;
+}
+
+.invoice-details {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.invoice-id {
+    font-weight: 500;
+    color: #444;
+}
+
+.invoice-pending {
+    font-size: 0.9rem;
+    color: #777;
+    font-style: italic;
+}
+
+/* ---------- PRÓXIMOS PASOS ---------- */
+
+.next-steps-card {
+    background-color: #f8f9fa;
+}
+
+.next-steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: step-counter;
+}
+
+.step-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    counter-increment: step-counter;
+}
+
+.step-item:last-child {
+    margin-bottom: 0;
+}
+
+.step-item::before {
+    content: counter(step-counter);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    background-color: var(--green-3);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.step-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    background-color: rgba(52, 199, 73, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green-3);
+    font-size: 1.2rem;
+    margin-left: 1.5rem;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-content h6 {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: #444;
+}
+
+.step-content p {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* ---------- ACCIONES Y SOPORTE ---------- */
+
+.order-success-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+}
+
+.success-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.success-actions .btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.success-actions .btn-primary {
+    background-color: var(--green-3);
+    border-color: var(--green-3);
+}
+
+.success-actions .btn-primary:hover {
+    background-color: var(--green-1);
+    border-color: var(--green-1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.success-actions .btn-outline-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.support-info {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.8rem;
+    border-left: 4px solid var(--green-3);
+}
+
+.support-info h5 {
+    color: #444;
+    margin-bottom: 0.8rem;
+    font-weight: 600;
+}
+
+.support-info p {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.support-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.support-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--green-3);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.support-contact-item:hover {
+    color: var(--green-1);
+    transform: translateX(3px);
+}
+
+/* ---------- ESTADOS DE CARGA Y ERROR ---------- */
+
+.spinner-container {
+    margin-bottom: 1.5rem;
+}
+
+.spinner-border.text-success {
+    color: var(--green-3) !important;
+    width: 3rem;
+    height: 3rem;
+}
+
+.error-icon-container {
+    font-size: 3.5rem;
+    color: #dc3545;
+    margin-bottom: 1rem;
+}
+
+/* ---------- ESTILOS RESPONSIVOS ---------- */
+
+@media (max-width: 991px) {
+    .order-details-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .success-actions {
+        flex-direction: column;
+    }
+
+    .success-actions .btn {
+        width: 100%;
+    }
+
+    .order-success-footer .row > div:last-child {
+        margin-top: 2rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .order-success-container {
+        padding: 1.5rem 0.8rem 3rem;
+    }
+
+    .success-header h1 {
+        font-size: 2rem;
+    }
+
+    .success-header .lead {
+        font-size: 1rem;
+    }
+
+    .order-number-value {
+        font-size: 1.3rem;
+        padding: 0.5rem;
+    }
+
+    .order-success-item {
+        flex-wrap: wrap;
+    }
+
+    .order-success-item-total {
+        margin-left: auto;
+        margin-top: 0.5rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+    }
+
+    .success-check-animation {
+        width: 80px;
+        height: 80px;
+    }
+
+    .success-check-animation i {
+        font-size: 3rem;
+    }
+
+    .step-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .support-contact {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+}
