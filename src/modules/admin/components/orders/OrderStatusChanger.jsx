@@ -56,6 +56,7 @@ export const OrderStatusChanger = ({
 
   // Manejador para cambiar el estado
   const handleChangeStatus = () => {
+    console.log('OrderStatusChanger: Intentando cambiar estado a', selectedStatus, 'con notas:', notes);
     onChangeStatus(selectedStatus, notes);
     setShowNotes(false);
     setNotes('');

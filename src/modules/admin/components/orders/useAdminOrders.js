@@ -140,6 +140,8 @@ export const useAdminOrders = (initialFilters = {}) => {
    * Cambiar el estado de un pedido
    */
   const changeOrderStatus = useCallback(async (orderId, newStatus, notes = '') => {
+    console.log('useAdminOrders: Iniciando cambio de estado', { orderId, newStatus, notes, uid });
+
     if (!orderId || !newStatus || !uid) {
       dispatch(addMessage({
         type: 'error',

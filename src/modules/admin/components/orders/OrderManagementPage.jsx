@@ -86,6 +86,8 @@ export const OrderManagementPage = () => {
 
   // Manejador para cambiar el estado de un pedido
   const handleChangeStatus = async (orderId, status, notes) => {
+    console.log('OrderManagementPage: Cambiando estado del pedido', orderId, 'a', status);
+
     await changeOrderStatus(orderId, status, notes);
   };
 

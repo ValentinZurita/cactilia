@@ -55,7 +55,10 @@ export const OrderDetail = ({
       {/* Cambiador de estado */}
       <OrderStatusChanger
         currentStatus={order.status}
-        onChangeStatus={onChangeStatus}
+        onChangeStatus={(status, notes) => {
+          console.log('OrderDetail: Recibiendo cambio de estado a', status, 'con notas:', notes);
+          onChangeStatus(status, notes);
+        }}
         isProcessing={isProcessing}
       />
 
