@@ -5,10 +5,9 @@
  * @param {Object} props.payment - Datos del método de pago
  * @param {Function} props.onSetDefault - Función para establecer como predeterminado
  * @param {Function} props.onDelete - Función para eliminar el método de pago
- * @param {Function} props.onEdit - Función para editar el método de pago
  * @returns {JSX.Element}
  */
-export const PaymentItem = ({ payment, onSetDefault, onDelete, onEdit }) => {
+export const PaymentItem = ({ payment, onSetDefault, onDelete }) => {
 
   /**
    * Obtener icono para tipo de tarjeta
@@ -69,15 +68,6 @@ export const PaymentItem = ({ payment, onSetDefault, onDelete, onEdit }) => {
       </div>
 
       <div className="payment-actions">
-
-        {/* Botón Editar */}
-        <button
-          className="payment-action-btn edit"
-          title="Editar método de pago"
-          onClick={() => onEdit(payment)}
-        >
-          <i className="bi bi-pencil"></i>
-        </button>
 
         {/* Botón Predeterminada (solo si no es la predeterminada) */}
         {!payment.isDefault && (
