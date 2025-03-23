@@ -52,7 +52,7 @@ export const UserRoutes = () => {
         <Route path="*" element={<Navigate to="orders" replace />} />
       </Route>
 
-      {/* Si alguien pone /X que no matchea, redirige a Home (o donde tú quieras) */}
+      {/* Cualquier ruta */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

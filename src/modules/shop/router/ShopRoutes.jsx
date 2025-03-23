@@ -12,8 +12,6 @@ export const ShopRoutes = () => {
       {/** /shop/order-success/:orderId */}
       <Route path="order-success/:orderId" element={<OrderSuccessPage />} />
 
-      {/** Si quisieras un checkout aquí en /shop/checkout, lo puedes poner.
-       Pero en el ejemplo lo manejamos directamente en AppRouter */}
     </Routes>
   );
 };
