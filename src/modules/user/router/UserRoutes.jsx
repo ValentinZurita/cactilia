@@ -1,52 +1,59 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { RequireAuth } from '../../auth/components/RequireAuth';
+// src/modules/user/router/UserRoutes.jsx
+
+import { Routes, Route, Navigate } from "react-router-dom";
+import { RequireAuth } from "../../auth/components/RequireAuth";
 import {
-  AddressesPage,
+  CartPage,
   OrdersPage,
+  OrderDetailPage,
+  AddressesPage,
   PaymentsPage,
   SettingsPage,
-  CartPage,
-  OrderDetailPage
-} from '../pages/index.js';
+} from "../pages";
 import { ProfileLayout } from '../components/profile/index.js';
-import { CheckoutPage } from '../../shop/pages';
+import { CheckoutPage } from '../../shop/pages/index.js'
 
-/**
- * UserRoutes
- *
- * Define las rutas para la sección de usuario
- * Todas las rutas están protegidas con RequireAuth
- */
 export const UserRoutes = () => {
   return (
     <Routes>
-      {/* Página de carrito - disponible sin autenticación */}
-      <Route path="/cart" element={<CartPage />} />
+      {/* Carrito sin protección */}
+      <Route path="cart" element={<CartPage />} />
 
-      {/* Checkout - requiere autenticación */}
-      <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
-
-      {/* Rutas del perfil - requieren autenticación */}
+      {/* Checkout requiere autenticación */}
       <Route
-        path="/profile"
-        element={<RequireAuth><ProfileLayout /></RequireAuth>}
+        path="checkout"
+        element={
+          <RequireAuth>
+            <CheckoutPage />
+          </RequireAuth>
+        }
+      />
+
+      {/* /profile requiere autenticación y muestra ProfileLayout */}
+      <Route
+        path="profile"
+        element={
+          <RequireAuth>
+            <ProfileLayout />
+          </RequireAuth>
+        }
       >
-        {/* Ruta por defecto - redireccionar a órdenes con 'replace' */}
+        {/* Redirección por defecto a /profile/orders */}
         <Route index element={<Navigate to="orders" replace />} />
 
-        {/* Secciones individuales del perfil */}
+        {/* Diferentes secciones del perfil */}
         <Route path="orders" element={<OrdersPage />} />
         <Route path="orders/:orderId" element={<OrderDetailPage />} />
         <Route path="addresses" element={<AddressesPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="settings" element={<SettingsPage />} />
 
-        {/* Redireccionar otras rutas a órdenes */}
+        {/* Cualquier ruta dentro de /profile que no exista -> /profile/orders */}
         <Route path="*" element={<Navigate to="orders" replace />} />
       </Route>
 
-      {/* Handle direct navigation to root paths */}
-      <Route path="*" element={<Navigate to="/profile" />} />
+      {/* Si alguien pone /X que no matchea, redirige a Home (o donde tú quieras) */}
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 };

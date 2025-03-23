@@ -1,6 +1,7 @@
 // src/modules/admin/routes/AdminRoutes.jsx
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AdminLayout } from '../../../layout/AdminLayout.jsx'
+
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AdminLayout } from "../../../layout/AdminLayout";
 import {
   AdminHomePage,
   AdminLoginPage,
@@ -9,40 +10,38 @@ import {
   UserManagementPage,
   MediaLibraryPage,
   MediaUploadPage,
-} from '../pages/index.js'
-import { RequireAdminAuth } from '../components/login/index.js'
-import { HomePageManagementPage } from '../components/content/homepage/HomePageManagementPage.jsx'
-import { ShopPageManagementPage } from '../components/content/shop/ShopPageManagementPage.jsx'
-import ContactPageManagementPage from '../components/content/contact/ContactPageManagementPage.jsx'
+} from "../pages";
+import { RequireAdminAuth } from "../components/login";
+import { HomePageManagementPage } from "../components/content/homepage/HomePageManagementPage";
+import { ShopPageManagementPage } from "../components/content/shop/ShopPageManagementPage";
+import ContactPageManagementPage from "../components/content/contact/ContactPageManagementPage";
 
 export const AdminRoutes = () => {
   return (
     <Routes>
-      {/* 1) Public route: login */}
+      {/* 1) Ruta de login de admin, sin protección */}
       <Route path="login" element={<AdminLoginPage />} />
 
-      {/* 2) Protected routes */}
+      {/* 2) Rutas protegidas de Admin */}
       <Route element={<RequireAdminAuth />}>
-        {/* Admin layout */}
         <Route element={<AdminLayout />}>
-          {/* Home */}
           <Route index element={<Navigate to="home" />} />
           <Route path="home" element={<AdminHomePage />} />
 
-          {/* Categories */}
+          {/* Categorías */}
           <Route path="categories" element={<Navigate to="categories/view" />} />
           <Route path="categories/:mode/:id?" element={<CategoryManagementPage />} />
 
-          {/* Products */}
+          {/* Productos */}
           <Route path="products" element={<Navigate to="products/view" />} />
           <Route path="products/:mode/:id?" element={<ProductManagementPage />} />
 
-          {/* Media Library */}
+          {/* Media */}
           <Route path="media" element={<Navigate to="media/browse" />} />
           <Route path="media/browse" element={<MediaLibraryPage />} />
           <Route path="media/upload" element={<MediaUploadPage />} />
 
-          {/* Content Management - Homepage, Shop Editor and Contact Editor */}
+          {/* Content Management */}
           <Route path="homepage" element={<HomePageManagementPage />} />
           <Route path="shoppage" element={<ShopPageManagementPage />} />
           <Route path="contactpage" element={<ContactPageManagementPage />} />
@@ -52,14 +51,14 @@ export const AdminRoutes = () => {
           <Route path="users/:type" element={<UserManagementPage />} />
           <Route path="users/:type/:mode/:id?" element={<UserManagementPage />} />
 
-          {/* Rutas solo para superadmin */}
+          {/* Ejemplo de rutas exclusivas superadmin */}
           <Route element={<RequireAdminAuth superadminOnly={true} />}>
             <Route path="superadmin/roles" element={<UserManagementPage />} />
           </Route>
         </Route>
       </Route>
 
-      {/* 3) Anything else => login */}
+      {/* 3) Cualquier otra -> login admin */}
       <Route path="*" element={<Navigate to="login" />} />
     </Routes>
   );

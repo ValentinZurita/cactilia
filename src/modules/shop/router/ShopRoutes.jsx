@@ -1,30 +1,19 @@
-/**
- * ShopRoutes.jsx
- *
- * Define las rutas principales relacionadas con el módulo 'shop'.
- */
+// src/modules/shop/router/ShopRoutes.jsx
 
-import { Routes, Route } from 'react-router-dom';
-import { ShopPage, CheckoutPage, OrderSuccessPage } from '../pages'
-import { PublicLayout } from '../../../layout/PublicLayout';
-
+import { Routes, Route } from "react-router-dom";
+import { ShopPage, OrderSuccessPage } from "../pages";
 
 export const ShopRoutes = () => {
   return (
     <Routes>
-      {/* Todas estas rutas usarán el PublicLayout */}
-      <Route element={<PublicLayout />}>
-        {/* Página de tienda principal */}
-        <Route path="" element={<ShopPage />} />
+      {/** /shop -> ShopPage */}
+      <Route index element={<ShopPage />} />
 
-        {/* Página de Checkout */}
-        <Route path="checkout" element={<CheckoutPage />} />
+      {/** /shop/order-success/:orderId */}
+      <Route path="order-success/:orderId" element={<OrderSuccessPage />} />
 
-        {/* Página de éxito de pedido con :orderId */}
-        <Route path="order-success/:orderId" element={<OrderSuccessPage />} />
-
-        {/* Aquí podrías tener más rutas si fuera necesario */}
-      </Route>
+      {/** Si quisieras un checkout aquí en /shop/checkout, lo puedes poner.
+       Pero en el ejemplo lo manejamos directamente en AppRouter */}
     </Routes>
   );
 };
