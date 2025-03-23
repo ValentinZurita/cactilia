@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SectionTitle } from '../components/shared';
 import '../styles/orderDetail.css';
+import '../../shop/styles/orderSuccess.css';
 import { useOrders } from '../hooks/userOrders.js';
 
 // Importar componentes compartidos
