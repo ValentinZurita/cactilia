@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * OrderSuccessPage - Modified with wrapper class to prevent style conflicts
+ */
+import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../firebase/firebaseConfig.js';
@@ -60,7 +63,7 @@ const fetchOrderDetails = async (orderId) => {
  * Componente para el estado de carga
  */
 const LoadingState = () => (
-  <div className="order-success-loading">
+  <div className="os-wrapper order-success-loading">
     <div className="spinner-container">
       <div className="spinner"></div>
     </div>
@@ -73,7 +76,7 @@ const LoadingState = () => (
  * Componente para mostrar mensajes de error
  */
 const ErrorState = ({ error }) => (
-  <div className="order-success-error">
+  <div className="os-wrapper order-success-error">
     <div className="order-error-icon">
       <i className="bi bi-exclamation-circle"></i>
     </div>
@@ -92,7 +95,7 @@ const ErrorState = ({ error }) => (
  * Componente para mostrar éxito sin detalles de pedido (backup)
  */
 const NoOrderDetailsState = () => (
-  <div className="order-success-container">
+  <div className="os-wrapper order-success-container">
     <div className="order-success-header">
       <div className="success-icon-container">
         <i className="bi bi-check-circle-fill"></i>
@@ -236,7 +239,7 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
   const isFromCheckout = !window.location.pathname.includes('/profile/');
 
   return (
-    <div className="order-success-container">
+    <div className="os-wrapper order-success-container">
       {/* Cabecera con animación de éxito */}
       <div className="order-success-header">
         <div className="success-icon-container">
@@ -496,18 +499,18 @@ export const OrderSuccessPage = () => {
     getOrderData();
   }, [orderId]);
 
-  // Renderizado condicional
-  if (loading) {
-    return <LoadingState />;
-  }
-
-  if (error) {
-    return <ErrorState error={error} />;
-  }
-
-  if (!orderDetails) {
-    return <NoOrderDetailsState />;
-  }
-
-  return <OrderSuccessContent orderId={orderId} orderDetails={orderDetails} />;
+  // Renderizado condicional con el wrapper principal
+  return (
+    <div className="order-success-page-wrapper">
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState error={error} />
+      ) : !orderDetails ? (
+        <NoOrderDetailsState />
+      ) : (
+        <OrderSuccessContent orderId={orderId} orderDetails={orderDetails} />
+      )}
+    </div>
+  );
 };
