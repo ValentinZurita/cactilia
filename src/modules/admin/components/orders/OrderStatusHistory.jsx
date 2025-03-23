@@ -2,6 +2,7 @@ import { OrderStatusBadge } from './OrderStatusBadge';
 
 /**
  * Componente para mostrar el historial de cambios de estado de un pedido
+ * Utilizando clases de Bootstrap para el estilo
  *
  * @param {Object} props
  * @param {Array} props.history - Historial de cambios de estado
@@ -24,17 +25,24 @@ export const OrderStatusHistory = ({ history = [], formatDate }) => {
         Historial de Estados
       </h5>
 
-      <div className="timeline">
+      <div className="position-relative ms-4 pb-2 border-start border-2 border-light">
         {history.map((change, index) => (
-          <div key={index} className="timeline-item">
-            <div className="timeline-marker"></div>
-            <div className="timeline-content">
+          <div key={index} className="position-relative mb-4">
+            {/* Círculo marcador */}
+            <div className="position-absolute top-0 start-0 translate-middle rounded-circle bg-primary"
+                 style={{ width: '14px', height: '14px', left: '-10px', border: '2px solid white' }}>
+            </div>
+
+            {/* Contenido */}
+            <div className="ms-4 ps-2">
+              {/* Timestamp */}
               <div className="d-flex justify-content-between mb-1">
-                <span className="timestamp text-muted">
+                <span className="text-muted small">
                   {formatDate(change.changedAt)}
                 </span>
               </div>
 
+              {/* Cambio de estado */}
               <div className="d-flex align-items-center">
                 <div className="me-2">
                   <OrderStatusBadge status={change.from} className="me-2" />
@@ -43,59 +51,22 @@ export const OrderStatusHistory = ({ history = [], formatDate }) => {
                 </div>
               </div>
 
+              {/* Notas (si existen) */}
               {change.notes && (
-                <blockquote className="blockquote-sm bg-light p-2 rounded mt-2">
+                <div className="bg-light p-2 rounded mt-2 border-start border-secondary border-2">
                   <i className="bi bi-quote me-1 text-muted"></i>
-                  {change.notes}
-                </blockquote>
+                  <small>{change.notes}</small>
+                </div>
               )}
 
-              <small className="text-muted">
+              {/* Usuario que realizó el cambio */}
+              <small className="text-muted d-block mt-1">
                 Actualizado por: Admin {change.changedBy.substring(0, 8)}...
               </small>
             </div>
           </div>
         ))}
       </div>
-
-      <style jsx>{`
-        .timeline {
-          position: relative;
-          padding-left: 30px;
-          margin-left: 10px;
-          border-left: 2px solid #e9ecef;
-        }
-        
-        .timeline-item {
-          position: relative;
-          margin-bottom: 25px;
-        }
-        
-        .timeline-marker {
-          position: absolute;
-          left: -36px;
-          top: 0;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background-color: #0d6efd;
-          border: 2px solid white;
-        }
-        
-        .timeline-content {
-          padding-bottom: 10px;
-        }
-        
-        .timestamp {
-          font-size: 0.8rem;
-        }
-        
-        .blockquote-sm {
-          font-size: 0.9rem;
-          border-left: 3px solid #dee2e6;
-          padding-left: 10px;
-        }
-      `}</style>
     </div>
   );
 };

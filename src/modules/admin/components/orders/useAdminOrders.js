@@ -264,9 +264,26 @@ export const useAdminOrders = (initialFilters = {}) => {
     if (!timestamp) return 'Fecha no disponible';
 
     try {
-      const date = timestamp instanceof Date
-        ? timestamp
-        : new Date(timestamp);
+      // Determinar el tipo de timestamp y convertirlo a Date
+      let date;
+      if (timestamp instanceof Date) {
+        date = timestamp;
+      } else if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+        // Es un Timestamp de Firestore
+        date = timestamp.toDate();
+      } else if (timestamp.seconds && timestamp.nanoseconds) {
+        // Es un objeto tipo Timestamp pero sin método toDate
+        date = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
+      } else {
+        // Intentar convertir desde string o número
+        date = new Date(timestamp);
+      }
+
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) {
+        console.warn('Fecha inválida:', timestamp);
+        return 'Fecha inválida';
+      }
 
       return date.toLocaleDateString('es-ES', {
         year: 'numeric',
@@ -276,7 +293,7 @@ export const useAdminOrders = (initialFilters = {}) => {
         minute: '2-digit'
       });
     } catch (err) {
-      console.error('Error formateando fecha:', err);
+      console.error('Error formateando fecha:', err, timestamp);
       return 'Fecha no disponible';
     }
   }, []);
