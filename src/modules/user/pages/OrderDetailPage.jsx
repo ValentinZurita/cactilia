@@ -94,23 +94,22 @@ export const OrderDetailPage = () => {
           <OrderTotals totals={order.totals} />
         </div>
 
-        {/* Información de envío */}
-        <div className="order-info-columns">
-          <div className="order-address-section">
-            <h3>Dirección de Envío</h3>
-            <OrderAddressCard
-              address={order.shipping?.address}
-              estimatedDelivery={order.shipping?.estimatedDelivery}
-            />
-          </div>
+        {/* Dirección de Envío - Ahora en su propia fila */}
+        <div className="order-details-section">
+          <h3>Dirección de Envío</h3>
+          <OrderAddressCard
+            address={order.shipping?.address}
+            estimatedDelivery={order.shipping?.estimatedDelivery}
+          />
+        </div>
 
-          <div className="order-payment-section">
-            <h3>Información de Pago</h3>
-            <OrderPaymentInfo
-              payment={order.payment}
-              billing={order.billing}
-            />
-          </div>
+        {/* Información de Pago - Ahora en su propia fila */}
+        <div className="order-details-section">
+          <h3>Información de Pago</h3>
+          <OrderPaymentInfo
+            payment={order.payment}
+            billing={order.billing}
+          />
         </div>
 
         {/* Notas del pedido */}

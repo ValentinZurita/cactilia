@@ -1,0 +1,33 @@
+
+.order-success-page-wrapper .next-steps-container {
+    display: grid;
+    gap: 20px;
+}
+
+/* En modo móvil: 1 columna */
+@media (max-width: 767px) {
+    .order-success-page-wrapper .next-steps-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* En modo tablet: 2 columnas */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .order-success-page-wrapper .next-steps-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* En modo desktop: 2 o 4 columnas (forzamos 2 para mantener una distribución más equilibrada) */
+@media (min-width: 1200px) {
+    .order-success-page-wrapper .next-steps-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Estilo alternativo por si prefieres 4 columnas en desktop muy grandes */
+@media (min-width: 1600px) {
+    .order-success-page-wrapper .next-steps-container {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+}

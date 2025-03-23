@@ -132,23 +132,22 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
         <OrderTotals totals={orderDetails.totals} />
       </div>
 
-      {/* Información de envío */}
-      <div className="order-info-columns">
-        <div className="order-address-section">
-          <h3>Dirección de Envío</h3>
-          <OrderAddressCard
-            address={orderDetails.shipping?.address}
-            estimatedDelivery={orderDetails.shipping?.estimatedDelivery}
-          />
-        </div>
+      {/* Dirección de Envío */}
+      <div className="order-details-section">
+        <h3>Dirección de Envío</h3>
+        <OrderAddressCard
+          address={orderDetails.shipping?.address}
+          estimatedDelivery={orderDetails.shipping?.estimatedDelivery}
+        />
+      </div>
 
-        <div className="order-payment-section">
-          <h3>Información de Pago</h3>
-          <OrderPaymentInfo
-            payment={orderDetails.payment}
-            billing={orderDetails.billing}
-          />
-        </div>
+      {/* Información de Pago */}
+      <div className="order-details-section">
+        <h3>Información de Pago</h3>
+        <OrderPaymentInfo
+          payment={orderDetails.payment}
+          billing={orderDetails.billing}
+        />
       </div>
 
       {/* Notas del pedido */}

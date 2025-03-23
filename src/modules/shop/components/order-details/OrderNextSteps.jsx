@@ -1,3 +1,5 @@
+import '../../styles/orderNextSteps.css';
+
 export const OrderNextSteps = () => {
   return (
     <div className="order-next-steps">
