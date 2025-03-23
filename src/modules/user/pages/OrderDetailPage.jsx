@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { SectionTitle } from '../components/shared';
 import '../styles/orderDetail.css';
 import '../../shop/styles/orderSuccess.css';
 import { useOrders } from '../hooks/userOrders.js';
 
-// Importar componentes compartidos
+// Import components from shop module
 import {
   OrderOverview,
   OrderProductsList,
@@ -25,7 +24,8 @@ export const OrderDetailPage = () => {
     orderLoading,
     orderError,
     fetchOrderById,
-    formatOrderDate
+    formatOrderDate,
+    mapOrderStatusToDisplay
   } = useOrders();
 
   // Cargar detalles de la orden cuando cambia el ID
@@ -68,92 +68,55 @@ export const OrderDetailPage = () => {
   }
 
   return (
-    <div className="order-detail-page">
-      {/* Encabezado con botón de regreso */}
-      <div className="d-flex align-items-center mb-4">
-        <Link to="/profile/orders" className="btn-back me-3">
-          <i className="bi bi-arrow-left"></i>
-        </Link>
-        <SectionTitle title={`Pedido #${order.id}`} />
-      </div>
-
-      {/* Información general de la orden - Usando componente compartido */}
-      <div className="order-info-card mb-4">
-        <div className="row align-items-center">
-          <div className="col-md-6">
-            <OrderOverview
-              orderId={order.id}
-              orderDate={formatOrderDate(order.createdAt)}
-              status={order.status}
-              createdAt={order.createdAt}
-              showTimeline={false} // No mostramos timeline aquí
-            />
-          </div>
-
-          <div className="col-md-6 text-md-end mt-3 mt-md-0">
-            <div className="order-status">
-              <h5 className="mb-2">Estado del pedido</h5>
-              <span className={`badge bg-${getStatusBadgeClass(order.status)}-subtle text-${getStatusBadgeClass(order.status)} order-status-badge`}>
-                {getStatusIcon(order.status)}
-                {getStatusLabel(order.status)}
-              </span>
-            </div>
-          </div>
+    <div className="order-success-page-wrapper">
+      <div className="os-wrapper order-success-container">
+        {/* Botón de regreso */}
+        <div className="d-flex align-items-center mb-4">
+          <Link to="/profile/orders" className="btn-back me-3">
+            <i className="bi bi-arrow-left"></i>
+          </Link>
         </div>
-      </div>
 
-      {/* Productos - Usando componente compartido */}
-      <div className="products-card mb-4">
-        <h4 className="card-title mb-3">Productos</h4>
-        <OrderProductsList items={order.items} />
-      </div>
+        {/* Información general de la orden */}
+        <OrderOverview
+          orderId={order.id}
+          orderDate={formatOrderDate(order.createdAt)}
+          status={order.status}
+          createdAt={order.createdAt}
+        />
 
-      {/* Dirección y desglose de costos */}
-      <div className="row">
-        {/* Dirección de envío - Usando componente compartido */}
-        <div className="col-md-6 mb-4">
-          <div className="address-card">
-            <h4 className="card-title mb-3">Dirección de envío</h4>
+        {/* Detalles de productos */}
+        <div className="order-details-section">
+          <h3>Productos</h3>
+          <OrderProductsList items={order.items} />
+
+          {/* Totales */}
+          <OrderTotals totals={order.totals} />
+        </div>
+
+        {/* Información de envío */}
+        <div className="order-info-columns">
+          <div className="order-address-section">
+            <h3>Dirección de Envío</h3>
             <OrderAddressCard
               address={order.shipping?.address}
               estimatedDelivery={order.shipping?.estimatedDelivery}
             />
           </div>
-        </div>
 
-        {/* Resumen de costos - Usando componente compartido */}
-        <div className="col-md-6 mb-4">
-          <div className="totals-card">
-            <h4 className="card-title mb-3">Resumen</h4>
-            <OrderTotals totals={order.totals} />
-
-            {/* Información de facturación si aplica */}
-            {order.billing?.requiresInvoice && (
-              <div className="invoice-info mt-3">
-                <OrderPaymentInfo
-                  payment={order.payment}
-                  billing={order.billing}
-                />
-              </div>
-            )}
+          <div className="order-payment-section">
+            <h3>Información de Pago</h3>
+            <OrderPaymentInfo
+              payment={order.payment}
+              billing={order.billing}
+            />
           </div>
         </div>
-      </div>
 
-      {/* Notas del pedido - Usando componente compartido */}
-      <OrderNotes notes={order.notes} />
+        {/* Notas del pedido */}
+        <OrderNotes notes={order.notes} />
 
-      {/* Acciones */}
-      <div className="order-actions mt-4 mb-4">
-        <Link to="/profile/orders" className="btn btn-outline-secondary me-2">
-          <i className="bi bi-arrow-left me-1"></i>
-          Volver a mis pedidos
-        </Link>
-
-        <Link to="/shop" className="btn btn-green-3">
-          <i className="bi bi-shop me-1"></i>
-          Continuar comprando
-        </Link>
+        {/* No action buttons needed */}
       </div>
     </div>
   );
