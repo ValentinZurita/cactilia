@@ -43,7 +43,7 @@ export const ActionItemCard = ({
 
         {/* Badge de predeterminado (si aplica) */}
         {isDefault && (
-          <span className="action-item-default-badge">
+          <span className="payment-default-tag">
             <i className="bi bi-check-circle-fill"></i>
             {defaultBadgeText}
           </span>

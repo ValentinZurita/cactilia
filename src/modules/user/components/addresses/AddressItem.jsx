@@ -127,7 +127,7 @@ export function AddressItem({
                               onDelete,
                               onEdit,
                             }) {
-  // Agrupamos en un objeto todos los datos de la dirección para pasarlos fácilmente
+  // Objeto todos los datos de la dirección para pasarlos fácilmente
   const addressData = {
     id,
     name,
@@ -142,7 +142,7 @@ export function AddressItem({
     isDefault,
   };
 
-  // Preparamos las acciones para el ActionItemCard
+  // Acciones para el ActionItemCard
   const actions = createActionItems({
     id,
     isDefault,
@@ -155,7 +155,7 @@ export function AddressItem({
   return (
     <ActionItemCard
       title={name}
-      subtitle={street} // El subtítulo puede ser solo la calle (por compatibilidad)
+      subtitle={street}
       isDefault={isDefault}
       defaultBadgeText="Predeterminada"
       actions={actions}
