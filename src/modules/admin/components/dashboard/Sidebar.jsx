@@ -36,6 +36,7 @@ export const Sidebar = ({ onLinkClick }) => {
     categories: false,
     products: false,
     users: false,
+    orders: false,
     media: false
   });
   const [userRole, setUserRole] = useState("admin");
@@ -130,6 +131,17 @@ export const Sidebar = ({ onLinkClick }) => {
           <SidebarItem to="/admin/products/view" label="Ver Productos" onClick={handleNavClick} />
           <SidebarItem to="/admin/products/create" label="Agregar Productos" onClick={handleNavClick} />
         </SidebarDropdown>
+
+        {/* Pedidos */}
+        <SidebarDropdown
+          label="Pedidos"
+          icon="bi-cart"
+          isOpen={openMenus.orders}
+          toggle={() => toggleMenu("orders")}
+        >
+          <SidebarItem to="/admin/orders/view" label="Ver Pedidos" onClick={handleNavClick} />
+        </SidebarDropdown>
+
 
         {/* Usuarios */}
         <SidebarDropdown

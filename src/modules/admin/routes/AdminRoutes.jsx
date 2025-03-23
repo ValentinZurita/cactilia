@@ -15,6 +15,7 @@ import { RequireAdminAuth } from "../components/login";
 import { HomePageManagementPage } from "../components/content/homepage/HomePageManagementPage";
 import { ShopPageManagementPage } from "../components/content/shop/ShopPageManagementPage";
 import ContactPageManagementPage from "../components/content/contact/ContactPageManagementPage";
+import { OrderManagementPage } from '../components/orders/OrderManagementPage.jsx'
 
 export const AdminRoutes = () => {
   return (
@@ -45,6 +46,10 @@ export const AdminRoutes = () => {
           <Route path="homepage" element={<HomePageManagementPage />} />
           <Route path="shoppage" element={<ShopPageManagementPage />} />
           <Route path="contactpage" element={<ContactPageManagementPage />} />
+
+          {/* Orders */}
+          <Route path="orders" element={<Navigate to="orders/view" />} />
+          <Route path="orders/:mode/:id?" element={<OrderManagementPage />} />
 
           {/* Users */}
           <Route path="users" element={<Navigate to="users/customers" />} />

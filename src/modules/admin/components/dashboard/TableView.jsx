@@ -9,7 +9,7 @@
  * @param {boolean} loading - Whether data is loading.
  * @param {string} [tableClass] - Additional class names for the table.
  * @param {string} [theadClass] - Additional class names for the thead.
- * @param {string} [style] - Inline styles for the table wrapper.
+ * @param {{borderRadius: string, overflow: string}} [style] - Inline styles for the table wrapper.
  * @returns {JSX.Element}
  *
  * @example
