@@ -156,6 +156,14 @@ export function AddressItem({
     addressData,
   });
 
+  // Función para manejar el clic en toda la tarjeta
+  const handleCardClick = (e) => {
+    // Asegurarse de que el clic no fue en uno de los botones de acción
+    if (!e.target.closest('.action-item-btn')) {
+      onEdit(addressData);
+    }
+  };
+
   return (
     <ActionItemCard
       title={name}
@@ -163,6 +171,8 @@ export function AddressItem({
       isDefault={isDefault}
       defaultBadgeText="Predeterminada"
       actions={actions}
+      onClick={handleCardClick}
+      className="clickable"
     >
       {/* Muestra detalles completos de la dirección, usando la función de formateo */}
       <div className="address-details">

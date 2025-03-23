@@ -1,18 +1,3 @@
-/**
- * Componente genérico para mostrar un elemento con acciones (editar, eliminar, establecer como predeterminado)
- * Usado para direcciones, métodos de pago, y otros elementos similares
- *
- * @param {Object} props - Propiedades del componente
- * @param {string} props.title - Título principal del elemento
- * @param {string|JSX.Element} props.subtitle - Subtítulo o descripción secundaria
- * @param {boolean} props.isDefault - Si el elemento es el predeterminado
- * @param {string} props.defaultBadgeText - Texto a mostrar en la etiqueta de predeterminado
- * @param {JSX.Element} props.iconComponent - Icono o imagen principal
- * @param {Array} props.actions - Lista de acciones disponibles: [{icon, label, onClick, showIf}]
- * @param {JSX.Element} props.children - Contenido adicional a mostrar en el cuerpo
- * @param {string} props.className - Clases CSS adicionales
- * @returns {JSX.Element}
- */
 export const ActionItemCard = ({
                                  title,
                                  subtitle,
@@ -21,10 +6,19 @@ export const ActionItemCard = ({
                                  iconComponent,
                                  actions = [],
                                  children,
-                                 className = ""
+                                 className = "",
+                                 onClick, // Nuevo prop para manejar clics
                                }) => {
+  // Determinar si la tarjeta es clicable
+  const isClickable = typeof onClick === 'function';
+  const cardClassName = `action-item ${className} ${isClickable ? 'clickable' : ''}`;
+
   return (
-    <li className={`action-item ${className}`}>
+    <li
+      className={cardClassName}
+      onClick={isClickable ? onClick : undefined}
+      style={isClickable ? { cursor: 'pointer' } : {}}
+    >
       {/* Cabecera del elemento */}
       <div className="action-item-header">
         <div className="action-item-main">
@@ -65,7 +59,10 @@ export const ActionItemCard = ({
             <button
               key={index}
               className={`action-item-btn ${action.className || ""} ${action.type || ""}`}
-              onClick={action.onClick}
+              onClick={(e) => {
+                e.stopPropagation(); // Evitar que el clic se propague a la tarjeta
+                action.onClick();
+              }}
               title={action.label}
               aria-label={action.label}
               disabled={action.disabled}
