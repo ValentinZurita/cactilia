@@ -1,9 +1,18 @@
 import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SectionTitle } from '../components/shared';
-import { formatPrice } from '../../shop/utils/cartUtilis';
 import '../styles/orderDetail.css';
-import { useOrders } from '../hooks/userOrders.js'
+import { useOrders } from '../hooks/userOrders.js';
+
+// Importar componentes compartidos
+import {
+  OrderOverview,
+  OrderProductsList,
+  OrderTotals,
+  OrderAddressCard,
+  OrderPaymentInfo,
+  OrderNotes,
+} from '../../shop/components/order-details';
 
 /**
  * OrderDetailPage - Página que muestra los detalles de una orden específica
@@ -15,7 +24,6 @@ export const OrderDetailPage = () => {
     orderLoading,
     orderError,
     fetchOrderById,
-    mapOrderStatusToDisplay,
     formatOrderDate
   } = useOrders();
 
@@ -25,30 +33,6 @@ export const OrderDetailPage = () => {
       fetchOrderById(orderId);
     }
   }, [orderId, fetchOrderById]);
-
-  // Formatear el estado de la orden para mostrar en un badge
-  const getStatusBadge = (status) => {
-    const displayStatus = mapOrderStatusToDisplay(status);
-    const statusClasses = {
-      'delivered': 'success',
-      'processing': 'warning',
-      'cancelled': 'danger'
-    };
-
-    const statusClass = statusClasses[displayStatus] || 'info';
-
-    return (
-      <span className={`badge bg-${statusClass}-subtle text-${statusClass} order-status-badge`}>
-        {displayStatus === 'delivered' && <i className="bi bi-check-circle-fill me-1"></i>}
-        {displayStatus === 'processing' && <i className="bi bi-clock-fill me-1"></i>}
-        {displayStatus === 'cancelled' && <i className="bi bi-x-circle-fill me-1"></i>}
-
-        {displayStatus === 'delivered' && 'Entregado'}
-        {displayStatus === 'processing' && 'En proceso'}
-        {displayStatus === 'cancelled' && 'Cancelado'}
-      </span>
-    );
-  };
 
   // Renderizar la página de carga
   if (orderLoading) {
@@ -92,199 +76,71 @@ export const OrderDetailPage = () => {
         <SectionTitle title={`Pedido #${order.id}`} />
       </div>
 
-      {/* Información general de la orden */}
+      {/* Información general de la orden - Usando componente compartido */}
       <div className="order-info-card mb-4">
         <div className="row align-items-center">
           <div className="col-md-6">
-            <div className="order-meta">
-              <div className="info-item">
-                <i className="bi bi-calendar3 me-2"></i>
-                <span className="label">Fecha del pedido:</span>
-                <span className="value">{formatOrderDate(order.createdAt)}</span>
-              </div>
-
-              <div className="info-item">
-                <i className="bi bi-truck me-2"></i>
-                <span className="label">Envío:</span>
-                <span className="value">
-                  {order.shipping?.estimatedDelivery
-                    ? `Entrega estimada: ${order.shipping.estimatedDelivery}`
-                    : 'Estándar'
-                  }
-                </span>
-              </div>
-
-              <div className="info-item">
-                <i className="bi bi-credit-card me-2"></i>
-                <span className="label">Pago:</span>
-                <span className="value">
-                  {order.payment?.method?.brand
-                    ? `${order.payment.method.brand.toUpperCase()} terminada en ${order.payment.method.last4}`
-                    : 'Método de pago'
-                  }
-                </span>
-              </div>
-            </div>
+            <OrderOverview
+              orderId={order.id}
+              orderDate={formatOrderDate(order.createdAt)}
+              status={order.status}
+              createdAt={order.createdAt}
+              showTimeline={false} // No mostramos timeline aquí
+            />
           </div>
 
           <div className="col-md-6 text-md-end mt-3 mt-md-0">
             <div className="order-status">
               <h5 className="mb-2">Estado del pedido</h5>
-              {getStatusBadge(order.status)}
+              <span className={`badge bg-${getStatusBadgeClass(order.status)}-subtle text-${getStatusBadgeClass(order.status)} order-status-badge`}>
+                {getStatusIcon(order.status)}
+                {getStatusLabel(order.status)}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Productos */}
+      {/* Productos - Usando componente compartido */}
       <div className="products-card mb-4">
         <h4 className="card-title mb-3">Productos</h4>
-
-        <div className="table-responsive">
-          <table className="table order-items-table">
-            <thead>
-            <tr>
-              <th>Producto</th>
-              <th className="text-center">Precio</th>
-              <th className="text-center">Cantidad</th>
-              <th className="text-end">Total</th>
-            </tr>
-            </thead>
-            <tbody>
-            {order.items.map((item, index) => (
-              <tr key={`${item.productId}-${index}`}>
-                <td>
-                  <div className="product-cell">
-                    {item.image && (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="product-thumbnail me-2"
-                      />
-                    )}
-                    <div className="product-info">
-                      <div className="product-name">{item.name}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="text-center">{formatPrice(item.price)}</td>
-                <td className="text-center">{item.quantity}</td>
-                <td className="text-end">{formatPrice(item.price * item.quantity)}</td>
-              </tr>
-            ))}
-            </tbody>
-          </table>
-        </div>
+        <OrderProductsList items={order.items} />
       </div>
 
       {/* Dirección y desglose de costos */}
       <div className="row">
-        {/* Dirección de envío */}
+        {/* Dirección de envío - Usando componente compartido */}
         <div className="col-md-6 mb-4">
           <div className="address-card">
             <h4 className="card-title mb-3">Dirección de envío</h4>
-
-            {order.shipping?.address ? (
-              <div className="address-info">
-                <p className="fw-medium mb-1">{order.shipping.address.name}</p>
-                <p className="mb-1">
-                  {order.shipping.address.street}
-                  {order.shipping.address.numExt && ` #${order.shipping.address.numExt}`}
-                  {order.shipping.address.numInt && `, Int. ${order.shipping.address.numInt}`}
-                </p>
-                {order.shipping.address.colonia && (
-                  <p className="mb-1">{order.shipping.address.colonia}</p>
-                )}
-                <p className="mb-1">
-                  {order.shipping.address.city}, {order.shipping.address.state} {order.shipping.address.zip}
-                </p>
-                {order.shipping.address.references && (
-                  <p className="text-muted fst-italic small mb-0">
-                    <i className="bi bi-info-circle me-1"></i>
-                    {order.shipping.address.references}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-muted">No hay información de dirección disponible</p>
-            )}
+            <OrderAddressCard
+              address={order.shipping?.address}
+              estimatedDelivery={order.shipping?.estimatedDelivery}
+            />
           </div>
         </div>
 
-        {/* Resumen de costos */}
+        {/* Resumen de costos - Usando componente compartido */}
         <div className="col-md-6 mb-4">
           <div className="totals-card">
             <h4 className="card-title mb-3">Resumen</h4>
+            <OrderTotals totals={order.totals} />
 
-            <div className="totals-table">
-              <div className="totals-row">
-                <div className="label">Subtotal:</div>
-                <div className="value">{formatPrice(order.totals.subtotal)}</div>
+            {/* Información de facturación si aplica */}
+            {order.billing?.requiresInvoice && (
+              <div className="invoice-info mt-3">
+                <OrderPaymentInfo
+                  payment={order.payment}
+                  billing={order.billing}
+                />
               </div>
-
-              <div className="totals-row">
-                <div className="label">IVA (16%):</div>
-                <div className="value">{formatPrice(order.totals.tax)}</div>
-              </div>
-
-              <div className="totals-row">
-                <div className="label">Envío:</div>
-                <div className="value">
-                  {order.totals.shipping > 0
-                    ? formatPrice(order.totals.shipping)
-                    : <span className="text-success">Gratis</span>
-                  }
-                </div>
-              </div>
-
-              {order.totals.discount > 0 && (
-                <div className="totals-row">
-                  <div className="label">Descuento:</div>
-                  <div className="value text-success">-{formatPrice(order.totals.discount)}</div>
-                </div>
-              )}
-
-              <div className="totals-row total">
-                <div className="label">Total:</div>
-                <div className="value">{formatPrice(order.totals.total)}</div>
-              </div>
-            </div>
+            )}
           </div>
-
-          {/* Información de facturación */}
-          {order.billing?.requiresInvoice && (
-            <div className="invoice-info mt-3">
-              <div className="d-flex align-items-center mb-2">
-                <i className="bi bi-receipt me-2 text-primary"></i>
-                <h6 className="mb-0">Información de facturación</h6>
-              </div>
-
-              {order.billing.invoiceId ? (
-                <div className="text-muted small">
-                  <p className="mb-1">Factura: {order.billing.invoiceId}</p>
-                  <p className="mb-1">RFC: {order.billing.fiscalData.rfc}</p>
-                  <p className="mb-0">Razón social: {order.billing.fiscalData.businessName}</p>
-                </div>
-              ) : (
-                <div className="text-muted small">
-                  <p className="mb-0">
-                    <i className="bi bi-info-circle me-1"></i>
-                    La factura está en proceso de generación
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Notas del pedido */}
-      {order.notes && (
-        <div className="notes-card mb-4">
-          <h4 className="card-title mb-2">Notas del pedido</h4>
-          <p className="text-muted">{order.notes}</p>
-        </div>
-      )}
+      {/* Notas del pedido - Usando componente compartido */}
+      <OrderNotes notes={order.notes} />
 
       {/* Acciones */}
       <div className="order-actions mt-4 mb-4">
@@ -300,4 +156,77 @@ export const OrderDetailPage = () => {
       </div>
     </div>
   );
+};
+
+/**
+ * Obtener clase CSS para la badge de estado
+ * @param {string} status Estado del pedido
+ * @returns {string} Clase CSS
+ */
+const getStatusBadgeClass = (status) => {
+  const displayStatus = mapOrderStatusToDisplay(status);
+  const statusClasses = {
+    'delivered': 'success',
+    'processing': 'warning',
+    'cancelled': 'danger'
+  };
+
+  return statusClasses[displayStatus] || 'info';
+};
+
+/**
+ * Obtener icono para el estado del pedido
+ * @param {string} status Estado del pedido
+ * @returns {JSX.Element} Elemento de icono
+ */
+const getStatusIcon = (status) => {
+  const displayStatus = mapOrderStatusToDisplay(status);
+
+  if (displayStatus === 'delivered') {
+    return <i className="bi bi-check-circle-fill me-1"></i>;
+  } else if (displayStatus === 'processing') {
+    return <i className="bi bi-clock-fill me-1"></i>;
+  } else if (displayStatus === 'cancelled') {
+    return <i className="bi bi-x-circle-fill me-1"></i>;
+  }
+
+  return null;
+};
+
+/**
+ * Obtener etiqueta para el estado del pedido
+ * @param {string} status Estado del pedido
+ * @returns {string} Etiqueta traducida
+ */
+const getStatusLabel = (status) => {
+  const displayStatus = mapOrderStatusToDisplay(status);
+
+  if (displayStatus === 'delivered') {
+    return 'Entregado';
+  } else if (displayStatus === 'processing') {
+    return 'En proceso';
+  } else if (displayStatus === 'cancelled') {
+    return 'Cancelado';
+  }
+
+  return status;
+};
+
+/**
+ * Mapea el estado del pedido a un estado para mostrar
+ * @param {string} status Estado del pedido
+ * @returns {string} Estado para mostrar
+ */
+const mapOrderStatusToDisplay = (status) => {
+  const statusMap = {
+    'pending': 'processing',
+    'payment_failed': 'cancelled',
+    'processing': 'processing',
+    'shipped': 'delivered',
+    'delivered': 'delivered',
+    'cancelled': 'cancelled',
+    'completed': 'delivered'
+  };
+
+  return statusMap[status] || status;
 };
