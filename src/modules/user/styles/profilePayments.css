@@ -2,26 +2,7 @@
    Estilos para la sección de métodos de pago
 */
 
-.payment-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
 
-.payment-item {
-    padding: 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.payment-item:last-child {
-    border-bottom: none;
-}
-
-.payment-item:hover {
-    background-color: #f9f9f9;
-}
 
 .payment-header {
     display: flex;
@@ -86,26 +67,8 @@
     margin-top: 10px;
 }
 
-.payment-action-btn {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: #f0f0f0;
-    color: #777;
-    border: none;
-    transition: all 0.2s ease;
-    font-size: 0.8rem;
-}
-
 .payment-action-btn:hover {
     background-color: #e3e3e3;
-}
-
-.payment-action-btn.edit:hover {
-    color: var(--green-3);
 }
 
 .payment-action-btn.default:hover {

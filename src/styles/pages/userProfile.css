@@ -93,6 +93,7 @@
     .profile-stats {
         grid-template-columns: repeat(2, 1fr);
     }
+
 }/* Estilos para la sección de métodos de pago */
 .payment-list {
     list-style: none;
