@@ -44,6 +44,9 @@ export const UserRoutes = () => {
         {/* Redireccionar otras rutas a órdenes */}
         <Route path="*" element={<Navigate to="orders" replace />} />
       </Route>
+
+      {/* Handle direct navigation to root paths */}
+      <Route path="*" element={<Navigate to="/profile" />} />
     </Routes>
   );
 };
