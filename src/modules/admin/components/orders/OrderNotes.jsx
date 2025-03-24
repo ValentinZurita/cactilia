@@ -9,6 +9,7 @@ export const OrderNotes = ({
   const [newNote, setNewNote] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
 
+
   // Manejador para enviar nueva nota
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -20,8 +21,13 @@ export const OrderNotes = ({
   };
 
   return (
-    <div className="order-notes">
-      {/* Lista de notas existentes - Estilo minimalista */}
+
+      <>
+
+      {/* Título de la sección */}
+        <h6 className="border-bottom pb-2 mb-3 fw-normal text-secondary">Notas administrativas</h6>
+
+      {/* Lista de notas existentes */}
       {notes && notes.length > 0 ? (
         <div className="notes-list mb-3">
           {notes.map((note, index) => (
@@ -30,17 +36,17 @@ export const OrderNotes = ({
                 <span className="text-secondary small">Admin {note.createdBy.substring(0, 6)}...</span>
                 <span className="text-secondary small">{formatDate(note.createdAt)}</span>
               </div>
-              <p className="mb-0 text-secondary">{note.text}</p>
+              <p className="mb-0">{note.text}</p>
             </div>
           ))}
         </div>
       ) : (
         <div className="text-center py-3 mb-3">
-          <p className="text-secondary small mb-0">No hay notas administrativas</p>
+          <p className="text-secondary mb-0">No hay notas administrativas</p>
         </div>
       )}
 
-      {/* Botón minimalista para mostrar/ocultar formulario de notas */}
+      {/* Botón  para mostrar/ocultar formulario de notas */}
       {!isExpanded ? (
         <button
           type="button"
@@ -49,9 +55,11 @@ export const OrderNotes = ({
         >
           <i className="bi bi-plus me-1"></i>
           Añadir nota
-        </button>
-      ) : (
+        </button> )
+        : (
         <form onSubmit={handleSubmit} className="pt-2">
+
+          {/* Campo de texto para nueva nota */}
           <div className="mb-3">
             <textarea
               className="form-control border"
@@ -63,6 +71,8 @@ export const OrderNotes = ({
               autoFocus
             ></textarea>
           </div>
+
+          {/* Botones para guardar o cancelar */}
           <div className="d-flex justify-content-between">
             <button
               type="button"
@@ -82,9 +92,10 @@ export const OrderNotes = ({
               ) : null}
               Guardar
             </button>
+
           </div>
         </form>
       )}
-    </div>
+      </>
   );
 };

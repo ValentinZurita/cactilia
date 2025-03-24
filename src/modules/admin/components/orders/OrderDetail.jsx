@@ -5,7 +5,6 @@ import { OrderPaymentInfo } from './OrderPaymentInfo';
 import { OrderStatusChangeSection } from './OrderStatusChangeSection';
 import { OrderNotes } from './OrderNotes';
 import { OrderCustomerInfo } from './OrderCustomInfo.jsx'
-import { AdminCard } from './AdminCard.jsx'
 import { OrderItemsTable } from './OrderItemTable.jsx'
 
 export const OrderDetail = ({
@@ -26,7 +25,7 @@ export const OrderDetail = ({
       <div className="card border-0 shadow-sm rounded-4">
         <div className="card-body p-4 text-center">
           <i className="bi bi-exclamation-circle text-secondary opacity-50 fs-1 mb-3"></i>
-          <h5 className="text-secondary">No se encontró información del pedido</h5>
+          <h5>No se encontró información del pedido</h5>
           <button
             className="btn btn-outline-secondary mt-3"
             onClick={onBack}
@@ -40,6 +39,7 @@ export const OrderDetail = ({
 
   return (
     <div className="order-detail">
+
       {/* Cabecera principal con información clave del pedido */}
       <OrderDetailHeader
         order={order}
@@ -53,7 +53,7 @@ export const OrderDetail = ({
 
       {/* Contenido según la pestaña seleccionada */}
       <div className="tab-content mb-4">
-        {/* Pestaña de productos - Ahora sin card, más minimalista */}
+        {/* Pestaña de productos */}
         {activeTab === 'products' && (
           <OrderItemsTable order={order} formatPrice={formatPrice} />
         )}
@@ -80,15 +80,12 @@ export const OrderDetail = ({
 
         {/* Pestaña para notas administrativas */}
         {activeTab === 'notes' && (
-          <div>
-            <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Notas administrativas</h6>
             <OrderNotes
               notes={order.adminNotes || []}
               onAddNote={onAddNote}
               formatDate={formatDate}
               isProcessing={isProcessing}
             />
-          </div>
         )}
       </div>
     </div>
