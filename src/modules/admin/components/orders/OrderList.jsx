@@ -4,6 +4,7 @@ import { TableView } from '../dashboard/TableView.jsx'
 
 /**
  * Componente para mostrar una lista de pedidos en formato tabla
+ * Con encabezado negro para mantener consistencia con otras tablas
  *
  * @param {Object} props
  * @param {Array} props.orders - Lista de pedidos
@@ -29,8 +30,8 @@ export const OrderList = ({
       key: 'id',
       header: 'ID Pedido',
       renderCell: (order) => (
-        <span className="order-id fw-medium">
-          {order.id.slice(0, 8)}...
+        <span className="order-id fw-medium text-primary">
+          #{order.id.slice(0, 8)}...
         </span>
       )
     },
@@ -38,7 +39,8 @@ export const OrderList = ({
       key: 'date',
       header: 'Fecha',
       renderCell: (order) => (
-        <span className="order-date">
+        <span className="order-date d-flex align-items-center">
+          <i className="bi bi-calendar3 text-muted me-2 small"></i>
           {formatDate(order.createdAt)}
         </span>
       )
@@ -48,10 +50,18 @@ export const OrderList = ({
       header: 'Cliente',
       renderCell: (order) => (
         <div className="customer-info">
-          <span className="customer-id">{order.userId.slice(0, 8)}...</span>
-          {order.shipping?.address?.name && (
-            <div className="customer-name text-muted small">{order.shipping.address.name}</div>
-          )}
+          <div className="d-flex align-items-center">
+            <div className="bg-light rounded-circle p-1 me-2 d-flex align-items-center justify-content-center"
+                 style={{ width: '28px', height: '28px' }}>
+              <i className="bi bi-person text-secondary"></i>
+            </div>
+            <div>
+              <span className="customer-id fw-medium">{order.userId.slice(0, 8)}...</span>
+              {order.shipping?.address?.name && (
+                <div className="customer-name text-muted small">{order.shipping.address.name}</div>
+              )}
+            </div>
+          </div>
         </div>
       )
     },
@@ -59,7 +69,8 @@ export const OrderList = ({
       key: 'items',
       header: 'Productos',
       renderCell: (order) => (
-        <span className="order-items">
+        <span className="order-items d-inline-flex align-items-center bg-light rounded-pill px-3 py-1">
+          <i className="bi bi-box2 me-2 text-muted"></i>
           {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
         </span>
       )
@@ -90,7 +101,8 @@ export const OrderList = ({
             onClick={() => onViewDetail(order.id)}
             title="Ver detalles"
           >
-            <i className="bi bi-eye"></i>
+            <i className="bi bi-eye me-1"></i>
+            Detalles
           </button>
         </div>
       )
@@ -98,19 +110,29 @@ export const OrderList = ({
   ];
 
   return (
-    <div className="order-list">
-      <TableView
-        data={orders}
-        columns={columns}
-        loading={loading}
-        tableClass="table-striped table-hover border shadow-sm"
-        theadClass="table-light"
-        style={{ borderRadius: "8px", overflow: "hidden" }}
-      />
+    <div className="order-list card border-0 shadow-sm overflow-hidden">
+      <div className="card-body p-0">
+        <TableView
+          data={orders}
+          columns={columns}
+          loading={loading}
+          tableClass="table-striped table-hover border shadow-sm"
+          theadClass="table-dark" // Utilizar encabezado negro para ser consistente
+          style={{ borderRadius: "8px", overflow: "hidden" }}
+        />
+
+        {/* Mensaje si no hay pedidos */}
+        {orders.length === 0 && !loading && (
+          <div className="alert alert-info m-3 mb-0 d-flex align-items-center">
+            <i className="bi bi-info-circle-fill me-3 fs-4"></i>
+            <span>No se encontraron pedidos con los filtros actuales.</span>
+          </div>
+        )}
+      </div>
 
       {/* Paginación / Botón cargar más */}
       {orders.length > 0 && hasMore && (
-        <div className="text-center mt-3">
+        <div className="text-center p-3 border-top">
           <button
             className="btn btn-outline-primary"
             onClick={onLoadMore}
@@ -128,14 +150,6 @@ export const OrderList = ({
               </>
             )}
           </button>
-        </div>
-      )}
-
-      {/* Mensaje si no hay pedidos */}
-      {orders.length === 0 && !loading && (
-        <div className="alert alert-info">
-          <i className="bi bi-info-circle me-2"></i>
-          No se encontraron pedidos con los filtros actuales.
         </div>
       )}
     </div>

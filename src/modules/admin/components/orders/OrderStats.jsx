@@ -1,5 +1,5 @@
 /**
- * Componente para mostrar estadísticas de pedidos
+ * Componente para mostrar estadísticas de pedidos con diseño mejorado
  *
  * @param {Object} props
  * @param {Object} props.stats - Estadísticas de pedidos
@@ -16,17 +16,17 @@ export const OrderStats = ({ stats, loading = false }) => {
     }).format(amount);
   };
 
-  // Si están cargando, mostrar placeholder
+  // Si están cargando, mostrar placeholder con efecto skeleton
   if (loading) {
     return (
       <div className="row stats-cards g-3 mb-4">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="col-md-6 col-lg-3">
-            <div className="card bg-light">
+            <div className="card border-0 shadow-sm">
               <div className="card-body p-3">
                 <div className="placeholder-glow">
                   <span className="placeholder col-6 mb-2"></span>
-                  <h2 className="placeholder col-4"></h2>
+                  <h2 className="placeholder col-4 mb-3"></h2>
                   <span className="placeholder col-8"></span>
                 </div>
               </div>
@@ -49,28 +49,32 @@ export const OrderStats = ({ stats, loading = false }) => {
       value: stats.todaysOrders || 0,
       icon: 'calendar-check',
       color: 'info',
-      footer: `${formatCurrency(stats.todaysRevenue)} en ventas hoy`
+      footer: `${formatCurrency(stats.todaysRevenue)} en ventas hoy`,
+      trend: stats.todaysOrders > 0 ? 'up' : 'neutral'
     },
     {
       title: 'Pendientes',
       value: stats.pendingOrders || 0,
       icon: 'hourglass-split',
       color: 'warning',
-      footer: 'Esperando procesamiento'
+      footer: 'Esperando procesamiento',
+      trend: stats.pendingOrders > 5 ? 'up' : 'neutral'
     },
     {
       title: 'En Proceso',
       value: stats.processingOrders || 0,
       icon: 'gear',
       color: 'primary',
-      footer: 'Siendo preparados'
+      footer: 'Siendo preparados',
+      trend: 'neutral'
     },
     {
       title: 'Total Pedidos',
       value: stats.totalOrders || 0,
       icon: 'cart-check',
       color: 'success',
-      footer: `${formatCurrency(stats.totalRevenue)} en ventas totales`
+      footer: `${formatCurrency(stats.totalRevenue)} en ventas totales`,
+      trend: 'up'
     }
   ];
 
@@ -78,7 +82,10 @@ export const OrderStats = ({ stats, loading = false }) => {
     <div className="row stats-cards g-3 mb-4">
       {statCards.map((card, index) => (
         <div key={index} className="col-md-6 col-lg-3">
-          <div className={`card border-0 shadow-sm bg-white h-100`}>
+          <div className={`card border-0 rounded-4 shadow-sm bg-white h-100 overflow-hidden`}>
+            {/* Barra de color en la parte superior */}
+            <div className={`bg-${card.color}`} style={{ height: '4px' }}></div>
+
             <div className="card-body p-3">
               <div className="d-flex align-items-center mb-3">
                 <div className={`rounded-circle bg-${card.color} bg-opacity-10 p-2 me-3`}>
@@ -86,7 +93,18 @@ export const OrderStats = ({ stats, loading = false }) => {
                 </div>
                 <h6 className="card-subtitle text-muted mb-0">{card.title}</h6>
               </div>
-              <h2 className="card-title mb-1 fw-bold">{card.value}</h2>
+
+              <div className="d-flex align-items-baseline">
+                <h2 className="card-title mb-1 fw-bold">{card.value}</h2>
+
+                {/* Indicador de tendencia */}
+                {card.trend !== 'neutral' && (
+                  <div className={`ms-2 text-${card.trend === 'up' ? 'success' : 'danger'}`}>
+                    <i className={`bi bi-arrow-${card.trend}`}></i>
+                  </div>
+                )}
+              </div>
+
               <p className="card-text text-muted small mb-0">{card.footer}</p>
             </div>
           </div>

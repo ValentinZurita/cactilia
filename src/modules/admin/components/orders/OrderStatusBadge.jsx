@@ -1,5 +1,6 @@
 /**
  * Componente para mostrar el estado de un pedido como badge
+ * Con diseño visual mejorado
  *
  * @param {Object} props
  * @param {string} props.status - Estado del pedido
@@ -11,27 +12,32 @@ export const OrderStatusBadge = ({ status, className = '' }) => {
     pending: {
       label: 'Pendiente',
       color: 'warning',
-      icon: 'hourglass-split'
+      icon: 'hourglass-split',
+      bgClass: 'bg-warning bg-opacity-10'
     },
     processing: {
       label: 'Procesando',
       color: 'primary',
-      icon: 'gear'
+      icon: 'gear',
+      bgClass: 'bg-primary bg-opacity-10'
     },
     shipped: {
       label: 'Enviado',
       color: 'info',
-      icon: 'truck'
+      icon: 'truck',
+      bgClass: 'bg-info bg-opacity-10'
     },
     delivered: {
       label: 'Entregado',
       color: 'success',
-      icon: 'check-circle-fill'
+      icon: 'check-circle-fill',
+      bgClass: 'bg-success bg-opacity-10'
     },
     cancelled: {
       label: 'Cancelado',
       color: 'danger',
-      icon: 'x-circle-fill'
+      icon: 'x-circle-fill',
+      bgClass: 'bg-danger bg-opacity-10'
     }
   };
 
@@ -39,11 +45,12 @@ export const OrderStatusBadge = ({ status, className = '' }) => {
   const config = statusConfig[status] || {
     label: status || 'Desconocido',
     color: 'secondary',
-    icon: 'question-circle'
+    icon: 'question-circle',
+    bgClass: 'bg-secondary bg-opacity-10'
   };
 
   return (
-    <span className={`badge bg-${config.color} ${className}`}>
+    <span className={`badge rounded-pill px-3 py-2 ${config.bgClass} text-${config.color} ${className}`}>
       <i className={`bi bi-${config.icon} me-1`}></i>
       {config.label}
     </span>

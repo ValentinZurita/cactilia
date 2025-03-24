@@ -1,7 +1,6 @@
-import React from 'react';
-
 /**
  * Componente de barra de búsqueda reutilizable
+ * Versión final mejorada y compatible con la implementación existente
  *
  * @param {Object} props - Propiedades del componente
  * @param {string} props.value - Valor actual del campo de búsqueda
@@ -51,28 +50,33 @@ export const SearchBar = ({
 
   return (
     <div className={`search-bar-container ${className}`}>
-      <div className={`input-group ${getSizeClass()} shadow-sm`}>
-        {/* Ícono de búsqueda */}
+
+
+      <div className="input-group shadow-sm rounded-pill overflow-hidden">
+
+        {/* Icono de búsqueda */}
         {showSearchIcon && (
-          <span className="input-group-text bg-white border-end-0">
-            <i className="bi bi-search"></i>
+          <span className="input-group-text bg-white border-0 me-3 ms-2">
+
+            {/* texto e icono juntos*/}
+            <i className="bi bi-search text-secondary"></i>
           </span>
         )}
 
         {/* Campo de entrada */}
         <input
           type="text"
-          className={`form-control ${showSearchIcon ? 'border-start-0' : ''} ${getSizeClass()}`}
+          className={`form-control border-0 ${getSizeClass()}`}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
           onKeyDown={handleKeyDown}
         />
 
-        {/* Botón para limpiar (condicional) */}
+        {/* Botón para limpiar */}
         {showClearButton && value && (
           <button
-            className="btn btn-outline-secondary border-start-0"
+            className="btn btn-outline-secondary border-0 bg-white"
             onClick={handleClear}
             type="button"
             aria-label="Limpiar búsqueda"
