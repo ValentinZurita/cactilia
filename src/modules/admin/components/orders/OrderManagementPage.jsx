@@ -17,6 +17,7 @@ import { useAdminOrders } from './useAdminOrders.js'
 export const OrderManagementPage = () => {
   const { mode, id } = useParams();
   const navigate = useNavigate();
+  const [advancedFilters, setAdvancedFilters] = useState({});
 
   // Usar el hook personalizado para gestionar pedidos
   const {
@@ -85,6 +86,12 @@ export const OrderManagementPage = () => {
     }
   };
 
+  // Manejador para la búsqueda avanzada
+  const handleAdvancedSearch = (filters) => {
+    setAdvancedFilters(filters);
+    updateFilters({ advancedFilters: filters });
+  };
+
   // Renderizar vista detallada de un pedido
   const renderDetailView = () => {
     if (selectedOrderLoading) {
@@ -129,6 +136,8 @@ export const OrderManagementPage = () => {
                 statistics={statistics}
                 loading={statsLoading}
                 formatPrice={formatPrice}
+                onAdvancedSearch={handleAdvancedSearch}
+                advancedFilters={advancedFilters}
               />
             </div>
           </div>

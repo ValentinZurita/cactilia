@@ -29,6 +29,7 @@ export const useAdminOrders = (initialFilters = {}) => {
     endDate: null,
     searchTerm: '',
     pageSize: 25,
+    advancedFilters: {},
     ...initialFilters
   });
   const [lastDoc, setLastDoc] = useState(null);
@@ -48,6 +49,9 @@ export const useAdminOrders = (initialFilters = {}) => {
   /**
    * Cargar pedidos según los filtros actuales
    */
+  /**
+   * Cargar pedidos según los filtros actuales
+   */
   const loadOrders = useCallback(async (resetPagination = true) => {
     setLoading(true);
     setError(null);
@@ -56,8 +60,24 @@ export const useAdminOrders = (initialFilters = {}) => {
       // Si resetea paginación, se limpia el lastDoc
       const paginationParam = resetPagination ? {} : { lastDoc };
 
+      // Procesar filtros avanzados si existen
+      let queryParams = { ...filters };
+
+      if (filters.advancedFilters && Object.keys(filters.advancedFilters).length > 0) {
+        const { dateFrom, dateTo, minAmount, maxAmount, productName } = filters.advancedFilters;
+
+        // Sobrescribir las fechas de inicio/fin si están definidas en los filtros avanzados
+        if (dateFrom) queryParams.startDate = new Date(dateFrom);
+        if (dateTo) queryParams.endDate = new Date(dateTo);
+
+        // Añadir filtros de monto y producto
+        if (minAmount !== undefined && minAmount !== null) queryParams.minAmount = Number(minAmount);
+        if (maxAmount !== undefined && maxAmount !== null) queryParams.maxAmount = Number(maxAmount);
+        if (productName) queryParams.productName = productName;
+      }
+
       const result = await getOrders({
-        ...filters,
+        ...queryParams,
         ...paginationParam
       });
 

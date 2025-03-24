@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { ORDER_STATUS_CONFIG } from '../../constants/orderConstants';
+import { SearchFilters } from './SearchFilters';
 
+/**
+ * Componente de sidebar con búsqueda y filtros avanzados
+ * Se integra con el componente SearchFilters
+ */
 export const OrderFiltersSidebar = ({
                                       activeFilter = 'all',
                                       onFilterChange,
@@ -9,9 +13,17 @@ export const OrderFiltersSidebar = ({
                                       counts = {},
                                       statistics = null,
                                       loading = false,
-                                      formatPrice
+                                      formatPrice,
+                                      onAdvancedSearch,
+                                      advancedFilters = {}
                                     }) => {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Verificar si hay filtros avanzados activos
+  const hasActiveFilters = Object.values(advancedFilters).some(val =>
+    val !== null && val !== undefined && val !== ''
+  );
 
   // Definir filtros disponibles con diseño minimalista
   const filters = [
@@ -23,21 +35,30 @@ export const OrderFiltersSidebar = ({
     { id: 'cancelled', label: 'Cancelados', icon: 'x-circle', color: 'danger' }
   ];
 
-  // Manejador para envío de búsqueda
+  // Manejador para envío de búsqueda básica
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     onSearch(localSearchTerm);
   };
 
+  // Manejador para aplicar filtros avanzados
+  const handleApplyAdvancedFilters = (filters) => {
+    onAdvancedSearch(filters);
+    // Opcionalmente cerrar los filtros avanzados después de aplicar
+    // setShowAdvanced(false);
+  };
+
+  // Manejador para limpiar filtros avanzados
+  const handleClearAdvancedFilters = () => {
+    onAdvancedSearch({});
+  };
+
   return (
     <div className="card border-0 shadow-sm rounded-4">
-      {/* Buscador elegante - Manteniendo tu diseño original */}
-      <div className="card-body border-bottom pb-4">
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          onSearch(localSearchTerm);
-        }}>
-          <div className="input-group">
+      {/* Buscador básico con toggle para búsqueda avanzada */}
+      <div className="card-body border-bottom pb-3">
+        <form onSubmit={handleSearchSubmit}>
+          <div className="input-group mb-2">
             <span className="input-group-text bg-white border-end-0">
               <i className="bi bi-search text-muted"></i>
             </span>
@@ -49,10 +70,37 @@ export const OrderFiltersSidebar = ({
               onChange={(e) => setLocalSearchTerm(e.target.value)}
             />
           </div>
+
+          <div className="d-flex justify-content-between align-items-center">
+            <button
+              type="button"
+              className={`btn btn-link btn-sm p-0 ${hasActiveFilters ? 'text-primary' : 'text-secondary'}`}
+              onClick={() => setShowAdvanced(!showAdvanced)}
+            >
+              <i className={`bi bi-funnel${hasActiveFilters ? '-fill' : ''} me-1`}></i>
+              Filtros avanzados
+              <i className={`bi bi-chevron-${showAdvanced ? 'up' : 'down'} ms-1`}></i>
+            </button>
+
+            <button type="submit" className="btn btn-sm btn-primary">
+              Buscar
+            </button>
+          </div>
         </form>
       </div>
 
-      {/* Filtros minimalistas - Versión simplificada */}
+      {/* Filtros avanzados colapsables */}
+      {showAdvanced && (
+        <div className="border-bottom">
+          <SearchFilters
+            onApplyFilters={handleApplyAdvancedFilters}
+            onClear={handleClearAdvancedFilters}
+            initialFilters={advancedFilters}
+          />
+        </div>
+      )}
+
+      {/* Filtros por estado */}
       <div className="list-group list-group-flush">
         {filters.map(filter => (
           <button
@@ -78,7 +126,7 @@ export const OrderFiltersSidebar = ({
         ))}
       </div>
 
-      {/* Resumen minimalista - Manteniendo tu diseño original */}
+      {/* Resumen de estadísticas */}
       {!loading && statistics && (
         <div className="card-body border-top pt-4">
           <h6 className="text-uppercase text-secondary small fw-bold mb-3">Resumen</h6>
