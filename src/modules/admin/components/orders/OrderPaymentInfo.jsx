@@ -44,6 +44,7 @@ export const OrderPaymentInfo = ({ order }) => {
 
   return (
     <div className="row g-4">
+
       {/* Método de pago */}
       <div className="col-md-6">
         <InfoBlock title="Método de pago">

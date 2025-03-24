@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
-import { ORDER_TRANSITIONS } from './orderConstants.js'
+import { ORDER_TRANSITIONS } from './orderConstants.js';
 
+// Componente reutilizable
+const IconCircle = ({ icon, className = '', color = 'secondary', ...props }) => (
+  <div
+    className={`rounded-circle bg-${color}-subtle d-flex align-items-center justify-content-center me-3 ${className}`}
+    style={{ width: '38px', height: '38px', minWidth: '38px' }}
+    {...props}
+  >
+    <i className={`bi bi-${icon} text-${color}`}></i>
+  </div>
+);
 
 export const OrderStatusChanger = ({
                                      currentStatus,
@@ -34,13 +44,13 @@ export const OrderStatusChanger = ({
     setSelectedStatus('');
   };
 
-  // Si no hay transiciones válidas, mostrar mensaje simplificado
+  // Si no hay transiciones válidas, mostrar mensaje
   if (validTransitions.length === 0) {
     return (
-      <div className="alert alert-light border">
-        <div className="d-flex align-items-center text-secondary">
-          <i className="bi bi-info-circle me-2"></i>
-          <span>Este pedido no puede cambiar de estado actualmente.</span>
+      <div className="d-flex align-items-center justify-content-center text-center py-4">
+        <div>
+          <i className="bi bi-info-circle text-secondary opacity-50 fs-3 mb-3 d-block"></i>
+          <p className="mb-0 text-muted">Este pedido no puede cambiar de estado actualmente.</p>
         </div>
       </div>
     );
@@ -49,37 +59,46 @@ export const OrderStatusChanger = ({
   return (
     <div className="order-status-changer">
       {!showNotes ? (
-        // Lista simple de botones para cambiar estado
-        <div className="status-options">
-          <div className="d-flex flex-column gap-2">
-            {validTransitions.map(transition => (
-              <button
-                key={transition.value}
-                className={`btn ${transition.isDanger ? 'btn-outline-danger' : 'btn-outline-secondary'} d-flex align-items-center justify-content-start`}
-                onClick={() => handleSelectStatus(transition.value)}
-                disabled={isProcessing}
-              >
-                <i className={`bi bi-${transition.icon} me-2`}></i>
+        // Lista de opciones para cambiar estado
+        <div className="transition-options">
+          {validTransitions.map(transition => (
+            <button
+              key={transition.value}
+              className="btn w-100 d-flex align-items-center text-start mb-3 border rounded-3 py-3 px-3 bg-white"
+              style={{ transition: 'background-color 0.2s ease' }}
+              onClick={() => handleSelectStatus(transition.value)}
+              disabled={isProcessing}
+            >
+              <IconCircle
+                icon={transition.icon}
+                color={transition.isDanger ? 'danger' : 'primary'}
+              />
+              <span className="text-dark">
                 {transition.label}
-              </button>
-            ))}
-          </div>
+              </span>
+            </button>
+          ))}
         </div>
       ) : (
-        // Formulario para añadir notas al cambio
-        <div className="status-notes">
-          <div className="mb-3">
-            <div className="alert alert-light border mb-3">
-              <span className="d-block mb-1">Cambiar estado a:</span>
-              <div className="fw-normal">
-                <i className={`bi bi-${validTransitions.find(t => t.value === selectedStatus)?.icon} me-2`}></i>
+        // Formulario para agregar notas
+        <div className="status-notes-form">
+          <div className="bg-light rounded-3 p-3 mb-3">
+            <div className="mb-2 small text-secondary">Cambiar estado a:</div>
+            <div className="d-flex align-items-center">
+              <IconCircle
+                icon={validTransitions.find(t => t.value === selectedStatus)?.icon || 'arrow-right'}
+                color={validTransitions.find(t => t.value === selectedStatus)?.isDanger ? 'danger' : 'primary'}
+              />
+              <span className="fw-medium">
                 {validTransitions.find(t => t.value === selectedStatus)?.label}
-              </div>
+              </span>
             </div>
+          </div>
 
-            <label className="form-label text-secondary small">Añadir nota (opcional):</label>
+          <div className="mb-3">
+            <label className="form-label small text-secondary mb-2">Nota sobre este cambio (opcional):</label>
             <textarea
-              className="form-control"
+              className="form-control border bg-white"
               placeholder="Escribe una nota sobre este cambio de estado..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -87,6 +106,7 @@ export const OrderStatusChanger = ({
               disabled={isProcessing}
             ></textarea>
           </div>
+
           <div className="d-flex gap-2">
             <button
               className="btn btn-outline-secondary flex-grow-1"
@@ -102,11 +122,11 @@ export const OrderStatusChanger = ({
             >
               {isProcessing ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
                   Procesando...
                 </>
               ) : (
-                <>Confirmar</>
+                'Confirmar'
               )}
             </button>
           </div>

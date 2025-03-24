@@ -1,11 +1,14 @@
-// ===============================
-// src/modules/admin/components/orders/OrderStatusChangeSection.jsx - Rediseñado
-// ===============================
 import React from 'react';
 import { OrderStatusChanger } from './OrderStatusChanger';
 import { OrderStatusHistory } from './OrderStatusHistory';
-import { AdminCard } from './AdminCard.jsx'
 
+// Componentes reutilizables (iguales a los de OrderPaymentInfo)
+const InfoBlock = ({ title, children }) => (
+  <div className="mb-4">
+    <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">{title}</h6>
+    {children}
+  </div>
+);
 
 export const OrderStatusChangeSection = ({
                                            order,
@@ -14,35 +17,25 @@ export const OrderStatusChangeSection = ({
                                            isProcessing
                                          }) => (
   <div className="row g-4">
-    {/* Cambiador de estado - Más minimalista */}
+    {/* Cambiador de estado */}
     <div className="col-md-5">
-      <AdminCard
-        icon="arrow-repeat"
-        title="Cambiar estado"
-        className="h-100"
-      >
+      <InfoBlock title="Cambiar estado">
         <OrderStatusChanger
           currentStatus={order.status}
-          onChangeStatus={(status, notes) => {
-            onChangeStatus(status, notes);
-          }}
+          onChangeStatus={onChangeStatus}
           isProcessing={isProcessing}
         />
-      </AdminCard>
+      </InfoBlock>
     </div>
 
-    {/* Historial de estados - Rediseñado */}
+    {/* Historial de estados */}
     <div className="col-md-7">
-      <AdminCard
-        icon="clock-history"
-        title="Historial de estados"
-        className="h-100"
-      >
+      <InfoBlock title="Historial de estados">
         <OrderStatusHistory
           history={order.statusHistory || []}
           formatDate={formatDate}
         />
-      </AdminCard>
+      </InfoBlock>
     </div>
   </div>
 );
