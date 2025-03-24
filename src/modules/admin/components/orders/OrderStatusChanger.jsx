@@ -65,15 +65,17 @@ export const OrderStatusChanger = ({
             <button
               key={transition.value}
               className="btn w-100 d-flex align-items-center text-start mb-3 border rounded-3 py-3 px-3 bg-white"
-              style={{ transition: 'background-color 0.2s ease' }}
               onClick={() => handleSelectStatus(transition.value)}
               disabled={isProcessing}
             >
               <IconCircle
                 icon={transition.icon}
-                color={transition.isDanger ? 'danger' : 'primary'}
+                color={transition.isDanger ? 'danger' :
+                  transition.value === 'shipped' ? 'info' :
+                    transition.value === 'delivered' ? 'success' : 'primary'}
               />
-              <span className="text-dark">
+              {/* Texto en gris oscuro */}
+              <span className="text-secondary">
                 {transition.label}
               </span>
             </button>
@@ -87,9 +89,14 @@ export const OrderStatusChanger = ({
             <div className="d-flex align-items-center">
               <IconCircle
                 icon={validTransitions.find(t => t.value === selectedStatus)?.icon || 'arrow-right'}
-                color={validTransitions.find(t => t.value === selectedStatus)?.isDanger ? 'danger' : 'primary'}
+                color={
+                  selectedStatus === 'cancelled' ? 'danger' :
+                    selectedStatus === 'shipped' ? 'info' :
+                      selectedStatus === 'delivered' ? 'success' : 'primary'
+                }
               />
-              <span className="fw-medium">
+              {/* Texto en gris oscuro */}
+              <span className="fw-medium text-secondary">
                 {validTransitions.find(t => t.value === selectedStatus)?.label}
               </span>
             </div>

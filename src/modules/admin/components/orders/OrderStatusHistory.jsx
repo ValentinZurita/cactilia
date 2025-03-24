@@ -2,7 +2,7 @@ import React from 'react';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { ORDER_STATUS_CONFIG } from './orderConstants.js';
 
-// Componente reutilizable para mantener consistencia
+// Componente reutilizable
 const IconCircle = ({ icon, className = '', color = 'secondary', ...props }) => (
   <div
     className={`rounded-circle d-flex align-items-center justify-content-center me-3 ${className}`}
@@ -37,16 +37,20 @@ export const OrderStatusHistory = ({ history = [], formatDate }) => {
     <div className="history-list">
       {history.map((change, index) => {
         const statusColor = getStatusColor(change.to);
+        const isLast = index === history.length - 1;
 
         return (
-          <div key={index} className={`mb-4 ${index !== history.length - 1 ? 'border-bottom pb-4' : ''}`}>
+          <div key={index} className={`mb-4 ${!isLast ? 'border-bottom pb-4' : ''}`}>
             <div className="d-flex justify-content-between mb-2">
               <span className="text-secondary small">{formatDate(change.changedAt)}</span>
               <span className="text-secondary small">Admin {change.changedBy.substring(0, 8)}...</span>
             </div>
 
             <div className="d-flex align-items-start">
-              <IconCircle icon={ORDER_STATUS_CONFIG[change.to]?.icon || 'arrow-right'} color={statusColor} />
+              <IconCircle
+                icon={ORDER_STATUS_CONFIG[change.to]?.icon || 'arrow-right'}
+                color={statusColor}
+              />
 
               <div className="flex-grow-1">
                 <div className="d-flex align-items-center mb-2">
@@ -56,7 +60,7 @@ export const OrderStatusHistory = ({ history = [], formatDate }) => {
                 </div>
 
                 {change.notes && (
-                  <div className="bg-light p-3 rounded-2 mt-2 small">
+                  <div className="bg-light p-3 rounded-2 mt-2 small text-secondary">
                     {change.notes}
                   </div>
                 )}

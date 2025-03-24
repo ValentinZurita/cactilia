@@ -1,3 +1,4 @@
+// Garantizar consistencia de colores entre componentes
 export const ORDER_STATUS_CONFIG = {
   pending: {
     label: 'Pendiente',
@@ -11,7 +12,7 @@ export const ORDER_STATUS_CONFIG = {
   },
   shipped: {
     label: 'Enviado',
-    color: 'info',
+    color: 'info', // Asegurando que sea siempre 'info'
     icon: 'truck'
   },
   delivered: {
@@ -26,6 +27,7 @@ export const ORDER_STATUS_CONFIG = {
   }
 };
 
+// Usar los mismos colores definidos arriba para mantener consistencia
 export const ORDER_TRANSITIONS = {
   pending: [
     { value: 'processing', label: 'Procesar pedido', icon: 'gear' },

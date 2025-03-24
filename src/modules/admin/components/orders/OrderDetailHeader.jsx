@@ -6,7 +6,7 @@ export const OrderDetailHeader = ({ order, formatDate, formatPrice }) => (
 
     {/* Información del pedido */}
     <div className="mb-3 mb-md-0 me-auto">
-      <h4 className="mb-2 fw-normal">{order.id}</h4>
+      <h4 className="mb-2 fw-normal text-secondary">{order.id}</h4>
       <div className="text-secondary small mb-2">
         Creado el {formatDate(order.createdAt)}
       </div>
@@ -16,7 +16,7 @@ export const OrderDetailHeader = ({ order, formatDate, formatPrice }) => (
     {/* Total */}
     <div className="align-self-start text-end">
       <span className="text-secondary small d-block mb-1">Total</span>
-      <span className="fs-4 fw-normal">{formatPrice(order.totals.total)}</span>
+      <span className="fs-4 fw-normal text-secondary">{formatPrice(order.totals.total)}</span>
     </div>
   </header>
 );
