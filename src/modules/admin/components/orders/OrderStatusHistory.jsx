@@ -2,7 +2,7 @@ import { OrderStatusBadge } from './OrderStatusBadge';
 
 /**
  * Componente para mostrar el historial de cambios de estado de un pedido
- * Con diseño visual mejorado
+ * Con diseño visual mejorado y responsivo
  *
  * @param {Object} props
  * @param {Array} props.history - Historial de cambios de estado
@@ -60,8 +60,8 @@ export const OrderStatusHistory = ({ history = [], formatDate }) => {
             <div className="ms-3 card border-0 rounded-4 shadow-sm">
               <div className="card-body p-3">
                 {/* Encabezado: fecha y usuario */}
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="text-muted small d-flex align-items-center">
+                <div className="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                  <span className="text-muted small d-flex align-items-center mb-1">
                     <i className="bi bi-calendar2 me-1"></i>
                     {formatDate(change.changedAt)}
                   </span>
@@ -71,10 +71,10 @@ export const OrderStatusHistory = ({ history = [], formatDate }) => {
                   </span>
                 </div>
 
-                {/* Cambio de estado con badges y flecha */}
-                <div className="d-flex align-items-center my-2">
-                  <OrderStatusBadge status={change.from} className="me-2" />
-                  <div className="mx-2 text-muted">
+                {/* Cambio de estado con badges y flecha - Uso de flex-wrap para adaptarse a móvil */}
+                <div className="d-flex flex-wrap align-items-center gap-2 my-2">
+                  <OrderStatusBadge status={change.from} />
+                  <div className="text-muted">
                     <i className="bi bi-arrow-right"></i>
                   </div>
                   <OrderStatusBadge status={change.to} />
