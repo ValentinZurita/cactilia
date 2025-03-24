@@ -1,14 +1,7 @@
-import { useState } from 'react'
+import React, { useState } from 'react';
+import { ORDER_TRANSITIONS } from './orderConstants.js'
 
-/**
- * Componente para cambiar el estado de un pedido
- * Con diseño mejorado y más simple
- *
- * @param {Object} props
- * @param {string} props.currentStatus - Estado actual del pedido
- * @param {Function} props.onChangeStatus - Función para cambiar el estado
- * @param {boolean} props.isProcessing - Indica si hay una operación en proceso
- */
+
 export const OrderStatusChanger = ({
                                      currentStatus,
                                      onChangeStatus,
@@ -18,36 +11,7 @@ export const OrderStatusChanger = ({
   const [notes, setNotes] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
 
-  // Definir transiciones válidas según el estado actual
-  const getValidTransitions = (status) => {
-    switch (status) {
-      case 'pending':
-        return [
-          { value: 'processing', label: 'Procesar pedido', icon: 'gear' },
-          { value: 'cancelled', label: 'Cancelar pedido', icon: 'x-circle', isDanger: true }
-        ];
-      case 'processing':
-        return [
-          { value: 'shipped', label: 'Marcar como enviado', icon: 'truck' },
-          { value: 'cancelled', label: 'Cancelar pedido', icon: 'x-circle', isDanger: true }
-        ];
-      case 'shipped':
-        return [
-          { value: 'delivered', label: 'Marcar como entregado', icon: 'check-circle' },
-          { value: 'cancelled', label: 'Cancelar pedido', icon: 'x-circle', isDanger: true }
-        ];
-      case 'delivered':
-        // Un pedido entregado no puede cambiar de estado
-        return [];
-      case 'cancelled':
-        // Un pedido cancelado no puede cambiar de estado
-        return [];
-      default:
-        return [];
-    }
-  };
-
-  const validTransitions = getValidTransitions(currentStatus);
+  const validTransitions = ORDER_TRANSITIONS[currentStatus] || [];
 
   // Manejador para seleccionar un nuevo estado
   const handleSelectStatus = (status) => {
