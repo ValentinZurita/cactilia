@@ -1,5 +1,5 @@
 /**
- * Componente para mostrar estadísticas de pedidos con diseño mejorado
+ * Componente para mostrar estadísticas de pedidos con diseño adaptado para sidebar
  *
  * @param {Object} props
  * @param {Object} props.stats - Estadísticas de pedidos
@@ -19,20 +19,18 @@ export const OrderStats = ({ stats, loading = false }) => {
   // Si están cargando, mostrar placeholder con efecto skeleton
   if (loading) {
     return (
-      <div className="row stats-cards g-3 mb-4">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="col-md-6 col-lg-3">
-            <div className="card border-0 shadow-sm">
-              <div className="card-body p-3">
-                <div className="placeholder-glow">
-                  <span className="placeholder col-6 mb-2"></span>
-                  <h2 className="placeholder col-4 mb-3"></h2>
-                  <span className="placeholder col-8"></span>
-                </div>
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div className="list-group list-group-flush">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="list-group-item border-0">
+              <div className="placeholder-glow">
+                <span className="placeholder col-6 mb-2"></span>
+                <h5 className="placeholder col-4 mb-3"></h5>
+                <span className="placeholder col-8"></span>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
@@ -43,13 +41,13 @@ export const OrderStats = ({ stats, loading = false }) => {
   }
 
   // Definir tarjetas de estadísticas
-  const statCards = [
+  const statItems = [
     {
       title: 'Pedidos Hoy',
       value: stats.todaysOrders || 0,
       icon: 'calendar-check',
       color: 'info',
-      footer: `${formatCurrency(stats.todaysRevenue)} en ventas hoy`,
+      subtitle: `${formatCurrency(stats.todaysRevenue)} en ventas hoy`,
       trend: stats.todaysOrders > 0 ? 'up' : 'neutral'
     },
     {
@@ -57,7 +55,7 @@ export const OrderStats = ({ stats, loading = false }) => {
       value: stats.pendingOrders || 0,
       icon: 'hourglass-split',
       color: 'warning',
-      footer: 'Esperando procesamiento',
+      subtitle: 'Esperando procesamiento',
       trend: stats.pendingOrders > 5 ? 'up' : 'neutral'
     },
     {
@@ -65,7 +63,7 @@ export const OrderStats = ({ stats, loading = false }) => {
       value: stats.processingOrders || 0,
       icon: 'gear',
       color: 'primary',
-      footer: 'Siendo preparados',
+      subtitle: 'Siendo preparados',
       trend: 'neutral'
     },
     {
@@ -73,43 +71,37 @@ export const OrderStats = ({ stats, loading = false }) => {
       value: stats.totalOrders || 0,
       icon: 'cart-check',
       color: 'success',
-      footer: `${formatCurrency(stats.totalRevenue)} en ventas totales`,
+      subtitle: `${formatCurrency(stats.totalRevenue)} en ventas totales`,
       trend: 'up'
     }
   ];
 
   return (
-    <div className="row stats-cards g-3 mb-4">
-      {statCards.map((card, index) => (
-        <div key={index} className="col-md-6 col-lg-3">
-          <div className={`card border-0 rounded-4 shadow-sm bg-white h-100 overflow-hidden`}>
-            {/* Barra de color en la parte superior */}
-            <div className={`bg-${card.color}`} style={{ height: '4px' }}></div>
+    <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div className="list-group list-group-flush">
+        {statItems.map((item, index) => (
+          <div key={index} className="list-group-item border-0 py-3">
+            <div className="d-flex align-items-center mb-2">
+              <div className={`rounded-circle bg-${item.color} bg-opacity-10 p-2 me-3`}>
+                <i className={`bi bi-${item.icon} text-${item.color}`}></i>
+              </div>
+              <span className="text-muted">{item.title}</span>
 
-            <div className="card-body p-3">
-              <div className="d-flex align-items-center mb-3">
-                <div className={`rounded-circle bg-${card.color} bg-opacity-10 p-2 me-3`}>
-                  <i className={`bi bi-${card.icon} fs-5 text-${card.color}`}></i>
+              {/* Indicador de tendencia */}
+              {item.trend !== 'neutral' && (
+                <div className={`ms-auto text-${item.trend === 'up' ? 'success' : 'danger'}`}>
+                  <i className={`bi bi-arrow-${item.trend}`}></i>
                 </div>
-                <h6 className="card-subtitle text-muted mb-0">{card.title}</h6>
-              </div>
+              )}
+            </div>
 
-              <div className="d-flex align-items-baseline">
-                <h2 className="card-title mb-1 fw-bold">{card.value}</h2>
-
-                {/* Indicador de tendencia */}
-                {card.trend !== 'neutral' && (
-                  <div className={`ms-2 text-${card.trend === 'up' ? 'success' : 'danger'}`}>
-                    <i className={`bi bi-arrow-${card.trend}`}></i>
-                  </div>
-                )}
-              </div>
-
-              <p className="card-text text-muted small mb-0">{card.footer}</p>
+            <div className="d-flex justify-content-between align-items-baseline">
+              <h4 className="fw-bold mb-0">{item.value}</h4>
+              <small className="text-muted">{item.subtitle}</small>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };

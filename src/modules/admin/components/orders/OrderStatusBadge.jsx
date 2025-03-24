@@ -1,6 +1,6 @@
 /**
  * Componente para mostrar el estado de un pedido como badge
- * Con diseño visual mejorado
+ * Con diseño ultraminimalista y sutil
  *
  * @param {Object} props
  * @param {string} props.status - Estado del pedido
@@ -12,32 +12,27 @@ export const OrderStatusBadge = ({ status, className = '' }) => {
     pending: {
       label: 'Pendiente',
       color: 'warning',
-      icon: 'hourglass-split',
-      bgClass: 'bg-warning bg-opacity-10'
+      icon: 'hourglass-split'
     },
     processing: {
       label: 'Procesando',
       color: 'primary',
-      icon: 'gear',
-      bgClass: 'bg-primary bg-opacity-10'
+      icon: 'gear'
     },
     shipped: {
       label: 'Enviado',
       color: 'info',
-      icon: 'truck',
-      bgClass: 'bg-info bg-opacity-10'
+      icon: 'truck'
     },
     delivered: {
       label: 'Entregado',
       color: 'success',
-      icon: 'check-circle-fill',
-      bgClass: 'bg-success bg-opacity-10'
+      icon: 'check-circle'
     },
     cancelled: {
       label: 'Cancelado',
       color: 'danger',
-      icon: 'x-circle-fill',
-      bgClass: 'bg-danger bg-opacity-10'
+      icon: 'x-circle'
     }
   };
 
@@ -45,14 +40,21 @@ export const OrderStatusBadge = ({ status, className = '' }) => {
   const config = statusConfig[status] || {
     label: status || 'Desconocido',
     color: 'secondary',
-    icon: 'question-circle',
-    bgClass: 'bg-secondary bg-opacity-10'
+    icon: 'question-circle'
   };
 
+  // Usar un diseño más sutil sin bordes ni fondos llamativos
   return (
-    <span className={`badge rounded-pill px-3 py-2 ${config.bgClass} text-${config.color} ${className}`}>
-      <i className={`bi bi-${config.icon} me-1`}></i>
-      {config.label}
+    <span
+      className={`text-${config.color} d-inline-flex align-items-center ${className}`}
+      style={{
+        fontSize: '0.815rem',
+        fontWeight: 'normal',
+        opacity: 0.85
+      }}
+    >
+      <i className={`bi bi-${config.icon} me-1`} style={{ fontSize: '0.875em' }}></i>
+      <span>{config.label}</span>
     </span>
   );
 };

@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 /**
  * Componente para filtrar pedidos por estado, fecha y búsqueda
- * Con barra de búsqueda mejorada
+ * Con diseño optimizado para sidebar
  *
  * @param {Object} props
  * @param {string} props.activeFilter - Filtro activo actualmente
@@ -48,60 +48,56 @@ export const OrderFilters = ({
   };
 
   return (
-    <div className="order-filters-container mb-4">
-      {/* Filtros de estado con diseño en forma de tabs */}
-      <div className="card border-0 shadow-sm mb-3 overflow-hidden">
-        <div className="card-body p-0">
-          <nav className="nav nav-tabs border-bottom">
-            {filters.map(filter => (
-              <button
-                key={filter.id}
-                className={`nav-link border-0 rounded-0 py-3 px-4 
-                  ${activeFilter === filter.id ? `text-${filter.color} active` : 'text-secondary'}`}
-                onClick={() => onFilterChange(filter.id)}
-                style={{
-                  borderBottom: activeFilter === filter.id ? `3px solid var(--bs-${filter.color})` : '3px solid transparent'
-                }}
-              >
-                <i className={`bi bi-${filter.icon} me-2`}></i>
-                <span>{filter.label}</span>
-                {counts[filter.id] !== undefined && (
-                  <span className={`ms-2 badge ${activeFilter === filter.id ? `bg-${filter.color}` : 'bg-light text-dark'}`}>
-                    {counts[filter.id]}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
-
+    <div className="order-filters-container">
       {/* Barra de búsqueda mejorada */}
-      <form onSubmit={handleSearchSubmit} className="input-group shadow-sm rounded-pill overflow-hidden">
-        <span className="input-group-text bg-white border-0">
-          <i className="bi bi-search text-secondary"></i>
-        </span>
-        <input
-          type="text"
-          className="form-control border-0"
-          placeholder="Buscar por ID, nombre de cliente, dirección..."
-          value={localSearchTerm}
-          onChange={handleSearchChange}
-        />
-        {localSearchTerm && (
-          <button
-            className="btn border-0 bg-white"
-            type="button"
-            onClick={clearSearch}
-          >
-            <i className="bi bi-x-lg"></i>
+      <form onSubmit={handleSearchSubmit} className="mb-4">
+        <div className="input-group shadow-sm rounded-pill overflow-hidden">
+          <span className="input-group-text bg-white border-0">
+            <i className="bi bi-search text-secondary"></i>
+          </span>
+          <input
+            type="text"
+            className="form-control border-0"
+            placeholder="Buscar pedidos..."
+            value={localSearchTerm}
+            onChange={handleSearchChange}
+          />
+          {localSearchTerm && (
+            <button
+              className="btn border-0 bg-white"
+              type="button"
+              onClick={clearSearch}
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+          )}
+          <button className="btn btn-primary" type="submit">
+            Buscar
           </button>
-        )}
-        <button className="btn btn-primary px-4" type="submit">
-          <i className="bi bi-search me-2"></i>
-          Buscar
-        </button>
+        </div>
       </form>
+
+      {/* Filtros de estado en forma de lista vertical para sidebar */}
+      <div className="list-group shadow-sm rounded-4 overflow-hidden">
+        {filters.map(filter => (
+          <button
+            key={filter.id}
+            className={`list-group-item list-group-item-action border-0 d-flex justify-content-between align-items-center py-3
+              ${activeFilter === filter.id ? `active bg-${filter.color} text-white` : ''}`}
+            onClick={() => onFilterChange(filter.id)}
+          >
+            <span className="d-flex align-items-center">
+              <i className={`bi bi-${filter.icon} me-3`}></i>
+              {filter.label}
+            </span>
+            {counts[filter.id] !== undefined && (
+              <span className={`badge ${activeFilter === filter.id ? 'bg-white text-' + filter.color : 'bg-light text-dark'} rounded-pill`}>
+                {counts[filter.id]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
