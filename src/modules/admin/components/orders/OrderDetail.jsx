@@ -1,6 +1,3 @@
-// ===============================
-// src/modules/admin/components/orders/OrderDetail.jsx - Actualizado
-// ===============================
 import React, { useState } from 'react';
 import { OrderDetailHeader } from './OrderDetailHeader';
 import { OrderDetailTabs } from './OrderDetailTabs';
@@ -11,12 +8,6 @@ import { OrderCustomerInfo } from './OrderCustomInfo.jsx'
 import { AdminCard } from './AdminCard.jsx'
 import { OrderItemsTable } from './OrderItemTable.jsx'
 
-
-/**
- * Componente para mostrar los detalles completos de un pedido
- * Versión refactorizada con componentes más pequeños y modulares
- * Ahora con pestaña de notas separada
- */
 export const OrderDetail = ({
                               order,
                               onBack,
@@ -62,7 +53,7 @@ export const OrderDetail = ({
 
       {/* Contenido según la pestaña seleccionada */}
       <div className="tab-content mb-4">
-        {/* Pestaña de productos */}
+        {/* Pestaña de productos - Ahora sin card, más minimalista */}
         {activeTab === 'products' && (
           <OrderItemsTable order={order} formatPrice={formatPrice} />
         )}
@@ -77,7 +68,7 @@ export const OrderDetail = ({
           <OrderPaymentInfo order={order} />
         )}
 
-        {/* Pestaña de historial y estado - Separada de las notas */}
+        {/* Pestaña de historial y estado */}
         {activeTab === 'status' && (
           <OrderStatusChangeSection
             order={order}
@@ -87,19 +78,17 @@ export const OrderDetail = ({
           />
         )}
 
-        {/* Nueva pestaña para notas administrativas */}
+        {/* Pestaña para notas administrativas */}
         {activeTab === 'notes' && (
-          <AdminCard
-            icon="journal-text"
-            title="Notas administrativas"
-          >
+          <div>
+            <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Notas administrativas</h6>
             <OrderNotes
               notes={order.adminNotes || []}
               onAddNote={onAddNote}
               formatDate={formatDate}
               isProcessing={isProcessing}
             />
-          </AdminCard>
+          </div>
         )}
       </div>
     </div>
