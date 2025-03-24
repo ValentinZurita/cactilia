@@ -1,13 +1,6 @@
-// ===============================
-// src/modules/admin/components/orders/OrderFiltersSidebar.jsx
-// ===============================
 import React, { useState } from 'react';
 import { ORDER_STATUS_CONFIG } from '../../constants/orderConstants';
 
-/**
- * Componente para filtros de pedidos en sidebar
- * Con el diseño original que te gustaba
- */
 export const OrderFiltersSidebar = ({
                                       activeFilter = 'all',
                                       onFilterChange,
@@ -22,12 +15,12 @@ export const OrderFiltersSidebar = ({
 
   // Definir filtros disponibles con diseño minimalista
   const filters = [
-    { id: 'all', label: 'Todos los pedidos', icon: 'grid' },
-    { id: 'pending', label: 'Pendientes', icon: 'hourglass-split' },
-    { id: 'processing', label: 'Procesando', icon: 'gear' },
-    { id: 'shipped', label: 'Enviados', icon: 'truck' },
-    { id: 'delivered', label: 'Entregados', icon: 'check-circle' },
-    { id: 'cancelled', label: 'Cancelados', icon: 'x-circle' }
+    { id: 'all', label: 'Todos los pedidos', icon: 'grid', color: 'secondary' },
+    { id: 'pending', label: 'Pendientes', icon: 'hourglass-split', color: 'warning' },
+    { id: 'processing', label: 'Procesando', icon: 'gear', color: 'primary' },
+    { id: 'shipped', label: 'Enviados', icon: 'truck', color: 'info' },
+    { id: 'delivered', label: 'Entregados', icon: 'check-circle', color: 'success' },
+    { id: 'cancelled', label: 'Cancelados', icon: 'x-circle', color: 'danger' }
   ];
 
   // Manejador para envío de búsqueda
@@ -59,7 +52,7 @@ export const OrderFiltersSidebar = ({
         </form>
       </div>
 
-      {/* Filtros minimalistas - Tu diseño original */}
+      {/* Filtros minimalistas - Versión simplificada */}
       <div className="list-group list-group-flush">
         {filters.map(filter => (
           <button
@@ -73,7 +66,11 @@ export const OrderFiltersSidebar = ({
               {filter.label}
             </span>
             {counts[filter.id] !== undefined && (
-              <span className="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">
+              <span className={`badge ${
+                activeFilter === filter.id ?
+                  `bg-${filter.color} text-white` :
+                  'bg-secondary bg-opacity-10 text-secondary'
+              } rounded-pill`}>
                 {counts[filter.id]}
               </span>
             )}
