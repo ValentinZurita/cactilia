@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OrderDetailHeader } from './OrderDetailHeader';
 import { OrderDetailTabs } from './OrderDetailTabs';
 import { OrderPaymentInfo } from './OrderPaymentInfo';
 import { OrderStatusChangeSection } from './OrderStatusChangeSection';
 import { OrderNotes } from './OrderNotes';
-import { OrderCustomerInfo } from './OrderCustomInfo.jsx'
-import { OrderItemsTable } from './OrderItemTable.jsx'
+import { OrderCustomerInfo } from './OrderCustomInfo.jsx';
+import { OrderItemsTable } from './OrderItemTable.jsx';
+import { getUserById } from './userAdminService.js'
 
 export const OrderDetail = ({
                               order,
@@ -18,6 +19,30 @@ export const OrderDetail = ({
                             }) => {
   // Estado para controlar la pestaña activa
   const [activeTab, setActiveTab] = useState('products');
+  // Estado para almacenar los datos del usuario
+  const [userData, setUserData] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(false);
+
+  // Cargar información del usuario cuando cambia el pedido
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (order && order.userId) {
+        setLoadingUser(true);
+        try {
+          const result = await getUserById(order.userId);
+          if (result.ok) {
+            setUserData(result.data);
+          }
+        } catch (error) {
+          console.error('Error al cargar datos del usuario:', error);
+        } finally {
+          setLoadingUser(false);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [order]);
 
   // Si no hay pedido, mostrar mensaje
   if (!order) {
@@ -46,6 +71,7 @@ export const OrderDetail = ({
         onBack={onBack}
         formatDate={formatDate}
         formatPrice={formatPrice}
+        userData={userData} // Pasar datos del usuario a la cabecera
       />
 
       {/* Navegación por pestañas */}
@@ -60,7 +86,7 @@ export const OrderDetail = ({
 
         {/* Pestaña de cliente */}
         {activeTab === 'customer' && (
-          <OrderCustomerInfo order={order} />
+          <OrderCustomerInfo order={order} userData={userData} loadingUser={loadingUser} />
         )}
 
         {/* Pestaña de pago */}
@@ -80,12 +106,12 @@ export const OrderDetail = ({
 
         {/* Pestaña para notas administrativas */}
         {activeTab === 'notes' && (
-            <OrderNotes
-              notes={order.adminNotes || []}
-              onAddNote={onAddNote}
-              formatDate={formatDate}
-              isProcessing={isProcessing}
-            />
+          <OrderNotes
+            notes={order.adminNotes || []}
+            onAddNote={onAddNote}
+            formatDate={formatDate}
+            isProcessing={isProcessing}
+          />
         )}
       </div>
     </div>

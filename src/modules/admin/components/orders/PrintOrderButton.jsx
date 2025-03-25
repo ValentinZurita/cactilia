@@ -5,14 +5,27 @@ import React from 'react';
  * @param {Object} order - Objeto con los datos del pedido
  * @param {Function} formatPrice - Función para formatear precios
  * @param {Function} formatDate - Función para formatear fechas
+ * @param {Object} userData - Datos del usuario (opcional)
  */
-export const PrintOrderButton = ({ order, formatPrice, formatDate }) => {
+export const PrintOrderButton = ({ order, formatPrice, formatDate, userData }) => {
   // Función para generar el contenido a imprimir
   const handlePrint = () => {
     if (!order) return;
 
-    // Obtener el nombre del cliente de la dirección de envío
-    const customerName = order.shipping?.address?.name || 'Cliente';
+    // Determinar el nombre del cliente
+    // 1. Prioridad al userData si está disponible (nombre completo del usuario)
+    // 2. Si no, usar el nombre del cliente de la información de usuario en la orden
+    // 3. Como respaldo, usar el nombre de la dirección de envío
+    // 4. Valor por defecto si nada está disponible
+    let customerName = 'Cliente';
+
+    if (userData && userData.displayName) {
+      customerName = userData.displayName;
+    } else if (order.customer && order.customer.name) {
+      customerName = order.customer.name;
+    } else if (order.shipping?.address?.name) {
+      customerName = order.shipping.address.name;
+    }
 
     // Crear el contenido a imprimir
     const printContent = `
@@ -269,11 +282,10 @@ export const PrintOrderButton = ({ order, formatPrice, formatDate }) => {
   return (
     <button
       onClick={handlePrint}
-      className="btn btn-outline-dark"
+      className="btn btn-outline-dark btn-sm"
       title="Imprimir detalles del pedido"
     >
-      <i className="bi bi-printer me-2"></i>
-      Imprimir
+      <i className="bi bi-printer"></i>
     </button>
   );
 };
