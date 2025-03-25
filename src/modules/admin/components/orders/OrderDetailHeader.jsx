@@ -1,12 +1,19 @@
 import { OrderStatusBadge } from './OrderStatusBadge';
+import { PrintOrderButton } from './PrintOrderButton';
 
-export const OrderDetailHeader = ({ order, formatDate, formatPrice }) => (
-
-  <header className="d-flex flex-wrap justify-content-between pb-3 mb-4">
-
+export const OrderDetailHeader = ({ order, formatDate, formatPrice, onBack }) => (
+  <header className="d-flex flex-wrap justify-content-between align-items-start pb-3 mb-4">
     {/* Información del pedido */}
     <div className="mb-3 mb-md-0 me-auto">
-      <h4 className="mb-2 fw-normal">{order.id}</h4>
+      <div className="d-flex align-items-center mb-2">
+        <h4 className="mb-0 fw-normal me-3">{order.id}</h4>
+        {/* Botón de imprimir */}
+        <PrintOrderButton
+          order={order}
+          formatDate={formatDate}
+          formatPrice={formatPrice}
+        />
+      </div>
       <div className="text-secondary small mb-2">
         Creado el {formatDate(order.createdAt)}
       </div>
