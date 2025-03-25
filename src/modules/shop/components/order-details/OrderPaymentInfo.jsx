@@ -18,11 +18,30 @@ export const OrderPaymentInfo = ({ payment, billing }) => {
             <i className="bi bi-receipt me-2"></i>
             Factura
           </h6>
-          {billing.invoiceId ? (
+          {billing.invoiceUrl ? (
             <div className="invoice-details">
-              <div>Folio: {billing.invoiceId}</div>
-              <div>RFC: {billing.fiscalData.rfc}</div>
-              <div>Razón social: {billing.fiscalData.businessName}</div>
+              <div className="mb-2">
+                <a
+                  href={billing.invoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-outline-primary"
+                >
+                  <i className="bi bi-file-earmark-pdf me-2"></i>
+                  Descargar Factura
+                </a>
+              </div>
+              {billing.invoiceFileName && (
+                <div className="invoice-filename text-muted small">
+                  {billing.invoiceFileName}
+                </div>
+              )}
+              {billing.fiscalData && (
+                <div className="mt-2">
+                  <div>RFC: {billing.fiscalData.rfc}</div>
+                  <div>Razón social: {billing.fiscalData.businessName}</div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="pending-invoice">

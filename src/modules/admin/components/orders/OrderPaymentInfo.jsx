@@ -1,5 +1,5 @@
 import React from 'react';
-import { AdminCard } from './AdminCard';
+import { InvoiceUploader } from './InvoiceUploader';
 
 const IconCircle = ({ icon, className = '', ...props }) => (
   <div
@@ -25,22 +25,24 @@ const InfoRow = ({ label, value }) => (
   </div>
 );
 
-export const OrderPaymentInfo = ({ order }) => {
+export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
   if (!order.payment) {
     return (
-      <AdminCard
-        icon="credit-card"
-        title="Información de pago"
-      >
-        <div className="d-flex align-items-center justify-content-center py-4">
-          <div className="text-center">
-            <i className="bi bi-credit-card text-secondary opacity-50 fs-1 mb-3"></i>
-            <p className="mb-0 text-muted">No hay información de pago disponible</p>
-          </div>
+      <div className="d-flex align-items-center justify-content-center py-4">
+        <div className="text-center">
+          <i className="bi bi-credit-card text-secondary opacity-50 fs-1 mb-3"></i>
+          <p className="mb-0 text-muted">No hay información de pago disponible</p>
         </div>
-      </AdminCard>
+      </div>
     );
   }
+
+  // Manejador para cuando se sube una factura
+  const handleInvoiceUploaded = (invoiceData) => {
+    if (onOrderUpdate) {
+      onOrderUpdate();
+    }
+  };
 
   return (
     <div className="row g-4">
@@ -99,7 +101,23 @@ export const OrderPaymentInfo = ({ order }) => {
                 <InfoRow label="Email" value={order.billing.fiscalData.email} />
                 <div className="mb-2"></div>
                 <InfoRow label="Uso CFDI" value={order.billing.fiscalData.usoCFDI} />
+                <div className="mb-2"></div>
+                {order.billing.fiscalData.regimenFiscal && (
+                  <>
+                    <InfoRow label="Régimen Fiscal" value={order.billing.fiscalData.regimenFiscal} />
+                    <div className="mb-2"></div>
+                  </>
+                )}
               </div>
+            </div>
+
+            {/* Componente para subir/gestionar facturas */}
+            <div className="mt-4 border-top pt-3">
+              <InvoiceUploader
+                orderId={order.id}
+                billing={order.billing}
+                onInvoiceUploaded={handleInvoiceUploaded}
+              />
             </div>
           </InfoBlock>
         ) : (

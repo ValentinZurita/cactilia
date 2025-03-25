@@ -1,14 +1,12 @@
-// ===============================
-// src/modules/admin/components/orders/OrderManagementPage.jsx
-// ===============================
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { OrderList } from './OrderList';
 import { OrderDetail } from './OrderDetail';
 import { OrderFiltersSidebar } from './OrderFiltersSidebar';
 import { OrderDetailSkeleton } from './OrderDetailSkeleton';
-import { useAdminOrders } from './useAdminOrders.js'
-
+import { useAdminOrders } from './useAdminOrders.js';
+import { addMessage } from '../../../../store/messages/messageSlice.js';
 
 /**
  * Página principal para la gestión de pedidos en el panel de administración
@@ -17,6 +15,7 @@ import { useAdminOrders } from './useAdminOrders.js'
 export const OrderManagementPage = () => {
   const { mode, id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [advancedFilters, setAdvancedFilters] = useState({});
 
   // Usar el hook personalizado para gestionar pedidos
@@ -86,6 +85,21 @@ export const OrderManagementPage = () => {
     }
   };
 
+  // Manejador para actualizar los datos del pedido después de subir una factura
+  const handleOrderUpdate = async () => {
+    if (id) {
+      await fetchOrderById(id);
+
+      // Mostrar un mensaje de éxito
+      dispatch(addMessage({
+        type: 'success',
+        text: 'Factura actualizada correctamente',
+        autoHide: true,
+        duration: 3000
+      }));
+    }
+  };
+
   // Manejador para la búsqueda avanzada
   const handleAdvancedSearch = (filters) => {
     setAdvancedFilters(filters);
@@ -104,6 +118,7 @@ export const OrderManagementPage = () => {
         onBack={handleBackToList}
         onChangeStatus={handleChangeStatus}
         onAddNote={handleAddNote}
+        onOrderUpdate={handleOrderUpdate} // Añadimos la función de actualización
         formatPrice={formatPrice}
         formatDate={formatOrderDate}
         isProcessing={isProcessing}

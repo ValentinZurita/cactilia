@@ -6,13 +6,14 @@ import { OrderStatusChangeSection } from './OrderStatusChangeSection';
 import { OrderNotes } from './OrderNotes';
 import { OrderCustomerInfo } from './OrderCustomInfo.jsx';
 import { OrderItemsTable } from './OrderItemTable.jsx';
-import { getUserById } from './userAdminService.js'
+import { getUserById } from './userAdminService.js';
 
 export const OrderDetail = ({
                               order,
                               onBack,
                               onChangeStatus,
                               onAddNote,
+                              onOrderUpdate, // Nueva prop para actualizar el pedido
                               formatPrice,
                               formatDate,
                               isProcessing = false
@@ -91,7 +92,10 @@ export const OrderDetail = ({
 
         {/* Pestaña de pago */}
         {activeTab === 'payment' && (
-          <OrderPaymentInfo order={order} />
+          <OrderPaymentInfo
+            order={order}
+            onOrderUpdate={onOrderUpdate} // Pasar la función
+          />
         )}
 
         {/* Pestaña de historial y estado */}
