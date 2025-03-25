@@ -49,9 +49,6 @@ export const useAdminOrders = (initialFilters = {}) => {
   /**
    * Cargar pedidos según los filtros actuales
    */
-  /**
-   * Cargar pedidos según los filtros actuales
-   */
   const loadOrders = useCallback(async (resetPagination = true) => {
     setLoading(true);
     setError(null);

@@ -133,7 +133,7 @@ export const OrderList = ({
       )}
 
       {/* Estilos específicos para el componente */}
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{__html: `
           /* Estilos para los bordes solo en modo desktop */
           @media (min-width: 768px) {
               .border-start-md {
@@ -179,7 +179,7 @@ export const OrderList = ({
               color: white !important;
               border-color: #212529 !important;
           }
-      `}</style>
+      `}} />
     </div>
   );
 };
