@@ -55,13 +55,18 @@ export const OrderFiltersSidebar = ({
 
   return (
     <div className="card border-0 shadow-sm rounded-4">
-      {/* Buscador básico con toggle para búsqueda avanzada */}
+
+      {/* Buscador con toggle para búsqueda avanzada */}
       <div className="card-body border-bottom pb-3">
         <form onSubmit={handleSearchSubmit}>
           <div className="input-group mb-2">
+
+            {/* Icono de búsqueda */}
             <span className="input-group-text bg-white border-end-0">
               <i className="bi bi-search text-muted"></i>
             </span>
+
+            {/* Input de búsqueda */}
             <input
               type="text"
               className="form-control border-start-0"
@@ -71,48 +76,54 @@ export const OrderFiltersSidebar = ({
             />
           </div>
 
-          <div className="d-flex justify-content-between align-items-center">
+            {/* Botón para filtros avanzados */}
             <button
               type="button"
-              className={`btn btn-link btn-sm p-0 ${hasActiveFilters ? 'text-primary' : 'text-secondary'}`}
+              className={`btn btn-sm p-0 ${hasActiveFilters ? 'text-primary' : 'text-secondary'}`}
               onClick={() => setShowAdvanced(!showAdvanced)}
             >
-              <i className={`bi bi-funnel${hasActiveFilters ? '-fill' : ''} me-1`}></i>
+
+              {/* Icono de embudo con indicador de filtros activos */}
+              <i className={`bi bi-funnel${hasActiveFilters ? '-fill' : ''} me-2`}></i>
+
+              {/* Texto de botón */}
               Filtros avanzados
-              <i className={`bi bi-chevron-${showAdvanced ? 'up' : 'down'} ms-1`}></i>
+
+              {/* Flecha de colapso */}
+              <i className={`bi bi-chevron-${showAdvanced ? 'up' : 'down'} ms-2`}></i>
             </button>
 
-            <button type="submit" className="btn btn-sm btn-primary">
-              Buscar
-            </button>
-          </div>
         </form>
       </div>
 
       {/* Filtros avanzados colapsables */}
       {showAdvanced && (
-        <div className="border-bottom">
           <SearchFilters
             onApplyFilters={handleApplyAdvancedFilters}
             onClear={handleClearAdvancedFilters}
             initialFilters={advancedFilters}
           />
-        </div>
       )}
 
       {/* Filtros por estado */}
       <div className="list-group list-group-flush">
         {filters.map(filter => (
+
+          // Botón de filtro con conteo de pedidos
           <button
             key={filter.id}
             className={`list-group-item list-group-item-action border-0 d-flex justify-content-between align-items-center px-4 py-3
               ${activeFilter === filter.id ? 'bg-light fw-medium' : ''}`}
             onClick={() => onFilterChange(filter.id)}
           >
+
+            {/* Icono y etiqueta del filtro */}
             <span className="d-flex align-items-center">
               <i className={`bi bi-${filter.icon} me-3 text-secondary`}></i>
               {filter.label}
             </span>
+
+            {/* Conteo de pedidos */}
             {counts[filter.id] !== undefined && (
               <span className={`badge ${
                 activeFilter === filter.id ?
@@ -121,6 +132,7 @@ export const OrderFiltersSidebar = ({
               } rounded-pill`}>
                 {counts[filter.id]}
               </span>
+
             )}
           </button>
         ))}

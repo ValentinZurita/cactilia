@@ -95,15 +95,15 @@ export const SearchFilters = ({ onApplyFilters, onClear, initialFilters = {} }) 
         </div>
 
         {/* Botones de acción */}
-        <div className="d-flex justify-content-between mt-3">
+        <div className="d-flex justify-content-sm-evenly">
           <button
             type="button"
-            className="btn btn-sm btn-link text-secondary"
+            className="btn btn-sm btn-outline-dark my-2"
             onClick={handleClear}
           >
             Limpiar
           </button>
-          <button type="submit" className="btn btn-sm btn-primary">
+          <button type="submit" className="btn btn-sm btn-outline-dark my-2">
             Aplicar filtros
           </button>
         </div>
