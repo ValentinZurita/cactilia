@@ -669,3 +669,190 @@
         margin-bottom: 10px;
     }
 }
+
+/*
+   Estilos mejorados para la información de pago y facturas
+   Se puede agregar a tu archivo de estilos existente o crear uno nuevo
+*/
+
+/* Tarjeta de información de pago con diseño más limpio */
+.payment-info-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+/* Encabezado de la tarjeta */
+.payment-info-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f5f5f5;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.payment-info-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+/* Contenido principal con espaciado adecuado */
+.payment-info-content {
+    padding: 20px;
+}
+
+/* Grupos de información de pago */
+.payment-info-group {
+    margin-bottom: 16px;
+}
+
+.payment-info-group:last-child {
+    margin-bottom: 0;
+}
+
+.payment-info-label {
+    font-size: 0.85rem;
+    color: #666;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.payment-info-value {
+    font-size: 0.95rem;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Método de pago con iconos */
+.payment-method {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.payment-method-icon {
+    font-size: 1.5rem;
+    color: #555;
+}
+
+.payment-method-details {
+    flex: 1;
+}
+
+.payment-card-number {
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.payment-card-expiry {
+    font-size: 0.85rem;
+    color: #777;
+    margin-top: 3px;
+}
+
+/* Estilos específicos para facturas */
+.invoice-section {
+    margin-top: 25px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 20px;
+}
+
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.invoice-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+/* Lista de facturas simplificada */
+.invoice-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.invoice-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+    border-left: 3px solid #e9ecef;
+}
+
+.invoice-item:hover {
+    background-color: #f0f0f0;
+    transform: translateX(3px);
+}
+
+/* Información de la factura */
+.invoice-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.invoice-icon {
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+
+.invoice-details {
+    line-height: 1.4;
+}
+
+.invoice-number {
+    font-weight: 500;
+    color: #333;
+}
+
+.invoice-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Acciones de factura */
+.invoice-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.invoice-action-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: white;
+    color: #555;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.invoice-action-btn:hover {
+    background-color: #34C749;
+    color: white;
+    border-color: #34C749;
+}
+
