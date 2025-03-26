@@ -1,5 +1,5 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { FirebaseDB, FirebaseStorage } from '../../../../firebase/firebaseConfig.js'
 
 /**
@@ -91,7 +91,113 @@ export const uploadInvoiceFilesForOrder = async (orderId, pdfFile, xmlFile, admi
 };
 
 /**
- * Elimina los archivos de factura de un pedido
+ * Elimina un archivo de factura específico (PDF o XML) de un pedido
+ *
+ * @param {string} orderId - ID del pedido
+ * @param {string} fileType - Tipo de archivo ('pdf' o 'xml')
+ * @returns {Promise<{ok: boolean, error: string}>} - Resultado de la operación
+ */
+export const removeInvoiceFileByType = async (orderId, fileType) => {
+  try {
+    if (!orderId) {
+      return {
+        ok: false,
+        error: 'ID de pedido no proporcionado'
+      };
+    }
+
+    if (fileType !== 'pdf' && fileType !== 'xml') {
+      return {
+        ok: false,
+        error: 'Tipo de archivo no válido. Debe ser "pdf" o "xml"'
+      };
+    }
+
+    // Obtener primero el documento para tener las rutas de los archivos
+    const orderRef = doc(FirebaseDB, 'orders', orderId);
+    const orderDoc = await getDoc(orderRef);
+
+    if (!orderDoc.exists()) {
+      return {
+        ok: false,
+        error: 'El pedido no existe'
+      };
+    }
+
+    const orderData = orderDoc.data();
+    const billing = orderData.billing || {};
+
+    // Definir las rutas y campos según el tipo de archivo
+    let filePath, updateFields;
+
+    if (fileType === 'pdf') {
+      filePath = billing.invoicePdfPath;
+      updateFields = {
+        'billing.invoicePdfUrl': null,
+        'billing.invoicePdfName': null,
+        'billing.invoicePdfPath': null,
+        // Compatibilidad con versión anterior
+        'billing.invoiceUrl': null,
+        'billing.invoiceFileName': null,
+        'billing.invoiceFilePath': null
+      };
+    } else { // XML
+      filePath = billing.invoiceXmlPath;
+      updateFields = {
+        'billing.invoiceXmlUrl': null,
+        'billing.invoiceXmlName': null,
+        'billing.invoiceXmlPath': null
+      };
+    }
+
+    // Verificar si existe el archivo para eliminar
+    if (!filePath) {
+      return {
+        ok: false,
+        error: `No hay archivo ${fileType.toUpperCase()} para eliminar`
+      };
+    }
+
+    // Eliminar el archivo físico de Storage
+    try {
+      const fileRef = ref(FirebaseStorage, filePath);
+      await deleteObject(fileRef);
+    } catch (err) {
+      console.warn(`Error al eliminar archivo ${fileType.toUpperCase()}:`, err);
+      // Continuamos a pesar del error para actualizar la base de datos
+    }
+
+    // Actualizar el documento para eliminar las referencias
+    updateFields['updatedAt'] = serverTimestamp();
+
+    // Si ambos archivos se han eliminado, también limpiar los campos de timestamp
+    const otherTypeExists = fileType === 'pdf' ?
+      (billing.invoiceXmlPath !== null && billing.invoiceXmlPath !== undefined) :
+      (billing.invoicePdfPath !== null && billing.invoicePdfPath !== undefined);
+
+    if (!otherTypeExists) {
+      updateFields['billing.invoiceUploadedAt'] = null;
+      updateFields['billing.invoiceUploadedBy'] = null;
+    }
+
+    await updateDoc(orderRef, updateFields);
+
+    return {
+      ok: true,
+      error: null
+    };
+  } catch (error) {
+    console.error(`Error al eliminar archivo ${fileType}:`, error);
+    return {
+      ok: false,
+      error: error.message || `Error al eliminar archivo ${fileType}`
+    };
+  }
+};
+
+/**
+ * Elimina todos los archivos de factura de un pedido
+ * Versión corregida que elimina también los archivos físicos de Storage
  *
  * @param {string} orderId - ID del pedido
  * @returns {Promise<{ok: boolean, error: string}>} - Resultado de la operación
@@ -105,8 +211,53 @@ export const removeInvoiceFilesFromOrder = async (orderId) => {
       };
     }
 
-    // Referencia al pedido en Firestore
+    // Obtener primero el documento para tener las rutas de los archivos
     const orderRef = doc(FirebaseDB, 'orders', orderId);
+    const orderDoc = await getDoc(orderRef);
+
+    if (!orderDoc.exists()) {
+      return {
+        ok: false,
+        error: 'El pedido no existe'
+      };
+    }
+
+    const orderData = orderDoc.data();
+    const billing = orderData.billing || {};
+
+    // Eliminar archivos físicos de Storage
+    const deletePromises = [];
+
+    // Eliminar PDF
+    if (billing.invoicePdfPath) {
+      const pdfRef = ref(FirebaseStorage, billing.invoicePdfPath);
+      deletePromises.push(deleteObject(pdfRef).catch(err => {
+        console.warn('Error al eliminar PDF:', err);
+        // Continuamos a pesar del error
+      }));
+    }
+
+    // Eliminar XML
+    if (billing.invoiceXmlPath) {
+      const xmlRef = ref(FirebaseStorage, billing.invoiceXmlPath);
+      deletePromises.push(deleteObject(xmlRef).catch(err => {
+        console.warn('Error al eliminar XML:', err);
+        // Continuamos a pesar del error
+      }));
+    }
+
+    // Eliminar archivo de factura (compatibilidad con versión anterior)
+    if (billing.invoiceFilePath &&
+      billing.invoiceFilePath !== billing.invoicePdfPath) {
+      const fileRef = ref(FirebaseStorage, billing.invoiceFilePath);
+      deletePromises.push(deleteObject(fileRef).catch(err => {
+        console.warn('Error al eliminar factura:', err);
+        // Continuamos a pesar del error
+      }));
+    }
+
+    // Esperar a que se eliminen todos los archivos
+    await Promise.all(deletePromises);
 
     // Actualizar el pedido eliminando la información de la factura
     await updateDoc(orderRef, {
@@ -127,8 +278,6 @@ export const removeInvoiceFilesFromOrder = async (orderId) => {
       'billing.invoiceUploadedBy': null,
       'updatedAt': serverTimestamp()
     });
-
-    // Nota: No eliminamos los archivos de Storage por ahora para mantener un historial
 
     return {
       ok: true,

@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { removeInvoiceFilesFromOrder, uploadInvoiceFilesForOrder } from './invoiceService.js'
+import {
+  removeInvoiceFilesFromOrder,
+  uploadInvoiceFilesForOrder,
+  removeInvoiceFileByType
+} from './invoiceService.js'
 
 /**
  * Componente para subir facturas a un pedido (PDF y XML)
+ * Diseño sobrio y minimalista con estructura simplificada
  *
  * @param {Object} props - Propiedades del componente
  * @param {string} props.orderId - ID del pedido
@@ -12,11 +17,12 @@ import { removeInvoiceFilesFromOrder, uploadInvoiceFilesForOrder } from './invoi
  * @returns {JSX.Element}
  */
 export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
+  // Estados locales
   const [pdfFile, setPdfFile] = useState(null);
   const [xmlFile, setXmlFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
 
   // Obtener el ID del usuario actual (administrador)
   const { uid } = useSelector(state => state.auth);
@@ -26,55 +32,63 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
   const hasXml = billing?.invoiceXmlUrl && billing?.invoiceXmlName;
   const hasInvoice = hasPdf || hasXml || (billing?.invoiceUrl && billing?.invoiceFileName);
 
-  // Manejar cambio de archivo PDF
+  /**
+   * Manejar cambio de archivo PDF
+   * @param {Event} e - Evento del input
+   */
   const handlePdfChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      // Validar tipo de archivo
-      if (!selectedFile.type.startsWith('application/pdf')) {
-        setError('El PDF debe ser un archivo PDF válido');
-        setPdfFile(null);
-        return;
-      }
+    if (!selectedFile) return;
 
-      // Validar tamaño (máximo 5MB)
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        setError('El archivo PDF es demasiado grande. Máximo 5MB.');
-        setPdfFile(null);
-        return;
-      }
-
-      setPdfFile(selectedFile);
-      setError(null);
+    // Validar tipo de archivo
+    if (!selectedFile.type.startsWith('application/pdf')) {
+      setError('El PDF debe ser un archivo PDF válido');
+      setPdfFile(null);
+      return;
     }
+
+    // Validar tamaño (máximo 5MB)
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      setError('El archivo PDF es demasiado grande. Máximo 5MB.');
+      setPdfFile(null);
+      return;
+    }
+
+    setPdfFile(selectedFile);
+    setError(null);
   };
 
-  // Manejar cambio de archivo XML
+  /**
+   * Manejar cambio de archivo XML
+   * @param {Event} e - Evento del input
+   */
   const handleXmlChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      // Validar tipo de archivo
-      if (!selectedFile.type.startsWith('application/xml') &&
-        !selectedFile.type.startsWith('text/xml') &&
-        !selectedFile.name.toLowerCase().endsWith('.xml')) {
-        setError('El archivo XML debe ser un archivo XML válido');
-        setXmlFile(null);
-        return;
-      }
+    if (!selectedFile) return;
 
-      // Validar tamaño (máximo 5MB)
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        setError('El archivo XML es demasiado grande. Máximo 5MB.');
-        setXmlFile(null);
-        return;
-      }
-
-      setXmlFile(selectedFile);
-      setError(null);
+    // Validar tipo de archivo
+    if (!selectedFile.type.startsWith('application/xml') &&
+      !selectedFile.type.startsWith('text/xml') &&
+      !selectedFile.name.toLowerCase().endsWith('.xml')) {
+      setError('El archivo XML debe ser un archivo XML válido');
+      setXmlFile(null);
+      return;
     }
+
+    // Validar tamaño (máximo 5MB)
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      setError('El archivo XML es demasiado grande. Máximo 5MB.');
+      setXmlFile(null);
+      return;
+    }
+
+    setXmlFile(selectedFile);
+    setError(null);
   };
 
-  // Manejar subida de archivos
+  /**
+   * Manejar subida de archivos
+   */
   const handleUpload = async () => {
     if (!pdfFile && !xmlFile) {
       setError('Selecciona al menos un archivo para subir');
@@ -83,19 +97,17 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
 
     setUploading(true);
     setError(null);
-    setSuccess(false);
 
     try {
-      // Usar la función actualizada que acepta PDF y XML
       const result = await uploadInvoiceFilesForOrder(orderId, pdfFile, xmlFile, uid);
 
       if (!result.ok) {
         throw new Error(result.error || 'Error al subir los archivos de factura');
       }
 
-      setSuccess(true);
       setPdfFile(null);
       setXmlFile(null);
+      setShowUploadForm(false);
 
       // Notificar al componente padre
       if (onInvoiceUploaded) {
@@ -108,23 +120,25 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
     }
   };
 
-  // Manejar eliminación de facturas
-  const handleRemove = async () => {
-    if (!hasInvoice) return;
+  /**
+   * Manejar eliminación de archivo específico
+   * @param {string} fileType - Tipo de archivo ('pdf' o 'xml')
+   */
+  const handleRemoveFile = async (fileType) => {
+    const fileTypeLabel = fileType === 'pdf' ? 'PDF' : 'XML';
 
-    if (!window.confirm('¿Estás seguro de eliminar los archivos de factura? Esta acción no se puede deshacer.')) {
+    if (!window.confirm(`¿Estás seguro de eliminar el archivo ${fileTypeLabel}? Esta acción no se puede deshacer.`)) {
       return;
     }
 
     setUploading(true);
     setError(null);
-    setSuccess(false);
 
     try {
-      const result = await removeInvoiceFilesFromOrder(orderId);
+      const result = await removeInvoiceFileByType(orderId, fileType);
 
       if (!result.ok) {
-        throw new Error(result.error || 'Error al eliminar los archivos de factura');
+        throw new Error(result.error || `Error al eliminar el archivo ${fileTypeLabel}`);
       }
 
       // Notificar al componente padre
@@ -132,13 +146,17 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
         onInvoiceUploaded(null);
       }
     } catch (err) {
-      setError(err.message || 'Error al eliminar los archivos de factura');
+      setError(err.message || `Error al eliminar el archivo ${fileTypeLabel}`);
     } finally {
       setUploading(false);
     }
   };
 
-  // Función para obtener fecha formateada
+  /**
+   * Función para obtener fecha formateada
+   * @param {Object|Date} timestamp - Timestamp
+   * @returns {string} - Fecha formateada
+   */
   const getFormattedDate = (timestamp) => {
     if (!timestamp) return 'Fecha no disponible';
 
@@ -149,140 +167,169 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
     return 'Fecha no disponible';
   };
 
-  return (
-    <div className="invoice-uploader">
-      <h6 className="mb-3">Factura Electrónica</h6>
+  /**
+   * Renderiza el listado de archivos de factura
+   */
+  const renderInvoiceFiles = () => (
+    <>
+      <p className="text-muted small mb-4">
+        Subido: {getFormattedDate(billing.invoiceUploadedAt)}
+      </p>
 
-      {/* Si ya existen archivos de factura, mostrar información */}
-      {hasInvoice && (
-        <div className="mb-3">
-          <div className="d-flex justify-content-between align-items-start mb-2">
-            <div className="d-flex">
-              <div className="ms-2">
-                <div className="text-muted small">
-                  Subido: {getFormattedDate(billing.invoiceUploadedAt)}
-                </div>
-              </div>
-            </div>
-            <button
-              className="btn btn-sm btn-outline-danger"
-              onClick={handleRemove}
-              disabled={uploading}
+      {/* PDF */}
+      {(hasPdf || billing?.invoiceUrl) && (
+        <div className="d-flex justify-content-between align-items-center border-bottom py-3 mb-4">
+          <div>
+            <i className="bi bi-file-earmark-pdf text-danger me-3"></i>
+            <a
+              href={billing.invoicePdfUrl || billing.invoiceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-decoration-none text-dark"
             >
-              <i className="bi bi-trash"></i>
-            </button>
+              {billing.invoicePdfName || billing.invoiceFileName}
+            </a>
           </div>
-
-          {/* PDF */}
-          {(hasPdf || billing?.invoiceUrl) && (
-            <div className="d-flex align-items-center mb-2 border-bottom pb-2">
-              <i className="bi bi-file-earmark-pdf text-danger me-2"></i>
-              <div>
-                <a
-                  href={billing.invoicePdfUrl || billing.invoiceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="fw-medium"
-                >
-                  {billing.invoicePdfName || billing.invoiceFileName}
-                </a>
-                <span className="ms-2 badge bg-primary">PDF</span>
-              </div>
-            </div>
-          )}
-
-          {/* XML */}
-          {hasXml && (
-            <div className="d-flex align-items-center">
-              <i className="bi bi-file-earmark-code text-primary me-2"></i>
-              <div>
-                <a
-                  href={billing.invoiceXmlUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="fw-medium"
-                >
-                  {billing.invoiceXmlName}
-                </a>
-                <span className="ms-2 badge bg-info">XML</span>
-              </div>
-            </div>
-          )}
+          <button
+            className="btn btn-sm btn-outline-secondary invoice-delete-btn"
+            onClick={() => handleRemoveFile('pdf')}
+            disabled={uploading}
+          >
+            <i className="bi bi-x"></i>
+          </button>
         </div>
       )}
 
-      {/* Si no hay factura o queremos reemplazarla */}
-      {!hasInvoice && (
-        <>
-          <div className="row mb-3">
-            {/* Archivo PDF */}
-            <div className="col-12 mb-2">
-              <label className="form-label mb-1">Archivo PDF</label>
-              <input
-                type="file"
-                className="form-control"
-                onChange={handlePdfChange}
-                accept=".pdf,application/pdf"
-                disabled={uploading}
-              />
-              <div className="form-text small">
-                Archivo PDF de la factura. Tamaño máximo: 5MB.
-              </div>
-            </div>
-
-            {/* Archivo XML */}
-            <div className="col-12">
-              <label className="form-label mb-1">Archivo XML</label>
-              <input
-                type="file"
-                className="form-control"
-                onChange={handleXmlChange}
-                accept=".xml,application/xml,text/xml"
-                disabled={uploading}
-              />
-              <div className="form-text small">
-                Archivo XML de la factura (CFDI). Tamaño máximo: 5MB.
-              </div>
-            </div>
-          </div>
-
-          {/* Mostrar errores */}
-          {error && (
-            <div className="alert alert-danger py-2 small">
-              <i className="bi bi-exclamation-triangle-fill me-2"></i>
-              {error}
-            </div>
-          )}
-
-          {/* Mostrar éxito */}
-          {success && (
-            <div className="alert alert-success py-2 small">
-              <i className="bi bi-check-circle-fill me-2"></i>
-              Archivos de factura subidos correctamente
-            </div>
-          )}
-
-          <div className="d-grid">
-            <button
-              className="btn btn-primary"
-              onClick={handleUpload}
-              disabled={(!pdfFile && !xmlFile) || uploading}
+      {/* XML */}
+      {hasXml && (
+        <div className="d-flex justify-content-between align-items-center py-3">
+          <div>
+            <i className="bi bi-file-earmark-code text-success me-3"></i>
+            <a
+              href={billing.invoiceXmlUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-decoration-none text-dark"
             >
-              {uploading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Subiendo...
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-cloud-upload me-2"></i>
-                  Subir Archivos
-                </>
-              )}
-            </button>
+              {billing.invoiceXmlName}
+            </a>
           </div>
-        </>
+          <button
+            className="btn btn-sm btn-outline-secondary invoice-delete-btn"
+            onClick={() => handleRemoveFile('xml')}
+            disabled={uploading}
+          >
+            <i className="bi bi-x"></i>
+          </button>
+        </div>
       )}
+
+      {/* Estilos específicos para el botón de eliminar */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .invoice-delete-btn:hover {
+          color: white;
+          background-color: #dc3545;
+          border-color: #dc3545;
+        }
+      `}} />
+    </>
+  );
+
+  /**
+   * Renderiza formulario de subida
+   */
+  const renderUploadForm = () => (
+    <form className="mt-4">
+      <fieldset disabled={uploading}>
+        {/* Archivo PDF */}
+        <div className="mb-4">
+          <label className="form-label small text-secondary">Archivo PDF</label>
+          <input
+            type="file"
+            className="form-control form-control-sm"
+            onChange={handlePdfChange}
+            accept=".pdf,application/pdf"
+          />
+          <p className="form-text small">Formato PDF. Tamaño máximo: 5MB.</p>
+        </div>
+
+        {/* Archivo XML */}
+        <div className="mb-4">
+          <label className="form-label small text-secondary">Archivo XML</label>
+          <input
+            type="file"
+            className="form-control form-control-sm"
+            onChange={handleXmlChange}
+            accept=".xml,application/xml,text/xml"
+          />
+          <p className="form-text small">Formato XML (CFDI). Tamaño máximo: 5MB.</p>
+        </div>
+
+        {/* Mensajes de error */}
+        {error && (
+          <div className="alert alert-danger py-2 small mb-4">
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            {error}
+          </div>
+        )}
+
+        {/* Botones de acción */}
+        <div className="d-flex gap-3 justify-content-end">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setShowUploadForm(false)}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-dark"
+            onClick={handleUpload}
+            disabled={!pdfFile && !xmlFile}
+          >
+            {uploading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                Subiendo...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-cloud-upload me-2"></i>
+                Subir archivos
+              </>
+            )}
+          </button>
+        </div>
+      </fieldset>
+    </form>
+  );
+
+  /**
+   * Renderiza el estado vacío
+   */
+  const renderEmptyState = () => (
+    <div className="text-center py-4">
+      <p className="text-secondary mb-4">No hay facturas subidas para este pedido</p>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-dark"
+        onClick={() => setShowUploadForm(true)}
+      >
+        <i className="bi bi-cloud-upload me-2"></i>
+        Subir factura
+      </button>
     </div>
+  );
+
+  // Componente principal
+  return (
+    <section className="invoice-uploader">
+      <h6 className="border-bottom pb-2 mb-4 text-secondary fw-normal">Factura Electrónica</h6>
+
+      {hasInvoice ? renderInvoiceFiles() :
+        (showUploadForm ? renderUploadForm() : renderEmptyState())}
+    </section>
   );
 };
