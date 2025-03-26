@@ -2,9 +2,9 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { FirebaseDB, FirebaseStorage } from '../../../../firebase/firebaseConfig.js'
 
-
 /**
  * Sube archivos de facturación (PDF y XML) para un pedido específico
+ * Con estructura organizada por año/mes
  *
  * @param {string} orderId - ID del pedido
  * @param {File} pdfFile - Archivo PDF de la factura
@@ -23,7 +23,12 @@ export const uploadInvoiceFilesForOrder = async (orderId, pdfFile, xmlFile, admi
 
     // Referencia al pedido en Firestore
     const orderRef = doc(FirebaseDB, 'orders', orderId);
-    const timestamp = Date.now();
+
+    // Crear la estructura de carpetas año/mes
+    const fecha = new Date();
+    const año = fecha.getFullYear();
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0'); // Formato: 01, 02, etc.
+
     const updateData = {
       'updatedAt': serverTimestamp(),
       'billing.invoiceUploadedAt': serverTimestamp(),
@@ -32,30 +37,33 @@ export const uploadInvoiceFilesForOrder = async (orderId, pdfFile, xmlFile, admi
 
     // Subir archivo PDF si se proporciona
     if (pdfFile) {
-      const pdfPath = `invoices/${orderId}/${timestamp}_${pdfFile.name}`;
+      const pdfPath = `invoices/${año}/${mes}/${orderId}_${pdfFile.name}`;
       const pdfRef = ref(FirebaseStorage, pdfPath);
       const pdfUploadResult = await uploadBytes(pdfRef, pdfFile);
       const pdfUrl = await getDownloadURL(pdfUploadResult.ref);
 
       updateData['billing.invoicePdfUrl'] = pdfUrl;
       updateData['billing.invoicePdfName'] = pdfFile.name;
+      updateData['billing.invoicePdfPath'] = pdfPath; // Guardar la ruta para referencia
     }
 
     // Subir archivo XML si se proporciona
     if (xmlFile) {
-      const xmlPath = `invoices/${orderId}/${timestamp}_${xmlFile.name}`;
+      const xmlPath = `invoices/${año}/${mes}/${orderId}_${xmlFile.name}`;
       const xmlRef = ref(FirebaseStorage, xmlPath);
       const xmlUploadResult = await uploadBytes(xmlRef, xmlFile);
       const xmlUrl = await getDownloadURL(xmlUploadResult.ref);
 
       updateData['billing.invoiceXmlUrl'] = xmlUrl;
       updateData['billing.invoiceXmlName'] = xmlFile.name;
+      updateData['billing.invoiceXmlPath'] = xmlPath; // Guardar la ruta para referencia
     }
 
     // Para mantener compatibilidad con el código anterior
     if (pdfFile) {
       updateData['billing.invoiceUrl'] = updateData['billing.invoicePdfUrl'];
       updateData['billing.invoiceFileName'] = updateData['billing.invoicePdfName'];
+      updateData['billing.invoiceFilePath'] = updateData['billing.invoicePdfPath'];
     }
 
     // Actualizar el pedido con la información de la factura
@@ -66,8 +74,10 @@ export const uploadInvoiceFilesForOrder = async (orderId, pdfFile, xmlFile, admi
       data: {
         pdfUrl: updateData['billing.invoicePdfUrl'],
         pdfName: updateData['billing.invoicePdfName'],
+        pdfPath: updateData['billing.invoicePdfPath'],
         xmlUrl: updateData['billing.invoiceXmlUrl'],
-        xmlName: updateData['billing.invoiceXmlName']
+        xmlName: updateData['billing.invoiceXmlName'],
+        xmlPath: updateData['billing.invoiceXmlPath']
       },
       error: null
     };
@@ -103,12 +113,15 @@ export const removeInvoiceFilesFromOrder = async (orderId) => {
       // Campos nuevos
       'billing.invoicePdfUrl': null,
       'billing.invoicePdfName': null,
+      'billing.invoicePdfPath': null,
       'billing.invoiceXmlUrl': null,
       'billing.invoiceXmlName': null,
+      'billing.invoiceXmlPath': null,
 
       // Campos anteriores para mantener compatibilidad
       'billing.invoiceUrl': null,
       'billing.invoiceFileName': null,
+      'billing.invoiceFilePath': null,
 
       'billing.invoiceUploadedAt': null,
       'billing.invoiceUploadedBy': null,
