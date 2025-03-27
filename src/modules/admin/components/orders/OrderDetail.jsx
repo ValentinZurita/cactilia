@@ -19,8 +19,10 @@ export const OrderDetail = ({
                               formatDate,
                               isProcessing = false
                             }) => {
+
   // Estado para controlar la pestaña activa
   const [activeTab, setActiveTab] = useState('products');
+
   // Estado para almacenar los datos del usuario
   const [userData, setUserData] = useState(null);
   const [loadingUser, setLoadingUser] = useState(false);
@@ -131,6 +133,7 @@ export const OrderDetail = ({
             isProcessing={isProcessing}
           />
         )}
+
       </div>
     </div>
   );

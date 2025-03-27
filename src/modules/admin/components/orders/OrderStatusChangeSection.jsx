@@ -1,4 +1,3 @@
-import React from 'react';
 import { OrderStatusHistory } from './OrderStatusHistory';
 import { OrderStatusBadge } from './OrderStatusBadge';
 
@@ -8,7 +7,9 @@ import { OrderStatusBadge } from './OrderStatusBadge';
  */
 export const OrderStatusChangeSection = ({ order, formatDate }) => {
   return (
+
     <div className="status-history-section">
+
       {/* Mensaje informativo sobre cambios de estado - Estilo más simple */}
       <div className="mb-4 border-start border-4 border-secondary ps-3 py-2">
         <p className="mb-1">Estado actual: <OrderStatusBadge status={order.status} /></p>
@@ -24,10 +25,12 @@ export const OrderStatusChangeSection = ({ order, formatDate }) => {
           Historial de cambios de estado
         </h6>
 
+        {/* Componente de historial de estados */}
         <OrderStatusHistory
           history={order.statusHistory || []}
           formatDate={formatDate}
         />
+
       </div>
     </div>
   );

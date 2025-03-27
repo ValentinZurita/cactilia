@@ -1,9 +1,8 @@
-import React from 'react';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { ORDER_STATUS_CONFIG } from './orderConstants.js';
 
 /**
- * Historial de estados con diseño minimalista
+ * Historial de estados
  */
 export const OrderStatusHistory = ({ history = [], formatDate }) => {
   if (!history || history.length === 0) {
@@ -21,15 +20,17 @@ export const OrderStatusHistory = ({ history = [], formatDate }) => {
 
   return (
     <div className="history-list">
+
       {/* Mostrar el número total de cambios de forma sutil */}
       <p className="text-muted small mb-3">
         {history.length} {history.length === 1 ? 'cambio' : 'cambios'} registrados
       </p>
 
-      {/* Lista minimalista de cambios */}
+      {/* Lista de cambios */}
       <div className="timeline">
         {history.map((change, index) => (
           <div key={index} className="timeline-item mb-4">
+
             {/* Encabezado con fecha y administrador */}
             <div className="d-flex justify-content-between text-secondary small mb-2">
               <span>{formatDate(change.changedAt)}</span>
@@ -56,6 +57,7 @@ export const OrderStatusHistory = ({ history = [], formatDate }) => {
             {index < history.length - 1 && (
               <div className="border-bottom border-light my-3"></div>
             )}
+
           </div>
         ))}
       </div>

@@ -1,16 +1,10 @@
-import React from 'react';
 import { StepperItem } from './StepperItem';
 
 /**
  * Stepper que muestra visualmente las etapas del pedido
- * @param {number} currentStep - Índice del paso actual
- * @param {Object} order - Datos del pedido
- * @param {Function} onStepAction - Función para ejecutar acciones en un paso
+ * con timeline mejorado y líneas continuas
  */
 export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
-  // Solo permitir cancelación en estados específicos
-  const allowCancellation = ['pending', 'processing', 'shipped'].includes(order.status);
-
   // Definición de pasos con sus acciones posibles
   const steps = [
     {
@@ -104,21 +98,43 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
     }
   ];
 
-  return (
-    <div className="d-flex flex-nowrap overflow-auto py-2">
-      {steps.map((step, index) => (
-        <StepperItem
-          key={step.id}
-          step={step}
-          index={index}
-          isLastStep={index === steps.length - 1}
-          onAction={onStepAction}
-        />
-      ))}
+  // Solo permitir cancelación en estados específicos
+  const allowCancellation = ['pending', 'processing', 'shipped'].includes(order.status);
 
-      {/* Botón de cancelación global (opcional, alternativa a los botones en cada paso) */}
+  return (
+    // Contenedor principal - ajustado para evitar cortes
+    <div className="d-flex flex-column">
+      {/* Línea de timeline continua */}
+      <div className="position-relative mb-4">
+        {/* Línea trasera continua */}
+        <div className="position-absolute bg-light"
+             style={{
+               height: '2px',
+               top: '20px',
+               left: '10%',
+               width: '80%',
+               zIndex: 0
+             }}></div>
+
+        {/* Contenedor de steps con posicionamiento correcto */}
+        <div className="d-flex justify-content-between position-relative">
+          {steps.map((step, index) => (
+            <StepperItem
+              key={step.id}
+              step={step}
+              index={index}
+              isLastStep={index === steps.length - 1}
+              onAction={onStepAction}
+              isActive={index <= currentStep}
+              totalSteps={steps.length}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Botón de cancelación global (opcional) */}
       {allowCancellation && currentStep < 3 && order.status !== 'cancelled' && (
-        <div className="ms-auto d-flex align-items-center ps-3 border-start">
+        <div className="d-flex justify-content-end mt-2">
           <button
             className="btn btn-sm btn-outline-secondary"
             onClick={() => onStepAction('cancel-order')}
