@@ -1,18 +1,15 @@
+// ConfirmationForm.jsx - Mejorado
 import React, { useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 /**
  * Formulario para reenviar email de confirmación de pedido
- *
- * @param {Object} props
- * @param {Object} props.order - Datos del pedido
- * @param {Function} props.onComplete - Función a ejecutar cuando se complete
- * @param {Function} props.onCancel - Función para cancelar la acción
  */
 export const ConfirmationForm = ({ order, onComplete, onCancel }) => {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
 
+  // Enviar el email de confirmación
   const handleResendConfirmation = async () => {
     setError(null);
     setSending(true);
@@ -39,7 +36,7 @@ export const ConfirmationForm = ({ order, onComplete, onCancel }) => {
   };
 
   return (
-    <div className="confirmation-form">
+    <div>
       <h5 className="mb-3">Reenviar Email de Confirmación</h5>
       <p className="text-muted mb-4">
         Esta acción enviará nuevamente el email de confirmación de pedido al cliente.
@@ -62,7 +59,7 @@ export const ConfirmationForm = ({ order, onComplete, onCancel }) => {
           Cancelar
         </button>
         <button
-          className="btn btn-primary"
+          className="btn btn-dark"
           onClick={handleResendConfirmation}
           disabled={sending}
         >

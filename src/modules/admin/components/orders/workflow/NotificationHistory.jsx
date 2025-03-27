@@ -1,10 +1,10 @@
 import React from 'react';
 
 /**
- * Historial de notificaciones minimalista
+ * Muestra el historial de notificaciones enviadas al cliente
  */
 export const NotificationHistory = ({ order }) => {
-  // Formatear timestamp
+  // Función para formatear timestamps
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     try {
@@ -16,7 +16,7 @@ export const NotificationHistory = ({ order }) => {
     }
   };
 
-  // Mapeo de tipos simplificado
+  // Mapeo de tipos de notificación
   const getNotificationType = (type) => {
     const types = {
       'confirmation': 'confirmación',
@@ -27,7 +27,7 @@ export const NotificationHistory = ({ order }) => {
     return types[type] || type;
   };
 
-  // Verificar historial
+  // Verificar si hay historial
   const hasHistory = order.emailHistory && order.emailHistory.length > 0;
   const hasLegacyConfirmation = order.emailStatus?.confirmationSent;
 
@@ -36,7 +36,7 @@ export const NotificationHistory = ({ order }) => {
     return (
       <div className="text-center py-4">
         <i className="bi bi-envelope text-secondary opacity-50 d-block mb-2 fs-4"></i>
-        <p className="mb-0 text-muted">No hay notificaciones enviadas</p>
+        <p className="text-muted mb-0">No hay notificaciones enviadas</p>
       </div>
     );
   }
@@ -45,11 +45,9 @@ export const NotificationHistory = ({ order }) => {
     <ul className="list-unstyled border-top pt-3">
       {/* Nuevo formato */}
       {hasHistory && order.emailHistory.map((entry, index) => (
-        <li key={index} className="d-flex align-items-start mb-3">
-          <div className="me-3 pt-1">
-            <i className={`bi bi-${entry.success ? 'check-circle' : 'x-circle'} 
-                          text-${entry.success ? 'dark' : 'secondary'}`}></i>
-          </div>
+        <li key={index} className="d-flex align-items-start mb-3 pb-3 border-bottom border-light">
+          <i className={`bi bi-${entry.success ? 'check-circle' : 'x-circle'} 
+                      text-${entry.success ? 'dark' : 'secondary'} me-3 mt-1`}></i>
           <div>
             <p className="mb-0">
               Email de {getNotificationType(entry.type)}
@@ -69,10 +67,8 @@ export const NotificationHistory = ({ order }) => {
 
       {/* Formato legacy */}
       {!hasHistory && hasLegacyConfirmation && (
-        <li className="d-flex align-items-start mb-3">
-          <div className="me-3 pt-1">
-            <i className="bi bi-check-circle text-dark"></i>
-          </div>
+        <li className="d-flex align-items-start mb-3 pb-3 border-bottom border-light">
+          <i className="bi bi-check-circle text-dark me-3 mt-1"></i>
           <div>
             <p className="mb-0">Email de confirmación enviado</p>
             <small className="text-muted">

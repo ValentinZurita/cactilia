@@ -1,14 +1,10 @@
+// DeliveryForm.jsx - Mejorado
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { updateOrderStatus } from '../orderAdminService.js'
+import { updateOrderStatus } from '../orderAdminService.js';
 
 /**
  * Formulario para marcar el pedido como entregado
- *
- * @param {Object} props
- * @param {Object} props.order - Datos del pedido
- * @param {Function} props.onComplete - Función a ejecutar cuando se complete
- * @param {Function} props.onCancel - Función para cancelar la acción
  */
 export const DeliveryForm = ({ order, onComplete, onCancel }) => {
   const { uid } = useSelector(state => state.auth);
@@ -46,7 +42,7 @@ export const DeliveryForm = ({ order, onComplete, onCancel }) => {
   };
 
   return (
-    <div className="delivery-form">
+    <div>
       <h5 className="mb-3">Confirmar Entrega del Pedido</h5>
 
       <p className="text-muted mb-4">
@@ -95,7 +91,7 @@ export const DeliveryForm = ({ order, onComplete, onCancel }) => {
           Cancelar
         </button>
         <button
-          className="btn btn-success"
+          className="btn btn-dark"
           onClick={handleConfirmDelivery}
           disabled={processing}
         >

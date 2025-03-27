@@ -2,10 +2,13 @@ import React from 'react';
 import { StepperItem } from './StepperItem';
 
 /**
- * Stepper minimalista para visualizar el flujo de trabajo
+ * Stepper que muestra visualmente las etapas del pedido
+ * @param {number} currentStep - Índice del paso actual
+ * @param {Object} order - Datos del pedido
+ * @param {Function} onStepAction - Función para ejecutar acciones en un paso
  */
 export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
-  // Definición de pasos simplificada
+  // Definición de pasos con sus acciones posibles
   const steps = [
     {
       id: 'confirm',
@@ -78,7 +81,7 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
   ];
 
   return (
-    <div className="mb-4 bg-light p-3 rounded border">
+    <div className="rounded border bg-light p-3">
       <div className="d-flex flex-nowrap overflow-auto py-2">
         {steps.map((step, index) => (
           <StepperItem

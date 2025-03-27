@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { updateOrderStatus } from '../orderAdminService.js'
+import { updateOrderStatus } from '../orderAdminService.js';
 
 /**
  * Formulario para actualizar el estado del pedido a "procesando"
- *
- * @param {Object} props
- * @param {Object} props.order - Datos del pedido
- * @param {Function} props.onComplete - Función a ejecutar cuando se complete
- * @param {Function} props.onCancel - Función para cancelar la acción
  */
 export const ProcessingForm = ({ order, onComplete, onCancel }) => {
   const { uid } = useSelector(state => state.auth);
@@ -17,7 +12,8 @@ export const ProcessingForm = ({ order, onComplete, onCancel }) => {
   const [error, setError] = useState(null);
 
   // El estado objetivo depende del estado actual
-  const targetStatus = order.status === 'pending' ? 'processing' : 'processing';
+  const targetStatus = 'processing';
+  const isNewProcessing = order.status === 'pending';
 
   const handleUpdateStatus = async () => {
     if (!uid) {
@@ -45,13 +41,13 @@ export const ProcessingForm = ({ order, onComplete, onCancel }) => {
   };
 
   return (
-    <div className="processing-form">
+    <div>
       <h5 className="mb-3">
-        {order.status === 'pending' ? 'Marcar como procesando' : 'Actualizar estado'}
+        {isNewProcessing ? 'Marcar como procesando' : 'Actualizar estado'}
       </h5>
 
       <p className="text-muted mb-4">
-        {order.status === 'pending'
+        {isNewProcessing
           ? 'Esta acción indicará que el pedido está siendo preparado.'
           : 'Actualiza la información sobre el procesamiento del pedido.'}
       </p>
@@ -85,7 +81,7 @@ export const ProcessingForm = ({ order, onComplete, onCancel }) => {
           Cancelar
         </button>
         <button
-          className="btn btn-primary"
+          className="btn btn-dark"
           onClick={handleUpdateStatus}
           disabled={processing}
         >
@@ -97,7 +93,7 @@ export const ProcessingForm = ({ order, onComplete, onCancel }) => {
           ) : (
             <>
               <i className="bi bi-gear me-2"></i>
-              {order.status === 'pending' ? 'Marcar como procesando' : 'Actualizar estado'}
+              {isNewProcessing ? 'Marcar como procesando' : 'Actualizar estado'}
             </>
           )}
         </button>

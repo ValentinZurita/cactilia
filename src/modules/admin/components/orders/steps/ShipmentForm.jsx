@@ -1,17 +1,12 @@
+// ShipmentForm.jsx - Mejorado
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useSelector } from 'react-redux';
-import { updateOrderStatus } from '../orderAdminService.js'
+import { updateOrderStatus } from '../orderAdminService.js';
 
 /**
- * Formulario flexible para marcar pedidos como enviados
- * - Permite envíos locales sin datos de seguimiento
- * - Soporte para entrega directa o envío con transportista
- *
- * @param {Object} props
- * @param {Object} props.order - Datos del pedido
- * @param {Function} props.onComplete - Función a ejecutar cuando se complete
- * @param {Function} props.onCancel - Función para cancelar la acción
+ * Formulario para gestionar envíos de pedidos
+ * Soporta envíos con transportista y entregas locales
  */
 export const ShipmentForm = ({ order, onComplete, onCancel }) => {
   const { uid } = useSelector(state => state.auth);
@@ -29,6 +24,8 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
 
   // Detectar si es actualización o nuevo envío
   const isShipped = order.status === 'shipped';
+  const formTitle = isShipped ? 'Actualizar información de envío' : 'Marcar como enviado';
+  const buttonText = isShipped ? 'Actualizar información' : 'Confirmar envío';
 
   // Cargar datos existentes si hay información de envío
   useEffect(() => {
@@ -43,15 +40,12 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
         notes: ''
       });
 
-      // Determinar el tipo de envío basado en los datos existentes
-      if (info.carrier || info.trackingNumber) {
-        setShipmentType('carrier');
-      } else {
-        setShipmentType('local');
-      }
+      // Determinar tipo de envío basado en datos existentes
+      setShipmentType(info.carrier || info.trackingNumber ? 'carrier' : 'local');
     }
   }, [order]);
 
+  // Manejar cambios en el formulario
   const handleChange = (e) => {
     const { id, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -60,19 +54,19 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
     }));
   };
 
+  // Manejar cambio de tipo de envío
   const handleTypeChange = (e) => {
     setShipmentType(e.target.value);
   };
 
+  // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validación según tipo de envío
-    if (shipmentType === 'carrier') {
-      if (!formData.carrier || !formData.trackingNumber) {
-        setError('Por favor ingresa transportista y número de guía');
-        return;
-      }
+    if (shipmentType === 'carrier' && (!formData.carrier || !formData.trackingNumber)) {
+      setError('Por favor ingresa transportista y número de guía');
+      return;
     }
 
     setSending(true);
@@ -87,7 +81,7 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
         notes = `Entrega local. ${notes}`.trim();
       }
 
-      // Preparar información de seguimiento (si aplica)
+      // Preparar información de seguimiento
       const trackingInfo = shipmentType === 'carrier'
         ? {
           carrier: formData.carrier,
@@ -109,8 +103,8 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
         }
       }
 
-      // Enviar notificación por email si está marcado y tiene sentido
-      if (formData.notifyCustomer && shipmentType === 'carrier') {
+      // Enviar notificación por email si está marcado
+      if (formData.notifyCustomer) {
         const functions = getFunctions();
         const sendShippedEmail = httpsCallable(functions, 'sendOrderShippedEmail');
 
@@ -124,9 +118,7 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
         }
       }
 
-      // Completar y cerrar
       onComplete();
-
     } catch (err) {
       console.error('Error procesando envío:', err);
       setError(err.message || 'Error al procesar el envío');
@@ -136,10 +128,8 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="shipment-form">
-      <h5 className="mb-3">
-        {isShipped ? 'Actualizar información de envío' : 'Marcar como enviado'}
-      </h5>
+    <form onSubmit={handleSubmit}>
+      <h5 className="mb-3">{formTitle}</h5>
 
       {/* Selector de tipo de envío */}
       <div className="mb-3">
@@ -257,7 +247,7 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
         </div>
       )}
 
-      {/* Notas (para ambos tipos) */}
+      {/* Notas */}
       <div className="mt-3">
         <label htmlFor="notes" className="form-label">Notas (opcional)</label>
         <textarea
@@ -289,7 +279,7 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
         </button>
         <button
           type="submit"
-          className="btn btn-primary"
+          className="btn btn-dark"
           disabled={sending}
         >
           {sending ? (
@@ -300,7 +290,7 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
           ) : (
             <>
               <i className="bi bi-truck me-2"></i>
-              {isShipped ? 'Actualizar información' : 'Confirmar envío'}
+              {buttonText}
             </>
           )}
         </button>

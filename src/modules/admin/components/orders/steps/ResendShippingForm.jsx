@@ -1,14 +1,9 @@
+// ResendShippingForm.jsx - Mejorado
 import React, { useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 /**
  * Formulario para reenviar la notificación de envío
- * - Soporta tanto envíos con transportista como envíos locales
- *
- * @param {Object} props
- * @param {Object} props.order - Datos del pedido
- * @param {Function} props.onComplete - Función a ejecutar cuando se complete
- * @param {Function} props.onCancel - Función para cancelar la acción
  */
 export const ResendShippingForm = ({ order, onComplete, onCancel }) => {
   const [sending, setSending] = useState(false);
@@ -20,7 +15,7 @@ export const ResendShippingForm = ({ order, onComplete, onCancel }) => {
   const isLocalDelivery = trackingInfo.isLocal === true ||
     (!trackingInfo.carrier && !trackingInfo.trackingNumber);
 
-  // Preparamos la información a mostrar y enviar
+  // Preparar información a mostrar y enviar
   const shippingInfo = isLocalDelivery
     ? { isLocal: true, carrier: 'Entrega local' }
     : trackingInfo;
@@ -34,13 +29,12 @@ export const ResendShippingForm = ({ order, onComplete, onCancel }) => {
       const functions = getFunctions();
       const sendShippedEmail = httpsCallable(functions, 'sendOrderShippedEmail');
 
-      // Parámetro adicional para indicar que esto es solo un reenvío
-      // y NO debe cambiar el estado del pedido
+      // Parámetros para indicar que esto es solo un reenvío
       const result = await sendShippedEmail({
         orderId: order.id,
         shippingInfo: shippingInfo,
-        resendOnly: true,  // Este parámetro es clave para evitar el cambio de estado
-        preserveOrderStatus: true  // Parámetro adicional para garantizar compatibilidad
+        resendOnly: true,
+        preserveOrderStatus: true
       });
 
       if (!result.data.success) {
@@ -49,11 +43,10 @@ export const ResendShippingForm = ({ order, onComplete, onCancel }) => {
 
       setSuccess('Email de envío reenviado correctamente');
 
-      // Pequeña pausa para mostrar el mensaje de éxito antes de completar
+      // Pequeña pausa para mostrar el mensaje de éxito
       setTimeout(() => {
         onComplete();
       }, 1500);
-
     } catch (err) {
       console.error('Error reenviando notificación de envío:', err);
       setError(err.message || 'Error al enviar notificación');
@@ -62,7 +55,7 @@ export const ResendShippingForm = ({ order, onComplete, onCancel }) => {
   };
 
   return (
-    <div className="resend-shipping-form">
+    <div>
       <h5 className="mb-3">Reenviar Notificación de Envío</h5>
 
       <p className="text-muted mb-4">
@@ -72,7 +65,7 @@ export const ResendShippingForm = ({ order, onComplete, onCancel }) => {
           : ', incluyendo la información de seguimiento registrada.'}
       </p>
 
-      {/* Mostrar información de envío según el tipo */}
+      {/* Mostrar información de envío */}
       <div className="card mb-3">
         <div className="card-body p-3">
           <div className="mb-1 small text-muted">Información de envío:</div>
@@ -134,7 +127,7 @@ export const ResendShippingForm = ({ order, onComplete, onCancel }) => {
           Cancelar
         </button>
         <button
-          className="btn btn-primary"
+          className="btn btn-dark"
           onClick={handleResendShippingEmail}
           disabled={sending}
         >
