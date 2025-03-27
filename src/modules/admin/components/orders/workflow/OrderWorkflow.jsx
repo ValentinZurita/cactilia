@@ -7,18 +7,13 @@ import { ResendShippingForm } from '../steps/ResendShippingForm.jsx'
 import { DeliveryForm } from '../steps/DeliveryForm.jsx'
 import { ConfirmationForm } from '../steps/ConfirmationForm.jsx'
 
-
 /**
- * Componente principal del flujo de trabajo de pedidos con estilos Bootstrap
- * y soporte para funciones en cualquier etapa del proceso
- *
- * @param {Object} props
- * @param {Object} props.order - Datos del pedido
- * @param {Function} props.onOrderUpdate - Función para actualizar el pedido
+ * Flujo de trabajo simplificado
  */
 export const OrderWorkflow = ({ order, onOrderUpdate }) => {
   const [activeStep, setActiveStep] = useState(null);
 
+  // Obtener índice del paso actual
   const getCurrentStepIndex = () => {
     switch(order.status) {
       case 'pending': return 0;
@@ -30,6 +25,7 @@ export const OrderWorkflow = ({ order, onOrderUpdate }) => {
     }
   };
 
+  // Manejadores
   const handleStepAction = (actionId) => {
     setActiveStep(actionId);
   };
@@ -43,6 +39,7 @@ export const OrderWorkflow = ({ order, onOrderUpdate }) => {
     setActiveStep(null);
   };
 
+  // Renderizar formulario activo
   const renderStepForm = () => {
     switch(activeStep) {
       case 'confirm-email':
@@ -91,7 +88,7 @@ export const OrderWorkflow = ({ order, onOrderUpdate }) => {
   };
 
   return (
-    <section className="order-workflow">
+    <section>
       <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">
         Flujo de Trabajo del Pedido
       </h6>
@@ -103,14 +100,14 @@ export const OrderWorkflow = ({ order, onOrderUpdate }) => {
       />
 
       {activeStep && (
-        <div className="mt-4 p-4 bg-light rounded-3">
+        <div className="mt-4 p-3 bg-light rounded border">
           {renderStepForm()}
         </div>
       )}
 
       {!activeStep && (
         <div className="mt-4">
-          <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">
+          <h6 className="mb-3 text-secondary fw-normal">
             Historial de Notificaciones
           </h6>
           <NotificationHistory order={order} />
