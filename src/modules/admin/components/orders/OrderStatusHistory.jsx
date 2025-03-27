@@ -2,73 +2,63 @@ import React from 'react';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { ORDER_STATUS_CONFIG } from './orderConstants.js';
 
-// Componente reutilizable
-const IconCircle = ({ icon, className = '', color = 'secondary', ...props }) => (
-  <div
-    className={`rounded-circle d-flex align-items-center justify-content-center me-3 ${className}`}
-    style={{
-      width: '36px',
-      height: '36px',
-      minWidth: '36px',
-      backgroundColor: `var(--bs-${color}-bg-subtle, #f8f9fa)`,
-    }}
-    {...props}
-  >
-    <i className={`bi bi-${icon} text-${color}`}></i>
-  </div>
-);
-
+/**
+ * Historial de estados con diseño minimalista
+ */
 export const OrderStatusHistory = ({ history = [], formatDate }) => {
   if (!history || history.length === 0) {
     return (
       <div className="text-center py-4">
-        <i className="bi bi-clock-history text-secondary opacity-50 d-block mb-2 fs-4"></i>
-        <p className="mb-0 text-muted">No hay historial de cambios de estado disponible</p>
+        <p className="text-muted mb-0">No hay historial de cambios de estado disponible</p>
       </div>
     );
   }
 
-  // Función para obtener el color según el estado
-  const getStatusColor = (status) => {
-    return ORDER_STATUS_CONFIG[status]?.color || 'secondary';
+  // Función para obtener el icono según el estado
+  const getStatusIcon = (status) => {
+    return ORDER_STATUS_CONFIG[status]?.icon || 'arrow-right';
   };
 
   return (
     <div className="history-list">
-      {history.map((change, index) => {
-        const statusColor = getStatusColor(change.to);
-        const isLast = index === history.length - 1;
+      {/* Mostrar el número total de cambios de forma sutil */}
+      <p className="text-muted small mb-3">
+        {history.length} {history.length === 1 ? 'cambio' : 'cambios'} registrados
+      </p>
 
-        return (
-          <div key={index} className={`mb-4 ${!isLast ? 'border-bottom pb-4' : ''}`}>
-            <div className="d-flex justify-content-between mb-2">
-              <span className="text-secondary small">{formatDate(change.changedAt)}</span>
-              <span className="text-secondary small">Admin {change.changedBy.substring(0, 8)}...</span>
+      {/* Lista minimalista de cambios */}
+      <div className="timeline">
+        {history.map((change, index) => (
+          <div key={index} className="timeline-item mb-4">
+            {/* Encabezado con fecha y administrador */}
+            <div className="d-flex justify-content-between text-secondary small mb-2">
+              <span>{formatDate(change.changedAt)}</span>
+              <span>Admin {change.changedBy.substring(0, 8)}...</span>
             </div>
 
-            <div className="d-flex align-items-start">
-              <IconCircle
-                icon={ORDER_STATUS_CONFIG[change.to]?.icon || 'arrow-right'}
-                color={statusColor}
-              />
+            {/* Transición de estado */}
+            <div className="d-flex align-items-center">
+              <i className={`bi bi-${getStatusIcon(change.from)} text-secondary me-2`}></i>
+              <OrderStatusBadge status={change.from} />
+              <i className="bi bi-arrow-right mx-2 text-secondary"></i>
+              <i className={`bi bi-${getStatusIcon(change.to)} text-secondary me-2`}></i>
+              <OrderStatusBadge status={change.to} />
+            </div>
 
-              <div className="flex-grow-1">
-                <div className="d-flex align-items-center mb-2">
-                  <OrderStatusBadge status={change.from} />
-                  <i className="bi bi-arrow-right mx-2 text-secondary"></i>
-                  <OrderStatusBadge status={change.to} />
-                </div>
-
-                {change.notes && (
-                  <div className="bg-light p-3 rounded-2 mt-2 small text-secondary">
-                    {change.notes}
-                  </div>
-                )}
+            {/* Notas (si existen) con estilo minimalista */}
+            {change.notes && (
+              <div className="mt-2 ms-4 ps-2 border-start border-2 border-light">
+                <p className="mb-0 small text-secondary">{change.notes}</p>
               </div>
-            </div>
+            )}
+
+            {/* Separador sutil entre elementos (excepto el último) */}
+            {index < history.length - 1 && (
+              <div className="border-bottom border-light my-3"></div>
+            )}
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 };

@@ -113,15 +113,14 @@ export const OrderDetail = ({
           />
         )}
 
-        {/* Pestaña de historial y estado */}
+        {/* Pestaña de historial y estado - Modificada */}
         {activeTab === 'status' && (
           <OrderStatusChangeSection
             order={order}
-            onChangeStatus={onChangeStatus}
             formatDate={formatDate}
-            isProcessing={isProcessing}
           />
         )}
+
 
         {/* Pestaña para notas administrativas */}
         {activeTab === 'notes' && (

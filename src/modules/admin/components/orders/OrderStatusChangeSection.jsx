@@ -1,41 +1,34 @@
 import React from 'react';
-import { OrderStatusChanger } from './OrderStatusChanger';
 import { OrderStatusHistory } from './OrderStatusHistory';
+import { OrderStatusBadge } from './OrderStatusBadge';
 
-// Componentes reutilizables (iguales a los de OrderPaymentInfo)
-const InfoBlock = ({ title, children }) => (
-  <div className="mb-4">
-    <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">{title}</h6>
-    {children}
-  </div>
-);
+/**
+ * Sección rediseñada con estilo minimalista para mostrar
+ * solo el historial de estados sin decoraciones excesivas
+ */
+export const OrderStatusChangeSection = ({ order, formatDate }) => {
+  return (
+    <div className="status-history-section">
+      {/* Mensaje informativo sobre cambios de estado - Estilo más simple */}
+      <div className="mb-4 border-start border-4 border-secondary ps-3 py-2">
+        <p className="mb-1">Estado actual: <OrderStatusBadge status={order.status} /></p>
+        <p className="mb-0 small text-secondary">
+          Los cambios de estado se realizan a través de la pestaña "Flujo de Trabajo".
+        </p>
+      </div>
 
-export const OrderStatusChangeSection = ({
-                                           order,
-                                           onChangeStatus,
-                                           formatDate,
-                                           isProcessing
-                                         }) => (
-  <div className="row g-4">
-    {/* Cambiador de estado */}
-    <div className="col-md-5">
-      <InfoBlock title="Cambiar estado">
-        <OrderStatusChanger
-          currentStatus={order.status}
-          onChangeStatus={onChangeStatus}
-          isProcessing={isProcessing}
-        />
-      </InfoBlock>
-    </div>
+      {/* Historial de estados - Sin card, estilo minimalista */}
+      <div>
+        <h6 className="mb-3 text-secondary fw-normal d-flex align-items-center">
+          <i className="bi bi-clock-history me-2"></i>
+          Historial de cambios de estado
+        </h6>
 
-    {/* Historial de estados */}
-    <div className="col-md-7">
-      <InfoBlock title="Historial de estados">
         <OrderStatusHistory
           history={order.statusHistory || []}
           formatDate={formatDate}
         />
-      </InfoBlock>
+      </div>
     </div>
-  </div>
-);
+  );
+};
