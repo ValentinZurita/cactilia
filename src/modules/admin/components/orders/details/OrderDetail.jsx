@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { OrderDetailHeader } from './OrderDetailHeader.jsx';
 import { OrderPaymentInfo } from '../payment/OrderPaymentInfo.jsx';
 import { OrderStatusChangeSection } from '../status/OrderStatusChangeSection.jsx';
 import { OrderNotes } from '../notes/OrderNotes.jsx';
 import { OrderCustomerInfo } from './OrderCustomInfo.jsx';
 import { OrderItemsTable } from './OrderItemTable.jsx';
+import { OrderWorkflow } from '../workflow/OrderWorkflow.jsx';
+import { OrderDetailTabs } from './OrderDetailTabs.jsx';
 import { getUserById } from '../services/userAdminService.js';
-import { OrderWorkflow } from '../workflow/OrderWorkflow.jsx'
-import { OrderDetailTabs } from './OrderDetailTabs.jsx'
+
+// Importaciones de Redux
+import {
+  updateOrderStatusThunk,
+  addOrderNoteThunk,
+  fetchOrderById
+} from '../thunks/orderThunks.js';
+import {
+  selectActionProcessing
+} from '../thunks/orderSelectors.js';
+import { addMessage } from '../../../../../store/messages/messageSlice.js';
 
 export const OrderDetail = ({
                               order,
@@ -19,13 +31,18 @@ export const OrderDetail = ({
                               formatDate,
                               isProcessing = false
                             }) => {
-
   // Estado para controlar la pestaña activa
   const [activeTab, setActiveTab] = useState('products');
 
   // Estado para almacenar los datos del usuario
   const [userData, setUserData] = useState(null);
   const [loadingUser, setLoadingUser] = useState(false);
+
+  // Obtener estado de procesamiento desde Redux
+  // (podemos usar el pasado por props o este directamente de Redux)
+  const processingFromRedux = useSelector(selectActionProcessing);
+  const dispatch = useDispatch();
+  const { uid } = useSelector(state => state.auth);
 
   // Cargar información del usuario cuando cambia el pedido
   useEffect(() => {
@@ -66,10 +83,51 @@ export const OrderDetail = ({
     );
   }
 
+  // Versión Redux del manejador para cambiar estado
+  const handleChangeStatusRedux = async (status, notes) => {
+    if (order && order.id && uid) {
+      await dispatch(updateOrderStatusThunk({
+        orderId: order.id,
+        newStatus: status,
+        adminId: uid,
+        notes
+      }));
+    }
+  };
+
+  // Versión Redux del manejador para añadir nota
+  const handleAddNoteRedux = async (noteText) => {
+    if (order && order.id && uid) {
+      await dispatch(addOrderNoteThunk({
+        orderId: order.id,
+        noteText,
+        adminId: uid
+      }));
+    }
+  };
+
+  // Versión Redux del manejador para actualizar datos
+  const handleOrderUpdateRedux = async () => {
+    if (order && order.id) {
+      await dispatch(fetchOrderById(order.id));
+
+      // Mostrar mensaje de éxito
+      dispatch(addMessage({
+        type: 'success',
+        text: 'Información actualizada correctamente',
+        autoHide: true,
+        duration: 3000
+      }));
+    }
+  };
+
   // Función que maneja las actualizaciones desde el flujo de trabajo
   const handleWorkflowUpdate = () => {
+    // Usar las funciones proporcionadas por props si existen o las versiones Redux
     if (onOrderUpdate) {
       onOrderUpdate();
+    } else {
+      handleOrderUpdateRedux();
     }
   };
 
@@ -103,11 +161,11 @@ export const OrderDetail = ({
         {activeTab === 'payment' && (
           <OrderPaymentInfo
             order={order}
-            onOrderUpdate={onOrderUpdate}
+            onOrderUpdate={onOrderUpdate || handleOrderUpdateRedux}
           />
         )}
 
-        {/* Nueva pestaña de flujo de trabajo */}
+        {/* Pestaña de flujo de trabajo */}
         {activeTab === 'workflow' && (
           <OrderWorkflow
             order={order}
@@ -115,7 +173,7 @@ export const OrderDetail = ({
           />
         )}
 
-        {/* Pestaña de historial y estado - Modificada */}
+        {/* Pestaña de historial y estado */}
         {activeTab === 'status' && (
           <OrderStatusChangeSection
             order={order}
@@ -123,17 +181,15 @@ export const OrderDetail = ({
           />
         )}
 
-
         {/* Pestaña para notas administrativas */}
         {activeTab === 'notes' && (
           <OrderNotes
             notes={order.adminNotes || []}
-            onAddNote={onAddNote}
+            onAddNote={onAddNote || handleAddNoteRedux}
             formatDate={formatDate}
-            isProcessing={isProcessing}
+            isProcessing={isProcessing || processingFromRedux}
           />
         )}
-
       </div>
     </div>
   );

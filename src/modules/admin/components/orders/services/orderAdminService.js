@@ -56,9 +56,6 @@ export const getOrders = async (options = {}) => {
       constraints.push(where('createdAt', '<=', endDate));
     }
 
-    // ⚠️ NO AÑADIR FILTROS DE PRECIO AQUÍ - Los haremos en memoria después
-    // debido a la limitación de Firestore con múltiples filtros de rango
-
     // Ordenar por fecha descendente
     constraints.push(orderBy('createdAt', 'desc'));
 
@@ -73,19 +70,41 @@ export const getOrders = async (options = {}) => {
     constraints.push(limit(effectivePageSize));
 
     // Si hay documento anterior para paginación
+    let lastVisible = null;
     if (lastDoc) {
-      constraints.push(startAfter(lastDoc));
+      // Si es un objeto con ID, necesitamos obtener el documento real
+      if (typeof lastDoc === 'object' && lastDoc.id) {
+        try {
+          console.log('Obteniendo documento para paginación con ID:', lastDoc.id);
+          const docRef = doc(FirebaseDB, ORDERS_COLLECTION, lastDoc.id);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            lastVisible = docSnap;
+            constraints.push(startAfter(lastVisible));
+          } else {
+            console.warn('El documento de paginación no existe');
+          }
+        } catch (err) {
+          console.error('Error obteniendo documento para paginación:', err);
+        }
+      } else if (lastDoc._firestore) {
+        // Si es un documento de Firestore directamente
+        lastVisible = lastDoc;
+        constraints.push(startAfter(lastVisible));
+      }
     }
 
     // Crear la consulta con todas las restricciones
     const ordersQuery = query(ordersRef, ...constraints);
+    console.log('Ejecutando consulta de pedidos con lastDoc:', lastDoc ? 'existe' : 'no existe');
 
     // Ejecutar la consulta
     const querySnapshot = await getDocs(ordersQuery);
 
     // Procesar los resultados
     const orders = [];
-    let lastVisible = null;
+    lastVisible = null;
 
     querySnapshot.forEach((doc) => {
       orders.push({
@@ -143,10 +162,13 @@ export const getOrders = async (options = {}) => {
     // Limitar a pageSize para mantener consistencia en la paginación
     const limitedResults = filteredOrders.slice(0, pageSize);
 
+    // Para la paginación solo necesitamos el ID del último documento
+    const lastDocId = lastVisible ? { id: lastVisible.id } : null;
+
     return {
       ok: true,
       data: limitedResults,
-      lastDoc: lastVisible,
+      lastDoc: lastDocId, // Devolvemos solo el ID para evitar problemas de serialización
       // Indicar si hay más resultados para la paginación
       hasMore: filteredOrders.length > pageSize,
       error: null

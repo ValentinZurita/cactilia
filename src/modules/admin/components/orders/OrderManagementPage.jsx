@@ -1,16 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { OrderList } from './list/OrderList.jsx';
 import { OrderDetail } from './details/OrderDetail.jsx';
 import { OrderFiltersSidebar } from './filters/OrderFiltersSidebar.jsx';
 import { OrderDetailSkeleton } from './details/OrderDetailSkeleton.jsx';
-import { useAdminOrders } from './hooks/useAdminOrders.js';
 import { addMessage } from '../../../../store/messages/messageSlice.js';
+
+// Importar acciones y selectores de Redux
+import { updateFilters, clearSelectedOrder } from './slices/ordersSlice.js';
+import {
+  fetchOrders,
+  fetchOrderById,
+  updateOrderStatusThunk,
+  addOrderNoteThunk,
+  fetchOrderStatistics
+} from './thunks/orderThunks.js';
+import {
+  selectOrders,
+  selectOrdersLoading,
+  selectHasMoreOrders,
+  selectSelectedOrder,
+  selectOrderDetailsLoading,
+  selectActionProcessing,
+  selectOrderStatistics,
+  selectStatisticsLoading,
+  selectOrderFilters
+} from './thunks/orderSelectors.js';
+
+// Utilidades para formateo
+import { formatOrderDate, formatPrice } from './utils/formatUtils.js'; /// Asumiendo que moverás estas funciones a un archivo de utilidades
 
 /**
  * Página principal para la gestión de pedidos en el panel de administración
- * Con la sidebar que te gustaba
+ * Versión refactorizada para usar Redux
  */
 export const OrderManagementPage = () => {
   const { mode, id } = useParams();
@@ -18,47 +41,46 @@ export const OrderManagementPage = () => {
   const dispatch = useDispatch();
   const [advancedFilters, setAdvancedFilters] = useState({});
 
-  // Usar el hook personalizado para gestionar pedidos
-  const {
-    orders,
-    loading,
-    filters,
-    hasMore,
-    selectedOrder,
-    selectedOrderLoading,
-    isProcessing,
-    statistics,
-    statsLoading,
-    updateFilters,
-    loadMoreOrders,
-    fetchOrderById,
-    changeOrderStatus,
-    addNote,
-    loadStatistics,
-    formatOrderDate,
-    formatPrice
-  } = useAdminOrders();
+  // Obtener estado desde Redux
+  const orders = useSelector(selectOrders);
+  const loading = useSelector(selectOrdersLoading);
+  const hasMore = useSelector(selectHasMoreOrders);
+  const selectedOrder = useSelector(selectSelectedOrder);
+  const selectedOrderLoading = useSelector(selectOrderDetailsLoading);
+  const isProcessing = useSelector(selectActionProcessing);
+  const statistics = useSelector(selectOrderStatistics);
+  const statsLoading = useSelector(selectStatisticsLoading);
+  const filters = useSelector(selectOrderFilters);
+  const { uid } = useSelector(state => state.auth);
 
   // Cargar estadísticas cuando se monta el componente
   useEffect(() => {
-    loadStatistics();
-  }, [loadStatistics]);
+    dispatch(fetchOrderStatistics());
+  }, [dispatch]);
+
+  // Cargar pedidos cuando cambian los filtros
+  useEffect(() => {
+    dispatch(fetchOrders());
+  }, [dispatch, filters]);
 
   // Obtener detalles del pedido si estamos en modo detalle
   useEffect(() => {
     if (mode === 'view' && id) {
-      fetchOrderById(id);
+      dispatch(fetchOrderById(id));
+    } else if (mode !== 'view') {
+      // Limpiar el pedido seleccionado si no estamos en vista detalle
+      dispatch(clearSelectedOrder());
     }
-  }, [mode, id, fetchOrderById]);
+  }, [mode, id, dispatch]);
 
   // Manejador para cambiar el filtro de estado
   const handleFilterChange = (status) => {
-    updateFilters({ status });
+    dispatch(updateFilters({ status }));
   };
 
   // Manejador para la búsqueda
   const handleSearch = (term) => {
-    updateFilters({ searchTerm: term });
+    dispatch(updateFilters({ searchTerm: term }));
   };
 
   // Manejador para ver detalles de un pedido
@@ -73,22 +95,31 @@ export const OrderManagementPage = () => {
 
   // Manejador para cambiar el estado de un pedido
   const handleChangeStatus = async (status, notes) => {
-    if (id) {
-      await changeOrderStatus(id, status, notes);
+    if (id && uid) {
+      await dispatch(updateOrderStatusThunk({
+        orderId: id,
+        newStatus: status,
+        adminId: uid,
+        notes
+      }));
     }
   };
 
   // Manejador para añadir una nota a un pedido
   const handleAddNote = async (note) => {
-    if (id) {
-      await addNote(id, note);
+    if (id && uid) {
+      await dispatch(addOrderNoteThunk({
+        orderId: id,
+        noteText: note,
+        adminId: uid
+      }));
     }
   };
 
   // Manejador para actualizar los datos del pedido después de subir una factura
   const handleOrderUpdate = async () => {
     if (id) {
-      await fetchOrderById(id);
+      await dispatch(fetchOrderById(id));
 
       // Mostrar un mensaje de éxito
       dispatch(addMessage({
@@ -103,7 +134,16 @@ export const OrderManagementPage = () => {
   // Manejador para la búsqueda avanzada
   const handleAdvancedSearch = (filters) => {
     setAdvancedFilters(filters);
-    updateFilters({ advancedFilters: filters });
+    dispatch(updateFilters({ advancedFilters: filters }));
+  };
+
+  // Cargar más pedidos (paginación)
+  const loadMoreOrders = () => {
+    if (hasMore && !loading) {
+      console.log('Cargando más pedidos...');
+      // Pasar explícitamente append: true y asegurarnos de que no sea undefined
+      dispatch(fetchOrders({ append: true }));
+    }
   };
 
   // Renderizar vista detallada de un pedido
@@ -118,7 +158,7 @@ export const OrderManagementPage = () => {
         onBack={handleBackToList}
         onChangeStatus={handleChangeStatus}
         onAddNote={handleAddNote}
-        onOrderUpdate={handleOrderUpdate} // Añadimos la función de actualización
+        onOrderUpdate={handleOrderUpdate}
         formatPrice={formatPrice}
         formatDate={formatOrderDate}
         isProcessing={isProcessing}
@@ -126,13 +166,13 @@ export const OrderManagementPage = () => {
     );
   };
 
-  // Renderizar lista de pedidos con estructura elegante y MANTENIENDO TU SIDEBAR ORIGINAL
+  // Renderizar lista de pedidos
   const renderListView = () => {
     return (
       <div className="order-management-container">
         {/* Layout de dos columnas para pantallas grandes */}
         <div className="row g-4">
-          {/* Columna lateral con sidebar elegante - DISEÑO ORIGINAL */}
+          {/* Columna lateral con sidebar elegante */}
           <div className="col-lg-3">
             <div className="sticky-lg-top" style={{ top: '1rem', zIndex: 100 }}>
               <OrderFiltersSidebar
@@ -157,7 +197,7 @@ export const OrderManagementPage = () => {
             </div>
           </div>
 
-          {/* Columna principal con la lista de pedidos - Sin título */}
+          {/* Columna principal con la lista de pedidos */}
           <div className="col-lg-9">
             <OrderList
               orders={orders}
