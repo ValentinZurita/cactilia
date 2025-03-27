@@ -1,5 +1,5 @@
 import React from 'react';
-import { OrderStatusBadge } from './OrderStatusBadge';
+import { OrderStatusBadge } from '../status/OrderStatusBadge.jsx';
 
 export const OrderList = ({
                             orders = [],

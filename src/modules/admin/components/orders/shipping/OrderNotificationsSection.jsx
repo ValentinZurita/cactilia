@@ -1,6 +1,6 @@
 import React from 'react';
-import { OrderEmailStatus } from './OrderEmailStatus';
-import { OrderShippingForm } from './OrderShippingForm';
+import { OrderEmailStatus } from './OrderEmailStatus.jsx';
+import { OrderShippingForm } from './OrderShippingForm.jsx';
 
 export const OrderNotificationsSection = ({
                                             order,

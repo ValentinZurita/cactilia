@@ -1,4 +1,4 @@
-import { ORDER_STATUS_CONFIG } from './orderConstants.js'
+import { ORDER_STATUS_CONFIG } from '../utils/orderConstants.js'
 
 export const OrderStatusBadge = ({ status, className = '' }) => {
   // Obtener configuración del estado o usar valores por defecto

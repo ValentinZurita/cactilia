@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { WorkflowStepper } from './WorkflowStepper';
 import { NotificationHistory } from './NotificationHistory';
-import { ProcessingForm } from '../steps/ProcessingForm';
-import { ShipmentForm } from '../steps/ShipmentForm';
-import { ResendShippingForm } from '../steps/ResendShippingForm';
-import { DeliveryForm } from '../steps/DeliveryForm';
-import { ConfirmationForm } from '../steps/ConfirmationForm';
-import { CancellationForm } from '../steps/CancellationForm';
+import { ProcessingForm } from './steps/ProcessingForm';
+import { ShipmentForm } from './steps/ShipmentForm';
+import { ResendShippingForm } from './steps/ResendShippingForm';
+import { DeliveryForm } from './steps/DeliveryForm';
+import { ConfirmationForm } from './steps/ConfirmationForm';
+import { CancellationForm } from './steps/CancellationForm';
 
 /**
  * Flujo de trabajo para procesar pedidos a través de sus diferentes etapas

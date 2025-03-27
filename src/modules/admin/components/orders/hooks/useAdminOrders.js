@@ -6,8 +6,8 @@ import {
   updateOrderStatus,
   getOrderStatistics,
   addOrderNote
-} from './orderAdminService.js';
-import { addMessage } from '../../../../store/messages/messageSlice.js'
+} from '../services/orderAdminService.js';
+import { addMessage } from '../../../../../store/messages/messageSlice.js'
 
 /**
  * Hook personalizado para la gestión de pedidos en el panel de administración

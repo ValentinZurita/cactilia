@@ -1,5 +1,5 @@
-import { OrderStatusBadge } from './OrderStatusBadge';
-import { PrintOrderButton } from './PrintOrderButton';
+import { OrderStatusBadge } from '../status/OrderStatusBadge.jsx';
+import { PrintOrderButton } from './PrintOrderButton.jsx';
 
 export const OrderDetailHeader = ({ order, formatDate, formatPrice, onBack, userData }) => (
   <header className="d-flex flex-wrap justify-content-between align-items-start pb-3 mb-4">

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useSelector } from 'react-redux';
-import { updateOrderStatus } from '../orderAdminService.js';
+import { updateOrderStatus } from '../../services/orderAdminService.js';
 
 /**
  * Formulario para gestionar envíos de pedidos

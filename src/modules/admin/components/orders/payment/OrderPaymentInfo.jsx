@@ -1,5 +1,5 @@
 import React from 'react';
-import { InvoiceUploader } from './InvoiceUploader';
+import { InvoiceUploader } from './InvoiceUploader.jsx';
 
 const IconCircle = ({ icon, className = '', ...props }) => (
   <div

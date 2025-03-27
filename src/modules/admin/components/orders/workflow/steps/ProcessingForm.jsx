@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { updateOrderStatus } from '../orderAdminService.js';
+import { updateOrderStatus } from '../../services/orderAdminService.js';
 
 /**
  * Formulario para actualizar el estado del pedido a "procesando"

@@ -1,5 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../../firebase/firebaseConfig';
+import { FirebaseDB } from '../../../../../firebase/firebaseConfig.js';
 
 // Colección de usuarios en Firestore
 const USERS_COLLECTION = 'users';

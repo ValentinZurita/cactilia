@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ORDER_TRANSITIONS } from './orderConstants.js';
+import { ORDER_TRANSITIONS } from '../utils/orderConstants.js';
 
 // Componente reutilizable
 const IconCircle = ({ icon, className = '', color = 'secondary', ...props }) => (

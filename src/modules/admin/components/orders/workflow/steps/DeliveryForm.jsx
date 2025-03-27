@@ -1,7 +1,7 @@
 // DeliveryForm.jsx - Mejorado
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { updateOrderStatus } from '../orderAdminService.js';
+import { updateOrderStatus } from '../../services/orderAdminService.js';
 
 /**
  * Formulario para marcar el pedido como entregado

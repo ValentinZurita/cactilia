@@ -1,5 +1,5 @@
-import { OrderStatusHistory } from './OrderStatusHistory';
-import { OrderStatusBadge } from './OrderStatusBadge';
+import { OrderStatusHistory } from './OrderStatusHistory.jsx';
+import { OrderStatusBadge } from './OrderStatusBadge.jsx';
 
 /**
  * Sección rediseñada con estilo minimalista para mostrar

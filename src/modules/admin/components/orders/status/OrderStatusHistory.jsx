@@ -1,5 +1,5 @@
-import { OrderStatusBadge } from './OrderStatusBadge';
-import { ORDER_STATUS_CONFIG } from './orderConstants.js';
+import { OrderStatusBadge } from './OrderStatusBadge.jsx';
+import { ORDER_STATUS_CONFIG } from '../utils/orderConstants.js';
 
 /**
  * Historial de estados

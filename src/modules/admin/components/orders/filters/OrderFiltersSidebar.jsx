@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SearchFilters } from './SearchFilters';
+import { SearchFilters } from './SearchFilters.jsx';
 
 /**
  * Componente de sidebar con búsqueda y filtros avanzados

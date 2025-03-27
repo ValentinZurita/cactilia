@@ -4,7 +4,7 @@ import {
   removeInvoiceFilesFromOrder,
   uploadInvoiceFilesForOrder,
   removeInvoiceFileByType
-} from './invoiceService.js'
+} from '../services/invoiceService.js'
 
 /**
  * Componente para subir facturas a un pedido (PDF y XML)

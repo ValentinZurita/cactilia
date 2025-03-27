@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { OrderDetailHeader } from './OrderDetailHeader';
-import { OrderPaymentInfo } from './OrderPaymentInfo';
-import { OrderStatusChangeSection } from './OrderStatusChangeSection';
-import { OrderNotes } from './OrderNotes';
-import { OrderCustomerInfo } from './OrderCustomInfo';
-import { OrderItemsTable } from './OrderItemTable';
-import { getUserById } from './userAdminService';
-import { OrderWorkflow } from './workflow/OrderWorkflow.jsx'
+import { OrderDetailHeader } from './OrderDetailHeader.jsx';
+import { OrderPaymentInfo } from '../payment/OrderPaymentInfo.jsx';
+import { OrderStatusChangeSection } from '../status/OrderStatusChangeSection.jsx';
+import { OrderNotes } from '../notes/OrderNotes.jsx';
+import { OrderCustomerInfo } from './OrderCustomInfo.jsx';
+import { OrderItemsTable } from './OrderItemTable.jsx';
+import { getUserById } from '../services/userAdminService.js';
+import { OrderWorkflow } from '../workflow/OrderWorkflow.jsx'
 import { OrderDetailTabs } from './OrderDetailTabs.jsx'
 
 export const OrderDetail = ({

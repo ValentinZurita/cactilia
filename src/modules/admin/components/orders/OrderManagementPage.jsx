@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { OrderList } from './OrderList';
-import { OrderDetail } from './OrderDetail';
-import { OrderFiltersSidebar } from './OrderFiltersSidebar';
-import { OrderDetailSkeleton } from './OrderDetailSkeleton';
-import { useAdminOrders } from './useAdminOrders.js';
+import { OrderList } from './list/OrderList.jsx';
+import { OrderDetail } from './details/OrderDetail.jsx';
+import { OrderFiltersSidebar } from './filters/OrderFiltersSidebar.jsx';
+import { OrderDetailSkeleton } from './details/OrderDetailSkeleton.jsx';
+import { useAdminOrders } from './hooks/useAdminOrders.js';
 import { addMessage } from '../../../../store/messages/messageSlice.js';
 
 /**
