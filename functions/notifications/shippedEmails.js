@@ -38,7 +38,9 @@ exports.sendOrderShippedEmail = onCall({
 
   const {
     orderId,
-    shippingInfo = {} // transportista, número de guía, URL de seguimiento, etc.
+    shippingInfo = {}, // transportista, número de guía, URL de seguimiento, etc.
+    resendOnly = false, // Nuevo parámetro para indicar que solo es un reenvío
+    preserveOrderStatus = false // Parámetro adicional de compatibilidad
   } = request.data;
 
   if (!orderId) {
@@ -86,8 +88,8 @@ exports.sendOrderShippedEmail = onCall({
       );
     }
 
-    // Actualizar el estado del pedido a "shipped" si aún no lo está
-    if (orderData.status !== 'shipped') {
+    // Si es reenvío, no modificamos el estado del pedido
+    if (!resendOnly && !preserveOrderStatus && orderData.status !== 'shipped') {
       await orderRef.update({
         status: 'shipped',
         'shipping.trackingInfo': shippingInfo,
@@ -102,7 +104,8 @@ exports.sendOrderShippedEmail = onCall({
         })
       });
     } else {
-      // Si ya está en estado shipped, solo actualizamos la info de seguimiento
+      // Si es un reenvío, solo actualizamos la información de seguimiento si es necesario
+      // sin cambiar el estado del pedido
       await orderRef.update({
         'shipping.trackingInfo': shippingInfo,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -134,7 +137,8 @@ exports.sendOrderShippedEmail = onCall({
           type: 'shipped',
           sentAt: new Date(),
           sentBy: request.auth.uid,
-          success: true
+          success: true,
+          resent: resendOnly // Marcar si fue un reenvío
         })
       });
 
