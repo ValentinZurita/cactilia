@@ -1,5 +1,13 @@
+// =============================================
+// OrderNotes.jsx (Con botón añadir centrado y botón guardar oscuro)
+// =============================================
 import React, { useState } from 'react';
 
+/**
+ * Componente para gestionar notas administrativas
+ * Con botón "Añadir nota" centrado y botón guardar oscuro para mantener
+ * la consistencia visual con el resto del módulo
+ */
 export const OrderNotes = ({
                              notes = [],
                              onAddNote,
@@ -8,7 +16,6 @@ export const OrderNotes = ({
                            }) => {
   const [newNote, setNewNote] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
-
 
   // Manejador para enviar nueva nota
   const handleSubmit = (e) => {
@@ -21,11 +28,9 @@ export const OrderNotes = ({
   };
 
   return (
-
-      <>
-
+    <>
       {/* Título de la sección */}
-        <h6 className="border-bottom pb-2 mb-3 fw-normal text-secondary">Notas administrativas</h6>
+      <h6 className="border-bottom pb-2 mb-3 fw-normal text-secondary">Notas administrativas</h6>
 
       {/* Lista de notas existentes */}
       {notes && notes.length > 0 ? (
@@ -46,19 +51,20 @@ export const OrderNotes = ({
         </div>
       )}
 
-      {/* Botón  para mostrar/ocultar formulario de notas */}
+      {/* Botón para mostrar/ocultar formulario de notas - CENTRADO */}
       {!isExpanded ? (
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-secondary"
-          onClick={() => setIsExpanded(true)}
-        >
-          <i className="bi bi-plus me-1"></i>
-          Añadir nota
-        </button> )
-        : (
+        <div className="text-center">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setIsExpanded(true)}
+          >
+            <i className="bi bi-plus me-1"></i>
+            Añadir nota
+          </button>
+        </div>
+      ) : (
         <form onSubmit={handleSubmit} className="pt-2">
-
           {/* Campo de texto para nueva nota */}
           <div className="mb-3">
             <textarea
@@ -82,9 +88,10 @@ export const OrderNotes = ({
             >
               Cancelar
             </button>
+            {/* Botón GUARDAR con color OSCURO en lugar de azul */}
             <button
               type="submit"
-              className="btn btn-sm btn-primary"
+              className="btn btn-sm btn-dark"
               disabled={!newNote.trim() || isProcessing}
             >
               {isProcessing ? (
@@ -92,10 +99,9 @@ export const OrderNotes = ({
               ) : null}
               Guardar
             </button>
-
           </div>
         </form>
       )}
-      </>
+    </>
   );
 };

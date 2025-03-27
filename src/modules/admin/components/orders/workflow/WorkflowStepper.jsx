@@ -1,10 +1,37 @@
+import React, { useRef, useEffect, useState } from 'react';
 import { StepperItem } from './StepperItem';
 
 /**
  * Stepper que muestra visualmente las etapas del pedido
- * con timeline mejorado y líneas continuas
+ * - Timeline vertical completamente continuo sin interrupciones
+ * - Igual de hermoso que la versión horizontal
  */
 export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
+  // Referencia al contenedor del timeline vertical
+  const verticalTimelineRef = useRef(null);
+
+  // Estado para la altura del timeline vertical
+  const [verticalHeight, setVerticalHeight] = useState(0);
+
+  // Calcular la altura del contenedor vertical al montar y al cambiar tamaño
+  useEffect(() => {
+    const calculateHeight = () => {
+      if (verticalTimelineRef.current) {
+        // Añadimos un pequeño margen extra para asegurar que la línea sea completa
+        setVerticalHeight(verticalTimelineRef.current.scrollHeight + 20);
+      }
+    };
+
+    // Calcular altura inicial después de renderizar
+    setTimeout(calculateHeight, 100);
+
+    // Actualizar en cambios de tamaño
+    window.addEventListener('resize', calculateHeight);
+
+    // Limpiar listener
+    return () => window.removeEventListener('resize', calculateHeight);
+  }, []);
+
   // Definición de pasos con sus acciones posibles
   const steps = [
     {
@@ -25,7 +52,7 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
           label: 'Cancelar pedido',
           icon: 'x-circle',
           visible: order.status === 'pending',
-          variant: 'outline-secondary'
+          variant: 'outline-danger'
         }
       ]
     },
@@ -48,7 +75,7 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
           label: 'Cancelar pedido',
           icon: 'x-circle',
           visible: order.status === 'processing',
-          variant: 'outline-secondary'
+          variant: 'outline-danger'
         }
       ]
     },
@@ -77,7 +104,7 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
           label: 'Cancelar pedido',
           icon: 'x-circle',
           visible: order.status === 'shipped',
-          variant: 'outline-secondary'
+          variant: 'outline-danger'
         }
       ]
     },
@@ -98,52 +125,87 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
     }
   ];
 
-  // Solo permitir cancelación en estados específicos
-  const allowCancellation = ['pending', 'processing', 'shipped'].includes(order.status);
+  // Calcular la altura de progreso en porcentaje
+  const progressPercentage = Math.min(100, ((currentStep + 1) / steps.length) * 100);
 
   return (
-    // Contenedor principal - ajustado para evitar cortes
-    <div className="d-flex flex-column">
-      {/* Línea de timeline continua */}
-      <div className="position-relative mb-4">
-        {/* Línea trasera continua */}
-        <div className="position-absolute bg-light"
-             style={{
-               height: '2px',
-               top: '20px',
-               left: '10%',
-               width: '80%',
-               zIndex: 0
-             }}></div>
+    <>
+      {/* Desktop/Tablet Version - Horizontal */}
+      <div className="d-none d-md-block">
+        <div className="position-relative mb-4">
+          {/* Línea trasera continua */}
+          <div className="position-absolute bg-light"
+               style={{
+                 height: '2px',
+                 top: '20px',
+                 left: '10%',
+                 width: '80%',
+                 zIndex: 0
+               }}>
+          </div>
 
-        {/* Contenedor de steps con posicionamiento correcto */}
-        <div className="d-flex justify-content-between position-relative">
-          {steps.map((step, index) => (
-            <StepperItem
-              key={step.id}
-              step={step}
-              index={index}
-              isLastStep={index === steps.length - 1}
-              onAction={onStepAction}
-              isActive={index <= currentStep}
-              totalSteps={steps.length}
-            />
-          ))}
+          {/* Contenedor de steps con posicionamiento */}
+          <div className="d-flex justify-content-between position-relative">
+            {steps.map((step, index) => (
+              <StepperItem
+                key={step.id}
+                step={step}
+                index={index}
+                isLastStep={index === steps.length - 1}
+                onAction={onStepAction}
+                isActive={index <= currentStep}
+                totalSteps={steps.length}
+                orientation="horizontal"
+              />
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Botón de cancelación global (opcional) */}
-      {allowCancellation && currentStep < 3 && order.status !== 'cancelled' && (
-        <div className="d-flex justify-content-end mt-2">
-          <button
-            className="btn btn-sm btn-outline-secondary"
-            onClick={() => onStepAction('cancel-order')}
-          >
-            <i className="bi bi-x-circle me-1"></i>
-            Cancelar pedido
-          </button>
+      {/* Mobile Version - Vertical con línea continua perfecta */}
+      <div className="d-md-none">
+        <div className="position-relative" style={{ minHeight: '400px' }}>
+          {/* Contenedor con seguimiento de altura */}
+          <div ref={verticalTimelineRef} className="d-flex flex-column position-relative">
+            {/* Línea de fondo que recorre todo el timeline (siempre visible) */}
+            <div className="position-absolute bg-light"
+                 style={{
+                   width: '2px',
+                   top: '0',
+                   height: `${verticalHeight}px`,
+                   left: '19px',
+                   zIndex: 1
+                 }}>
+            </div>
+
+            {/* Línea de progreso (solo la parte completada) */}
+            <div className="position-absolute bg-dark"
+                 style={{
+                   width: '2px',
+                   top: '0',
+                   height: `${progressPercentage}%`,
+                   left: '19px',
+                   zIndex: 2,
+                   maxHeight: `${verticalHeight}px`
+                 }}>
+            </div>
+
+            {/* Steps verticales */}
+            {steps.map((step, index) => (
+              <StepperItem
+                key={step.id}
+                step={step}
+                index={index}
+                isLastStep={index === steps.length - 1}
+                onAction={onStepAction}
+                isActive={index <= currentStep}
+                totalSteps={steps.length}
+                orientation="vertical"
+              />
+            ))}
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
