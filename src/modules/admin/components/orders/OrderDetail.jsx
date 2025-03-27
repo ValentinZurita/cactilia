@@ -6,15 +6,15 @@ import { OrderStatusChangeSection } from './OrderStatusChangeSection';
 import { OrderNotes } from './OrderNotes';
 import { OrderCustomerInfo } from './OrderCustomInfo.jsx';
 import { OrderItemsTable } from './OrderItemTable.jsx';
+import { OrderNotificationsSection } from './OrderNotificationsSection';
 import { getUserById } from './userAdminService.js';
-import { OrderEmailStatus } from './OrderEmailStatus.jsx'
 
 export const OrderDetail = ({
                               order,
                               onBack,
                               onChangeStatus,
                               onAddNote,
-                              onOrderUpdate, // Nueva prop para actualizar el pedido
+                              onOrderUpdate,
                               formatPrice,
                               formatDate,
                               isProcessing = false
@@ -66,14 +66,13 @@ export const OrderDetail = ({
 
   return (
     <div className="order-detail">
-
       {/* Cabecera principal con información clave del pedido */}
       <OrderDetailHeader
         order={order}
         onBack={onBack}
         formatDate={formatDate}
         formatPrice={formatPrice}
-        userData={userData} // Pasar datos del usuario a la cabecera
+        userData={userData}
       />
 
       {/* Navegación por pestañas */}
@@ -95,7 +94,7 @@ export const OrderDetail = ({
         {activeTab === 'payment' && (
           <OrderPaymentInfo
             order={order}
-            onOrderUpdate={onOrderUpdate} // Pasar la función
+            onOrderUpdate={onOrderUpdate}
           />
         )}
 
@@ -109,13 +108,13 @@ export const OrderDetail = ({
           />
         )}
 
-        {/* Sección para estado de emails */}
-        <div className="col-md-6 mt-4">
-          <OrderEmailStatus
+        {/* Nueva pestaña para notificaciones */}
+        {activeTab === 'notifications' && (
+          <OrderNotificationsSection
             order={order}
-            onEmailSent={onOrderUpdate}
+            onOrderUpdate={onOrderUpdate}
           />
-        </div>
+        )}
 
         {/* Pestaña para notas administrativas */}
         {activeTab === 'notes' && (

@@ -1,11 +1,6 @@
-// src/modules/admin/components/orders/OrderEmailStatus.jsx
 import React, { useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
-/**
- * Componente para mostrar el estado de los emails de un pedido
- * y permitir reenviar emails en caso de error
- */
 export const OrderEmailStatus = ({ order, onEmailSent }) => {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -14,9 +9,7 @@ export const OrderEmailStatus = ({ order, onEmailSent }) => {
   const emailSent = order.emailStatus?.confirmationSent === true;
   const sentDate = order.emailStatus?.sentAt;
 
-  /**
-   * Formatea un timestamp para mostrar fecha y hora
-   */
+  // Formatear timestamp para mostrar fecha y hora
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
 
@@ -29,9 +22,7 @@ export const OrderEmailStatus = ({ order, onEmailSent }) => {
     }
   };
 
-  /**
-   * Reenvía el email de confirmación
-   */
+  // Reenviar el email de confirmación
   const handleResendEmail = async () => {
     setError(null);
     setSending(true);
@@ -55,30 +46,31 @@ export const OrderEmailStatus = ({ order, onEmailSent }) => {
   };
 
   return (
-    <section className="email-status mt-4">
-      <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">
-        Estado de Notificaciones
-      </h6>
+    <div>
+      <div className="d-flex align-items-center mb-3">
+        <div className="rounded-circle bg-light p-2 d-flex align-items-center justify-content-center me-3" style={{ width: '42px', height: '42px', minWidth: '42px' }}>
+          <i className="bi bi-envelope text-secondary"></i>
+        </div>
 
-      <div className="d-flex justify-content-between align-items-center">
-        <div>
-          <span className="me-2">Email de Confirmación:</span>
-          {emailSent ? (
-            <>
+        <div className="flex-grow-1">
+          <div className="d-flex align-items-center">
+            <div className="me-2">Estado:</div>
+            {emailSent ? (
               <span className="badge bg-success">Enviado</span>
-              {sentDate && (
-                <small className="text-muted ms-2">
-                  {formatTimestamp(sentDate)}
-                </small>
-              )}
-            </>
-          ) : (
-            <span className="badge bg-danger">No Enviado</span>
+            ) : (
+              <span className="badge bg-danger">No enviado</span>
+            )}
+          </div>
+
+          {emailSent && sentDate && (
+            <div className="small text-muted mt-1">
+              Enviado el {formatTimestamp(sentDate)}
+            </div>
           )}
         </div>
 
         <button
-          className="btn btn-sm btn-outline-primary"
+          className="btn btn-sm btn-outline-secondary"
           onClick={handleResendEmail}
           disabled={sending}
         >
@@ -89,7 +81,7 @@ export const OrderEmailStatus = ({ order, onEmailSent }) => {
             </>
           ) : (
             <>
-              <i className="bi bi-envelope me-1"></i>
+              <i className="bi bi-arrow-clockwise me-1"></i>
               Reenviar
             </>
           )}
@@ -102,6 +94,13 @@ export const OrderEmailStatus = ({ order, onEmailSent }) => {
           {error}
         </div>
       )}
-    </section>
+
+      {!emailSent && !error && (
+        <div className="alert alert-info py-2 small mt-2">
+          <i className="bi bi-info-circle-fill me-2"></i>
+          El email de confirmación no se ha enviado aún. Puedes enviarlo manualmente.
+        </div>
+      )}
+    </div>
   );
 };

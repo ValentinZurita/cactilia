@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
 export const OrderDetailTabs = ({ activeTab, setActiveTab }) => {
-
   const [hoveredTab, setHoveredTab] = useState(null);
 
   const tabs = [
@@ -9,6 +8,7 @@ export const OrderDetailTabs = ({ activeTab, setActiveTab }) => {
     { id: 'customer', label: 'Cliente', icon: 'person' },
     { id: 'payment', label: 'Pago', icon: 'credit-card' },
     { id: 'status', label: 'Historial', icon: 'clock-history' },
+    { id: 'notifications', label: 'Notificaciones', icon: 'envelope' }, // Nueva pestaña
     { id: 'notes', label: 'Notas', icon: 'journal-text' }
   ];
 
