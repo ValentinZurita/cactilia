@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { OrderDetailHeader } from './OrderDetailHeader';
-import { OrderDetailTabs } from './OrderDetailTabs';
 import { OrderPaymentInfo } from './OrderPaymentInfo';
 import { OrderStatusChangeSection } from './OrderStatusChangeSection';
 import { OrderNotes } from './OrderNotes';
-import { OrderCustomerInfo } from './OrderCustomInfo.jsx';
-import { OrderItemsTable } from './OrderItemTable.jsx';
-import { OrderNotificationsSection } from './OrderNotificationsSection';
-import { getUserById } from './userAdminService.js';
+import { OrderCustomerInfo } from './OrderCustomInfo';
+import { OrderItemsTable } from './OrderItemTable';
+import { getUserById } from './userAdminService';
+import { OrderWorkflow } from './workflow/OrderWorkflow.jsx'
+import { OrderDetailTabs } from './OrderDetailTabs.jsx'
 
 export const OrderDetail = ({
                               order,
@@ -64,6 +64,13 @@ export const OrderDetail = ({
     );
   }
 
+  // Función que maneja las actualizaciones desde el flujo de trabajo
+  const handleWorkflowUpdate = () => {
+    if (onOrderUpdate) {
+      onOrderUpdate();
+    }
+  };
+
   return (
     <div className="order-detail">
       {/* Cabecera principal con información clave del pedido */}
@@ -98,6 +105,14 @@ export const OrderDetail = ({
           />
         )}
 
+        {/* Nueva pestaña de flujo de trabajo */}
+        {activeTab === 'workflow' && (
+          <OrderWorkflow
+            order={order}
+            onOrderUpdate={handleWorkflowUpdate}
+          />
+        )}
+
         {/* Pestaña de historial y estado */}
         {activeTab === 'status' && (
           <OrderStatusChangeSection
@@ -105,14 +120,6 @@ export const OrderDetail = ({
             onChangeStatus={onChangeStatus}
             formatDate={formatDate}
             isProcessing={isProcessing}
-          />
-        )}
-
-        {/* Nueva pestaña para notificaciones */}
-        {activeTab === 'notifications' && (
-          <OrderNotificationsSection
-            order={order}
-            onOrderUpdate={onOrderUpdate}
           />
         )}
 

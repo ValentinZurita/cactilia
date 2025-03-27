@@ -7,8 +7,8 @@ export const OrderDetailTabs = ({ activeTab, setActiveTab }) => {
     { id: 'products', label: 'Productos', icon: 'box' },
     { id: 'customer', label: 'Cliente', icon: 'person' },
     { id: 'payment', label: 'Pago', icon: 'credit-card' },
+    { id: 'workflow', label: 'Flujo de Trabajo', icon: 'arrow-repeat' },
     { id: 'status', label: 'Historial', icon: 'clock-history' },
-    { id: 'notifications', label: 'Notificaciones', icon: 'envelope' }, // Nueva pestaña
     { id: 'notes', label: 'Notas', icon: 'journal-text' }
   ];
 
