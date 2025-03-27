@@ -12,6 +12,7 @@ if (!admin.apps.length) {
 const paymentFunctions = require('./payment/paymentIntents');
 const paymentMethodFunctions = require('./payment/paymentMethods');
 const stripeService = require('./payment/stripeService');
+const resendEmails = require('./notifications/resendEmails');
 
 // Import auth functions
 const authFunctions = require("./auth/setCustomClaims");
@@ -33,3 +34,6 @@ exports.getUsersDetail = authFunctions.getUsersDetail;
 
 // Export test function
 exports.basicTest = basicTest;
+
+// Export resend email functions
+exports.resendOrderConfirmationEmail = resendEmails.resendOrderConfirmationEmail;

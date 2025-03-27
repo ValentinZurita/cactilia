@@ -7,6 +7,7 @@ import { OrderNotes } from './OrderNotes';
 import { OrderCustomerInfo } from './OrderCustomInfo.jsx';
 import { OrderItemsTable } from './OrderItemTable.jsx';
 import { getUserById } from './userAdminService.js';
+import { OrderEmailStatus } from './OrderEmailStatus.jsx'
 
 export const OrderDetail = ({
                               order,
@@ -107,6 +108,14 @@ export const OrderDetail = ({
             isProcessing={isProcessing}
           />
         )}
+
+        {/* Sección para estado de emails */}
+        <div className="col-md-6 mt-4">
+          <OrderEmailStatus
+            order={order}
+            onEmailSent={onOrderUpdate}
+          />
+        </div>
 
         {/* Pestaña para notas administrativas */}
         {activeTab === 'notes' && (
