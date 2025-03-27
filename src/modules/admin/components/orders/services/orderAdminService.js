@@ -1,8 +1,3 @@
-// ========================================
-// orderAdminService.js
-// Servicios para gestión de órdenes en Admin
-// ========================================
-
 import {
   collection,
   getDocs,
