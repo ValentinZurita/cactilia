@@ -49,7 +49,7 @@ export const StepperItem = ({ step, index, onAction }) => {
                 <button
                   key={idx}
                   type="button"
-                  className="btn btn-sm btn-outline-secondary"
+                  className={`btn btn-sm ${action.variant || 'btn-outline-secondary'}`}
                   onClick={() => onAction(action.id)}
                 >
                   {action.icon && (

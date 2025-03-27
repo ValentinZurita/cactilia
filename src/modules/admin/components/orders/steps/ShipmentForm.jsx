@@ -1,4 +1,4 @@
-// ShipmentForm.jsx - Mejorado
+// ShipmentForm.jsx - Mejorado con checkbox estilizado
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useSelector } from 'react-redux';
@@ -229,11 +229,11 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
             />
           </div>
 
-          <div className="col-md-12">
+          <div className="col-md-12 mt-2">
             <div className="form-check">
               <input
                 type="checkbox"
-                className="form-check-input"
+                className="form-check-input bg-dark border-dark"
                 id="notifyCustomer"
                 checked={formData.notifyCustomer}
                 onChange={handleChange}

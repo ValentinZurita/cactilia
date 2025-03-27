@@ -8,6 +8,9 @@ import { StepperItem } from './StepperItem';
  * @param {Function} onStepAction - Función para ejecutar acciones en un paso
  */
 export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
+  // Solo permitir cancelación en estados específicos
+  const allowCancellation = ['pending', 'processing', 'shipped'].includes(order.status);
+
   // Definición de pasos con sus acciones posibles
   const steps = [
     {
@@ -22,6 +25,13 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
           label: 'Reenviar confirmación',
           icon: 'envelope',
           visible: true
+        },
+        {
+          id: 'cancel-order',
+          label: 'Cancelar pedido',
+          icon: 'x-circle',
+          visible: order.status === 'pending',
+          variant: 'outline-secondary'
         }
       ]
     },
@@ -38,6 +48,13 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
             (order.status === 'processing' ? 'Actualizar estado' : null),
           icon: 'gear',
           visible: ['pending', 'processing'].includes(order.status)
+        },
+        {
+          id: 'cancel-order',
+          label: 'Cancelar pedido',
+          icon: 'x-circle',
+          visible: order.status === 'processing',
+          variant: 'outline-secondary'
         }
       ]
     },
@@ -60,6 +77,13 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
           label: 'Reenviar notificación',
           icon: 'envelope',
           visible: order.status === 'shipped' || order.status === 'delivered'
+        },
+        {
+          id: 'cancel-order',
+          label: 'Cancelar pedido',
+          icon: 'x-circle',
+          visible: order.status === 'shipped',
+          variant: 'outline-secondary'
         }
       ]
     },
@@ -81,18 +105,29 @@ export const WorkflowStepper = ({ currentStep, order, onStepAction }) => {
   ];
 
   return (
-    <div className="rounded border bg-light p-3">
-      <div className="d-flex flex-nowrap overflow-auto py-2">
-        {steps.map((step, index) => (
-          <StepperItem
-            key={step.id}
-            step={step}
-            index={index}
-            isLastStep={index === steps.length - 1}
-            onAction={onStepAction}
-          />
-        ))}
-      </div>
+    <div className="d-flex flex-nowrap overflow-auto py-2">
+      {steps.map((step, index) => (
+        <StepperItem
+          key={step.id}
+          step={step}
+          index={index}
+          isLastStep={index === steps.length - 1}
+          onAction={onStepAction}
+        />
+      ))}
+
+      {/* Botón de cancelación global (opcional, alternativa a los botones en cada paso) */}
+      {allowCancellation && currentStep < 3 && order.status !== 'cancelled' && (
+        <div className="ms-auto d-flex align-items-center ps-3 border-start">
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => onStepAction('cancel-order')}
+          >
+            <i className="bi bi-x-circle me-1"></i>
+            Cancelar pedido
+          </button>
+        </div>
+      )}
     </div>
   );
 };
