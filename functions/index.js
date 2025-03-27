@@ -12,7 +12,10 @@ if (!admin.apps.length) {
 const paymentFunctions = require('./payment/paymentIntents');
 const paymentMethodFunctions = require('./payment/paymentMethods');
 const stripeService = require('./payment/stripeService');
+
+// Import resend email functions
 const resendEmails = require('./notifications/resendEmails');
+const shippedEmails = require('./notifications/shippedEmails');
 
 // Import auth functions
 const authFunctions = require("./auth/setCustomClaims");
@@ -35,5 +38,6 @@ exports.getUsersDetail = authFunctions.getUsersDetail;
 // Export test function
 exports.basicTest = basicTest;
 
-// Export resend email functions
+// Export email functions
 exports.resendOrderConfirmationEmail = resendEmails.resendOrderConfirmationEmail;
+exports.sendOrderShippedEmail = shippedEmails.sendOrderShippedEmail;

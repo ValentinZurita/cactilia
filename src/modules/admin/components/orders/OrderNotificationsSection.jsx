@@ -1,5 +1,6 @@
 import React from 'react';
 import { OrderEmailStatus } from './OrderEmailStatus';
+import { OrderShippingForm } from './OrderShippingForm';
 
 export const OrderNotificationsSection = ({
                                             order,
@@ -31,7 +32,7 @@ export const OrderNotificationsSection = ({
         </div>
       </div>
 
-      {/* Sección del historial de notificaciones - VERSIÓN MEJORADA */}
+      {/* Sección para futuras notificaciones */}
       <div className="col-md-6">
         <div className="mb-4">
           <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Historial de notificaciones</h6>
@@ -52,7 +53,11 @@ export const OrderNotificationsSection = ({
                   </div>
                   <div>
                     <p className="mb-0">
-                      Email de {entry.type === 'confirmation' ? 'confirmación' : entry.type}
+                      Email de {
+                      entry.type === 'confirmation' ? 'confirmación' :
+                        entry.type === 'shipped' ? 'envío' :
+                          entry.type
+                    }
                       {entry.success ? ' enviado' : ' fallido'}
                     </p>
                     <small className="text-muted d-block">
@@ -88,6 +93,16 @@ export const OrderNotificationsSection = ({
               </div>
             )
           )}
+        </div>
+      </div>
+
+      {/* Sección de Envío - NUEVA */}
+      <div className="col-12">
+        <div className="card border-0 shadow-sm rounded-3 p-3 mt-2">
+          <OrderShippingForm
+            order={order}
+            onOrderUpdated={onOrderUpdate}
+          />
         </div>
       </div>
     </div>
