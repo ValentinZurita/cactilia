@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
   removeInvoiceFilesFromOrder,
   uploadInvoiceFilesForOrder,
@@ -24,6 +25,10 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
   const [error, setError] = useState(null);
   const [showUploadForm, setShowUploadForm] = useState(false);
 
+  // Estado para el envío de email de facturas
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState(null);
+
   // Obtener el ID del usuario actual (administrador)
   const { uid } = useSelector(state => state.auth);
 
@@ -31,6 +36,10 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
   const hasPdf = billing?.invoicePdfUrl && billing?.invoicePdfName;
   const hasXml = billing?.invoiceXmlUrl && billing?.invoiceXmlName;
   const hasInvoice = hasPdf || hasXml || (billing?.invoiceUrl && billing?.invoiceFileName);
+
+  // Comprobar si ya se envió email de factura
+  const invoiceEmailSent = billing?.invoiceEmailSent === true;
+  const hasEmailForInvoice = billing?.fiscalData?.email ? true : false;
 
   /**
    * Manejar cambio de archivo PDF
@@ -153,6 +162,48 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
   };
 
   /**
+   * Manejar el envío de facturas por email
+   */
+  const handleSendInvoiceEmail = async () => {
+    if (!hasPdf && !hasXml) {
+      setError('No hay facturas disponibles para enviar');
+      return;
+    }
+
+    if (!hasEmailForInvoice) {
+      setError('No hay email de facturación disponible');
+      return;
+    }
+
+    setSendingEmail(true);
+    setError(null);
+    setEmailSuccess(null);
+
+    try {
+      const functions = getFunctions();
+      const sendInvoiceEmail = httpsCallable(functions, 'sendInvoiceEmail');
+
+      const result = await sendInvoiceEmail({ orderId });
+
+      if (result.data.success) {
+        setEmailSuccess(`Facturas enviadas correctamente a ${billing.fiscalData.email}`);
+
+        // Notificar al componente padre para actualizar la información
+        if (onInvoiceUploaded) {
+          onInvoiceUploaded();
+        }
+      } else {
+        throw new Error(result.data.message || 'Error al enviar facturas');
+      }
+    } catch (err) {
+      console.error('Error enviando facturas por email:', err);
+      setError(err.message || 'Error al enviar facturas por email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  /**
    * Función para obtener fecha formateada
    * @param {Object|Date} timestamp - Timestamp
    * @returns {string} - Fecha formateada
@@ -174,6 +225,9 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
     <>
       <p className="text-muted small mb-4">
         Subido: {getFormattedDate(billing.invoiceUploadedAt)}
+        {invoiceEmailSent && billing.invoiceEmailSentAt && (
+          <> • Email enviado: {getFormattedDate(billing.invoiceEmailSentAt)}</>
+        )}
       </p>
 
       {/* PDF */}
@@ -221,6 +275,50 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
           >
             <i className="bi bi-x"></i>
           </button>
+        </div>
+      )}
+
+      {/* Botón para enviar facturas por email */}
+      {hasInvoice && hasEmailForInvoice && (
+        <div className="mt-4 pt-3 border-top">
+          <div className="d-flex align-items-center justify-content-between">
+            <div>
+              <p className="mb-0 text-muted small">
+                <i className="bi bi-envelope-at me-1"></i>
+                {billing.fiscalData.email}
+                {invoiceEmailSent && (
+                  <span className="text-secondary ms-1 fst-italic">
+                    (Enviadas)
+                  </span>
+                )}
+              </p>
+            </div>
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              onClick={handleSendInvoiceEmail}
+              disabled={sendingEmail}
+            >
+              {sendingEmail ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-envelope me-1"></i>
+                  {invoiceEmailSent ? 'Reenviar' : 'Enviar facturas'}
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Mensajes de éxito/error */}
+          {emailSuccess && (
+            <div className="alert alert-success py-2 small mt-3">
+              <i className="bi bi-check-circle-fill me-2"></i>
+              {emailSuccess}
+            </div>
+          )}
         </div>
       )}
 
@@ -327,6 +425,14 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
   return (
     <section className="invoice-uploader">
       <h6 className="border-bottom pb-2 mb-4 text-secondary fw-normal">Factura Electrónica</h6>
+
+      {/* Mostrar error general si existe */}
+      {error && !showUploadForm && (
+        <div className="alert alert-danger py-2 small mb-3">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {error}
+        </div>
+      )}
 
       {hasInvoice ? renderInvoiceFiles() :
         (showUploadForm ? renderUploadForm() : renderEmptyState())}

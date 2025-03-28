@@ -25,6 +25,21 @@ const InfoRow = ({ label, value }) => (
   </div>
 );
 
+// Función auxiliar para formatear fechas
+const formatDate = (timestamp) => {
+  if (!timestamp) return '';
+
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() :
+      timestamp.seconds ? new Date(timestamp.seconds * 1000) :
+        new Date(timestamp);
+    return date.toLocaleString('es-MX');
+  } catch (error) {
+    console.error('Error formateando fecha:', error);
+    return '';
+  }
+};
+
 export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
   if (!order.payment) {
     return (
@@ -43,6 +58,13 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
       onOrderUpdate();
     }
   };
+
+  // Detectar si hay facturas disponibles para descargar
+  const billing = order.billing || {};
+  const hasPdf = billing?.invoicePdfUrl || billing?.invoiceUrl;
+  const hasXml = billing?.invoiceXmlUrl;
+  const hasInvoice = hasPdf || hasXml;
+  const invoiceEmailSent = billing?.invoiceEmailSent === true;
 
   return (
     <div className="row g-4">
@@ -89,33 +111,66 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
 
       {/* Datos fiscales */}
       <div className="col-md-6">
-        {order.billing?.requiresInvoice && order.billing.fiscalData ? (
+        {billing?.requiresInvoice && billing.fiscalData ? (
           <InfoBlock title="Datos de facturación">
             <div className="d-flex align-items-start">
               <IconCircle icon="receipt" className="mt-1" />
               <div>
-                <InfoRow label="RFC" value={order.billing.fiscalData.rfc} />
+                <InfoRow label="RFC" value={billing.fiscalData.rfc} />
                 <div className="mb-2"></div>
-                <InfoRow label="Razón Social" value={order.billing.fiscalData.businessName} />
+                <InfoRow label="Razón Social" value={billing.fiscalData.businessName} />
                 <div className="mb-2"></div>
-                <InfoRow label="Email" value={order.billing.fiscalData.email} />
+                <InfoRow label="Email" value={billing.fiscalData.email} />
                 <div className="mb-2"></div>
-                <InfoRow label="Uso CFDI" value={order.billing.fiscalData.usoCFDI} />
+                <InfoRow label="Uso CFDI" value={billing.fiscalData.usoCFDI} />
                 <div className="mb-2"></div>
-                {order.billing.fiscalData.regimenFiscal && (
+                {billing.fiscalData.regimenFiscal && (
                   <>
-                    <InfoRow label="Régimen Fiscal" value={order.billing.fiscalData.regimenFiscal} />
+                    <InfoRow label="Régimen Fiscal" value={billing.fiscalData.regimenFiscal} />
                     <div className="mb-2"></div>
                   </>
                 )}
               </div>
             </div>
 
+            {/* Estado de envío de facturas por email */}
+            {billing.fiscalData?.email && (
+              <div className="mt-3 border-top pt-3">
+                <div className="d-flex align-items-center mb-2">
+                  <IconCircle icon="envelope" />
+                  <div>
+                    <InfoRow label="Estado de envío de facturas"
+                             value={
+                               invoiceEmailSent ? (
+                                 <span className="badge bg-success px-2 py-1">
+                            Enviadas
+                          </span>
+                               ) : hasInvoice ? (
+                                 <span className="badge bg-warning text-dark px-2 py-1">
+                            Pendiente de envío
+                          </span>
+                               ) : (
+                                 <span className="badge bg-secondary px-2 py-1">
+                            Sin facturas disponibles
+                          </span>
+                               )
+                             }
+                    />
+                    {invoiceEmailSent && billing.invoiceEmailSentAt && (
+                      <p className="mb-0 small text-muted">
+                        Enviadas el {formatDate(billing.invoiceEmailSentAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Componente para subir/gestionar facturas */}
             <div className="mt-4 border-top pt-3">
               <InvoiceUploader
                 orderId={order.id}
-                billing={order.billing}
+                billing={billing}
                 onInvoiceUploaded={handleInvoiceUploaded}
               />
             </div>

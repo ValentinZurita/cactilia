@@ -16,6 +16,8 @@ const stripeService = require('./payment/stripeService');
 // Import resend email functions
 const resendEmails = require('./notifications/resendEmails');
 const shippedEmails = require('./notifications/shippedEmails');
+const invoiceEmails = require('./notifications/invoiceEmails');
+
 
 // Import auth functions
 const authFunctions = require("./auth/setCustomClaims");
@@ -41,3 +43,4 @@ exports.basicTest = basicTest;
 // Export email functions
 exports.resendOrderConfirmationEmail = resendEmails.resendOrderConfirmationEmail;
 exports.sendOrderShippedEmail = shippedEmails.sendOrderShippedEmail;
+exports.sendInvoiceEmail = invoiceEmails.sendInvoiceEmail;
