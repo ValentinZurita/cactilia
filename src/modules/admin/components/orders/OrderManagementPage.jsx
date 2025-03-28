@@ -8,7 +8,7 @@ import { OrderDetailSkeleton } from './details/OrderDetailSkeleton.jsx';
 import { addMessage } from '../../../../store/messages/messageSlice.js';
 
 // Importar acciones y selectores de Redux
-import { updateFilters, clearSelectedOrder } from './slices/ordersSlice.js';
+import { updateFilters, clearSelectedOrder, setActiveTab } from './slices/ordersSlice.js';
 import {
   fetchOrders,
   fetchOrderById,
@@ -29,7 +29,8 @@ import {
 } from './thunks/orderSelectors.js'
 
 // Utilidades para formateo
-import { formatOrderDate, formatPrice } from './utils/formatUtils.js'; /// Asumiendo que moverás estas funciones a un archivo de utilidades
+import { formatOrderDate, formatPrice } from './utils/formatUtils.js';
+
 
 /**
  * Página principal para la gestión de pedidos en el panel de administración
@@ -52,6 +53,7 @@ export const OrderManagementPage = () => {
   const statistics = useSelector(selectOrderStatistics);
   const statsLoading = useSelector(selectStatisticsLoading);
   const filters = useSelector(selectOrderFilters);
+  const activeTab = useSelector(selectActiveTab); // Añade esta línea aquí
   const { uid } = useSelector(state => state.auth);
 
   // Cargar estadísticas cuando se monta el componente
@@ -95,7 +97,6 @@ export const OrderManagementPage = () => {
 
   // Modificar la función handleViewDetail para incluir la pestaña actual
   const handleViewDetail = (orderId) => {
-    const activeTab = useSelector(selectActiveTab);
     navigate(`/admin/orders/view/${orderId}?tab=${activeTab}`);
   };
 
