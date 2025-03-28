@@ -1,14 +1,17 @@
-// ShipmentForm.jsx - Mejorado con checkbox estilizado
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { updateOrderStatus } from '../../services/orderAdminService.js';
+import { updateOrderFieldsOptimistic } from '../../slices/ordersSlice.js';
+import { fetchOrderById } from '../../thunks/orderThunks.js';
 
 /**
  * Formulario para gestionar envíos de pedidos
  * Soporta envíos con transportista y entregas locales
+ * Versión mejorada con actualizaciones optimistas para UI fluida
  */
 export const ShipmentForm = ({ order, onComplete, onCancel }) => {
+  const dispatch = useDispatch();
   const { uid } = useSelector(state => state.auth);
   const [shipmentType, setShipmentType] = useState('local');
   const [formData, setFormData] = useState({
@@ -95,6 +98,22 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
           carrier: 'Entrega local'
         };
 
+      // Crear actualización optimista para la UI
+      const updatedShipping = {
+        ...order.shipping,
+        trackingInfo: trackingInfo
+      };
+
+      // Actualizar optimistamente la UI primero
+      dispatch(updateOrderFieldsOptimistic({
+        orderId: order.id,
+        fields: {
+          status: 'shipped',
+          shipping: updatedShipping,
+          updatedAt: new Date().toISOString()
+        }
+      }));
+
       // Si no está ya enviado, actualizar estado
       if (!isShipped) {
         const statusResult = await updateOrderStatus(order.id, 'shipped', uid, notes);
@@ -116,12 +135,26 @@ export const ShipmentForm = ({ order, onComplete, onCancel }) => {
         if (!result.data.success) {
           throw new Error(result.data.message || 'Error al enviar notificación');
         }
+
+        // Actualizar los datos completos solo si enviamos email
+        // para tener el historial de emails actualizado
+        await dispatch(fetchOrderById(order.id));
       }
 
       onComplete();
     } catch (err) {
       console.error('Error procesando envío:', err);
       setError(err.message || 'Error al procesar el envío');
+
+      // Revertir actualización optimista en caso de error
+      dispatch(updateOrderFieldsOptimistic({
+        orderId: order.id,
+        fields: {
+          status: order.status,
+          shipping: order.shipping,
+          updatedAt: order.updatedAt
+        }
+      }));
     } finally {
       setSending(false);
     }

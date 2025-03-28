@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { WorkflowStepper } from './WorkflowStepper';
 import { NotificationHistory } from './NotificationHistory';
 import { ProcessingForm } from './steps/ProcessingForm';
@@ -7,13 +8,17 @@ import { ResendShippingForm } from './steps/ResendShippingForm';
 import { DeliveryForm } from './steps/DeliveryForm';
 import { ConfirmationForm } from './steps/ConfirmationForm';
 import { CancellationForm } from './steps/CancellationForm';
+import { fetchOrderById } from '../thunks/orderThunks.js';
 
 /**
  * Flujo de trabajo para procesar pedidos a través de sus diferentes etapas
  * Permite visualizar el progreso y realizar acciones en cada paso
+ * Versión mejorada para actualizaciones más fluidas
  */
 export const OrderWorkflow = ({ order, onOrderUpdate }) => {
+  const dispatch = useDispatch();
   const [activeStep, setActiveStep] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Determina el índice del paso actual basado en el estado del pedido
   const getCurrentStepIndex = () => {
@@ -29,10 +34,27 @@ export const OrderWorkflow = ({ order, onOrderUpdate }) => {
 
   // Manejadores de eventos
   const handleStepAction = (actionId) => setActiveStep(actionId);
+
+  // Versión mejorada del manejador de completado para evitar recargas innecesarias
   const handleFormComplete = () => {
-    onOrderUpdate();
-    setActiveStep(null);
+    setIsUpdating(true);
+
+    // Solo obtener los datos más recientes pero evitar recargar la UI
+    // hasta que tengamos los datos actualizados
+    dispatch(fetchOrderById(order.id)).then(() => {
+      // Notificar solo por compatibilidad con componentes externos
+      if (onOrderUpdate) {
+        onOrderUpdate();
+      }
+
+      setIsUpdating(false);
+      setActiveStep(null);
+    }).catch(() => {
+      setIsUpdating(false);
+      setActiveStep(null);
+    });
   };
+
   const handleFormCancel = () => setActiveStep(null);
 
   // Renderiza el formulario activo según la acción seleccionada
@@ -49,7 +71,7 @@ export const OrderWorkflow = ({ order, onOrderUpdate }) => {
       case 'ship-order': return <ShipmentForm {...formProps} />;
       case 'resend-shipping-email': return <ResendShippingForm {...formProps} />;
       case 'deliver-order': return <DeliveryForm {...formProps} />;
-      case 'cancel-order': return <CancellationForm {...formProps} />; // Nuevo caso para cancelación
+      case 'cancel-order': return <CancellationForm {...formProps} />; // Caso para cancelación
       default: return null;
     }
   };
@@ -89,18 +111,29 @@ export const OrderWorkflow = ({ order, onOrderUpdate }) => {
         />
       </div>
 
+      {/* Indicador de carga para actualizaciones */}
+      {isUpdating && (
+        <div className="d-flex justify-content-center my-4 py-4">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Actualizando...</span>
+          </div>
+        </div>
+      )}
+
       {/* Área para formularios activos sin fondo gris o historial de notificaciones */}
-      {activeStep ? (
+      {!isUpdating && activeStep ? (
         <div className="mt-4 p-0">
           {renderStepForm()}
         </div>
       ) : (
-        <div className="mt-4">
-          <h6 className="mb-3 text-secondary fw-normal">
-            Historial de Notificaciones
-          </h6>
-          <NotificationHistory order={order} />
-        </div>
+        !isUpdating && (
+          <div className="mt-4">
+            <h6 className="mb-3 text-secondary fw-normal">
+              Historial de Notificaciones
+            </h6>
+            <NotificationHistory order={order} />
+          </div>
+        )
       )}
     </section>
   );

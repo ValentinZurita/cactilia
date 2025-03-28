@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAction } from '@reduxjs/toolkit';
 import {
   fetchOrders,
   fetchOrderById,
@@ -10,6 +10,9 @@ import {
 
 // Importar la función de serialización
 import { serializeFirestoreData } from '../utils/firestoreUtils.js';
+
+// Acción para actualizaciones optimistas
+export const updateOrderFieldsOptimistic = createAction('orders/updateOrderFieldsOptimistic');
 
 const initialState = {
   // Lista de pedidos
@@ -258,6 +261,24 @@ const ordersSlice = createSlice({
       })
       .addCase(sendInvoiceEmailThunk.rejected, (state) => {
         state.processingActions.sendingInvoice = false;
+      })
+
+      // Añadir caso para actualizaciones optimistas
+      .addCase(updateOrderFieldsOptimistic, (state, action) => {
+        const { orderId, fields } = action.payload;
+
+        // Actualizar el pedido en la lista si existe
+        state.orders = state.orders.map(order =>
+          order.id === orderId ? { ...order, ...fields } : order
+        );
+
+        // Actualizar el pedido seleccionado si coincide con el ID
+        if (state.selectedOrder && state.selectedOrder.id === orderId) {
+          state.selectedOrder = {
+            ...state.selectedOrder,
+            ...fields
+          };
+        }
       });
   }
 });

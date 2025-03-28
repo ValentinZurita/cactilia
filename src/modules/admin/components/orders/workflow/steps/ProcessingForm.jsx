@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { updateOrderStatus } from '../../services/orderAdminService.js';
+import { updateOrderFieldsOptimistic } from '../../slices/ordersSlice.js';
+import { fetchOrderById } from '../../thunks/orderThunks.js';
 
 /**
  * Formulario para actualizar el estado del pedido a "procesando"
+ * Versión mejorada con actualizaciones optimistas para UI fluida
  */
 export const ProcessingForm = ({ order, onComplete, onCancel }) => {
+  const dispatch = useDispatch();
   const { uid } = useSelector(state => state.auth);
   const [notes, setNotes] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -25,16 +29,39 @@ export const ProcessingForm = ({ order, onComplete, onCancel }) => {
     setError(null);
 
     try {
+      // 1. Actualizar optimistamente primero para UI inmediata
+      dispatch(updateOrderFieldsOptimistic({
+        orderId: order.id,
+        fields: {
+          status: targetStatus,
+          updatedAt: new Date().toISOString()
+        }
+      }));
+
+      // 2. Luego hacer la actualización real en el backend
       const result = await updateOrderStatus(order.id, targetStatus, uid, notes);
 
       if (!result.ok) {
         throw new Error(result.error || 'Error al actualizar el estado');
       }
 
+      // 3. Actualizar solo los datos necesarios del pedido
+      // para obtener el historial actualizado
+      await dispatch(fetchOrderById(order.id));
+
       onComplete();
     } catch (err) {
       console.error('Error actualizando estado:', err);
       setError(err.message || 'Error al actualizar el estado');
+
+      // 4. Si falla, revertir a estado anterior
+      dispatch(updateOrderFieldsOptimistic({
+        orderId: order.id,
+        fields: {
+          status: order.status,
+          updatedAt: order.updatedAt
+        }
+      }));
     } finally {
       setProcessing(false);
     }

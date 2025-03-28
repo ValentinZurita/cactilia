@@ -234,3 +234,28 @@ export const sendInvoiceEmailThunk = createAsyncThunk(
     }
   }
 );
+
+export const fetchOrderWorkflowInfo = createAsyncThunk(
+  'orders/fetchOrderWorkflowInfo',
+  async (orderId, { rejectWithValue, dispatch }) => {
+    try {
+      // Podrías implementar un servicio específico que devuelva
+      // solo los campos relacionados con el flujo de trabajo
+      const result = await getOrderWorkflowInfo(orderId);
+
+      if (!result.ok) {
+        throw new Error(result.error || 'Error al cargar información del flujo');
+      }
+
+      // Actualizar solo los campos específicos
+      dispatch(updateOrderFieldsOptimistic({
+        orderId,
+        fields: result.data
+      }));
+
+      return result;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);

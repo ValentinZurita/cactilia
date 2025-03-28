@@ -396,3 +396,43 @@ export const getOrderStatistics = async () => {
     return { ok: false, data: null, error: error.message };
   }
 };
+
+/**
+ * Obtiene información de flujo de trabajo de un pedido
+ * @param {string} orderId - ID del pedido
+ * @returns {Promise<Object>} - Resultado con información del flujo
+ */
+export const getOrderWorkflowInfo = async (orderId) => {
+  try {
+    const orderRef = doc(FirebaseDB, ORDERS_COLLECTION, orderId);
+    const orderDoc = await getDoc(orderRef);
+
+    if (!orderDoc.exists()) {
+      return { ok: false, error: 'Pedido no encontrado' };
+    }
+
+    const data = orderDoc.data();
+
+    const workflowData = {
+      id: orderDoc.id,
+      status: data.status,
+      statusHistory: data.statusHistory || [],
+      shipping: data.shipping || {},
+      emailHistory: data.emailHistory || [],
+      emailStatus: data.emailStatus || {}
+    };
+
+    return {
+      ok: true,
+      data: workflowData,
+      error: null
+    };
+  } catch (error) {
+    console.error('Error al obtener información de flujo:', error);
+    return {
+      ok: false,
+      data: null,
+      error: error.message
+    };
+  }
+};
