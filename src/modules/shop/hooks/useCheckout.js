@@ -4,6 +4,7 @@
  * Hook personalizado para manejar el flujo de checkout:
  * - Selección de dirección de envío
  * - Selección de método de pago
+ * - Tarjeta nueva sin guardar (o con opción de guardar)
  * - Facturación (factura / fiscalData)
  * - Creación de orden en Firestore
  * - Creación/confirmación de PaymentIntent con Stripe (o mocks en dev)
@@ -15,6 +16,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardElement } from '@stripe/react-stripe-js';
 
 import {
   getFunctions,
@@ -102,6 +104,15 @@ export const useCheckout = () => {
 
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
+
+  // Nuevos estados para la tarjeta nueva
+  const [useNewCard, setUseNewCard] = useState(false);
+  const [newCardData, setNewCardData] = useState({
+    cardholderName: '',
+    saveCard: false,
+    isComplete: false,
+    error: null
+  });
 
   const [requiresInvoice, setRequiresInvoice] = useState(false);
   const [fiscalData, setFiscalData] = useState(null);
@@ -251,9 +262,23 @@ export const useCheckout = () => {
     (paymentId) => {
       setSelectedPaymentId(paymentId);
       updateSelectedPayment(paymentMethods, paymentId);
+      setUseNewCard(false); // Si seleccionamos una tarjeta guardada, desactivamos la opción de tarjeta nueva
     },
     [updateSelectedPayment, paymentMethods]
   );
+
+  // -------------------------------------------------------------------------
+  // Manejo de tarjeta nueva
+  // -------------------------------------------------------------------------
+  const handleNewCardSelect = useCallback(() => {
+    setSelectedPaymentId(null);
+    setSelectedPayment(null);
+    setUseNewCard(true);
+  }, []);
+
+  const handleNewCardDataChange = useCallback((data) => {
+    setNewCardData(data);
+  }, []);
 
   // -------------------------------------------------------------------------
   // Manejo de la facturación
@@ -282,23 +307,41 @@ export const useCheckout = () => {
   // -------------------------------------------------------------------------
   const validateCheckoutData = useCallback(() => {
     if (!selectedAddressId || !selectedAddress) {
-      setError('You must select a shipping address');
+      setError('Debes seleccionar una dirección de envío');
       return false;
     }
-    if (!selectedPaymentId || !selectedPayment) {
-      setError('You must select a payment method');
+
+    // Validar método de pago - ahora puede ser un método guardado o una nueva tarjeta
+    if (!useNewCard && (!selectedPaymentId || !selectedPayment)) {
+      setError('Debes seleccionar un método de pago');
       return false;
     }
+
+    // Si está usando una tarjeta nueva, validar los datos
+    if (useNewCard) {
+      if (!newCardData.cardholderName) {
+        setError('Debes ingresar el nombre del titular de la tarjeta');
+        return false;
+      }
+
+      if (!newCardData.isComplete) {
+        setError('Los datos de la tarjeta están incompletos o son inválidos');
+        return false;
+      }
+    }
+
     if (requiresInvoice && (!fiscalData || !fiscalData.rfc)) {
-      setError('Fiscal data is required for invoicing');
+      setError('Los datos fiscales son requeridos para facturación');
       return false;
     }
+
     if (hasOutOfStockItems) {
-      setError('There are out-of-stock items in your cart');
+      setError('Hay productos sin stock en tu carrito');
       return false;
     }
+
     if (!stripe || !elements) {
-      setError('Payment system is not ready. Please try again.');
+      setError('El sistema de pago no está listo. Intenta nuevamente.');
       return false;
     }
 
@@ -310,6 +353,8 @@ export const useCheckout = () => {
     selectedAddress,
     selectedPaymentId,
     selectedPayment,
+    useNewCard,
+    newCardData,
     requiresInvoice,
     fiscalData,
     hasOutOfStockItems,
@@ -332,16 +377,30 @@ export const useCheckout = () => {
         .split('T')[0],
     };
 
-    const paymentInfo = {
-      methodId: selectedPaymentId,
-      method: {
-        type: selectedPayment.type,
-        last4: selectedPayment.cardNumber.split(' ').pop(),
-        brand: selectedPayment.type,
-      },
-      status: 'pending',
-      stripePaymentMethodId: selectedPayment.stripePaymentMethodId,
-    };
+    // Información de pago - ahora puede ser un método guardado o una nueva tarjeta
+    let paymentInfo = {};
+
+    if (useNewCard) {
+      // Para tarjeta nueva sin guardar
+      paymentInfo = {
+        newCard: true,
+        cardholderName: newCardData.cardholderName,
+        saveForFuture: newCardData.saveCard,
+        status: 'pending'
+      };
+    } else {
+      // Para método de pago guardado
+      paymentInfo = {
+        methodId: selectedPaymentId,
+        method: {
+          type: selectedPayment.type,
+          last4: selectedPayment.cardNumber.split(' ').pop(),
+          brand: selectedPayment.type,
+        },
+        status: 'pending',
+        stripePaymentMethodId: selectedPayment.stripePaymentMethodId,
+      };
+    }
 
     const billingInfo = {
       requiresInvoice,
@@ -377,6 +436,8 @@ export const useCheckout = () => {
     selectedAddress,
     selectedPaymentId,
     selectedPayment,
+    useNewCard,
+    newCardData,
     requiresInvoice,
     fiscalData,
     isFreeShipping,
@@ -405,37 +466,78 @@ export const useCheckout = () => {
       // 2. Preparar los datos de la orden
       const orderData = prepareOrderData();
 
-      // 3. Crear PaymentIntent (mock o real)
+      // 3. Crear o usar un Payment Method
+      let paymentMethodId;
+
+      if (useNewCard) {
+        // Si es tarjeta nueva, crear Payment Method con Stripe Elements
+        const cardElement = elements.getElement(CardElement);
+
+        if (!cardElement) {
+          throw new Error('No se pudo acceder al formulario de tarjeta');
+        }
+
+        const { paymentMethod, error } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: cardElement,
+          billing_details: {
+            name: newCardData.cardholderName
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        paymentMethodId = paymentMethod.id;
+
+        // Si el usuario quiere guardar la tarjeta, hacerlo
+        if (newCardData.saveCard) {
+          const functions = getFunctions();
+          const savePaymentMethod = httpsCallable(functions, 'savePaymentMethod');
+
+          await savePaymentMethod({
+            paymentMethodId: paymentMethod.id,
+            cardHolder: newCardData.cardholderName,
+            isDefault: false
+          });
+        }
+      } else {
+        // Si es método guardado, usar el ID existente
+        paymentMethodId = orderData.payment.stripePaymentMethodId;
+      }
+
+      // 4. Crear PaymentIntent con el método de pago
       let paymentResponse;
       if (shouldUseMocks()) {
         console.log('Usando mock para createPaymentIntent');
         paymentResponse = await mockCreatePaymentIntent({
           amount: Math.round(orderData.totals.total * 100),
-          paymentMethodId: orderData.payment.stripePaymentMethodId,
-          description: 'Order at Cactilia',
+          paymentMethodId: paymentMethodId,
+          description: 'Compra en Cactilia',
         });
       } else {
         const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
         paymentResponse = await createPaymentIntent({
           amount: Math.round(orderData.totals.total * 100),
-          paymentMethodId: orderData.payment.stripePaymentMethodId,
-          description: 'Order at Cactilia',
+          paymentMethodId: paymentMethodId,
+          description: 'Compra en Cactilia',
         });
       }
 
       if (!paymentResponse.data || !paymentResponse.data.clientSecret) {
-        throw new Error('Could not create payment intent');
+        throw new Error('No se pudo crear el intent de pago');
       }
 
       const { clientSecret, paymentIntentId } = paymentResponse.data;
-      console.log('PaymentIntent creado:', { clientSecret, paymentIntentId });
 
-      // 4. Guardar la orden en Firestore con el paymentIntentId
+      // 5. Guardar la orden en Firestore con el paymentIntentId
       const orderToSave = {
         ...orderData,
         payment: {
           ...orderData.payment,
           paymentIntentId,
+          paymentMethodId
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -443,9 +545,8 @@ export const useCheckout = () => {
 
       const orderRef = await addDoc(collection(FirebaseDB, 'orders'), orderToSave);
       setOrderId(orderRef.id);
-      console.log('✅ Pedido creado exitosamente con ID:', orderRef.id);
 
-      // 5. Confirmar pago con Stripe
+      // 6. Confirmar pago con Stripe
       let stripeConfirmation;
       if (shouldUseMocks()) {
         // Mock de confirmación exitosa
@@ -460,14 +561,14 @@ export const useCheckout = () => {
       } else {
         // Confirmación real
         stripeConfirmation = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: orderData.payment.stripePaymentMethodId
+          payment_method: paymentMethodId
         });
         if (stripeConfirmation.error) {
           throw new Error(stripeConfirmation.error.message);
         }
       }
 
-      // 6. Confirmar pago también con Cloud Function (mock o real)
+      // 7. Confirmar pago también con Cloud Function
       let confirmResult;
       if (shouldUseMocks()) {
         console.log('Usando mock para confirmOrderPayment');
@@ -483,29 +584,28 @@ export const useCheckout = () => {
         });
       }
 
-      // 7. Mostrar mensaje de éxito, limpiar carrito y redirigir a la página de éxito
+      // 8. Mostrar mensaje de éxito, limpiar carrito y redirigir
       dispatch(addMessage({
         type: 'success',
-        text: 'Payment completed successfully! Your order has been processed.',
+        text: '¡Pago completado con éxito! Tu pedido ha sido procesado.',
         autoHide: true,
         duration: 5000
       }));
 
       dispatch(clearCartWithSync());
 
-      // IMPORTANTE: Redirigir a la ruta de éxito con el ID de la orden
-      console.log('Redirigiendo a la página de éxito...');
+      // Redirigir a la ruta de éxito con el ID de la orden
       setTimeout(() => {
         navigate(`/shop/order-success/${orderRef.id}`, { replace: true });
       }, 100);
 
     } catch (err) {
-      console.error('Error processing order:', err);
-      setError(err.message || 'Error processing your order. Please try again.');
+      console.error('Error procesando el pedido:', err);
+      setError(err.message || 'Error procesando tu pedido. Intenta nuevamente.');
 
       dispatch(addMessage({
         type: 'error',
-        text: err.message || 'Error processing payment.',
+        text: err.message || 'Error procesando el pago.',
         autoHide: true,
         duration: 5000
       }));
@@ -520,7 +620,10 @@ export const useCheckout = () => {
     dispatch,
     functions,
     stripe,
-    navigate
+    elements,
+    navigate,
+    useNewCard,
+    newCardData
   ]);
 
   // -------------------------------------------------------------------------
@@ -542,6 +645,10 @@ export const useCheckout = () => {
     loadingAddresses,
     loadingPayments,
 
+    // Nuevos estados para tarjeta nueva
+    useNewCard,
+    newCardData,
+
     // Funciones manejadoras
     handleAddressChange,
     handlePaymentChange,
@@ -549,6 +656,10 @@ export const useCheckout = () => {
     handleFiscalDataChange,
     handleNotesChange,
     handleProcessOrder,
+
+    // Nuevas funciones para tarjeta nueva
+    handleNewCardSelect,
+    handleNewCardDataChange,
 
     // Helpers expuestos (por si se necesitan en pruebas)
     updateSelectedAddress,

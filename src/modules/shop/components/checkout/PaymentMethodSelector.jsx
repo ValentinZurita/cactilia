@@ -1,30 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PaymentFormModal } from '../../../user/components/payments/PaymentFormModal.jsx'
-import { useStripe } from '@stripe/react-stripe-js'
-
+import { useStripe } from '@stripe/react-stripe-js';
+import { PaymentFormModal } from '../../../user/components/payments/PaymentFormModal.jsx';
+import { NewCardForm } from './NewCardForm.jsx';
+import '../../../shop/styles/newCardForm.css';
 
 /**
- * PaymentMethodSelector - Componente para seleccionar método de pago
- * Permite seleccionar un método existente o agregar uno nuevo
+ * Componente para seleccionar método de pago
+ * Permite seleccionar un método existente, añadir uno nuevo, o usar una tarjeta nueva sin guardarla
  *
  * @param {Object} props - Propiedades del componente
  * @param {Array} props.paymentMethods - Lista de métodos de pago disponibles
  * @param {string} props.selectedPaymentId - ID del método de pago seleccionado
  * @param {Function} props.onPaymentSelect - Función que se ejecuta al seleccionar un método
+ * @param {Function} props.onNewCardSelect - Función que se ejecuta al seleccionar "Usar tarjeta nueva"
+ * @param {Function} props.onNewCardDataChange - Función que se ejecuta cuando cambian los datos de la nueva tarjeta
  * @param {boolean} props.loading - Indica si están cargando los métodos de pago
+ * @param {string} props.newCardSelected - Indica si la opción de tarjeta nueva está seleccionada
  */
 export const PaymentMethodSelector = ({
                                         paymentMethods = [],
                                         selectedPaymentId,
                                         onPaymentSelect,
-                                        loading = false
+                                        onNewCardSelect,
+                                        onNewCardDataChange,
+                                        loading = false,
+                                        newCardSelected = false
                                       }) => {
   // Estado local para mostrar formulario de nuevo método
   const [showForm, setShowForm] = useState(false);
-
-  // Estado para controlar si Stripe está listo
   const [stripeReady, setStripeReady] = useState(false);
+  const [showNewCardForm, setShowNewCardForm] = useState(newCardSelected);
+
+  // Estados para el formulario de nueva tarjeta
+  const [cardholderName, setCardholderName] = useState('');
+  const [saveCard, setSaveCard] = useState(false);
+  const [cardState, setCardState] = useState({ complete: false, error: null });
 
   // Usar hooks de Stripe
   const stripe = useStripe();
@@ -36,9 +47,14 @@ export const PaymentMethodSelector = ({
     }
   }, [stripe]);
 
+  // Manejar cambios en el estado de newCardSelected
+  useEffect(() => {
+    setShowNewCardForm(newCardSelected);
+  }, [newCardSelected]);
+
   // Efecto para seleccionar el método predeterminado cuando se cargan
   useEffect(() => {
-    if (!selectedPaymentId && paymentMethods.length > 0 && !loading) {
+    if (!selectedPaymentId && !newCardSelected && paymentMethods.length > 0 && !loading) {
       // Buscar método predeterminado
       const defaultMethod = paymentMethods.find(method => method.isDefault);
 
@@ -49,7 +65,19 @@ export const PaymentMethodSelector = ({
         onPaymentSelect(paymentMethods[0].id);
       }
     }
-  }, [paymentMethods, selectedPaymentId, loading, onPaymentSelect]);
+  }, [paymentMethods, selectedPaymentId, newCardSelected, loading, onPaymentSelect]);
+
+  // Actualizar los datos de la tarjeta nueva cuando cambian
+  useEffect(() => {
+    if (showNewCardForm && onNewCardDataChange) {
+      onNewCardDataChange({
+        cardholderName,
+        saveCard,
+        isComplete: cardState.complete,
+        error: cardState.error
+      });
+    }
+  }, [showNewCardForm, cardholderName, saveCard, cardState, onNewCardDataChange]);
 
   // Obtener icono según tipo de tarjeta
   const getCardIcon = (type) => {
@@ -66,11 +94,26 @@ export const PaymentMethodSelector = ({
     return type.charAt(0).toUpperCase() + type.slice(1);
   };
 
-  // Manejador para agregar nuevo método de pago
+  // Manejar selección de tarjeta nueva
+  const handleNewCardSelection = () => {
+    setShowNewCardForm(true);
+    if (onNewCardSelect) onNewCardSelect();
+  };
+
+  // Manejar selección de tarjeta guardada
+  const handleSavedCardSelection = (id) => {
+    setShowNewCardForm(false);
+    onPaymentSelect(id);
+  };
+
+  // Manejar cambios en el estado de la tarjeta
+  const handleCardChange = (cardData) => {
+    setCardState(cardData);
+  };
+
+  // Manejador para cuando se añade un nuevo método de pago
   const handlePaymentAdded = () => {
-    // Esta función se llamaría cuando se agrega un nuevo método de pago
     setShowForm(false);
-    // Aquí podrías recargar los métodos de pago o realizar otras acciones
   };
 
   // Si está cargando, mostrar indicador
@@ -85,37 +128,47 @@ export const PaymentMethodSelector = ({
     );
   }
 
-  // Si no hay métodos de pago, mostrar mensaje y opción para agregar
-  if (paymentMethods.length === 0) {
-    return (
-      <div className="payment-selector-empty">
-        <div className="alert alert-info">
-          <i className="bi bi-info-circle me-2"></i>
-          No tienes métodos de pago guardados. Por favor, agrega un método de pago.
-        </div>
-
-        <button
-          className="btn btn-green-3 mt-2"
-          onClick={() => setShowForm(true)}
-          disabled={!stripeReady}
-        >
-          <i className="bi bi-plus-circle me-2"></i>
-          Agregar Método de Pago
-        </button>
-
-        {!stripeReady && (
-          <div className="text-muted small mt-2">
-            <i className="bi bi-exclamation-triangle me-1"></i>
-            Cargando pasarela de pago...
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="payment-method-selector">
+      {/* Lista de métodos guardados */}
       <div className="payment-method-list">
+        {/* Opción para usar una tarjeta nueva */}
+        <div className="payment-method-option">
+          <div className="form-check">
+            <input
+              className="form-check-input"
+              type="radio"
+              name="paymentMethodSelection"
+              id="payment-new-card"
+              checked={showNewCardForm}
+              onChange={handleNewCardSelection}
+            />
+            <label
+              className="form-check-label d-flex align-items-center"
+              htmlFor="payment-new-card"
+              style={{ cursor: 'pointer' }}
+            >
+              <i className="bi bi-plus-circle me-2 fs-4"></i>
+              <div>
+                <div className="payment-method-name">
+                  Usar tarjeta nueva
+                </div>
+                <div className="payment-method-details text-muted small">
+                  Ingresa los datos de una tarjeta para esta compra
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* Separador si hay métodos guardados */}
+        {paymentMethods.length > 0 && (
+          <div className="payment-methods-separator my-3">
+            <span className="separator-text">o usa una tarjeta guardada</span>
+          </div>
+        )}
+
+        {/* Métodos guardados */}
         {paymentMethods.map(method => (
           <div key={method.id} className="payment-method-option">
             <div className="form-check">
@@ -124,8 +177,8 @@ export const PaymentMethodSelector = ({
                 type="radio"
                 name="paymentMethodSelection"
                 id={`payment-${method.id}`}
-                checked={selectedPaymentId === method.id}
-                onChange={() => onPaymentSelect(method.id)}
+                checked={selectedPaymentId === method.id && !showNewCardForm}
+                onChange={() => handleSavedCardSelection(method.id)}
               />
               <label
                 className="form-check-label d-flex align-items-center"
@@ -153,15 +206,38 @@ export const PaymentMethodSelector = ({
         ))}
       </div>
 
+      {/* Formulario de nueva tarjeta (si está seleccionado) */}
+      {showNewCardForm && stripeReady && (
+        <NewCardForm
+          onCardChange={handleCardChange}
+          saveCard={saveCard}
+          onSaveCardChange={setSaveCard}
+          cardholderName={cardholderName}
+          onCardholderNameChange={setCardholderName}
+        />
+      )}
+
+      {/* Mensaje si Stripe no está listo */}
+      {showNewCardForm && !stripeReady && (
+        <div className="alert alert-info mt-3">
+          <i className="bi bi-info-circle me-2"></i>
+          Cargando el procesador de pagos...
+        </div>
+      )}
+
+      {/* Acciones */}
       <div className="payment-method-actions mt-3">
-        <button
-          className="btn btn-outline-secondary btn-sm me-2"
-          onClick={() => setShowForm(true)}
-          disabled={!stripeReady}
-        >
-          <i className="bi bi-plus-circle me-1"></i>
-          Agregar Nuevo Método de Pago
-        </button>
+        {/* Solo mostrar botón para guardar métodos de pago si estamos en una tarjeta guardada */}
+        {!showNewCardForm && (
+          <button
+            className="btn btn-outline-secondary btn-sm me-2"
+            onClick={() => setShowForm(true)}
+            disabled={!stripeReady}
+          >
+            <i className="bi bi-plus-circle me-1"></i>
+            Guardar Nuevo Método de Pago
+          </button>
+        )}
 
         <Link
           to="/profile/payments"
@@ -173,14 +249,45 @@ export const PaymentMethodSelector = ({
         </Link>
       </div>
 
-      {/* Modal para agregar método de pago */}
+      {/* Modal para guardar método de pago */}
       {showForm && stripeReady && (
-          <PaymentFormModal
-            isOpen={showForm}
-            onClose={() => setShowForm(false)}
-            onSuccess={handlePaymentAdded}
-          />
+        <PaymentFormModal
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          onSuccess={handlePaymentAdded}
+        />
       )}
+
+      {/* Estilos adicionales */}
+      <style jsx>{`
+        .payment-methods-separator {
+          display: flex;
+          align-items: center;
+          text-align: center;
+          color: #888;
+          font-size: 0.9rem;
+        }
+        
+        .payment-methods-separator::before,
+        .payment-methods-separator::after {
+          content: '';
+          flex: 1;
+          border-bottom: 1px solid #ddd;
+        }
+        
+        .payment-methods-separator::before {
+          margin-right: 1em;
+        }
+        
+        .payment-methods-separator::after {
+          margin-left: 1em;
+        }
+        
+        .separator-text {
+          padding: 0 10px;
+          background-color: white;
+        }
+      `}</style>
     </div>
-  )
+  );
 };

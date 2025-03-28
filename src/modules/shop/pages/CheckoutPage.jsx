@@ -1,16 +1,3 @@
-/**
- * CheckoutPage.jsx
- *
- * Página principal para el proceso de pago (Checkout).
- * - Integra la selección de dirección, método de pago e información fiscal.
- * - Muestra un resumen de pedido y un botón para procesar la compra.
- * - Utiliza `useCheckout` para la lógica de obtención de direcciones, métodos de pago y manejo del pago.
- *
- * Al completar correctamente la compra, el usuario es redirigido a la ruta:
- *   "/order-success/:orderId"
- * donde se muestra la confirmación del pedido.
- */
-
 import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -21,8 +8,6 @@ import { AddressSelector } from '../components/checkout/AddressSelector';
 import { PaymentMethodSelector } from '../components/checkout/PaymentMethodSelector';
 import { BillingInfoForm } from '../components/checkout/BillingInfoForm';
 import { CheckoutButton } from '../components/checkout/CheckoutButton';
-// Eliminamos import de OrderConfirmation, ya que iremos a la ruta separada
-// import { OrderConfirmation } from '../components/checkout/OrderConfirmation';
 
 import '../styles/checkout.css';
 
@@ -52,6 +37,9 @@ export const CheckoutPage = () => {
     paymentMethods,
     loadingAddresses,
     loadingPayments,
+    // Nuevo - estado para tarjeta nueva
+    useNewCard,
+    newCardData,
 
     // Manejadores
     handleAddressChange,
@@ -60,6 +48,9 @@ export const CheckoutPage = () => {
     handleFiscalDataChange,
     handleNotesChange,
     handleProcessOrder,
+    // Nuevos - manejadores para tarjeta nueva
+    handleNewCardSelect,
+    handleNewCardDataChange,
   } = useCheckout();
 
   // Opciones de configuración para Stripe Elements
@@ -117,7 +108,10 @@ export const CheckoutPage = () => {
                 paymentMethods={paymentMethods}
                 selectedPaymentId={selectedPaymentId}
                 onPaymentSelect={handlePaymentChange}
+                onNewCardSelect={handleNewCardSelect}
+                onNewCardDataChange={handleNewCardDataChange}
                 loading={loadingPayments}
+                newCardSelected={useNewCard}
               />
             </div>
 
@@ -167,8 +161,15 @@ export const CheckoutPage = () => {
                 <CheckoutButton
                   onCheckout={handleProcessOrder}
                   isProcessing={isProcessing}
-                  // Deshabilitar si no hay dirección o método de pago seleccionado
-                  disabled={!selectedAddressId || !selectedPaymentId}
+                  // Deshabilitar si:
+                  // - No hay dirección seleccionada, o
+                  // - No hay método de pago seleccionado y no está usando tarjeta nueva, o
+                  // - Está usando tarjeta nueva pero los datos no están completos
+                  disabled={
+                    !selectedAddressId ||
+                    (!selectedPaymentId && !useNewCard) ||
+                    (useNewCard && (!newCardData.cardholderName || !newCardData.isComplete))
+                  }
                 />
 
                 {/* Términos y condiciones */}
@@ -179,10 +180,45 @@ export const CheckoutPage = () => {
                     <a href="/privacy" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>.
                   </small>
                 </div>
+
+                {/* Indicadores de procesamiento - Mostrar durante el paso 2 */}
+                {step === 2 && (
+                  <div className="processing-indicators mt-4 p-3 border rounded">
+                    <div className="processing-step mb-2">
+                      <i className="bi bi-arrow-repeat spin me-2"></i>
+                      <span>Procesando tu pago...</span>
+                    </div>
+                    <small className="text-muted d-block">
+                      Espera un momento mientras procesamos tu compra. No cierres esta ventana.
+                    </small>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Estilos CSS para el indicador de procesamiento */}
+        <style jsx>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          
+          .spin {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+          }
+          
+          .processing-indicators {
+            background-color: #f8f9fa;
+          }
+          
+          .processing-step {
+            font-size: 0.9rem;
+            font-weight: 500;
+          }
+        `}</style>
       </div>
     </Elements>
   );
