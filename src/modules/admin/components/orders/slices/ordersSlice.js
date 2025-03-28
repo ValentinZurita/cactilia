@@ -4,10 +4,11 @@ import {
   fetchOrderById,
   updateOrderStatusThunk,
   addOrderNoteThunk,
-  fetchOrderStatistics
+  fetchOrderStatistics,
+  sendInvoiceEmailThunk, // Nuevo thunk que añadiremos
 } from '../thunks/orderThunks.js';
 
-// Importar la función de serialización directamente desde donde fue definida
+// Importar la función de serialización
 import { serializeFirestoreData } from '../utils/firestoreUtils.js';
 
 const initialState = {
@@ -29,6 +30,9 @@ const initialState = {
   // Pedido seleccionado para detalles
   selectedOrder: null,
 
+  // Pestaña activa en detalles de pedido - NUEVO
+  activeTab: 'products',
+
   // Estadísticas
   statistics: null,
 
@@ -38,6 +42,12 @@ const initialState = {
     orderDetails: false,
     statistics: false,
     action: false
+  },
+  // Estado más granular de acciones en progreso - NUEVO
+  processingActions: {
+    sendingInvoice: false,
+    changingStatus: false,
+    addingNote: false
   },
   errors: {
     orders: null,
@@ -64,6 +74,11 @@ const ordersSlice = createSlice({
     // Limpiar pedido seleccionado (por ejemplo, al volver a la lista)
     clearSelectedOrder: (state) => {
       state.selectedOrder = null;
+    },
+
+    // Establecer pestaña activa - NUEVO
+    setActiveTab: (state, action) => {
+      state.activeTab = action.payload;
     },
 
     // Limpiar errores
@@ -130,10 +145,12 @@ const ordersSlice = createSlice({
       // Gestionar estados de updateOrderStatusThunk
       .addCase(updateOrderStatusThunk.pending, (state) => {
         state.loading.action = true;
+        state.processingActions.changingStatus = true; // NUEVO
         state.errors.action = null;
       })
       .addCase(updateOrderStatusThunk.fulfilled, (state, action) => {
         state.loading.action = false;
+        state.processingActions.changingStatus = false; // NUEVO
 
         // Actualizar el pedido seleccionado si coincide el ID
         if (state.selectedOrder && state.selectedOrder.id === action.meta.arg.orderId) {
@@ -166,16 +183,19 @@ const ordersSlice = createSlice({
       })
       .addCase(updateOrderStatusThunk.rejected, (state, action) => {
         state.loading.action = false;
+        state.processingActions.changingStatus = false; // NUEVO
         state.errors.action = action.error.message;
       })
 
       // Gestionar estados de addOrderNoteThunk
       .addCase(addOrderNoteThunk.pending, (state) => {
         state.loading.action = true;
+        state.processingActions.addingNote = true; // NUEVO
         state.errors.action = null;
       })
       .addCase(addOrderNoteThunk.fulfilled, (state, action) => {
         state.loading.action = false;
+        state.processingActions.addingNote = false; // NUEVO
 
         // Actualizar el pedido seleccionado si coincide el ID
         if (state.selectedOrder && state.selectedOrder.id === action.meta.arg.orderId) {
@@ -193,6 +213,7 @@ const ordersSlice = createSlice({
       })
       .addCase(addOrderNoteThunk.rejected, (state, action) => {
         state.loading.action = false;
+        state.processingActions.addingNote = false; // NUEVO
         state.errors.action = action.error.message;
       })
 
@@ -203,8 +224,6 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrderStatistics.fulfilled, (state, action) => {
         state.loading.statistics = false;
-        // Si serializeFirestoreData no está disponible, usar el dato directamente
-        // De lo contrario, serializar el resultado
         state.statistics = action.payload.data
           ? (typeof serializeFirestoreData === 'function'
             ? serializeFirestoreData(action.payload.data)
@@ -214,12 +233,37 @@ const ordersSlice = createSlice({
       .addCase(fetchOrderStatistics.rejected, (state, action) => {
         state.loading.statistics = false;
         state.errors.statistics = action.error.message;
+      })
+
+      // NUEVO - Gestionar estados de sendInvoiceEmailThunk
+      .addCase(sendInvoiceEmailThunk.pending, (state) => {
+        state.processingActions.sendingInvoice = true;
+      })
+      .addCase(sendInvoiceEmailThunk.fulfilled, (state, action) => {
+        state.processingActions.sendingInvoice = false;
+
+        // Actualizar estado de factura en el pedido seleccionado si coincide
+        if (state.selectedOrder && state.selectedOrder.id === action.meta.arg.orderId) {
+          if (state.selectedOrder.billing) {
+            state.selectedOrder = {
+              ...state.selectedOrder,
+              billing: {
+                ...state.selectedOrder.billing,
+                invoiceEmailSent: true,
+                invoiceEmailSentAt: new Date().toISOString()
+              }
+            };
+          }
+        }
+      })
+      .addCase(sendInvoiceEmailThunk.rejected, (state) => {
+        state.processingActions.sendingInvoice = false;
       });
   }
 });
 
 // Exportar acciones
-export const { updateFilters, clearSelectedOrder, clearErrors } = ordersSlice.actions;
+export const { updateFilters, clearSelectedOrder, clearErrors, setActiveTab } = ordersSlice.actions;
 
 // Exportar el reducer
 export default ordersSlice.reducer;

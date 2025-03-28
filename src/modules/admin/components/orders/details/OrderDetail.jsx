@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { OrderDetailHeader } from './OrderDetailHeader.jsx';
 import { OrderPaymentInfo } from '../payment/OrderPaymentInfo.jsx';
 import { OrderStatusChangeSection } from '../status/OrderStatusChangeSection.jsx';
@@ -17,8 +18,10 @@ import {
   fetchOrderById
 } from '../thunks/orderThunks.js';
 import {
-  selectActionProcessing
+  selectActionProcessing,
+  selectActiveTab // NUEVO: Selector para tab activa
 } from '../thunks/orderSelectors.js';
+import { setActiveTab } from '../slices/ordersSlice.js'; // NUEVO: Action para pestaña activa
 import { addMessage } from '../../../../../store/messages/messageSlice.js';
 
 export const OrderDetail = ({
@@ -31,18 +34,40 @@ export const OrderDetail = ({
                               formatDate,
                               isProcessing = false
                             }) => {
-  // Estado para controlar la pestaña activa
-  const [activeTab, setActiveTab] = useState('products');
+  // ELIMINADO: estado local de activeTab
+  // const [activeTab, setActiveTab] = useState('products');
 
   // Estado para almacenar los datos del usuario
   const [userData, setUserData] = useState(null);
   const [loadingUser, setLoadingUser] = useState(false);
 
-  // Obtener estado de procesamiento desde Redux
-  // (podemos usar el pasado por props o este directamente de Redux)
+  // Obtener estados desde Redux
   const processingFromRedux = useSelector(selectActionProcessing);
+  const activeTab = useSelector(selectActiveTab); // NUEVO: Obtenemos pestaña desde Redux
   const dispatch = useDispatch();
+  const location = useLocation(); // NUEVO: para manejar URL
   const { uid } = useSelector(state => state.auth);
+
+  // NUEVO: Efecto para sincronizar pestaña con URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabFromURL = params.get('tab');
+
+    if (tabFromURL && ['products', 'customer', 'payment', 'workflow', 'status', 'notes'].includes(tabFromURL)) {
+      dispatch(setActiveTab(tabFromURL));
+    }
+  }, [location.search, dispatch]);
+
+  // NUEVO: Función para cambiar pestaña y actualizar URL
+  const handleSetActiveTab = (tab) => {
+    dispatch(setActiveTab(tab));
+
+    // Actualizar URL sin recargar la página
+    const params = new URLSearchParams(location.search);
+    params.set('tab', tab);
+    const newUrl = `${location.pathname}?${params.toString()}`;
+    window.history.pushState({}, '', newUrl);
+  };
 
   // Cargar información del usuario cuando cambia el pedido
   useEffect(() => {
@@ -142,8 +167,8 @@ export const OrderDetail = ({
         userData={userData}
       />
 
-      {/* Navegación por pestañas */}
-      <OrderDetailTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* Navegación por pestañas - MODIFICADO para usar Redux */}
+      <OrderDetailTabs activeTab={activeTab} setActiveTab={handleSetActiveTab} />
 
       {/* Contenido según la pestaña seleccionada */}
       <div className="tab-content mb-4">

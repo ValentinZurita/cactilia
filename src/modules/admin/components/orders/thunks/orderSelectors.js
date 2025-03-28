@@ -15,6 +15,9 @@ export const selectOrderFilters = (state) => state.orders.filters;
 // Selector para obtener el pedido seleccionado
 export const selectSelectedOrder = (state) => state.orders.selectedOrder;
 
+// Selector para obtener la pestaña activa - NUEVO
+export const selectActiveTab = (state) => state.orders.activeTab;
+
 // Selector para obtener las estadísticas
 export const selectOrderStatistics = (state) => state.orders.statistics;
 
@@ -23,6 +26,11 @@ export const selectOrdersLoading = (state) => state.orders.loading.orders;
 export const selectOrderDetailsLoading = (state) => state.orders.loading.orderDetails;
 export const selectStatisticsLoading = (state) => state.orders.loading.statistics;
 export const selectActionProcessing = (state) => state.orders.loading.action;
+
+// Selectores para estados específicos de procesamiento - NUEVO
+export const selectSendingInvoice = (state) => state.orders.processingActions.sendingInvoice;
+export const selectChangingStatus = (state) => state.orders.processingActions.changingStatus;
+export const selectAddingNote = (state) => state.orders.processingActions.addingNote;
 
 // Selectores para errores
 export const selectOrdersError = (state) => state.orders.errors.orders;

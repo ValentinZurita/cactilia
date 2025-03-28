@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux'
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
   removeInvoiceFilesFromOrder,
   uploadInvoiceFilesForOrder,
   removeInvoiceFileByType
 } from '../services/invoiceService.js'
+import { selectSendingInvoice } from '../thunks/orderSelectors.js'
+import { sendInvoiceEmailThunk } from '../thunks/orderThunks.js'
 
 /**
  * Componente para subir facturas a un pedido (PDF y XML)
@@ -18,6 +20,7 @@ import {
  * @returns {JSX.Element}
  */
 export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
+
   // Estados locales
   const [pdfFile, setPdfFile] = useState(null);
   const [xmlFile, setXmlFile] = useState(null);
@@ -25,12 +28,14 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
   const [error, setError] = useState(null);
   const [showUploadForm, setShowUploadForm] = useState(false);
 
-  // Estado para el envío de email de facturas
-  const [sendingEmail, setSendingEmail] = useState(false);
+  // Estados para email ya no son necesarios como estados locales
+  // const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState(null);
 
-  // Obtener el ID del usuario actual (administrador)
+  // Obtener estados de Redux
+  const dispatch = useDispatch();
   const { uid } = useSelector(state => state.auth);
+  const sendingEmail = useSelector(selectSendingInvoice); // NUEVO: Estado desde Redux
 
   // Comprobar si hay facturas ya subidas
   const hasPdf = billing?.invoicePdfUrl && billing?.invoicePdfName;
@@ -39,7 +44,7 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
 
   // Comprobar si ya se envió email de factura
   const invoiceEmailSent = billing?.invoiceEmailSent === true;
-  const hasEmailForInvoice = billing?.fiscalData?.email ? true : false;
+  const hasEmailForInvoice = !!billing?.fiscalData?.email;
 
   /**
    * Manejar cambio de archivo PDF
@@ -162,7 +167,7 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
   };
 
   /**
-   * Manejar el envío de facturas por email
+   * Manejar el envío de facturas por email - MODIFICADO para usar Redux
    */
   const handleSendInvoiceEmail = async () => {
     if (!hasPdf && !hasXml) {
@@ -175,31 +180,26 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
       return;
     }
 
-    setSendingEmail(true);
     setError(null);
     setEmailSuccess(null);
 
     try {
-      const functions = getFunctions();
-      const sendInvoiceEmail = httpsCallable(functions, 'sendInvoiceEmail');
+      // Usar thunk de Redux en lugar de llamada directa
+      const resultAction = await dispatch(sendInvoiceEmailThunk({ orderId }));
 
-      const result = await sendInvoiceEmail({ orderId });
-
-      if (result.data.success) {
+      if (sendInvoiceEmailThunk.fulfilled.match(resultAction)) {
         setEmailSuccess(`Facturas enviadas correctamente a ${billing.fiscalData.email}`);
 
         // Notificar al componente padre para actualizar la información
         if (onInvoiceUploaded) {
           onInvoiceUploaded();
         }
-      } else {
-        throw new Error(result.data.message || 'Error al enviar facturas');
+      } else if (sendInvoiceEmailThunk.rejected.match(resultAction)) {
+        throw new Error(resultAction.payload || 'Error al enviar facturas');
       }
     } catch (err) {
       console.error('Error enviando facturas por email:', err);
       setError(err.message || 'Error al enviar facturas por email');
-    } finally {
-      setSendingEmail(false);
     }
   };
 

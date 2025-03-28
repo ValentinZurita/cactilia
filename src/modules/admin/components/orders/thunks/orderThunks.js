@@ -8,6 +8,7 @@ import {
 } from '../services/orderAdminService.js';
 import { addMessage } from '../../../../../store/messages/messageSlice.js'
 import { serializeFirestoreData } from '../utils/firestoreUtils';
+import { getFunctions, httpsCallable } from 'firebase/functions'
 
 /**
  * Thunk para obtener pedidos con filtros y paginación
@@ -185,6 +186,50 @@ export const fetchOrderStatistics = createAsyncThunk(
         type: 'error',
         text: 'Error al cargar estadísticas de pedidos'
       }));
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+/**
+ * Thunk para enviar facturas por email
+ */
+export const sendInvoiceEmailThunk = createAsyncThunk(
+  'orders/sendInvoiceEmail',
+  async ({ orderId }, { rejectWithValue, dispatch }) => {
+    try {
+      const functions = getFunctions();
+      const sendInvoiceEmail = httpsCallable(functions, 'sendInvoiceEmail');
+
+      const result = await sendInvoiceEmail({ orderId });
+
+      if (!result.data || !result.data.success) {
+        throw new Error(result.data?.message || 'Error al enviar facturas');
+      }
+
+      // Mostrar mensaje de éxito
+      dispatch(addMessage({
+        type: 'success',
+        text: 'Facturas enviadas correctamente',
+        autoHide: true,
+        duration: 3000
+      }));
+
+      // No necesitamos recargar el pedido completo si manejamos correctamente
+      // el estado en el reducer, pero por seguridad podemos actualizarlo
+      dispatch(fetchOrderById(orderId));
+
+      return result.data;
+    } catch (error) {
+      console.error('Error enviando facturas:', error);
+
+      dispatch(addMessage({
+        type: 'error',
+        text: error.message || 'Error al enviar facturas',
+        autoHide: true,
+        duration: 3000
+      }));
+
       return rejectWithValue(error.message);
     }
   }

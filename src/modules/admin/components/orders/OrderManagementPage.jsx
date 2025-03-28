@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux';
 import { OrderList } from './list/OrderList.jsx';
 import { OrderDetail } from './details/OrderDetail.jsx';
@@ -25,8 +25,8 @@ import {
   selectActionProcessing,
   selectOrderStatistics,
   selectStatisticsLoading,
-  selectOrderFilters
-} from './thunks/orderSelectors.js';
+  selectOrderFilters, selectActiveTab,
+} from './thunks/orderSelectors.js'
 
 // Utilidades para formateo
 import { formatOrderDate, formatPrice } from './utils/formatUtils.js'; /// Asumiendo que moverás estas funciones a un archivo de utilidades
@@ -40,6 +40,7 @@ export const OrderManagementPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [advancedFilters, setAdvancedFilters] = useState({});
+  const location = useLocation();
 
   // Obtener estado desde Redux
   const orders = useSelector(selectOrders);
@@ -73,6 +74,31 @@ export const OrderManagementPage = () => {
     }
   }, [mode, id, dispatch]);
 
+  // Manejar la vista en detalle
+  useEffect(() => {
+    if (mode === 'view' && id) {
+      dispatch(fetchOrderById(id));
+
+      // Obtener la pestaña de la URL si existe
+      const params = new URLSearchParams(location.search);
+      const tab = params.get('tab');
+
+      if (tab && ['products', 'customer', 'payment', 'workflow', 'status', 'notes'].includes(tab)) {
+        dispatch(setActiveTab(tab));
+      }
+    } else if (mode !== 'view') {
+      // Limpiar el pedido seleccionado si no estamos en vista detalle
+      dispatch(clearSelectedOrder());
+    }
+  }, [mode, id, dispatch, location.search]);
+
+
+  // Modificar la función handleViewDetail para incluir la pestaña actual
+  const handleViewDetail = (orderId) => {
+    const activeTab = useSelector(selectActiveTab);
+    navigate(`/admin/orders/view/${orderId}?tab=${activeTab}`);
+  };
+
   // Manejador para cambiar el filtro de estado
   const handleFilterChange = (status) => {
     dispatch(updateFilters({ status }));
@@ -81,11 +107,6 @@ export const OrderManagementPage = () => {
   // Manejador para la búsqueda
   const handleSearch = (term) => {
     dispatch(updateFilters({ searchTerm: term }));
-  };
-
-  // Manejador para ver detalles de un pedido
-  const handleViewDetail = (orderId) => {
-    navigate(`/admin/orders/view/${orderId}`);
   };
 
   // Manejador para volver a la lista
