@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -12,6 +12,8 @@ import { CheckoutButton } from './components/CheckoutButton.jsx';
 // Importar estilos
 import './styles/checkout.css';
 import './styles/processingIndicator.css';
+import './styles/addressSelector.css';
+import './styles/newAddressForm.css';
 
 // Importar nuestro custom hook
 import { useCheckout } from './hooks/useCheckout.js';
@@ -28,6 +30,7 @@ export const CheckoutPage = () => {
   const {
     // Estados
     selectedAddressId,
+    selectedAddressType,
     selectedPaymentId,
     selectedPaymentType,
     requiresInvoice,
@@ -40,12 +43,18 @@ export const CheckoutPage = () => {
     paymentMethods,
     loadingAddresses,
     loadingPayments,
+    // Estado para dirección nueva
+    useNewAddress,
+    newAddressData,
     // Estado para tarjeta nueva
     useNewCard,
     newCardData,
 
-    // Manejadores
+    // Manejadores para dirección
     handleAddressChange,
+    handleNewAddressSelect,
+    handleNewAddressDataChange,
+    // Manejadores para pago
     handlePaymentChange,
     handleInvoiceChange,
     handleFiscalDataChange,
@@ -56,6 +65,16 @@ export const CheckoutPage = () => {
     handleOxxoSelect,
     handleNewCardDataChange,
   } = useCheckout();
+
+  // Log para debug
+  useEffect(() => {
+    console.log('CheckoutPage render:', {
+      selectedAddressId,
+      selectedAddressType,
+      addresses,
+      loadingAddresses
+    });
+  }, [selectedAddressId, selectedAddressType, addresses, loadingAddresses]);
 
   // Opciones de configuración para Stripe Elements
   const stripeOptions = {
@@ -70,8 +89,13 @@ export const CheckoutPage = () => {
 
   // Verificar si el botón debe estar deshabilitado
   const isButtonDisabled = () => {
-    // Siempre necesitamos una dirección
-    if (!selectedAddressId) return true;
+    // Verificar dirección según el tipo
+    const hasValidAddress = (
+      (selectedAddressType === 'saved' && selectedAddressId) ||
+      (selectedAddressType === 'new' && newAddressData.street && newAddressData.city && newAddressData.state && newAddressData.zip)
+    );
+
+    if (!hasValidAddress) return true;
 
     // Verificar según el tipo de pago
     switch (selectedPaymentType) {
@@ -126,7 +150,10 @@ export const CheckoutPage = () => {
               <AddressSelector
                 addresses={addresses}
                 selectedAddressId={selectedAddressId}
+                selectedAddressType={selectedAddressType}
                 onAddressSelect={handleAddressChange}
+                onNewAddressSelect={handleNewAddressSelect}
+                onNewAddressDataChange={handleNewAddressDataChange}
                 loading={loadingAddresses}
               />
             </div>
@@ -216,7 +243,7 @@ export const CheckoutPage = () => {
                       Al hacer clic en "Generar voucher OXXO", crearemos un voucher de pago que podrás presentar en cualquier tienda OXXO en México.
                     </p>
                     <p className="small mb-0">
-                      El voucher tiene validez de 24 horas y tu pedido será procesado una vez que realices el pago.
+                      El voucher tiene validez de 24 horas y tu pedido será procesado una vez que recibamos la confirmación del pago.
                     </p>
                   </div>
                 )}

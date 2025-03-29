@@ -2,7 +2,7 @@
  * useCheckout.js
  *
  * Hook personalizado para manejar el flujo de checkout:
- * - Selección de dirección de envío
+ * - Selección de dirección de envío (guardada o nueva temporal)
  * - Selección de método de pago (tarjeta guardada, tarjeta nueva, OXXO)
  * - Facturación (factura / fiscalData)
  * - Creación de orden en Firestore
@@ -100,6 +100,22 @@ export const useCheckout = () => {
   // -------------------------------------------------------------------------
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [selectedAddressType, setSelectedAddressType] = useState(''); // 'saved', 'new'
+
+  // Estado para la dirección nueva
+  const [useNewAddress, setUseNewAddress] = useState(false);
+  const [newAddressData, setNewAddressData] = useState({
+    name: '',
+    street: '',
+    numExt: '',
+    numInt: '',
+    colonia: '',
+    city: '',
+    state: '',
+    zip: '',
+    references: '',
+    saveAddress: false
+  });
 
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -243,6 +259,23 @@ export const useCheckout = () => {
   }, [paymentMethods, loadingPayments]);
 
   // -------------------------------------------------------------------------
+  // Efecto: Selección automática de dirección predeterminada
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (!selectedAddressId && !selectedAddressType && addresses.length > 0 && !loadingAddresses) {
+      // Buscar dirección predeterminada
+      const defaultAddress = addresses.find(address => address.isDefault);
+
+      if (defaultAddress) {
+        handleAddressChange(defaultAddress.id, 'saved');
+      } else if (addresses.length > 0) {
+        // Si no hay dirección predeterminada, usar la primera
+        handleAddressChange(addresses[0].id, 'saved');
+      }
+    }
+  }, [addresses, loadingAddresses]);
+
+  // -------------------------------------------------------------------------
   // Helpers: Actualizar dirección seleccionada
   // -------------------------------------------------------------------------
   const updateSelectedAddress = useCallback((addressesList, addressId) => {
@@ -268,12 +301,36 @@ export const useCheckout = () => {
   // Manejo de cambios en dirección y método de pago
   // -------------------------------------------------------------------------
   const handleAddressChange = useCallback(
-    (addressId) => {
+    (addressId, addressType = 'saved') => {
+      console.log('handleAddressChange:', { addressId, addressType });
       setSelectedAddressId(addressId);
-      updateSelectedAddress(addresses, addressId);
+      setSelectedAddressType(addressType);
+
+      if (addressType === 'saved') {
+        updateSelectedAddress(addresses, addressId);
+        setUseNewAddress(false);
+      }
     },
     [updateSelectedAddress, addresses]
   );
+
+  // Manejador para selección de dirección nueva
+  const handleNewAddressSelect = useCallback(() => {
+    console.log('handleNewAddressSelect');
+    setSelectedAddressId(null);
+    setSelectedAddress(null);
+    setSelectedAddressType('new');
+    setUseNewAddress(true);
+  }, []);
+
+  // Manejador para cambios en los datos de la nueva dirección
+  const handleNewAddressDataChange = useCallback((data) => {
+    console.log('handleNewAddressDataChange:', data);
+    setNewAddressData(prev => ({
+      ...prev,
+      ...data
+    }));
+  }, []);
 
   const handlePaymentChange = useCallback(
     (paymentId, paymentType = 'card') => {
@@ -337,8 +394,29 @@ export const useCheckout = () => {
   // Validar que el Checkout esté completo antes de procesar
   // -------------------------------------------------------------------------
   const validateCheckoutData = useCallback(() => {
-    if (!selectedAddressId || !selectedAddress) {
-      setError('You must select a shipping address');
+    // Validar dirección según el tipo seleccionado
+    if (selectedAddressType === 'saved') {
+      if (!selectedAddressId || !selectedAddress) {
+        setError('Debes seleccionar una dirección de envío');
+        return false;
+      }
+    } else if (selectedAddressType === 'new') {
+      // Validar campos requeridos para dirección nueva
+      const requiredFields = ['name', 'street', 'city', 'state', 'zip'];
+      const missingFields = requiredFields.filter(field => !newAddressData[field]);
+
+      if (missingFields.length > 0) {
+        setError('Por favor completa todos los campos obligatorios de la dirección');
+        return false;
+      }
+
+      // Validación específica para código postal
+      if (!/^\d{5}$/.test(newAddressData.zip)) {
+        setError('El código postal debe tener 5 dígitos');
+        return false;
+      }
+    } else {
+      setError('Debes seleccionar o ingresar una dirección de envío');
       return false;
     }
 
@@ -388,8 +466,10 @@ export const useCheckout = () => {
     setError(null);
     return true;
   }, [
+    selectedAddressType,
     selectedAddressId,
     selectedAddress,
+    newAddressData,
     selectedPaymentId,
     selectedPaymentType,
     newCardData,
@@ -404,9 +484,8 @@ export const useCheckout = () => {
   // Preparar el objeto "orderData" para guardar en Firestore
   // -------------------------------------------------------------------------
   const prepareOrderData = useCallback(() => {
-    const shippingInfo = {
-      addressId: selectedAddressId,
-      address: { ...selectedAddress },
+    // Información de envío según el tipo de dirección
+    let shippingInfo = {
       method: 'standard',
       cost: isFreeShipping ? 0 : shipping,
       // Ejemplo de fecha estimada a 7 días
@@ -414,6 +493,24 @@ export const useCheckout = () => {
         .toISOString()
         .split('T')[0],
     };
+
+    if (selectedAddressType === 'saved') {
+      // Usar dirección guardada
+      shippingInfo = {
+        ...shippingInfo,
+        addressId: selectedAddressId,
+        address: { ...selectedAddress },
+        addressType: 'saved'
+      };
+    } else if (selectedAddressType === 'new') {
+      // Usar dirección temporal
+      shippingInfo = {
+        ...shippingInfo,
+        address: { ...newAddressData },
+        addressType: 'new',
+        saveForFuture: newAddressData.saveAddress
+      };
+    }
 
     // Información de pago según el tipo seleccionado
     let paymentInfo = {};
@@ -481,8 +578,10 @@ export const useCheckout = () => {
       createdAt: new Date()
     };
   }, [
+    selectedAddressType,
     selectedAddressId,
     selectedAddress,
+    newAddressData,
     selectedPaymentId,
     selectedPaymentType,
     selectedPayment,
@@ -717,7 +816,23 @@ export const useCheckout = () => {
         });
       }
 
-      // 7. Mostrar mensaje adecuado según el método de pago
+      // 7. Guardar la dirección nueva si el usuario lo solicitó
+      if (selectedAddressType === 'new' && newAddressData.saveAddress) {
+        try {
+          const functions = getFunctions();
+          const saveAddress = httpsCallable(functions, 'saveAddress');
+
+          await saveAddress({
+            address: newAddressData,
+            isDefault: false
+          });
+        } catch (saveAddressError) {
+          console.error('Error al guardar la dirección:', saveAddressError);
+          // No interrumpimos el flujo principal si falla el guardado de la dirección
+        }
+      }
+
+      // 8. Mostrar mensaje adecuado según el método de pago
       if (selectedPaymentType === 'oxxo') {
         dispatch(addMessage({
           type: 'success',
@@ -726,90 +841,88 @@ export const useCheckout = () => {
           duration: 8000
         }));
       } else {
+        // 9. Limpiar el carrito
+        dispatch(clearCartWithSync());
+      }
+    } catch (err) {
+        console.error('Error processing order:', err);
+        setError(err.message || 'Error processing your order. Please try again.');
+
         dispatch(addMessage({
-          type: 'success',
-          text: 'Payment completed successfully! Your order has been processed.',
+          type: 'error',
+          text: err.message || 'Error processing payment.',
           autoHide: true,
           duration: 5000
         }));
+
+        setStep(1); // Regresamos al paso 1 (formulario) si hubo error
+      } finally {
+        setIsProcessing(false);
       }
 
-      // 8. Limpiar el carrito
-      dispatch(clearCartWithSync());
+    // 10. Redirigir según el método de pago fuera del bloque try/catch
+    setTimeout(() => {
+      if (selectedPaymentType === 'oxxo') {
+        navigate(`/shop/order-success/${orderRef.id}?payment=oxxo`, { replace: true });
+      } else {
+        navigate(`/shop/order-success/${orderRef.id}`, { replace: true });
+      }
+    }, 100);
+    }, [
+      validateCheckoutData,
+      prepareOrderData,
+      dispatch,
+      functions,
+      stripe,
+      elements,
+      navigate,
+      selectedPaymentType,
+      newCardData,
+      selectedAddressType,
+      newAddressData,
+      auth
+    ]);
 
-      // 9. Redirigir según el método de pago
-      setTimeout(() => {
-        if (selectedPaymentType === 'oxxo') {
-          // Para OXXO, podemos pasar un parámetro adicional para mostrar instrucciones específicas
-          navigate(`/shop/order-success/${orderRef.id}?payment=oxxo`, { replace: true });
-        } else {
-          navigate(`/shop/order-success/${orderRef.id}`, { replace: true });
-        }
-      }, 100);
+    // -------------------------------------------------------------------------
+    // Retorno del hook
+    // -------------------------------------------------------------------------
+    return {
+      // Estados que el componente Checkout necesita
+      selectedAddressId,
+      selectedAddressType,
+      selectedPaymentId,
+      selectedPaymentType,
+      requiresInvoice,
+      fiscalData,
+      orderNotes,
+      step,
+      error,
+      orderId,
+      isProcessing,
+      addresses,
+      paymentMethods,
+      loadingAddresses,
+      loadingPayments,
+      useNewCard,
+      newCardData,
+      useNewAddress,
+      newAddressData,
 
-    } catch (err) {
-      console.error('Error processing order:', err);
-      setError(err.message || 'Error processing your order. Please try again.');
+      // Funciones manejadoras
+      handleAddressChange,
+      handleNewAddressSelect,
+      handleNewAddressDataChange,
+      handlePaymentChange,
+      handleInvoiceChange,
+      handleFiscalDataChange,
+      handleNotesChange,
+      handleProcessOrder,
+      handleNewCardSelect,
+      handleOxxoSelect,
+      handleNewCardDataChange,
 
-      dispatch(addMessage({
-        type: 'error',
-        text: err.message || 'Error processing payment.',
-        autoHide: true,
-        duration: 5000
-      }));
-
-      setStep(1); // Regresamos al paso 1 (formulario) si hubo error
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [
-    validateCheckoutData,
-    prepareOrderData,
-    dispatch,
-    functions,
-    stripe,
-    elements,
-    navigate,
-    selectedPaymentType,
-    newCardData,
-    auth
-  ]);
-
-  // -------------------------------------------------------------------------
-  // Retorno del hook
-  // -------------------------------------------------------------------------
-  return {
-    // Estados que el componente Checkout necesita
-    selectedAddressId,
-    selectedPaymentId,
-    selectedPaymentType,
-    requiresInvoice,
-    fiscalData,
-    orderNotes,
-    step,
-    error,
-    orderId,
-    isProcessing,
-    addresses,
-    paymentMethods,
-    loadingAddresses,
-    loadingPayments,
-    useNewCard,
-    newCardData,
-
-    // Funciones manejadoras
-    handleAddressChange,
-    handlePaymentChange,
-    handleInvoiceChange,
-    handleFiscalDataChange,
-    handleNotesChange,
-    handleProcessOrder,
-    handleNewCardSelect,
-    handleOxxoSelect,
-    handleNewCardDataChange,
-
-    // Helpers expuestos (por si se necesitan en pruebas)
-    updateSelectedAddress,
-    updateSelectedPayment,
-  };
+      // Helpers expuestos (por si se necesitan en pruebas)
+      updateSelectedAddress,
+      updateSelectedPayment,
+    };
 };

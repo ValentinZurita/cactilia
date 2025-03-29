@@ -1,26 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SimpleAddressForm } from '../../../../user/components/addresses/index.js'
-
+import { NewAddressForm } from './NewAddressForm.jsx';
+import '../styles/newAddressForm.css';
+import '../styles/addressSelector.css';
 
 /**
  * AddressSelector - Componente para seleccionar una dirección de envío
- * Permite seleccionar una dirección existente o agregar una nueva
+ * Permite seleccionar una dirección existente, usar una dirección nueva temporal
+ * o agregar una nueva dirección al perfil
  *
  * @param {Object} props - Propiedades del componente
  * @param {Array} props.addresses - Lista de direcciones disponibles
  * @param {string} props.selectedAddressId - ID de la dirección seleccionada
+ * @param {string} props.selectedAddressType - Tipo de dirección seleccionada ('saved', 'new')
  * @param {Function} props.onAddressSelect - Función que se ejecuta al seleccionar una dirección
+ * @param {Function} props.onNewAddressSelect - Función que se ejecuta al seleccionar "Usar dirección nueva"
+ * @param {Function} props.onNewAddressDataChange - Función que se ejecuta cuando cambian los datos de la nueva dirección
  * @param {boolean} props.loading - Indica si están cargando las direcciones
  */
 export const AddressSelector = ({
                                   addresses = [],
                                   selectedAddressId,
+                                  selectedAddressType,
                                   onAddressSelect,
+                                  onNewAddressSelect,
+                                  onNewAddressDataChange,
                                   loading = false
                                 }) => {
-  // Estado local para formulario de nueva dirección
-  const [showForm, setShowForm] = useState(false);
+  // Estado local para formulario de nueva dirección permanente
+  const [showManageForm, setShowManageForm] = useState(false);
+
+  // Estados para la dirección nueva temporal
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [newAddressData, setNewAddressData] = useState({
+    name: '',
+    street: '',
+    numExt: '',
+    numInt: '',
+    colonia: '',
+    city: '',
+    state: '',
+    zip: '',
+    references: '',
+    saveAddress: false
+  });
+
+  // Comprobar si se ha seleccionado una dirección nueva
+  const isNewAddressSelected = selectedAddressType === 'new';
 
   // Formatear dirección para mostrarla en el selector
   const formatAddress = (address) => {
@@ -38,27 +65,62 @@ export const AddressSelector = ({
 
   // Efecto para seleccionar la dirección predeterminada cuando se cargan las direcciones
   useEffect(() => {
-    if (!selectedAddressId && addresses.length > 0 && !loading) {
+    if (!selectedAddressId && !selectedAddressType && addresses.length > 0 && !loading) {
       // Buscar dirección predeterminada
       const defaultAddress = addresses.find(address => address.isDefault);
 
       if (defaultAddress) {
-        onAddressSelect(defaultAddress.id);
-      } else {
+        onAddressSelect(defaultAddress.id, 'saved');
+      } else if (addresses.length > 0) {
         // Si no hay dirección predeterminada, usar la primera
-        onAddressSelect(addresses[0].id);
+        onAddressSelect(addresses[0].id, 'saved');
       }
     }
-  }, [addresses, selectedAddressId, loading, onAddressSelect]);
+  }, [addresses, selectedAddressId, selectedAddressType, loading, onAddressSelect]);
 
-  // Manejador para agregar nueva dirección
+  // Manejador para agregar nueva dirección permanente
   const handleAddAddress = (addressData) => {
-    // Aquí se manejaría la adición de la nueva dirección
-    // Esta función sería implementada con la lógica real que ya tienes
-    console.log('Agregando nueva dirección:', addressData);
-
+    console.log('Agregando nueva dirección permanente:', addressData);
     // Cerrar el formulario después de agregar
-    setShowForm(false);
+    setShowManageForm(false);
+  };
+
+  // Manejador para seleccionar "usar dirección nueva"
+  const handleNewAddressSelection = () => {
+    console.log('Seleccionando usar dirección nueva');
+    if (onNewAddressSelect) {
+      onNewAddressSelect(); // Llama a setSelectedAddressType('new')
+    }
+  };
+
+  // Manejador para seleccionar dirección guardada
+  const handleSavedAddressSelection = (id) => {
+    console.log('Seleccionando dirección guardada:', id);
+    if (onAddressSelect) {
+      onAddressSelect(id, 'saved');
+    }
+  };
+
+  // Manejador para cambios en los datos de la nueva dirección
+  const handleNewAddressChange = (data) => {
+    setNewAddressData(data);
+    if (onNewAddressDataChange) {
+      onNewAddressDataChange({
+        ...data,
+        saveAddress,
+      });
+    }
+  };
+
+  // Manejador para cambio en la opción de guardar dirección
+  const handleSaveAddressChange = (save) => {
+    setSaveAddress(save);
+    if (onNewAddressDataChange) {
+      onNewAddressDataChange({
+        ...newAddressData,
+        saveAddress: save
+      });
+    }
   };
 
   // Si está cargando, mostrar indicador
@@ -73,52 +135,101 @@ export const AddressSelector = ({
     );
   }
 
-  // Si no hay direcciones, mostrar mensaje y opción para agregar
+  // Si no hay direcciones, mostrar directamente el formulario de dirección nueva
   if (addresses.length === 0) {
     return (
       <div className="address-selector-empty">
         <div className="alert alert-info">
           <i className="bi bi-info-circle me-2"></i>
-          No tienes direcciones guardadas. Por favor, agrega una dirección de envío.
+          No tienes direcciones guardadas. Por favor, ingresa una dirección de envío.
         </div>
 
-        {showForm ? (
-          <SimpleAddressForm
-            isOpen={showForm}
-            onClose={() => setShowForm(false)}
-            onSave={handleAddAddress}
-          />
-        ) : (
-          <button
-            className="btn btn-green-3 mt-2"
-            onClick={() => setShowForm(true)}
-          >
-            <i className="bi bi-plus-circle me-2"></i>
-            Agregar Dirección
-          </button>
-        )}
+        <NewAddressForm
+          onAddressChange={handleNewAddressChange}
+          saveAddress={saveAddress}
+          onSaveAddressChange={handleSaveAddressChange}
+        />
       </div>
     );
   }
 
+  // Debug info
+  console.log('Render AddressSelector', {
+    selectedAddressId,
+    selectedAddressType,
+    isNewAddressSelected
+  });
+
   return (
     <div className="address-selector">
+      {/* Opción para usar una dirección nueva */}
+      <div className={`address-option ${isNewAddressSelected ? 'active-address-option' : ''}`}>
+        <div className="form-check">
+          <input
+            className="form-check-input"
+            type="radio"
+            name="addressSelection"
+            id="address-new"
+            checked={isNewAddressSelected}
+            onChange={handleNewAddressSelection}
+          />
+          <label
+            className="form-check-label d-flex align-items-center"
+            htmlFor="address-new"
+            style={{ cursor: 'pointer' }}
+            onClick={handleNewAddressSelection} // Añadido para mejor UX
+          >
+            <i className="bi bi-plus-circle me-2 fs-4"></i>
+            <div>
+              <div className="address-name">
+                Usar dirección nueva
+              </div>
+              <div className="address-details text-muted small">
+                Ingresa los datos de una dirección para esta compra
+              </div>
+            </div>
+          </label>
+        </div>
+
+        {/* Formulario de nueva dirección (si está seleccionado) */}
+        {isNewAddressSelected && (
+          <div className="new-address-form-container mt-3">
+            <NewAddressForm
+              onAddressChange={handleNewAddressChange}
+              saveAddress={saveAddress}
+              onSaveAddressChange={handleSaveAddressChange}
+              addressData={newAddressData}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Separador entre nueva dirección y direcciones guardadas */}
+      <div className="address-separator my-3">
+        <span className="separator-text">o usa una dirección guardada</span>
+      </div>
+
+      {/* Lista de direcciones existentes */}
       <div className="address-list">
         {addresses.map(address => (
-          <div key={address.id} className="address-option">
+          <div
+            key={address.id}
+            className={`address-option ${selectedAddressId === address.id && selectedAddressType === 'saved' ? 'active-address-option' : ''}`}
+          >
             <div className="form-check">
               <input
                 className="form-check-input"
                 type="radio"
                 name="addressSelection"
                 id={`address-${address.id}`}
-                checked={selectedAddressId === address.id}
-                onChange={() => onAddressSelect(address.id)}
+                checked={selectedAddressId === address.id && selectedAddressType === 'saved'}
+                onChange={() => handleSavedAddressSelection(address.id)}
               />
               <label
                 className="form-check-label"
                 htmlFor={`address-${address.id}`}
                 style={{ cursor: 'pointer' }}
+                onClick={() => handleSavedAddressSelection(address.id)} // Añadido para mejor UX
               >
                 <div className="address-name fw-medium">{address.name}</div>
                 <div className="address-details text-muted small">
@@ -142,13 +253,14 @@ export const AddressSelector = ({
         ))}
       </div>
 
+      {/* Acciones */}
       <div className="address-actions mt-3">
         <button
           className="btn btn-outline-secondary btn-sm me-2"
-          onClick={() => setShowForm(true)}
+          onClick={() => setShowManageForm(true)}
         >
           <i className="bi bi-plus-circle me-1"></i>
-          Agregar Nueva Dirección
+          Guardar Nueva Dirección
         </button>
 
         <Link
@@ -161,11 +273,11 @@ export const AddressSelector = ({
         </Link>
       </div>
 
-      {/* Formulario para nueva dirección */}
-      {showForm && (
+      {/* Modal para nueva dirección guardada */}
+      {showManageForm && (
         <SimpleAddressForm
-          isOpen={showForm}
-          onClose={() => setShowForm(false)}
+          isOpen={showManageForm}
+          onClose={() => setShowManageForm(false)}
           onSave={handleAddAddress}
         />
       )}
