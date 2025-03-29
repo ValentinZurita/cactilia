@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import '../styles/orderDetail.css';
-import '../../shop/styles/orderSuccess.css';
+import '../../shop/features/checkout/styles/orderSuccess.css';
 import { useOrders } from '../hooks/userOrders.js';
 
 // Import components from shop module
@@ -12,7 +12,7 @@ import {
   OrderAddressCard,
   OrderPaymentInfo,
   OrderNotes,
-} from '../../shop/components/order-details';
+} from '../../shop/features/order-details';
 
 /**
  * OrderDetailPage - Página que muestra los detalles de una orden específica

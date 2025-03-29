@@ -1,5 +1,5 @@
 import React from 'react';
-import oxxoLogo from '../../../../shared/assets/oxxo-logo.svg';
+import oxxoLogo from '../../../../../shared/assets/oxxo-logo.svg';
 /**
  * Componente que muestra información sobre el pago con OXXO
  * y explica el proceso al usuario

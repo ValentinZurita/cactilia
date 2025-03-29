@@ -3,18 +3,18 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
 // Importar componentes de checkout
-import { CheckoutSummary } from '../components/checkout/CheckoutSummary';
-import { AddressSelector } from '../components/checkout/AddressSelector';
-import { PaymentMethodSelector } from '../components/checkout/PaymentMethodSelector';
-import { BillingInfoForm } from '../components/checkout/BillingInfoForm';
-import { CheckoutButton } from '../components/checkout/CheckoutButton';
+import { CheckoutSummary } from './components/CheckoutSummary.jsx';
+import { AddressSelector } from './components/AddressSelector.jsx';
+import { PaymentMethodSelector } from './components/PaymentMethodSelector.jsx';
+import { BillingInfoForm } from './components/BillingInfoForm.jsx';
+import { CheckoutButton } from './components/CheckoutButton.jsx';
 
 // Importar estilos
-import '../styles/checkout.css';
-import '../styles/processingIndicator.css';
+import './styles/checkout.css';
+import './styles/processingIndicator.css';
 
 // Importar nuestro custom hook
-import { useCheckout } from '../hooks/useCheckout';
+import { useCheckout } from './hooks/useCheckout.js';
 
 // Cargar instancia de Stripe con la key de entorno
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);

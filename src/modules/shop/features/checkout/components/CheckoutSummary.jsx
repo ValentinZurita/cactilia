@@ -1,6 +1,6 @@
 import React from 'react';
-import { formatPrice } from '../../utils/cartUtilis.js';
-import { useCart } from '../../../user/hooks/useCart.js';
+import { formatPrice } from '../../../utils/cartUtilis.js';
+import { useCart } from '../../../../user/hooks/useCart.js';
 
 /**
  * CheckoutSummary - Componente que muestra el resumen del pedido

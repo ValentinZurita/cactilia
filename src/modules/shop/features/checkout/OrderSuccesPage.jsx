@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../firebase/firebaseConfig.js';
-import { OxxoVoucher } from '../components/checkout/OxxoVoucher';
-import '../styles/oxxoVoucher.css';
-import '../styles/orderSuccess.css';
+import { FirebaseDB } from '../../../../firebase/firebaseConfig.js';
+import { OxxoVoucher } from './components/oxxoVoucher.jsx';
+import './styles/oxxoVoucher.css';
+import './styles/orderSuccess.css';
 
 // Importar componentes refactorizados
 import {
@@ -17,8 +17,8 @@ import {
   OrderActions,
   OrderNotes,
   OrderNextSteps
-} from '../components/order-details';
-import { formatDate } from '../utils/dateUtils.js'
+} from '../order-details/index.js';
+import { formatDate } from '../../utils/dateUtils.js'
 
 // Nombre de la colección de órdenes en Firestore
 const ORDERS_COLLECTION = 'orders';

@@ -1,6 +1,6 @@
 import '../../../../styles/pages/shop.css';
-import { CartButton } from './CartButton';
-import { ProductStatus } from './ProductStatus';
+import { CartButton } from './CartButton.jsx';
+import { ProductStatus } from './ProductStatus.jsx';
 
 export const ProductCard = ({ product, onProductClick }) => {
 

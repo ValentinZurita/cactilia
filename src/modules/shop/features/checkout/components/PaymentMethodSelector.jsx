@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useStripe } from '@stripe/react-stripe-js';
-import { PaymentFormModal } from '../../../user/components/payments/PaymentFormModal.jsx';
+import { PaymentFormModal } from '../../../../user/components/payments/PaymentFormModal.jsx';
 import { NewCardForm } from './NewCardForm.jsx';
-import '../../../shop/styles/newCardForm.css';
-import '../../styles/paymentSelector.css';
-import '../../styles/oxxoPayment.css';
+import '../styles/newCardForm.css';
+import '../styles/paymentSelector.css';
+import '../styles/oxxoPayment.css';
 import { OxxoPaymentOption } from './OxxoPaymentOption.jsx'
 
 /**

@@ -1,4 +1,4 @@
-import '../../styles/orderNextSteps.css';
+import '../checkout/styles/orderNextSteps.css';
 
 export const OrderNextSteps = () => {
   return (

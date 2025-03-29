@@ -1,4 +1,4 @@
-import { OrderTimeline } from './OrderTimeline';
+import { OrderTimeline } from './OrderTimeline.jsx';
 
 export const OrderOverview = ({
                                 orderId,

@@ -27,16 +27,16 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 
-import { FirebaseDB } from '../../../firebase/firebaseConfig';
-import { addMessage } from '../../../store/messages/messageSlice';
-import { clearCartWithSync } from '../../../store/cart/cartThunk';
-import { useCart } from '../../user/hooks/useCart';
+import { FirebaseDB } from '../../../../../firebase/firebaseConfig.js';
+import { addMessage } from '../../../../../store/messages/messageSlice.js';
+import { clearCartWithSync } from '../../../../../store/cart/cartThunk.js';
+import { useCart } from '../../../../user/hooks/useCart.js';
 
 import {
   mockCreatePaymentIntent,
   mockConfirmOrderPayment,
   shouldUseMocks
-} from '../../user/services/stripeMock.js';
+} from '../../../../user/services/stripeMock.js';
 
 /**
  * @function useCheckout
@@ -167,7 +167,7 @@ export const useCheckout = () => {
       setLoadingAddresses(true);
       try {
         // Importación dinámica del servicio de direcciones
-        const { getUserAddresses } = await import('../../user/services/addressService');
+        const { getUserAddresses } = await import('../../../../user/services/addressService.js');
         const result = await getUserAddresses(uid);
 
         if (result.ok) {
@@ -201,7 +201,7 @@ export const useCheckout = () => {
       setLoadingPayments(true);
       try {
         // Importación dinámica del servicio de métodos de pago
-        const { getUserPaymentMethods } = await import('../../user/services/paymentService');
+        const { getUserPaymentMethods } = await import('../../../../user/services/paymentService.js');
         const result = await getUserPaymentMethods(uid);
 
         if (result.ok) {
