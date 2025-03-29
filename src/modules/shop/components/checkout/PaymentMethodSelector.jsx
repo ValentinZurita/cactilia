@@ -4,6 +4,7 @@ import { useStripe } from '@stripe/react-stripe-js';
 import { PaymentFormModal } from '../../../user/components/payments/PaymentFormModal.jsx';
 import { NewCardForm } from './NewCardForm.jsx';
 import '../../../shop/styles/newCardForm.css';
+import '../../styles/paymentSelector.css';
 
 /**
  * Componente para seleccionar método de pago
@@ -130,10 +131,10 @@ export const PaymentMethodSelector = ({
 
   return (
     <div className="payment-method-selector">
-      {/* Lista de métodos guardados */}
+      {/* Lista de métodos de pago */}
       <div className="payment-method-list">
         {/* Opción para usar una tarjeta nueva */}
-        <div className="payment-method-option">
+        <div className={`payment-method-option ${showNewCardForm ? 'active-payment-option' : ''}`}>
           <div className="form-check">
             <input
               className="form-check-input"
@@ -159,6 +160,27 @@ export const PaymentMethodSelector = ({
               </div>
             </label>
           </div>
+
+          {/* Formulario de nueva tarjeta (si está seleccionado) - AHORA DENTRO DEL MISMO CONTENEDOR */}
+          {showNewCardForm && stripeReady && (
+            <div className="new-card-form-container mt-3">
+              <NewCardForm
+                onCardChange={handleCardChange}
+                saveCard={saveCard}
+                onSaveCardChange={setSaveCard}
+                cardholderName={cardholderName}
+                onCardholderNameChange={setCardholderName}
+              />
+            </div>
+          )}
+
+          {/* Mensaje si Stripe no está listo */}
+          {showNewCardForm && !stripeReady && (
+            <div className="alert alert-info mt-3">
+              <i className="bi bi-info-circle me-2"></i>
+              Cargando el procesador de pagos...
+            </div>
+          )}
         </div>
 
         {/* Separador si hay métodos guardados */}
@@ -170,7 +192,7 @@ export const PaymentMethodSelector = ({
 
         {/* Métodos guardados */}
         {paymentMethods.map(method => (
-          <div key={method.id} className="payment-method-option">
+          <div key={method.id} className={`payment-method-option ${selectedPaymentId === method.id && !showNewCardForm ? 'active-payment-option' : ''}`}>
             <div className="form-check">
               <input
                 className="form-check-input"
@@ -206,25 +228,6 @@ export const PaymentMethodSelector = ({
         ))}
       </div>
 
-      {/* Formulario de nueva tarjeta (si está seleccionado) */}
-      {showNewCardForm && stripeReady && (
-        <NewCardForm
-          onCardChange={handleCardChange}
-          saveCard={saveCard}
-          onSaveCardChange={setSaveCard}
-          cardholderName={cardholderName}
-          onCardholderNameChange={setCardholderName}
-        />
-      )}
-
-      {/* Mensaje si Stripe no está listo */}
-      {showNewCardForm && !stripeReady && (
-        <div className="alert alert-info mt-3">
-          <i className="bi bi-info-circle me-2"></i>
-          Cargando el procesador de pagos...
-        </div>
-      )}
-
       {/* Acciones */}
       <div className="payment-method-actions mt-3">
         {/* Solo mostrar botón para guardar métodos de pago si estamos en una tarjeta guardada */}
@@ -257,37 +260,6 @@ export const PaymentMethodSelector = ({
           onSuccess={handlePaymentAdded}
         />
       )}
-
-      {/* Estilos adicionales */}
-      <style jsx>{`
-        .payment-methods-separator {
-          display: flex;
-          align-items: center;
-          text-align: center;
-          color: #888;
-          font-size: 0.9rem;
-        }
-        
-        .payment-methods-separator::before,
-        .payment-methods-separator::after {
-          content: '';
-          flex: 1;
-          border-bottom: 1px solid #ddd;
-        }
-        
-        .payment-methods-separator::before {
-          margin-right: 1em;
-        }
-        
-        .payment-methods-separator::after {
-          margin-left: 1em;
-        }
-        
-        .separator-text {
-          padding: 0 10px;
-          background-color: white;
-        }
-      `}</style>
     </div>
   );
 };

@@ -1,0 +1,51 @@
+/* Estilos para los indicadores de procesamiento en la página de checkout */
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+.processing-indicators {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+}
+
+.processing-step {
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    color: #666;
+}
+
+.processing-step i {
+    color: var(--green-3);
+    font-size: 1.1rem;
+}
+
+/* Mejoras para accesibilidad - alto contraste */
+@media (prefers-contrast: more) {
+    .processing-indicators {
+        border: 2px solid #444;
+    }
+
+    .processing-step {
+        color: #000;
+    }
+}
+
+/* Animación para la entrada del indicador de procesamiento */
+.processing-indicators {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

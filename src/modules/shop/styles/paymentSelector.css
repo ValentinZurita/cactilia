@@ -1,0 +1,133 @@
+/* Estilos para PaymentMethodSelector */
+
+/* Separador entre opciones de tarjeta */
+.payment-methods-separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+    margin: 20px 0;
+}
+
+.payment-methods-separator::before,
+.payment-methods-separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #eee;
+}
+
+.payment-methods-separator::before {
+    margin-right: 1em;
+}
+
+.payment-methods-separator::after {
+    margin-left: 1em;
+}
+
+.separator-text {
+    padding: 0 10px;
+    background-color: white;
+}
+
+/* Estilos para las opciones de método de pago */
+.payment-method-option {
+    padding: 16px;
+    border: 1px solid #eaeaea;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.payment-method-option:hover {
+    border-color: #d0d0d0;
+    background-color: #fafafa;
+}
+
+/* Opción activa con borde destacado */
+.payment-method-option.active-payment-option {
+    border-color: var(--green-3);
+    background-color: rgba(52, 199, 73, 0.05);
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+}
+
+.payment-method-option .form-check {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.payment-method-option .form-check-input {
+    margin-right: 15px;
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid #c8c8c8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.payment-method-option .form-check-input:checked {
+    background-color: var(--green-3) !important;
+    border-color: var(--green-3) !important;
+    box-shadow: 0 0 0 2px rgba(52, 199, 73, 0.2) !important;
+}
+
+.payment-method-option .form-check-input:checked + .form-check-label .payment-method-name {
+    font-weight: 600;
+    color: var(--green-3);
+}
+
+.payment-method-name {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 1.05rem;
+}
+
+.payment-method-details {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Contenedor del formulario de tarjeta nueva */
+.new-card-form-container {
+    padding-top: 10px;
+    margin-top: 15px;
+    border-top: 1px dashed #ddd;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Acciones de métodos de pago */
+.payment-method-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Mejoras para móviles */
+@media (max-width: 576px) {
+    .payment-method-option {
+        padding: 12px;
+    }
+
+    .payment-method-name {
+        font-size: 0.95rem;
+    }
+
+    .payment-method-details {
+        font-size: 0.85rem;
+    }
+
+    .new-card-form-container {
+        margin-top: 12px;
+        padding-top: 8px;
+    }
+}

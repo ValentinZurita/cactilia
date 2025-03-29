@@ -9,7 +9,9 @@ import { PaymentMethodSelector } from '../components/checkout/PaymentMethodSelec
 import { BillingInfoForm } from '../components/checkout/BillingInfoForm';
 import { CheckoutButton } from '../components/checkout/CheckoutButton';
 
+// Importar estilos
 import '../styles/checkout.css';
+import '../styles/processingIndicator.css';
 
 // Importar nuestro custom hook
 import { useCheckout } from '../hooks/useCheckout';
@@ -197,28 +199,6 @@ export const CheckoutPage = () => {
             </div>
           </div>
         </div>
-
-        {/* Estilos CSS para el indicador de procesamiento */}
-        <style jsx>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          
-          .spin {
-            display: inline-block;
-            animation: spin 1s linear infinite;
-          }
-          
-          .processing-indicators {
-            background-color: #f8f9fa;
-          }
-          
-          .processing-step {
-            font-size: 0.9rem;
-            font-weight: 500;
-          }
-        `}</style>
       </div>
     </Elements>
   );
