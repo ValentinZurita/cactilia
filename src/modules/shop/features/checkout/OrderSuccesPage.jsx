@@ -108,6 +108,8 @@ const NoOrderDetailsState = () => (
  */
 const OrderSuccessContent = ({ orderId, orderDetails }) => {
   const isFromCheckout = !window.location.pathname.includes('/profile/');
+  // Definir correctamente isOxxoPayment basado en el tipo de pago de la orden
+  const isOxxoPayment = orderDetails.payment?.type === 'oxxo';
 
   return (
     <div className="os-wrapper order-success-container">
@@ -119,7 +121,6 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
           : "Gracias por tu compra. Tu pedido ha sido procesado correctamente."
         }
       />
-
       {/* Resumen principal del pedido */}
       <OrderOverview
         orderId={orderId}
