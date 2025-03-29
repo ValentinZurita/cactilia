@@ -3,8 +3,7 @@
  *
  * Hook personalizado para manejar el flujo de checkout:
  * - Selección de dirección de envío
- * - Selección de método de pago
- * - Tarjeta nueva sin guardar (o con opción de guardar)
+ * - Selección de método de pago (tarjeta guardada, tarjeta nueva, OXXO)
  * - Facturación (factura / fiscalData)
  * - Creación de orden en Firestore
  * - Creación/confirmación de PaymentIntent con Stripe (o mocks en dev)
@@ -15,8 +14,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { CardElement } from '@stripe/react-stripe-js';
+import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 
 import {
   getFunctions,
@@ -81,7 +79,8 @@ export const useCheckout = () => {
   // -------------------------------------------------------------------------
   // Data del usuario autenticado
   // -------------------------------------------------------------------------
-  const { uid, status } = useSelector(state => state.auth);
+  const auth = useSelector(state => state.auth);
+  const { uid, status } = auth;
 
   // -------------------------------------------------------------------------
   // Datos del carrito
@@ -104,8 +103,9 @@ export const useCheckout = () => {
 
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [selectedPaymentType, setSelectedPaymentType] = useState(''); // 'card', 'new_card', 'oxxo'
 
-  // Nuevos estados para la tarjeta nueva
+  // Estados para la tarjeta nueva
   const [useNewCard, setUseNewCard] = useState(false);
   const [newCardData, setNewCardData] = useState({
     cardholderName: '',
@@ -226,6 +226,23 @@ export const useCheckout = () => {
   }, [uid, status, dispatch]);
 
   // -------------------------------------------------------------------------
+  // Efecto: Selección automática de método de pago predeterminado
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (!selectedPaymentId && !selectedPaymentType && paymentMethods.length > 0 && !loadingPayments) {
+      // Buscar método predeterminado
+      const defaultMethod = paymentMethods.find(method => method.isDefault);
+
+      if (defaultMethod) {
+        handlePaymentChange(defaultMethod.id, 'card');
+      } else if (paymentMethods.length > 0) {
+        // Si no hay método predeterminado, usar el primero
+        handlePaymentChange(paymentMethods[0].id, 'card');
+      }
+    }
+  }, [paymentMethods, loadingPayments]);
+
+  // -------------------------------------------------------------------------
   // Helpers: Actualizar dirección seleccionada
   // -------------------------------------------------------------------------
   const updateSelectedAddress = useCallback((addressesList, addressId) => {
@@ -259,21 +276,35 @@ export const useCheckout = () => {
   );
 
   const handlePaymentChange = useCallback(
-    (paymentId) => {
+    (paymentId, paymentType = 'card') => {
+      console.log('useCheckout: Cambiando método de pago', { paymentId, paymentType });
       setSelectedPaymentId(paymentId);
+      setSelectedPaymentType(paymentType);
       updateSelectedPayment(paymentMethods, paymentId);
-      setUseNewCard(false); // Si seleccionamos una tarjeta guardada, desactivamos la opción de tarjeta nueva
+      if (paymentType === 'card') {
+        setUseNewCard(false);
+      }
     },
     [updateSelectedPayment, paymentMethods]
   );
 
   // -------------------------------------------------------------------------
-  // Manejo de tarjeta nueva
+  // Manejo de tarjeta nueva y OXXO
   // -------------------------------------------------------------------------
   const handleNewCardSelect = useCallback(() => {
+    console.log('useCheckout: Seleccionando tarjeta nueva');
     setSelectedPaymentId(null);
     setSelectedPayment(null);
+    setSelectedPaymentType('new_card');
     setUseNewCard(true);
+  }, []);
+
+  const handleOxxoSelect = useCallback(() => {
+    console.log('useCheckout: Seleccionando OXXO');
+    setSelectedPaymentId(null);
+    setSelectedPayment(null);
+    setSelectedPaymentType('oxxo');
+    setUseNewCard(false);
   }, []);
 
   const handleNewCardDataChange = useCallback((data) => {
@@ -307,41 +338,49 @@ export const useCheckout = () => {
   // -------------------------------------------------------------------------
   const validateCheckoutData = useCallback(() => {
     if (!selectedAddressId || !selectedAddress) {
-      setError('Debes seleccionar una dirección de envío');
+      setError('You must select a shipping address');
       return false;
     }
 
-    // Validar método de pago - ahora puede ser un método guardado o una nueva tarjeta
-    if (!useNewCard && (!selectedPaymentId || !selectedPayment)) {
-      setError('Debes seleccionar un método de pago');
+    // Validar método de pago según el tipo seleccionado
+    if (!selectedPaymentType) {
+      setError('You must select a payment method');
       return false;
     }
 
-    // Si está usando una tarjeta nueva, validar los datos
-    if (useNewCard) {
+    // Si es tarjeta guardada, verificar que haya una seleccionada
+    if (selectedPaymentType === 'card' && !selectedPaymentId) {
+      setError('You must select a card');
+      return false;
+    }
+
+    // Si es tarjeta nueva, validar los datos
+    if (selectedPaymentType === 'new_card') {
       if (!newCardData.cardholderName) {
-        setError('Debes ingresar el nombre del titular de la tarjeta');
+        setError('You must enter the cardholder name');
         return false;
       }
 
       if (!newCardData.isComplete) {
-        setError('Los datos de la tarjeta están incompletos o son inválidos');
+        setError('Card details are incomplete or invalid');
         return false;
       }
     }
 
+    // Para OXXO, no se requiere validación adicional
+
     if (requiresInvoice && (!fiscalData || !fiscalData.rfc)) {
-      setError('Los datos fiscales son requeridos para facturación');
+      setError('Fiscal data is required for invoicing');
       return false;
     }
 
     if (hasOutOfStockItems) {
-      setError('Hay productos sin stock en tu carrito');
+      setError('There are out-of-stock items in your cart');
       return false;
     }
 
     if (!stripe || !elements) {
-      setError('El sistema de pago no está listo. Intenta nuevamente.');
+      setError('Payment system is not ready. Please try again.');
       return false;
     }
 
@@ -352,8 +391,7 @@ export const useCheckout = () => {
     selectedAddressId,
     selectedAddress,
     selectedPaymentId,
-    selectedPayment,
-    useNewCard,
+    selectedPaymentType,
     newCardData,
     requiresInvoice,
     fiscalData,
@@ -377,20 +415,22 @@ export const useCheckout = () => {
         .split('T')[0],
     };
 
-    // Información de pago - ahora puede ser un método guardado o una nueva tarjeta
+    // Información de pago según el tipo seleccionado
     let paymentInfo = {};
 
-    if (useNewCard) {
+    if (selectedPaymentType === 'new_card') {
       // Para tarjeta nueva sin guardar
       paymentInfo = {
+        type: 'card',
         newCard: true,
         cardholderName: newCardData.cardholderName,
         saveForFuture: newCardData.saveCard,
         status: 'pending'
       };
-    } else {
+    } else if (selectedPaymentType === 'card') {
       // Para método de pago guardado
       paymentInfo = {
+        type: 'card',
         methodId: selectedPaymentId,
         method: {
           type: selectedPayment.type,
@@ -399,6 +439,15 @@ export const useCheckout = () => {
         },
         status: 'pending',
         stripePaymentMethodId: selectedPayment.stripePaymentMethodId,
+      };
+    } else if (selectedPaymentType === 'oxxo') {
+      // Para pago en OXXO
+      paymentInfo = {
+        type: 'oxxo',
+        status: 'pending',
+        // El voucher se generará después del pago
+        voucherUrl: null,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 horas de validez
       };
     }
 
@@ -435,8 +484,8 @@ export const useCheckout = () => {
     selectedAddressId,
     selectedAddress,
     selectedPaymentId,
+    selectedPaymentType,
     selectedPayment,
-    useNewCard,
     newCardData,
     requiresInvoice,
     fiscalData,
@@ -466,15 +515,16 @@ export const useCheckout = () => {
       // 2. Preparar los datos de la orden
       const orderData = prepareOrderData();
 
-      // 3. Crear o usar un Payment Method
-      let paymentMethodId;
+      // 3. Procesar el pago según el tipo seleccionado
+      let paymentMethodId = null;
+      let paymentResponse = null;
 
-      if (useNewCard) {
-        // Si es tarjeta nueva, crear Payment Method con Stripe Elements
+      if (selectedPaymentType === 'new_card') {
+        // Crear Payment Method con Stripe Elements para tarjeta nueva
         const cardElement = elements.getElement(CardElement);
 
         if (!cardElement) {
-          throw new Error('No se pudo acceder al formulario de tarjeta');
+          throw new Error('Could not access card form');
         }
 
         const { paymentMethod, error } = await stripe.createPaymentMethod({
@@ -491,7 +541,7 @@ export const useCheckout = () => {
 
         paymentMethodId = paymentMethod.id;
 
-        // Si el usuario quiere guardar la tarjeta, hacerlo
+        // Guardar tarjeta si el usuario lo solicitó
         if (newCardData.saveCard) {
           const functions = getFunctions();
           const savePaymentMethod = httpsCallable(functions, 'savePaymentMethod');
@@ -502,42 +552,89 @@ export const useCheckout = () => {
             isDefault: false
           });
         }
-      } else {
-        // Si es método guardado, usar el ID existente
+
+        // Crear PaymentIntent para tarjeta
+        if (shouldUseMocks()) {
+          console.log('Usando mock para createPaymentIntent (tarjeta)');
+          paymentResponse = await mockCreatePaymentIntent({
+            amount: Math.round(orderData.totals.total * 100),
+            paymentMethodId: paymentMethodId,
+            description: 'Order at Cactilia',
+          });
+        } else {
+          const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
+          paymentResponse = await createPaymentIntent({
+            amount: Math.round(orderData.totals.total * 100),
+            paymentMethodId: paymentMethodId,
+            description: 'Order at Cactilia',
+          });
+        }
+      }
+      else if (selectedPaymentType === 'card') {
+        // Usar método de pago guardado
         paymentMethodId = orderData.payment.stripePaymentMethodId;
+
+        // Crear PaymentIntent para tarjeta guardada
+        if (shouldUseMocks()) {
+          console.log('Usando mock para createPaymentIntent (tarjeta guardada)');
+          paymentResponse = await mockCreatePaymentIntent({
+            amount: Math.round(orderData.totals.total * 100),
+            paymentMethodId: paymentMethodId,
+            description: 'Order at Cactilia',
+          });
+        } else {
+          const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
+          paymentResponse = await createPaymentIntent({
+            amount: Math.round(orderData.totals.total * 100),
+            paymentMethodId: paymentMethodId,
+            description: 'Order at Cactilia',
+          });
+        }
+      }
+      else if (selectedPaymentType === 'oxxo') {
+        // Crear PaymentIntent para OXXO
+        if (shouldUseMocks()) {
+          console.log('Usando mock para createOxxoPaymentIntent');
+          // Simulamos la respuesta para OXXO en modo de desarrollo
+          paymentResponse = {
+            data: {
+              clientSecret: `oxxo_mock_${Date.now()}_secret_${Math.random().toString(36).substring(2, 10)}`,
+              paymentIntentId: `pi_oxxo_mock_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`,
+              // En un entorno real, Stripe retornaría una URL para el voucher de OXXO
+              voucherUrl: 'https://example.com/oxxo-voucher.pdf'
+            }
+          };
+        } else {
+          // En producción, deberemos llamar a una Cloud Function que cree un PaymentIntent
+          // con método de pago tipo 'oxxo'
+          const createOxxoPaymentIntent = httpsCallable(functions, 'createOxxoPaymentIntent');
+          paymentResponse = await createOxxoPaymentIntent({
+            amount: Math.round(orderData.totals.total * 100),
+            description: 'Order at Cactilia',
+            customer_email: auth.email, // Necesario para que Stripe envíe el correo con el voucher
+          });
+        }
+
+        // Guardamos la URL del voucher para mostrarlo después
+        if (paymentResponse.data && paymentResponse.data.voucherUrl) {
+          orderData.payment.voucherUrl = paymentResponse.data.voucherUrl;
+        }
       }
 
-      // 4. Crear PaymentIntent con el método de pago
-      let paymentResponse;
-      if (shouldUseMocks()) {
-        console.log('Usando mock para createPaymentIntent');
-        paymentResponse = await mockCreatePaymentIntent({
-          amount: Math.round(orderData.totals.total * 100),
-          paymentMethodId: paymentMethodId,
-          description: 'Compra en Cactilia',
-        });
-      } else {
-        const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
-        paymentResponse = await createPaymentIntent({
-          amount: Math.round(orderData.totals.total * 100),
-          paymentMethodId: paymentMethodId,
-          description: 'Compra en Cactilia',
-        });
-      }
-
-      if (!paymentResponse.data || !paymentResponse.data.clientSecret) {
-        throw new Error('No se pudo crear el intent de pago');
+      if (!paymentResponse || !paymentResponse.data || !paymentResponse.data.clientSecret) {
+        throw new Error('Could not create payment intent');
       }
 
       const { clientSecret, paymentIntentId } = paymentResponse.data;
+      console.log('PaymentIntent creado:', { clientSecret, paymentIntentId });
 
-      // 5. Guardar la orden en Firestore con el paymentIntentId
+      // 4. Guardar la orden en Firestore con el paymentIntentId
       const orderToSave = {
         ...orderData,
         payment: {
           ...orderData.payment,
           paymentIntentId,
-          paymentMethodId
+          paymentMethodId: paymentMethodId || null,
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -545,67 +642,118 @@ export const useCheckout = () => {
 
       const orderRef = await addDoc(collection(FirebaseDB, 'orders'), orderToSave);
       setOrderId(orderRef.id);
+      console.log('✅ Pedido creado exitosamente con ID:', orderRef.id);
 
-      // 6. Confirmar pago con Stripe
-      let stripeConfirmation;
-      if (shouldUseMocks()) {
-        // Mock de confirmación exitosa
-        console.log('Usando mock para confirmCardPayment');
-        stripeConfirmation = {
-          paymentIntent: {
-            id: paymentIntentId,
-            status: 'succeeded'
-          },
-          error: null
-        };
-      } else {
-        // Confirmación real
-        stripeConfirmation = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: paymentMethodId
-        });
-        if (stripeConfirmation.error) {
-          throw new Error(stripeConfirmation.error.message);
+      // 5. Confirmar el pago según el tipo seleccionado
+      let stripeConfirmation = null;
+
+      if (selectedPaymentType === 'card' || selectedPaymentType === 'new_card') {
+        // Confirmar el pago para tarjetas
+        if (shouldUseMocks()) {
+          console.log('Usando mock para confirmCardPayment');
+          stripeConfirmation = {
+            paymentIntent: {
+              id: paymentIntentId,
+              status: 'succeeded'
+            },
+            error: null
+          };
+        } else {
+          stripeConfirmation = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: paymentMethodId
+          });
+
+          if (stripeConfirmation.error) {
+            throw new Error(stripeConfirmation.error.message);
+          }
+        }
+      }
+      else if (selectedPaymentType === 'oxxo') {
+        // Para OXXO no se confirma el pago, solo se genera el voucher
+        if (shouldUseMocks()) {
+          console.log('Usando mock para confirmOxxoPayment');
+          stripeConfirmation = {
+            paymentIntent: {
+              id: paymentIntentId,
+              status: 'requires_payment' // Estado especial para OXXO
+            },
+            error: null
+          };
+        } else {
+          // No hay confirmación inmediata para OXXO, pero sí podemos
+          // confirmar que se ha creado el voucher correctamente
+          const oxxoPaymentResult = await stripe.confirmOxxoPayment(clientSecret, {
+            payment_method: {
+              billing_details: {
+                name: `${auth.displayName || 'Cliente'}`,
+                email: auth.email || '',
+              }
+            }
+          });
+
+          if (oxxoPaymentResult.error) {
+            throw new Error(oxxoPaymentResult.error.message);
+          }
+
+          stripeConfirmation = oxxoPaymentResult;
         }
       }
 
-      // 7. Confirmar pago también con Cloud Function
+      // 6. Informar a nuestra Cloud Function sobre el estado del pago
       let confirmResult;
       if (shouldUseMocks()) {
         console.log('Usando mock para confirmOrderPayment');
         confirmResult = await mockConfirmOrderPayment({
           orderId: orderRef.id,
-          paymentIntentId
+          paymentIntentId,
+          paymentType: selectedPaymentType
         });
       } else {
         const confirmOrderPayment = httpsCallable(functions, 'confirmOrderPayment');
         confirmResult = await confirmOrderPayment({
           orderId: orderRef.id,
-          paymentIntentId
+          paymentIntentId,
+          paymentType: selectedPaymentType
         });
       }
 
-      // 8. Mostrar mensaje de éxito, limpiar carrito y redirigir
-      dispatch(addMessage({
-        type: 'success',
-        text: '¡Pago completado con éxito! Tu pedido ha sido procesado.',
-        autoHide: true,
-        duration: 5000
-      }));
+      // 7. Mostrar mensaje adecuado según el método de pago
+      if (selectedPaymentType === 'oxxo') {
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Order registered successfully. Check your email for the OXXO payment voucher.',
+          autoHide: true,
+          duration: 8000
+        }));
+      } else {
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Payment completed successfully! Your order has been processed.',
+          autoHide: true,
+          duration: 5000
+        }));
+      }
 
+      // 8. Limpiar el carrito
       dispatch(clearCartWithSync());
 
-      // Redirigir a la ruta de éxito con el ID de la orden
+      // 9. Redirigir según el método de pago
       setTimeout(() => {
-        navigate(`/shop/order-success/${orderRef.id}`, { replace: true });
+        if (selectedPaymentType === 'oxxo') {
+          // Para OXXO, podemos pasar un parámetro adicional para mostrar instrucciones específicas
+          navigate(`/shop/order-success/${orderRef.id}?payment=oxxo`, { replace: true });
+        } else {
+          navigate(`/shop/order-success/${orderRef.id}`, { replace: true });
+        }
       }, 100);
 
     } catch (err) {
-      console.error('Error procesando el pedido:', err);
-      setError(err.message || 'Error procesando tu pedido. Intenta nuevamente.');
+      console.error('Error processing order:', err);
+      setError(err.message || 'Error processing your order. Please try again.');
 
       dispatch(addMessage({
         type: 'error',
-        text: err.message || 'Error procesando el pago.',
+        text: err.message || 'Error processing payment.',
         autoHide: true,
         duration: 5000
       }));
@@ -622,8 +770,9 @@ export const useCheckout = () => {
     stripe,
     elements,
     navigate,
-    useNewCard,
-    newCardData
+    selectedPaymentType,
+    newCardData,
+    auth
   ]);
 
   // -------------------------------------------------------------------------
@@ -633,6 +782,7 @@ export const useCheckout = () => {
     // Estados que el componente Checkout necesita
     selectedAddressId,
     selectedPaymentId,
+    selectedPaymentType,
     requiresInvoice,
     fiscalData,
     orderNotes,
@@ -644,8 +794,6 @@ export const useCheckout = () => {
     paymentMethods,
     loadingAddresses,
     loadingPayments,
-
-    // Nuevos estados para tarjeta nueva
     useNewCard,
     newCardData,
 
@@ -656,9 +804,8 @@ export const useCheckout = () => {
     handleFiscalDataChange,
     handleNotesChange,
     handleProcessOrder,
-
-    // Nuevas funciones para tarjeta nueva
     handleNewCardSelect,
+    handleOxxoSelect,
     handleNewCardDataChange,
 
     // Helpers expuestos (por si se necesitan en pruebas)

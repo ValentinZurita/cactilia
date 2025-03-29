@@ -1,0 +1,93 @@
+/* Estilos para la opción de pago con OXXO */
+
+.oxxo-logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background-color: white;
+    padding: 4px;
+    width: 48px;
+    height: 48px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.oxxo-logo {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.oxxo-payment-info {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    border-top: 1px dashed #ddd;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.oxxo-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.oxxo-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.oxxo-step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background-color: #e10718; /* Color rojo de OXXO */
+    color: white;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.oxxo-step-text {
+    font-size: 0.9rem;
+    color: #495057;
+    line-height: 1.4;
+}
+
+.oxxo-important-info {
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+/* Estilos para vista móvil */
+@media (max-width: 767px) {
+    .oxxo-steps {
+        gap: 10px;
+    }
+
+    .oxxo-step-text {
+        font-size: 0.85rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .oxxo-step-text {
+        color: #ccc;
+    }
+
+    .oxxo-payment-info {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+}

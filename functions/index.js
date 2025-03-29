@@ -25,6 +25,9 @@ const authFunctions = require("./auth/setCustomClaims");
 // Import test function
 const { basicTest } = require("./payment/test-function");
 
+// Import OXXO payment functions
+const oxxoFunctions = require('./payment/oxxoPaymentIntent');
+
 // Export all functions
 exports.createPaymentIntent = paymentFunctions.createPaymentIntent;
 exports.confirmOrderPayment = paymentFunctions.confirmOrderPayment;
@@ -44,3 +47,7 @@ exports.basicTest = basicTest;
 exports.resendOrderConfirmationEmail = resendEmails.resendOrderConfirmationEmail;
 exports.sendOrderShippedEmail = shippedEmails.sendOrderShippedEmail;
 exports.sendInvoiceEmail = invoiceEmails.sendInvoiceEmail;
+
+// Export OXXO payment functions
+exports.createOxxoPaymentIntent = oxxoFunctions.createOxxoPaymentIntent;
+exports.checkOxxoPaymentStatus = oxxoFunctions.checkOxxoPaymentStatus;

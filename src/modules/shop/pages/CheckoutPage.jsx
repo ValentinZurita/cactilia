@@ -29,6 +29,7 @@ export const CheckoutPage = () => {
     // Estados
     selectedAddressId,
     selectedPaymentId,
+    selectedPaymentType,
     requiresInvoice,
     fiscalData,
     orderNotes,
@@ -39,7 +40,7 @@ export const CheckoutPage = () => {
     paymentMethods,
     loadingAddresses,
     loadingPayments,
-    // Nuevo - estado para tarjeta nueva
+    // Estado para tarjeta nueva
     useNewCard,
     newCardData,
 
@@ -50,8 +51,9 @@ export const CheckoutPage = () => {
     handleFiscalDataChange,
     handleNotesChange,
     handleProcessOrder,
-    // Nuevos - manejadores para tarjeta nueva
+    // Manejadores para tarjeta nueva y OXXO
     handleNewCardSelect,
+    handleOxxoSelect,
     handleNewCardDataChange,
   } = useCheckout();
 
@@ -64,6 +66,35 @@ export const CheckoutPage = () => {
         colorPrimary: '#34C749',
       },
     },
+  };
+
+  // Verificar si el botón debe estar deshabilitado
+  const isButtonDisabled = () => {
+    // Siempre necesitamos una dirección
+    if (!selectedAddressId) return true;
+
+    // Verificar según el tipo de pago
+    switch (selectedPaymentType) {
+      case 'card':
+        return !selectedPaymentId;
+      case 'new_card':
+        return !newCardData.cardholderName || !newCardData.isComplete;
+      case 'oxxo':
+        return false; // Para OXXO no se necesita información adicional
+      default:
+        return true; // Si no hay tipo seleccionado, deshabilitar
+    }
+  };
+
+  // Obtener texto del botón según el método de pago
+  const getButtonText = () => {
+    if (isProcessing) return "Procesando...";
+
+    if (selectedPaymentType === 'oxxo') {
+      return "Generar voucher OXXO";
+    }
+
+    return "Completar Compra";
   };
 
   // ------------------------------------------------------------------------
@@ -109,11 +140,12 @@ export const CheckoutPage = () => {
               <PaymentMethodSelector
                 paymentMethods={paymentMethods}
                 selectedPaymentId={selectedPaymentId}
+                selectedPaymentType={selectedPaymentType}
                 onPaymentSelect={handlePaymentChange}
                 onNewCardSelect={handleNewCardSelect}
+                onOxxoSelect={handleOxxoSelect}
                 onNewCardDataChange={handleNewCardDataChange}
                 loading={loadingPayments}
-                newCardSelected={useNewCard}
               />
             </div>
 
@@ -163,15 +195,8 @@ export const CheckoutPage = () => {
                 <CheckoutButton
                   onCheckout={handleProcessOrder}
                   isProcessing={isProcessing}
-                  // Deshabilitar si:
-                  // - No hay dirección seleccionada, o
-                  // - No hay método de pago seleccionado y no está usando tarjeta nueva, o
-                  // - Está usando tarjeta nueva pero los datos no están completos
-                  disabled={
-                    !selectedAddressId ||
-                    (!selectedPaymentId && !useNewCard) ||
-                    (useNewCard && (!newCardData.cardholderName || !newCardData.isComplete))
-                  }
+                  disabled={isButtonDisabled()}
+                  buttonText={getButtonText()}
                 />
 
                 {/* Términos y condiciones */}
@@ -183,15 +208,32 @@ export const CheckoutPage = () => {
                   </small>
                 </div>
 
+                {/* Detalles según el método de pago seleccionado */}
+                {selectedPaymentType === 'oxxo' && !isProcessing && (
+                  <div className="payment-info-box mt-3 p-3 bg-light border rounded">
+                    <p className="small mb-2">
+                      <i className="bi bi-info-circle-fill me-2 text-primary"></i>
+                      Al hacer clic en "Generar voucher OXXO", crearemos un voucher de pago que podrás presentar en cualquier tienda OXXO en México.
+                    </p>
+                    <p className="small mb-0">
+                      El voucher tiene validez de 24 horas y tu pedido será procesado una vez que realices el pago.
+                    </p>
+                  </div>
+                )}
+
                 {/* Indicadores de procesamiento - Mostrar durante el paso 2 */}
                 {step === 2 && (
                   <div className="processing-indicators mt-4 p-3 border rounded">
                     <div className="processing-step mb-2">
                       <i className="bi bi-arrow-repeat spin me-2"></i>
-                      <span>Procesando tu pago...</span>
+                      <span>
+                        {selectedPaymentType === 'oxxo' ?
+                          'Generando voucher de pago...' :
+                          'Procesando tu pago...'}
+                      </span>
                     </div>
                     <small className="text-muted d-block">
-                      Espera un momento mientras procesamos tu compra. No cierres esta ventana.
+                      Espera un momento mientras procesamos tu solicitud. No cierres esta ventana.
                     </small>
                   </div>
                 )}

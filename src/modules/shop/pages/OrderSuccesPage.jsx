@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../firebase/firebaseConfig.js';
+import { OxxoVoucher } from '../components/checkout/OxxoVoucher';
+import '../styles/oxxoVoucher.css';
 import '../styles/orderSuccess.css';
 
 // Importar componentes refactorizados
@@ -111,8 +113,11 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
     <div className="os-wrapper order-success-container">
       {/* Cabecera con animación de éxito */}
       <OrderSummaryHeader
-        title={isFromCheckout ? '¡Pedido Confirmado!' : 'Detalles del Pedido'}
-        message={isFromCheckout ? 'Gracias por tu compra. Tu pedido ha sido procesado correctamente.' : null}
+        title={isOxxoPayment ? "¡Pedido Registrado!" : "¡Pedido Confirmado!"}
+        message={isOxxoPayment
+          ? "Tu pedido ha sido registrado. Por favor completa el pago en tu tienda OXXO más cercana."
+          : "Gracias por tu compra. Tu pedido ha sido procesado correctamente."
+        }
       />
 
       {/* Resumen principal del pedido */}
@@ -150,8 +155,39 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
         />
       </div>
 
+      {/* Información de Pago en OXXO */}
+      {orderDetails.payment?.type === 'oxxo' && (
+        <div className="order-details-section">
+          <h3>Información de Pago en OXXO</h3>
+          <OxxoVoucher
+            orderData={orderDetails}
+            voucherUrl={orderDetails.payment?.voucherUrl}
+            expiresAt={orderDetails.payment?.expiresAt}
+          />
+        </div>
+      )}
+
       {/* Notas del pedido */}
       <OrderNotes notes={orderDetails.notes} />
+
+      {/* Mensaje de OXXO */}
+      {orderDetails.payment?.type === 'oxxo' && (
+        <div className="order-details-section">
+          <div className="oxxo-disclaimer alert alert-warning">
+            <h5 className="alert-heading">
+              <i className="bi bi-info-circle-fill me-2"></i>
+              Información importante
+            </h5>
+            <p>Tu pedido ha sido registrado, pero será procesado únicamente después de confirmar tu pago en OXXO.</p>
+            <p className="mb-0">Ten en cuenta que:</p>
+            <ul>
+              <li>El voucher tiene una validez de 24 horas.</li>
+              <li>Una vez realizado el pago, puede tomar hasta 24 horas para que se refleje en nuestro sistema.</li>
+              <li>Recibirás un correo electrónico cuando confirmemos tu pago.</li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Siguientes pasos y soporte */}
       {isFromCheckout && <OrderNextSteps />}
@@ -180,6 +216,10 @@ export const OrderSuccessPage = () => {
   const [orderDetails, setOrderDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const searchParams = new URLSearchParams(window.location.search);
+  const paymentType = searchParams.get('payment');
+  const isOxxoPayment = paymentType === 'oxxo';
+
 
   useEffect(() => {
     const getOrderData = async () => {

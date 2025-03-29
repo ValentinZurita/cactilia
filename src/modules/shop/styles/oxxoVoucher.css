@@ -1,0 +1,130 @@
+/* Estilos para el componente OxxoVoucher */
+
+.oxxo-voucher-container {
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.oxxo-logo-wrapper {
+    background-color: white;
+    display: inline-flex;
+    justify-content: center;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.voucher-title {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.oxxo-voucher-details {
+    border: 1px dashed #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #f9f9f9;
+}
+
+.detail-group {
+    margin-bottom: 8px;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.detail-value {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.text-danger {
+    color: #e10718 !important;
+}
+
+.oxxo-voucher-instructions {
+    border-left: 4px solid #e10718;
+}
+
+.instructions-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.instructions-list {
+    padding-left: 20px;
+}
+
+.instructions-list li {
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.voucher-actions {
+    margin-top: 20px;
+}
+
+.voucher-actions .btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+}
+
+/* Modificadores para diferentes estados de pago */
+.oxxo-voucher-container.expired {
+    opacity: 0.8;
+}
+
+.oxxo-voucher-container.expired::after {
+    content: "EXPIRADO";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 3rem;
+    font-weight: 900;
+    color: rgba(225, 7, 24, 0.6);
+    border: 5px solid rgba(225, 7, 24, 0.6);
+    padding: 10px 20px;
+    border-radius: 10px;
+    pointer-events: none;
+}
+
+.oxxo-voucher-container.paid {
+    opacity: 0.8;
+}
+
+.oxxo-voucher-container.paid::after {
+    content: "PAGADO";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 3rem;
+    font-weight: 900;
+    color: rgba(40, 167, 69, 0.6);
+    border: 5px solid rgba(40, 167, 69, 0.6);
+    padding: 10px 20px;
+    border-radius: 10px;
+    pointer-events: none;
+}
+
+/* Estilos responsivos */
+@media (max-width: 767px) {
+    .voucher-title {
+        font-size: 1.3rem;
+    }
+
+    .detail-value {
+        font-size: 1rem;
+    }
+
+    .instructions-list li {
+        margin-bottom: 8px;
+    }
+}
