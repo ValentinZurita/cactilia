@@ -19,6 +19,8 @@ import {
   OrderNextSteps
 } from '../order-details/index.js';
 import { formatDate } from '../../utils/dateUtils.js'
+import { OxxoPaymentSimulator } from './components/OxxoPaymentSimulator.jsx'
+import { TempOxxoSimulator } from './components/TempOxxoSimulator.jsx'
 
 // Nombre de la colección de órdenes en Firestore
 const ORDERS_COLLECTION = 'orders';
@@ -165,6 +167,23 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
             voucherUrl={orderDetails.payment?.voucherUrl}
             expiresAt={orderDetails.payment?.expiresAt}
           />
+
+          {/* Simuladores solo para desarrollo */}
+          {process.env.NODE_ENV !== 'production' && (
+            <>
+              {/* Simulador usando Cloud Function */}
+              <OxxoPaymentSimulator
+                orderId={orderId}
+                paymentIntentId={orderDetails.payment?.paymentIntentId}
+              />
+
+              {/* Simulador alternativo directo */}
+              <TempOxxoSimulator
+                orderId={orderId}
+                paymentIntentId={orderDetails.payment?.paymentIntentId}
+              />
+            </>
+          )}
         </div>
       )}
 

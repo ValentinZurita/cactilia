@@ -27,6 +27,7 @@ const { basicTest } = require("./payment/test-function");
 
 // Import OXXO payment functions
 const oxxoFunctions = require('./payment/oxxoPaymentIntent');
+const { simulateOxxoPayment } = require('./payment/simulateOxxOPayment');
 
 // Export all functions
 exports.createPaymentIntent = paymentFunctions.createPaymentIntent;
@@ -51,3 +52,4 @@ exports.sendInvoiceEmail = invoiceEmails.sendInvoiceEmail;
 // Export OXXO payment functions
 exports.createOxxoPaymentIntent = oxxoFunctions.createOxxoPaymentIntent;
 exports.checkOxxoPaymentStatus = oxxoFunctions.checkOxxoPaymentStatus;
+exports.simulateOxxoPayment = simulateOxxoPayment;
