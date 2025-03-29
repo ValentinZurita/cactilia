@@ -1,29 +1,29 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-// Importar componentes de checkout
-import { CheckoutSummary } from './components/CheckoutSummary.jsx';
-import { AddressSelector } from './components/AddressSelector.jsx';
-import { PaymentMethodSelector } from './components/PaymentMethodSelector.jsx';
-import { BillingInfoForm } from './components/BillingInfoForm.jsx';
-import { CheckoutButton } from './components/CheckoutButton.jsx';
+// Componentes del checkout
+import { CheckoutSummary } from './components/CheckoutSummary';
+import { AddressSelector } from './components/AddressSelector';
+import { PaymentMethodSelector } from './components/PaymentMethodSelector';
+import { BillingInfoForm } from './components/BillingInfoForm';
+import { CheckoutButton } from './components/CheckoutButton';
+import { CheckoutSection } from './components/CheckoutSection';
 
 // Importar estilos
 import './styles/checkout.css';
-import './styles/processingIndicator.css';
-import './styles/addressSelector.css';
-import './styles/newAddressForm.css';
 
 // Importar nuestro custom hook
-import { useCheckout } from './hooks/useCheckout.js';
+import { useCheckout } from './hooks/useCheckout';
 
 // Cargar instancia de Stripe con la key de entorno
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 /**
- * @component
- * @returns {JSX.Element} Pantalla principal del Checkout.
+ * Componente principal de la página de Checkout
+ * Gestiona el proceso completo de finalización de compra
+ *
+ * @returns {JSX.Element} Pantalla principal del Checkout
  */
 export const CheckoutPage = () => {
   // Obtenemos todo el estado y métodos necesarios del hook useCheckout
@@ -43,9 +43,11 @@ export const CheckoutPage = () => {
     paymentMethods,
     loadingAddresses,
     loadingPayments,
+
     // Estado para dirección nueva
     useNewAddress,
     newAddressData,
+
     // Estado para tarjeta nueva
     useNewCard,
     newCardData,
@@ -54,27 +56,19 @@ export const CheckoutPage = () => {
     handleAddressChange,
     handleNewAddressSelect,
     handleNewAddressDataChange,
+
     // Manejadores para pago
     handlePaymentChange,
     handleInvoiceChange,
     handleFiscalDataChange,
     handleNotesChange,
     handleProcessOrder,
+
     // Manejadores para tarjeta nueva y OXXO
     handleNewCardSelect,
     handleOxxoSelect,
-    handleNewCardDataChange,
+    handleNewCardDataChange
   } = useCheckout();
-
-  // Log para debug
-  useEffect(() => {
-    console.log('CheckoutPage render:', {
-      selectedAddressId,
-      selectedAddressType,
-      addresses,
-      loadingAddresses
-    });
-  }, [selectedAddressId, selectedAddressType, addresses, loadingAddresses]);
 
   // Opciones de configuración para Stripe Elements
   const stripeOptions = {
@@ -121,9 +115,6 @@ export const CheckoutPage = () => {
     return "Completar Compra";
   };
 
-  // ------------------------------------------------------------------------
-  // Renderizado principal
-  // ------------------------------------------------------------------------
   return (
     <Elements stripe={stripePromise} options={stripeOptions}>
       <div className="container checkout-page my-5">
@@ -142,11 +133,10 @@ export const CheckoutPage = () => {
           {/* Columna Izquierda: Formulario de checkout */}
           <div className="col-lg-8">
             {/* Sección: Dirección de Envío */}
-            <div className="checkout-section">
-              <h2 className="section-title">
-                <span className="step-number">1</span>
-                Dirección de Envío
-              </h2>
+            <CheckoutSection
+              title="Dirección de Envío"
+              stepNumber={1}
+            >
               <AddressSelector
                 addresses={addresses}
                 selectedAddressId={selectedAddressId}
@@ -156,14 +146,13 @@ export const CheckoutPage = () => {
                 onNewAddressDataChange={handleNewAddressDataChange}
                 loading={loadingAddresses}
               />
-            </div>
+            </CheckoutSection>
 
             {/* Sección: Método de Pago */}
-            <div className="checkout-section">
-              <h2 className="section-title">
-                <span className="step-number">2</span>
-                Método de Pago
-              </h2>
+            <CheckoutSection
+              title="Método de Pago"
+              stepNumber={2}
+            >
               <PaymentMethodSelector
                 paymentMethods={paymentMethods}
                 selectedPaymentId={selectedPaymentId}
@@ -174,28 +163,26 @@ export const CheckoutPage = () => {
                 onNewCardDataChange={handleNewCardDataChange}
                 loading={loadingPayments}
               />
-            </div>
+            </CheckoutSection>
 
             {/* Sección: Información Fiscal (opcional) */}
-            <div className="checkout-section">
-              <h2 className="section-title">
-                <span className="step-number">3</span>
-                Información Fiscal
-              </h2>
+            <CheckoutSection
+              title="Información Fiscal"
+              stepNumber={3}
+            >
               <BillingInfoForm
                 requiresInvoice={requiresInvoice}
                 onRequiresInvoiceChange={handleInvoiceChange}
                 fiscalData={fiscalData}
                 onFiscalDataChange={handleFiscalDataChange}
               />
-            </div>
+            </CheckoutSection>
 
             {/* Sección: Notas adicionales */}
-            <div className="checkout-section">
-              <h2 className="section-title">
-                <span className="step-number">4</span>
-                Notas Adicionales
-              </h2>
+            <CheckoutSection
+              title="Notas Adicionales"
+              stepNumber={4}
+            >
               <div className="form-group">
                 <textarea
                   className="form-control"
@@ -208,7 +195,7 @@ export const CheckoutPage = () => {
                   Por ejemplo: "Dejar con el portero" o "Llamar antes de entregar".
                 </small>
               </div>
-            </div>
+            </CheckoutSection>
           </div>
 
           {/* Columna Derecha: Resumen del pedido y botón de pago */}
@@ -224,6 +211,7 @@ export const CheckoutPage = () => {
                   isProcessing={isProcessing}
                   disabled={isButtonDisabled()}
                   buttonText={getButtonText()}
+                  paymentType={selectedPaymentType}
                 />
 
                 {/* Términos y condiciones */}

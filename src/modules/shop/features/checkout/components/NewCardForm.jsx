@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import PropTypes from 'prop-types';
+import { CardElement } from '@stripe/react-stripe-js';
+import '../styles/newCardForm.css';
 
 /**
  * Componente que muestra un formulario para ingresar los datos de una nueva tarjeta
@@ -11,7 +13,6 @@ import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
  * @param {Function} props.onSaveCardChange - Función para actualizar la opción de guardar tarjeta
  * @param {string} props.cardholderName - Nombre del titular de la tarjeta
  * @param {Function} props.onCardholderNameChange - Función para actualizar el nombre del titular
- * @returns {JSX.Element}
  */
 export const NewCardForm = ({
                               onCardChange,
@@ -127,4 +128,12 @@ export const NewCardForm = ({
       </div>
     </div>
   );
+};
+
+NewCardForm.propTypes = {
+  onCardChange: PropTypes.func.isRequired,
+  saveCard: PropTypes.bool,
+  onSaveCardChange: PropTypes.func.isRequired,
+  cardholderName: PropTypes.string.isRequired,
+  onCardholderNameChange: PropTypes.func.isRequired
 };
