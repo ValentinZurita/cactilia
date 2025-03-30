@@ -19,22 +19,47 @@ export const cartSlice = createSlice({
     addToCart: (state, action) => {
       const { product, quantity = 1 } = action.payload;
 
+      // Datos esenciales del producto para el carrito
+      const cartProduct = {
+        id: product.id,
+        name: product.name || product.title,
+        price: product.price,
+        image: product.image || product.mainImage,
+        category: product.category,
+        stock: product.stock || 0
+      };
+
       // Buscar si el producto ya está en el carrito
-      const existingItem = state.items.find(item => item.id === product.id);
+      const existingItem = state.items.find(item => item.id === cartProduct.id);
 
       if (existingItem) {
-        // Si el producto ya está en el carrito, incrementar cantidad
-        existingItem.quantity += quantity;
+        // Validar stock antes de actualizar
+        const newQuantity = existingItem.quantity + quantity;
+        if (cartProduct.stock === 0) {
+          // No hacer nada si no hay stock
+          return;
+        }
+        // Limitar a stock disponible si está definido
+        existingItem.quantity = cartProduct.stock > 0
+          ? Math.min(newQuantity, cartProduct.stock)
+          : newQuantity;
+        // Actualizar información de stock
+        existingItem.stock = cartProduct.stock;
       } else {
-        // Si no, añadirlo con la cantidad especificada
+        // Validar stock antes de añadir
+        if (cartProduct.stock === 0) {
+          // No añadir si no hay stock
+          return;
+        }
+        // Limitar a stock disponible
+        const validQuantity = cartProduct.stock > 0
+          ? Math.min(quantity, cartProduct.stock)
+          : quantity;
+
+        // Añadir el producto con la cantidad validada
         state.items.push({
-          id: product.id,
-          name: product.name || product.title,
-          price: product.price,
-          image: product.image || product.mainImage,
-          category: product.category,
-          quantity,
-          stock: product.stock || 0
+          ...cartProduct,
+          quantity: validQuantity
         });
       }
     },

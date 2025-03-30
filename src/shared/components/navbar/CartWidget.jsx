@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../../modules/shop/features/cart/hooks/useCart.js';
-import { formatPrice } from '../../../modules/shop/features/cart/utils/cartUtils.js';
+import { formatPrice } from '../../../modules/shop/utils/format.js';
 
 /**
  * CartItem component - Renders a single item in the cart preview
@@ -33,12 +33,11 @@ const CartItem = memo(({ item }) => (
 export const CartWidget = () => {
   // State & hooks
   const [showPreview, setShowPreview] = useState(false);
-  const { items, total } = useCart();
+  const { items, finalTotal, itemsCount } = useCart();
   const previewRef = useRef(null);
   const timerRef = useRef(null);
 
   // Derived values
-  const itemsCount = items.reduce((count, item) => count + item.quantity, 0);
   const hasItems = items.length > 0;
   const showCartPreview = showPreview && hasItems;
 
@@ -89,7 +88,7 @@ export const CartWidget = () => {
   const renderBadge = () =>
     itemsCount > 0 && (
       <span style={badgeStyles}>
-        {itemsCount > 99 ? '9+' : itemsCount}
+        {itemsCount > 99 ? '99+' : itemsCount}
       </span>
     );
 
@@ -158,7 +157,7 @@ export const CartWidget = () => {
             <div className="d-flex justify-content-between mb-3">
               <span className="fw-bold">Total:</span>
               <span className="fw-bold" style={{ color: '#34C749' }}>
-                {formatPrice(total)}
+                {formatPrice(finalTotal)}
               </span>
             </div>
 
@@ -185,7 +184,6 @@ export const CartWidget = () => {
               </Link>
 
             </div>
-
           </footer>
         </section>
       )}

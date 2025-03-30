@@ -1,3 +1,4 @@
+// src/modules/shop/features/cart/hooks/useCart.js
 import { useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -5,9 +6,9 @@ import {
   removeFromCart,
   updateQuantity,
   clearCart
-} from '../store/index.js';
-import { syncCartWithServer } from '../store/index.js';
-import { calculateCartTotals, getOutOfStockItems } from '../utils/index.js';
+} from '../store/cartSlice';
+import { syncCartWithServer } from '../store/cartThunk';
+import { calculateCartTotals } from '../utils/cartUtils';
 
 /**
  * Hook personalizado para manejar las operaciones del carrito
@@ -21,6 +22,21 @@ export const useCart = () => {
   const { items = [] } = useSelector(state => state.cart);
   const { uid } = useSelector(state => state.auth);
 
+  // Calcular los totales del carrito
+  const {
+    subtotal,
+    taxes,
+    shipping,
+    total,
+    finalTotal,
+    isFreeShipping
+  } = useMemo(() => calculateCartTotals(items), [items]);
+
+  // Total de items en el carrito (cantidad)
+  const itemsCount = useMemo(() =>
+      items.reduce((count, item) => count + item.quantity, 0),
+    [items]);
+
   // Verificar si hay productos sin stock
   const outOfStockItems = useMemo(() =>
       items.filter(item => item.stock === 0),
@@ -32,16 +48,6 @@ export const useCart = () => {
       items.filter(item => item.stock > 0 && item.quantity > item.stock),
     [items]
   );
-
-  // Calcular los totales del carrito
-  const {
-    subtotal,
-    taxes,
-    shipping,
-    total,
-    finalTotal,
-    isFreeShipping
-  } = useMemo(() => calculateCartTotals(items), [items]);
 
   // Verificar si hay problemas de stock
   const hasStockIssues = useMemo(() =>
@@ -60,10 +66,22 @@ export const useCart = () => {
     if (uid) dispatch(syncCartWithServer(uid));
   }, [dispatch, uid]);
 
-  const handleUpdateQuantity = useCallback((productId, quantity) => {
-    dispatch(updateQuantity({ id: productId, quantity }));
-    if (uid) dispatch(syncCartWithServer(uid));
-  }, [dispatch, uid]);
+  const increaseQuantity = useCallback((productId) => {
+    const item = items.find(item => item.id === productId);
+    if (item) {
+      // No validamos stock aquí, lo dejamos para el reducer
+      dispatch(updateQuantity({ id: productId, quantity: item.quantity + 1 }));
+      if (uid) dispatch(syncCartWithServer(uid));
+    }
+  }, [dispatch, items, uid]);
+
+  const decreaseQuantity = useCallback((productId) => {
+    const item = items.find(item => item.id === productId);
+    if (item && item.quantity > 1) {
+      dispatch(updateQuantity({ id: productId, quantity: item.quantity - 1 }));
+      if (uid) dispatch(syncCartWithServer(uid));
+    }
+  }, [dispatch, items, uid]);
 
   const handleClearCart = useCallback(() => {
     dispatch(clearCart());
@@ -111,6 +129,7 @@ export const useCart = () => {
   return {
     // Datos del carrito
     items,
+    itemsCount,
     subtotal,
     taxes,
     shipping,
@@ -125,7 +144,12 @@ export const useCart = () => {
     // Métodos
     addToCart: handleAddToCart,
     removeFromCart: handleRemoveFromCart,
-    updateQuantity: handleUpdateQuantity,
+    increaseQuantity,
+    decreaseQuantity,
+    updateQuantity: (productId, quantity) => {
+      dispatch(updateQuantity({ id: productId, quantity }));
+      if (uid) dispatch(syncCartWithServer(uid));
+    },
     clearCart: handleClearCart,
     isInCart,
     getItem,

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import '../../../styles/pages/cart.css';
 import { useCart } from '../features/cart/hooks/useCart.js'
-import { CartItem, CartTotal, EmptyCart } from '../features/cart/components/index.js'
+import { CartItem, CartTotal, EmptyCart, StockAlert } from '../features/cart/components/index.js'
 import { useSelector } from 'react-redux';
 
 export const CartPage = () => {
@@ -10,10 +10,11 @@ export const CartPage = () => {
   const {
     items: cartItems,
     itemsCount,
-    hasOutOfStockItems,
+    hasStockIssues,
     increaseQuantity,
     decreaseQuantity,
     removeFromCart,
+    hasOutOfStockItems
   } = useCart();
 
   const handleGoBack = () => {
@@ -28,8 +29,8 @@ export const CartPage = () => {
     }
 
     // Si hay productos sin stock, mostrar alerta
-    if (hasOutOfStockItems) {
-      alert('Hay productos sin stock en tu carrito. Por favor, elimínalos antes de continuar.');
+    if (hasStockIssues) {
+      alert('Hay problemas de stock en tu carrito. Por favor, revisa antes de continuar.');
       return;
     }
 
@@ -64,13 +65,8 @@ export const CartPage = () => {
         </div>
       </div>
 
-      {/* Alerta de productos sin stock */}
-      {hasOutOfStockItems && (
-        <div className="alert alert-warning mb-4">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          Hay productos sin stock en tu carrito. Por favor, elimínalos antes de continuar.
-        </div>
-      )}
+      {/* Alerta de productos con problemas de stock */}
+      <StockAlert items={cartItems} className="mb-4" />
 
       {/* Layout con dos columnas en desktop */}
       <div className="row">
@@ -103,7 +99,7 @@ export const CartPage = () => {
             <button
               className="btn btn-green-checkout w-100"
               onClick={handleCheckout}
-              disabled={hasOutOfStockItems}
+              disabled={hasStockIssues}
             >
               <i className="bi bi-credit-card me-2"></i>
               Proceder al pago
