@@ -1,6 +1,6 @@
 import { shouldUseMocks } from '../../../../user/services/stripeMock.js';
 import { apiService } from '../../../services/api.js';
-import { doc, runTransaction } from 'firebase/firestore';
+import { doc, runTransaction, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../../../firebase/firebaseConfig';
 
 const ORDERS_COLLECTION = 'orders';
@@ -43,19 +43,34 @@ export const verifyAndUpdateStock = async (items) => {
     // Lista para almacenar productos sin stock suficiente
     const outOfStockItems = [];
 
-    // Ejecutar transacción
+    // Usar runTransaction para garantizar consistencia en la base de datos
     await runTransaction(FirebaseDB, async (transaction) => {
-      // Para cada producto en la orden
+      // PASO 1: Realizar todas las lecturas primero
+      const productRefs = [];
+      const productSnapshots = [];
+
+      // Creamos referencias y obtenemos todos los productos primero
       for (const item of items) {
         const productRef = doc(FirebaseDB, PRODUCTS_COLLECTION, item.id);
+        productRefs.push({ ref: productRef, item });
+
+        // Obtener el documento dentro de la transacción
         const productDoc = await transaction.get(productRef);
 
         if (!productDoc.exists()) {
           throw new Error(`Producto no encontrado: ${item.id}`);
         }
 
-        const productData = productDoc.data();
-        const currentStock = productData.stock || 0;
+        productSnapshots.push({
+          doc: productDoc,
+          data: productDoc.data(),
+          item
+        });
+      }
+
+      // PASO 2: Verificar stock y crear lista de productos sin stock suficiente
+      for (const { doc, data, item } of productSnapshots) {
+        const currentStock = data.stock || 0;
 
         // Verificar si hay suficiente stock
         if (currentStock < item.quantity) {
@@ -65,19 +80,23 @@ export const verifyAndUpdateStock = async (items) => {
             requestedQuantity: item.quantity,
             availableStock: currentStock
           });
-          // No lanzamos error para continuar verificando todos los productos
-        } else {
-          // Actualizar el stock
-          transaction.update(productRef, {
-            stock: currentStock - item.quantity,
-            updatedAt: new Date()
-          });
         }
       }
 
-      // Si hay productos sin stock suficiente, la transacción fallará
+      // Si hay productos sin stock suficiente, no continuamos con la transacción
       if (outOfStockItems.length > 0) {
         throw new Error('Productos con stock insuficiente');
+      }
+
+      // PASO 3: Realizar todas las escrituras después de todas las lecturas
+      for (const { doc, data, item } of productSnapshots) {
+        const currentStock = data.stock || 0;
+
+        // Actualizar el stock
+        transaction.update(doc.ref, {
+          stock: currentStock - item.quantity,
+          updatedAt: new Date()
+        });
       }
     });
 
@@ -211,6 +230,23 @@ export const processPayment = async (
   customerEmail = null
 ) => {
   try {
+    // Validar datos mínimos de la orden
+    if (!orderData || !orderData.userId || !orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+      return { ok: false, error: 'Datos de orden incompletos o inválidos' };
+    }
+
+    // Validar que hay totales definidos
+    if (!orderData.totals || typeof orderData.totals.total !== 'number' || orderData.totals.total <= 0) {
+      return { ok: false, error: 'Total de la orden inválido' };
+    }
+
+    console.log('Procesando pago con datos:', {
+      items: orderData.items.length,
+      total: orderData.totals.total,
+      paymentType,
+      paymentMethodId: paymentMethodId ? '***' : null
+    });
+
     // 1. Verificar stock de productos
     const stockResult = await verifyAndUpdateStock(orderData.items);
     if (!stockResult.ok) {
@@ -231,7 +267,10 @@ export const processPayment = async (
     const orderId = orderResult.id;
 
     // 3. Crear el Payment Intent
-    const amount = Math.round(orderData.totals.total * 100); // Convertir a centavos
+    // Convertir el total a centavos para Stripe (multiplicar por 100)
+    const amount = Math.round(orderData.totals.total * 100);
+
+    console.log(`Creando Payment Intent por $${orderData.totals.total} (${amount} centavos)`);
 
     const paymentIntent = await createPaymentIntent(
       amount,
@@ -247,17 +286,18 @@ export const processPayment = async (
         'payment.status': 'failed'
       });
 
+      console.error('Error en Payment Intent:', paymentIntent.error);
       throw new Error(paymentIntent.error || 'Error al procesar el pago');
     }
 
     // 4. Actualizar la orden con el ID del Payment Intent
-    await apiService.updateDocument(ORDERS_COLLECTION, orderId, {
+    const updateData = {
       'payment.paymentIntentId': paymentIntent.data.paymentIntentId,
       'payment.status': 'pending',
-      ...(paymentType === 'oxxo' && paymentIntent.data.voucherUrl
-        ? { 'payment.voucherUrl': paymentIntent.data.voucherUrl }
-        : {})
-    });
+      ...(paymentType === 'oxxo' && paymentIntent.data.voucherUrl ? { 'payment.voucherUrl': paymentIntent.data.voucherUrl } : {})
+    };
+
+    await apiService.updateDocument(ORDERS_COLLECTION, orderId, updateData);
 
     // 5. Si se debe guardar el método de pago
     if (paymentType === 'card' && savePaymentMethod && paymentMethodId) {

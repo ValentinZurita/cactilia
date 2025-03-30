@@ -1,9 +1,10 @@
+
 /**
- * Format price as currency
- * @param {number} price - Price to format
- * @param {string} locale - Locale for formatting
- * @param {string} currency - Currency code
- * @returns {string} - Formatted price
+ * Formatear precio como moneda
+ * @param {number} price - Precio a formatear
+ * @param {string} locale - Configuración regional para formateo
+ * @param {string} currency - Código de moneda
+ * @returns {string} - Precio formateado
  */
 export const formatPrice = (price, locale = 'es-MX', currency = 'MXN') => {
   if (typeof price !== 'number' || isNaN(price)) {
@@ -19,13 +20,13 @@ export const formatPrice = (price, locale = 'es-MX', currency = 'MXN') => {
 };
 
 /**
- * Calculate cart totals with Mexican tax model (IVA included in price)
+ * Calcula todos los totales del carrito según el modelo fiscal mexicano (IVA incluido en el precio)
  *
- * @param {Array} items - Cart items
- * @param {number} taxRate - Tax rate (default: 0.16 = 16%)
- * @param {number} minFreeShipping - Minimum amount for free shipping
- * @param {number} shippingCost - Standard shipping cost
- * @returns {Object} - Cart totals
+ * @param {Array} items - Items del carrito
+ * @param {number} taxRate - Tasa de impuesto (por defecto: 0.16 = 16%)
+ * @param {number} minFreeShipping - Monto mínimo para envío gratuito
+ * @param {number} shippingCost - Costo estándar de envío
+ * @returns {Object} - Totales del carrito
  */
 export const calculateCartTotals = (
   items,
@@ -33,6 +34,7 @@ export const calculateCartTotals = (
   minFreeShipping = 500,
   shippingCost = 50
 ) => {
+  // Validar items
   if (!items || !Array.isArray(items) || items.length === 0) {
     return {
       subtotal: 0,
@@ -44,22 +46,27 @@ export const calculateCartTotals = (
     };
   }
 
-  // Calculate total with tax included (mexican model)
-  const total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+  // Calcular total con impuestos incluidos (modelo mexicano)
+  // Validamos cada item y nos aseguramos que tengan precio y cantidad válidos
+  const total = items.reduce((sum, item) => {
+    const price = typeof item.price === 'number' ? item.price : 0;
+    const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
+    return sum + (price * quantity);
+  }, 0);
 
-  // Calculate the tax amount (already included in the price)
-  // Formula: tax = total - (total / (1 + taxRate))
-  const taxes = total - (total / (1 + taxRate));
+  // Calcular el impuesto (ya incluido en el precio)
+  // Fórmula: impuesto = total - (total / (1 + tasaImpuesto))
+  const taxes = +(total - (total / (1 + taxRate))).toFixed(2);
 
-  // Calculate subtotal (price without tax)
-  const subtotal = total - taxes;
+  // Calcular subtotal (precio sin impuesto)
+  const subtotal = +(total - taxes).toFixed(2);
 
-  // Calculate shipping (free if total >= minFreeShipping)
+  // Determinar si el envío es gratuito
   const isFreeShipping = total >= minFreeShipping;
   const shipping = isFreeShipping ? 0 : shippingCost;
 
-  // Calculate final total including shipping
-  const finalTotal = total + shipping;
+  // Calcular total final incluyendo envío
+  const finalTotal = +(total + shipping).toFixed(2);
 
   return {
     subtotal,

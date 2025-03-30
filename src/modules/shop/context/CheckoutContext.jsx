@@ -6,7 +6,7 @@ import { useCart } from '../features/cart/hooks/useCart';
 import { getUserAddresses } from '../../user/services/addressService';
 import { getUserPaymentMethods } from '../../user/services/paymentService';
 import { processPayment } from '../features/checkout/services/index.js';
-import { clearCartWithSync } from '../features/cart/store/index.js'
+import { clearCartWithSync } from '../features/cart/store/index.js';
 
 // Crear el contexto
 const CheckoutContext = createContext(null);
@@ -19,7 +19,14 @@ export const CheckoutProvider = ({ children }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { uid } = useSelector(state => state.auth);
-  const { items, validateCheckout } = useCart();
+  const {
+    items,
+    validateCheckout,
+    subtotal,
+    taxes,
+    shipping,
+    finalTotal
+  } = useCart();
 
   // Estados generales
   const [step, setStep] = useState(1);
@@ -119,7 +126,7 @@ export const CheckoutProvider = ({ children }) => {
     };
 
     loadAddresses();
-  }, [uid]);
+  }, [uid, selectedAddressId]);
 
   // Cargar métodos de pago
   useEffect(() => {
@@ -164,7 +171,7 @@ export const CheckoutProvider = ({ children }) => {
     };
 
     loadPaymentMethods();
-  }, [uid]);
+  }, [uid, selectedPaymentId]);
 
   // Manejador para cambio de dirección
   const handleAddressChange = useCallback((addressId, addressType = 'saved') => {
@@ -250,20 +257,39 @@ export const CheckoutProvider = ({ children }) => {
         }
         shippingAddress = { ...address };
       } else if (selectedAddressType === 'new') {
+        // Validar campos obligatorios
+        const requiredFields = ['name', 'street', 'city', 'state', 'zip'];
+        const missingFields = requiredFields.filter(field => !newAddressData[field]);
+
+        if (missingFields.length > 0) {
+          throw new Error('Completa todos los campos obligatorios de la dirección');
+        }
+
         shippingAddress = { ...newAddressData };
       } else {
         throw new Error('Selecciona una dirección de envío');
       }
 
       // Obtener método de pago seleccionado
-      let paymentMethod = null;
+      let paymentMethodId = null;
+      let cardholderName = '';
+
       if (selectedPaymentType === 'card') {
-        paymentMethod = paymentMethods.find(method => method.id === selectedPaymentId);
+        const paymentMethod = paymentMethods.find(method => method.id === selectedPaymentId);
         if (!paymentMethod) {
           throw new Error('El método de pago seleccionado no es válido');
         }
+        paymentMethodId = paymentMethod.stripePaymentMethodId;
       } else if (selectedPaymentType === 'new_card') {
-        // Para tarjeta nueva, el paymentMethod se crea en el servidor
+        // Para tarjeta nueva, validamos campos y creamos el PaymentMethod
+        if (!newCardData.cardholderName) {
+          throw new Error('Ingresa el nombre del titular de la tarjeta');
+        }
+
+        if (!newCardData.isComplete) {
+          throw new Error('Completa los datos de la tarjeta');
+        }
+
         const cardElement = elements.getElement('CardElement');
         if (!cardElement) {
           throw new Error('No se pudo acceder al formulario de tarjeta');
@@ -280,12 +306,23 @@ export const CheckoutProvider = ({ children }) => {
         if (error) {
           throw new Error(error.message);
         }
+
+        paymentMethodId = paymentMethod.id;
+        cardholderName = newCardData.cardholderName;
       }
 
       // Preparar datos de la orden
       const orderData = {
         userId: uid,
-        items: items,
+        items: items.map(item => ({
+          id: item.id,
+          name: item.name || item.title,
+          price: item.price,
+          image: item.image || item.mainImage,
+          category: item.category,
+          quantity: item.quantity,
+          stock: item.stock || 0
+        })),
         shipping: {
           method: 'standard',
           address: shippingAddress,
@@ -302,11 +339,28 @@ export const CheckoutProvider = ({ children }) => {
           requiresInvoice,
           fiscalData: requiresInvoice ? fiscalData : null
         },
-        notes: orderNotes
+        notes: orderNotes,
+        totals: {
+          subtotal: subtotal,
+          tax: taxes,
+          shipping: shipping,
+          total: finalTotal // Total incluyendo envío
+        }
       };
 
+      // Verificar que el total sea válido
+      if (!orderData.totals.total || orderData.totals.total <= 0) {
+        throw new Error('El total de la orden es inválido. Verifica los productos en tu carrito.');
+      }
+
       // Procesar la orden
-      const result = await processPayment(orderData);
+      const result = await processPayment(
+        orderData,
+        paymentMethodId,
+        selectedPaymentType === 'new_card' && newCardData.saveCard,
+        selectedPaymentType,
+        selectedPaymentType === 'oxxo' ? fiscalData.email || '' : null
+      );
 
       if (!result.ok) {
         throw new Error(result.error || 'Error al procesar el pago');
@@ -337,7 +391,8 @@ export const CheckoutProvider = ({ children }) => {
     selectedAddressType, selectedAddressId, addresses, newAddressData,
     selectedPaymentType, selectedPaymentId, paymentMethods, newCardData,
     requiresInvoice, fiscalData, orderNotes,
-    uid, items, dispatch
+    uid, items, dispatch,
+    subtotal, taxes, shipping, finalTotal
   ]);
 
   // Obtener dirección y método de pago seleccionados

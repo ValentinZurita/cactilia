@@ -1,4 +1,3 @@
-// src/modules/shop/features/cart/hooks/useCart.js
 import { useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -6,10 +5,16 @@ import {
   removeFromCart,
   updateQuantity,
   clearCart
-} from '../../cart/store/cartSlice.js';
+} from '../store/index.js';
 import { calculateCartTotals } from '../utils/cartUtils';
-import { syncCartWithServer } from '../store/index.js'
+import { syncCartWithServer } from '../store/index.js';
 
+/**
+ * Hook personalizado para manejar todas las operaciones del carrito de compras
+ * Proporciona acceso a los items del carrito, métodos para manipularlo y cálculos derivados
+ *
+ * @returns {Object} Funciones y estado del carrito
+ */
 export const useCart = () => {
   const dispatch = useDispatch();
   const { items = [] } = useSelector(state => state.cart);
@@ -28,7 +33,8 @@ export const useCart = () => {
   // Total de items (cantidad)
   const itemsCount = useMemo(() =>
       items.reduce((count, item) => count + item.quantity, 0),
-    [items]);
+    [items]
+  );
 
   // Verificar si hay productos sin stock o con stock insuficiente
   const outOfStockItems = useMemo(() =>
@@ -48,28 +54,77 @@ export const useCart = () => {
 
   // Funciones para manipular el carrito
   const handleAddToCart = useCallback((product, quantity = 1) => {
-    dispatch(addToCart({ product, quantity }));
+    // Validación básica
+    if (!product || !product.id) {
+      console.error('Producto inválido', product);
+      return;
+    }
+
+    // Verificar stock disponible
+    const stock = product.stock || 0;
+    if (stock <= 0) {
+      console.warn('Producto sin stock disponible:', product.id);
+      return;
+    }
+
+    // Encontrar si ya existe en el carrito para validar cantidad total
+    const existingItem = items.find(item => item.id === product.id);
+    const currentQuantity = existingItem ? existingItem.quantity : 0;
+
+    // Validar que no exceda el stock disponible
+    const totalQuantity = currentQuantity + quantity;
+    if (totalQuantity > stock) {
+      console.warn(`Cantidad excede stock disponible (${stock})`, product.id);
+      // Opcional: Ajustar automáticamente al máximo disponible
+      // quantity = stock - currentQuantity;
+      return;
+    }
+
+    dispatch(addToCart({
+      product: {
+        ...product,
+        stock // Asegurar que el stock se guarda en el carrito
+      },
+      quantity
+    }));
+
     if (uid) dispatch(syncCartWithServer());
-  }, [dispatch, uid]);
+  }, [dispatch, uid, items]);
 
   const handleRemoveFromCart = useCallback((productId) => {
+    if (!productId) {
+      console.error('ID de producto requerido para eliminar del carrito');
+      return;
+    }
+
     dispatch(removeFromCart(productId));
     if (uid) dispatch(syncCartWithServer());
   }, [dispatch, uid]);
 
-  // Función para incrementar cantidad
+  // Función para incrementar cantidad con validación de stock
   const increaseQuantity = useCallback((productId) => {
-    console.log("Incrementando cantidad para:", productId);
+    if (!productId) return;
+
     const item = items.find(item => item.id === productId);
-    if (item) {
-      dispatch(updateQuantity({ id: productId, quantity: item.quantity + 1 }));
-      if (uid) dispatch(syncCartWithServer());
+    if (!item) {
+      console.warn('Producto no encontrado en el carrito:', productId);
+      return;
     }
+
+    // Validar stock disponible
+    if (item.stock <= 0 || item.quantity >= item.stock) {
+      console.warn('No hay suficiente stock para incrementar:', productId);
+      return;
+    }
+
+    dispatch(updateQuantity({ id: productId, quantity: item.quantity + 1 }));
+    if (uid) dispatch(syncCartWithServer());
   }, [dispatch, items, uid]);
 
   // Función para decrementar cantidad
   const decreaseQuantity = useCallback((productId) => {
-    console.log("Decrementando cantidad para:", productId);
+    if (!productId) return;
+
     const item = items.find(item => item.id === productId);
     if (item && item.quantity > 1) {
       dispatch(updateQuantity({ id: productId, quantity: item.quantity - 1 }));
