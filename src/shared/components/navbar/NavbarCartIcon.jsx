@@ -1,27 +1,22 @@
 import { NavbarIcon } from './NavbarIcon';
 import { useSelector } from 'react-redux';
 import { selectCartItemsCount } from '../../../store/cart/cartSlice.js'
+import '../../../styles/global.css'
 
 /**
- * Cart Icon for the Navbar with a badge showing the number of items in the cart
+ * Cart Icon for the Navbar with a badge showing the number of items
+ * in the cart. Uses the brand's green color scheme.
  */
-
 export const NavbarCartIcon = () => {
-
-
   // Get cart items count from Redux
   const cartItemsCount = useSelector(selectCartItemsCount);
-
 
   // Icon and label
   const cartIcon = "bi-cart-fill";
   const cartLabel = "Carrito";
 
-
   return (
-
     <div className="position-relative">
-
       {/* Cart Icon */}
       <NavbarIcon
         iconClass={cartIcon}
@@ -30,14 +25,13 @@ export const NavbarCartIcon = () => {
         hideLabelOnMobile={true}
       />
 
-      {/* Cart badge showing number of items */}
+      {/* Cart badge showing number of items - updated to use brand green color */}
       {cartItemsCount > 0 && (
-        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge" style={{ marginLeft: '-1rem' }}>
           {cartItemsCount > 99 ? '99+' : cartItemsCount}
           <span className="visually-hidden">productos en el carrito</span>
         </span>
       )}
-
     </div>
   );
 };

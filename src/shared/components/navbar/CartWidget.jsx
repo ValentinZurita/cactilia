@@ -5,7 +5,8 @@ import { formatPrice } from '../../../modules/shop/features/cart/utils/cartUtils
 
 /**
  * CartWidget component that shows a mini preview of the cart
- * when hovering over the cart icon
+ * when hovering over the cart icon. Includes a badge with the
+ * number of items in the cart styled in the brand green color.
  */
 export const CartWidget = () => {
   const [showPreview, setShowPreview] = useState(false);
@@ -62,8 +63,9 @@ export const CartWidget = () => {
           Carrito
         </span>
 
+        {/* Cart badge showing number of items - now with brand green color */}
         {itemsCount > 0 && (
-          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ marginLeft: '-1rem' }}>
+          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge" style={{ marginLeft: '-1rem' }}>
             {itemsCount > 99 ? '99+' : itemsCount}
             <span className="visually-hidden">productos en el carrito</span>
           </span>
