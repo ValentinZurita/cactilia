@@ -6,7 +6,7 @@ import { useCart } from '../features/cart/hooks/useCart';
 import { getUserAddresses } from '../../user/services/addressService';
 import { getUserPaymentMethods } from '../../user/services/paymentService';
 import { processPayment } from '../features/checkout/services/index.js';
-import { clearCartWithSync } from '../../../store/cart/cartThunk';
+import { clearCartWithSync } from '../features/cart/store/index.js'
 
 // Crear el contexto
 const CheckoutContext = createContext(null);

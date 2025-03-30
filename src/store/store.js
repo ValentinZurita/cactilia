@@ -4,9 +4,9 @@ import { registerSlice } from '../modules/auth/store/registerSlice.js'
 import { persistReducer, persistStore } from 'redux-persist'
 import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'
 import { authSlice } from './auth/authSlice.js'
-import { cartSlice } from './cart/cartSlice.js'
 import messagesReducer from './messages/messageSlice.js'
 import ordersReducer from '../modules/admin/components/orders/slices/ordersSlice.js';
+import { cartSlice } from '../modules/shop/features/cart/store/index.js'
 
 // Config persistence for auth
 const authPersistConfig = {

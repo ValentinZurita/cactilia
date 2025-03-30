@@ -5,8 +5,8 @@ import { useCheckAuth } from './shared/hooks/useCheckAuth.js';
 import { Spinner } from './shared/components/spinner/Spinner.jsx';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loadCartFromFirestore, mergeCartsOnLogin } from './store/cart/cartThunk.js';
 import { StripeProvider } from './contexts/StripeContext.jsx';
+import { loadCartFromFirestore, mergeCartsOnLogin } from './modules/shop/features/cart/store/index.js'
 
 export const App = () => {
   // Check if user is authenticated

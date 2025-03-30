@@ -1,7 +1,8 @@
+// src/modules/shop/pages/CartPage.jsx
 import { useNavigate } from 'react-router-dom';
 import '../../../styles/pages/cart.css';
-import { useCart } from '../features/cart/hooks/useCart.js'
-import { CartItem, CartTotal, EmptyCart, StockAlert } from '../features/cart/components/index.js'
+import { useCart } from '../features/cart/hooks/useCart';
+import { CartItem, CartTotal, EmptyCart } from '../features/cart/components/index.js';
 import { useSelector } from 'react-redux';
 
 export const CartPage = () => {
@@ -10,11 +11,10 @@ export const CartPage = () => {
   const {
     items: cartItems,
     itemsCount,
-    hasStockIssues,
+    hasOutOfStockItems,
     increaseQuantity,
     decreaseQuantity,
     removeFromCart,
-    hasOutOfStockItems
   } = useCart();
 
   const handleGoBack = () => {
@@ -22,23 +22,19 @@ export const CartPage = () => {
   };
 
   const handleCheckout = () => {
-    // Si el usuario no está autenticado, redirigir a inicio de sesión
     if (status !== 'authenticated') {
       navigate('/auth/login?redirect=shop/checkout');
       return;
     }
 
-    // Si hay productos sin stock, mostrar alerta
-    if (hasStockIssues) {
-      alert('Hay problemas de stock en tu carrito. Por favor, revisa antes de continuar.');
+    if (hasOutOfStockItems) {
+      alert('Hay productos sin stock en tu carrito. Por favor, elimínalos antes de continuar.');
       return;
     }
 
-    // Redirigir a checkout
     navigate('/shop/checkout');
   };
 
-  // Si el carrito está vacío, mostrar componente EmptyCart
   if (cartItems.length === 0) {
     return <EmptyCart onContinueShopping={() => navigate('/shop')} />;
   }
@@ -47,7 +43,6 @@ export const CartPage = () => {
     <div className="container cart-page pt-5 mt-5">
       {/* Encabezado y botón de regreso */}
       <div className="d-flex align-items-center mb-4">
-        {/* Botón de regreso */}
         <button
           className="btn-arrow-back me-3"
           onClick={handleGoBack}
@@ -56,7 +51,6 @@ export const CartPage = () => {
           <i className="bi bi-arrow-left"></i>
         </button>
 
-        {/* Título y cantidad de artículos */}
         <div>
           <h2 className="mb-0 fw-bold">Tu Carrito</h2>
           <p className="text-muted mb-0">
@@ -64,9 +58,6 @@ export const CartPage = () => {
           </p>
         </div>
       </div>
-
-      {/* Alerta de productos con problemas de stock */}
-      <StockAlert items={cartItems} className="mb-4" />
 
       {/* Layout con dos columnas en desktop */}
       <div className="row">
@@ -79,8 +70,14 @@ export const CartPage = () => {
                   <CartItem
                     key={item.id}
                     product={item}
-                    onIncrement={() => increaseQuantity(item.id)}
-                    onDecrement={() => decreaseQuantity(item.id)}
+                    onIncrement={() => {
+                      console.log("Intentando incrementar:", item.id);
+                      increaseQuantity(item.id);
+                    }}
+                    onDecrement={() => {
+                      console.log("Intentando decrementar:", item.id);
+                      decreaseQuantity(item.id);
+                    }}
                     onRemove={() => removeFromCart(item.id)}
                   />
                 ))}
@@ -99,7 +96,7 @@ export const CartPage = () => {
             <button
               className="btn btn-green-checkout w-100"
               onClick={handleCheckout}
-              disabled={hasStockIssues}
+              disabled={hasOutOfStockItems}
             >
               <i className="bi bi-credit-card me-2"></i>
               Proceder al pago

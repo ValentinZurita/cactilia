@@ -6,23 +6,16 @@ import {
   removeFromCart,
   updateQuantity,
   clearCart
-} from '../store/cartSlice';
-import { syncCartWithServer } from '../store/cartThunk';
+} from '../../cart/store/cartSlice.js';
 import { calculateCartTotals } from '../utils/cartUtils';
+import { syncCartWithServer } from '../store/index.js'
 
-/**
- * Hook personalizado para manejar las operaciones del carrito
- * Proporciona métodos para añadir, eliminar, actualizar y verificar productos
- * @returns {Object} - Métodos y datos del carrito
- */
 export const useCart = () => {
   const dispatch = useDispatch();
-
-  // Obtener el estado del carrito desde Redux
   const { items = [] } = useSelector(state => state.cart);
   const { uid } = useSelector(state => state.auth);
 
-  // Calcular los totales del carrito
+  // Calcular totales del carrito
   const {
     subtotal,
     taxes,
@@ -32,24 +25,22 @@ export const useCart = () => {
     isFreeShipping
   } = useMemo(() => calculateCartTotals(items), [items]);
 
-  // Total de items en el carrito (cantidad)
+  // Total de items (cantidad)
   const itemsCount = useMemo(() =>
       items.reduce((count, item) => count + item.quantity, 0),
     [items]);
 
-  // Verificar si hay productos sin stock
+  // Verificar si hay productos sin stock o con stock insuficiente
   const outOfStockItems = useMemo(() =>
       items.filter(item => item.stock === 0),
     [items]
   );
 
-  // Verificar si hay productos con stock insuficiente
   const insufficientStockItems = useMemo(() =>
       items.filter(item => item.stock > 0 && item.quantity > item.stock),
     [items]
   );
 
-  // Verificar si hay problemas de stock
   const hasStockIssues = useMemo(() =>
       outOfStockItems.length > 0 || insufficientStockItems.length > 0,
     [outOfStockItems, insufficientStockItems]
@@ -58,34 +49,37 @@ export const useCart = () => {
   // Funciones para manipular el carrito
   const handleAddToCart = useCallback((product, quantity = 1) => {
     dispatch(addToCart({ product, quantity }));
-    if (uid) dispatch(syncCartWithServer(uid));
+    if (uid) dispatch(syncCartWithServer());
   }, [dispatch, uid]);
 
   const handleRemoveFromCart = useCallback((productId) => {
     dispatch(removeFromCart(productId));
-    if (uid) dispatch(syncCartWithServer(uid));
+    if (uid) dispatch(syncCartWithServer());
   }, [dispatch, uid]);
 
+  // Función para incrementar cantidad
   const increaseQuantity = useCallback((productId) => {
+    console.log("Incrementando cantidad para:", productId);
     const item = items.find(item => item.id === productId);
     if (item) {
-      // No validamos stock aquí, lo dejamos para el reducer
       dispatch(updateQuantity({ id: productId, quantity: item.quantity + 1 }));
-      if (uid) dispatch(syncCartWithServer(uid));
+      if (uid) dispatch(syncCartWithServer());
     }
   }, [dispatch, items, uid]);
 
+  // Función para decrementar cantidad
   const decreaseQuantity = useCallback((productId) => {
+    console.log("Decrementando cantidad para:", productId);
     const item = items.find(item => item.id === productId);
     if (item && item.quantity > 1) {
       dispatch(updateQuantity({ id: productId, quantity: item.quantity - 1 }));
-      if (uid) dispatch(syncCartWithServer(uid));
+      if (uid) dispatch(syncCartWithServer());
     }
   }, [dispatch, items, uid]);
 
   const handleClearCart = useCallback(() => {
     dispatch(clearCart());
-    if (uid) dispatch(syncCartWithServer(uid));
+    if (uid) dispatch(syncCartWithServer());
   }, [dispatch, uid]);
 
   // Verificar si un producto está en el carrito
@@ -98,7 +92,7 @@ export const useCart = () => {
     return items.find(item => item.id === productId);
   }, [items]);
 
-  // Validar si se puede proceder al checkout
+  // Validar carrito para checkout
   const validateCheckout = useCallback(() => {
     if (items.length === 0) {
       return {
@@ -146,10 +140,6 @@ export const useCart = () => {
     removeFromCart: handleRemoveFromCart,
     increaseQuantity,
     decreaseQuantity,
-    updateQuantity: (productId, quantity) => {
-      dispatch(updateQuantity({ id: productId, quantity }));
-      if (uid) dispatch(syncCartWithServer(uid));
-    },
     clearCart: handleClearCart,
     isInCart,
     getItem,

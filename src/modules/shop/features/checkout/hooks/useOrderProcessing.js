@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAsync } from '../../../hooks/useAsync.js';
-import { processPayment } from '../services/checkoutService.js';
-import { clearCartWithSync } from '../../../../../store/cart/cartThunk.js';
+import { processPayment } from '../services/index.js';
+import { clearCartWithSync } from '../../cart/store/index.js'
 
 /**
  * Hook para procesar órdenes en el checkout

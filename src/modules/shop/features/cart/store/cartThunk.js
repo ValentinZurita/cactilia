@@ -1,36 +1,39 @@
+// src/store/cart/cartThunk.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { saveCart, getCart, deleteCart } from '../services/cartService.js';
-import {
-  setCartItems,
-  setSyncStatus,
-  setSyncError,
-  setLastSync,
-  clearCart
-} from './cartSlice.js';
+import { setCartItems, setSyncStatus, setSyncError, setLastSync, clearCart } from './cartSlice';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { FirebaseDB } from '../../../../../firebase/firebaseConfig.js'
 
 /**
- * Carga el carrito desde Firebase
+ * Carga el carrito desde Firestore para el usuario autenticado
  */
-export const loadCartFromServer = createAsyncThunk(
-  'cart/loadFromServer',
-  async (userId, { dispatch }) => {
+export const loadCartFromFirestore = createAsyncThunk(
+  'cart/loadFromFirestore',
+  async (_, { getState, dispatch }) => {
     try {
+      const { auth } = getState();
+      if (!auth.uid) return;
+
       dispatch(setSyncStatus('loading'));
 
-      const result = await getCart(userId);
+      // Referencia al documento del carrito en Firestore
+      const cartRef = doc(FirebaseDB, 'carts', auth.uid);
+      const cartSnap = await getDoc(cartRef);
 
-      if (result.ok) {
-        // Si hay items, cargarlos
-        if (result.data && result.data.items && result.data.items.length > 0) {
-          dispatch(setCartItems(result.data.items));
-        }
-
-        // Registrar sincronización exitosa
+      if (cartSnap.exists()) {
+        const cartData = cartSnap.data();
+        dispatch(setCartItems(cartData.items || []));
         dispatch(setLastSync(new Date().toISOString()));
-        return result.data;
+        return cartData;
       } else {
-        dispatch(setSyncError(result.error || 'Error al cargar el carrito'));
-        return null;
+        // Si no existe un carrito, inicializar con el carrito actual
+        const { cart } = getState();
+        await setDoc(cartRef, {
+          items: cart.items,
+          updatedAt: new Date()
+        });
+        dispatch(setLastSync(new Date().toISOString()));
+        return { items: cart.items };
       }
     } catch (error) {
       console.error('Error cargando carrito:', error);
@@ -41,35 +44,91 @@ export const loadCartFromServer = createAsyncThunk(
 );
 
 /**
- * Sincroniza el carrito con Firebase
+ * Fusiona el carrito local con el de Firestore cuando el usuario inicia sesión
+ */
+export const mergeCartsOnLogin = createAsyncThunk(
+  'cart/mergeOnLogin',
+  async (_, { getState, dispatch }) => {
+    try {
+      const { auth, cart } = getState();
+      if (!auth.uid) return;
+
+      // Si no hay items en el carrito local, no hay nada que fusionar
+      if (cart.items.length === 0) return;
+
+      dispatch(setSyncStatus('loading'));
+
+      // Intentar obtener el carrito existente del usuario
+      const cartRef = doc(FirebaseDB, 'carts', auth.uid);
+      const cartSnap = await getDoc(cartRef);
+
+      // Crear una nueva copia profunda de los items para evitar modificar el estado directamente
+      let mergedItems = cart.items.map(item => ({...item}));
+
+      // Si ya existe un carrito, fusionar los items
+      if (cartSnap.exists()) {
+        const storedCart = cartSnap.data();
+        const storedItems = storedCart.items || [];
+
+        // Para cada item en el carrito almacenado
+        storedItems.forEach(storedItem => {
+          // Verificar si ya existe en el carrito local
+          const localItemIndex = mergedItems.findIndex(i => i.id === storedItem.id);
+
+          if (localItemIndex >= 0) {
+            // Si existe, crear un nuevo objeto con la cantidad sumada
+            mergedItems[localItemIndex] = {
+              ...mergedItems[localItemIndex],
+              quantity: mergedItems[localItemIndex].quantity + storedItem.quantity
+            };
+          } else {
+            // Si no existe, añadir una copia
+            mergedItems.push({...storedItem});
+          }
+        });
+      }
+
+      // Actualizar en Firestore
+      await setDoc(cartRef, {
+        items: mergedItems,
+        updatedAt: new Date()
+      });
+
+      // Actualizar en Redux
+      dispatch(setCartItems(mergedItems));
+      dispatch(setLastSync(new Date().toISOString()));
+
+      return { items: mergedItems };
+    } catch (error) {
+      console.error('Error fusionando carritos:', error);
+      dispatch(setSyncError(error.message));
+      return null;
+    }
+  }
+);
+
+
+/**
+ * Sincroniza el carrito de Redux con Firestore
  */
 export const syncCartWithServer = createAsyncThunk(
   'cart/syncWithServer',
-  async (userId, { getState, dispatch }) => {
+  async (_, { getState, dispatch }) => {
     try {
+      const { auth, cart } = getState();
+      if (!auth.uid) return;
+
       dispatch(setSyncStatus('loading'));
 
-      // Obtener items actuales del carrito
-      const { cart } = getState();
-      const { items } = cart;
+      // Guardar el carrito en Firestore
+      const cartRef = doc(FirebaseDB, 'carts', auth.uid);
+      await setDoc(cartRef, {
+        items: cart.items,
+        updatedAt: new Date()
+      });
 
-      // Si el carrito está vacío, eliminar el documento del servidor
-      if (items.length === 0) {
-        await deleteCart(userId);
-        dispatch(setLastSync(new Date().toISOString()));
-        return [];
-      }
-
-      // Si hay items, guardarlos en el servidor
-      const result = await saveCart(userId, items);
-
-      if (result.ok) {
-        dispatch(setLastSync(new Date().toISOString()));
-        return items;
-      } else {
-        dispatch(setSyncError(result.error || 'Error al sincronizar el carrito'));
-        return null;
-      }
+      dispatch(setLastSync(new Date().toISOString()));
+      return cart.items;
     } catch (error) {
       console.error('Error sincronizando carrito:', error);
       dispatch(setSyncError(error.message));
@@ -80,11 +139,13 @@ export const syncCartWithServer = createAsyncThunk(
 
 /**
  * Limpia el carrito y lo sincroniza con el servidor
+ * Utilizada principalmente después de completar una compra
  */
 export const clearCartWithSync = createAsyncThunk(
   'cart/clearWithSync',
   async (_, { dispatch, getState }) => {
     try {
+      console.log("Executing clearCartWithSync");
       // Limpiar el carrito localmente
       dispatch(clearCart());
 
@@ -92,45 +153,18 @@ export const clearCartWithSync = createAsyncThunk(
       const { auth } = getState();
       const { uid } = auth;
 
-      // Si está autenticado, sincronizar con el servidor
+      // Si está autenticado, eliminar el carrito del servidor
       if (uid) {
-        await deleteCart(uid);
+        const cartRef = doc(FirebaseDB, 'carts', uid);
+        await deleteDoc(cartRef);
         dispatch(setLastSync(new Date().toISOString()));
+        console.log("Cart cleared from server for user:", uid);
       }
 
       return null;
     } catch (error) {
       console.error('Error limpiando carrito:', error);
       dispatch(setSyncError(error.message));
-      return null;
-    }
-  }
-);
-
-/**
- * Verifica y actualiza el stock de los productos en el carrito
- */
-export const checkCartItemsStock = createAsyncThunk(
-  'cart/checkStock',
-  async (_, { dispatch, getState }) => {
-    try {
-      // Obtener items actuales del carrito
-      const { cart } = getState();
-      const { items } = cart;
-
-      if (items.length === 0) return null;
-
-      // Aquí deberías tener un servicio que consulte el stock actual
-      // de los productos en el carrito, por ejemplo:
-      // const stockInfo = await getProductsStock(items.map(item => item.id));
-
-      // Por ahora, esto es un placeholder
-      // En tu implementación real, reemplaza esto con una llamada a tu API
-      // que verifique el stock actual
-
-      return null;
-    } catch (error) {
-      console.error('Error verificando stock:', error);
       return null;
     }
   }
