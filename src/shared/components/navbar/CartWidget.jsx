@@ -28,8 +28,7 @@ const CartItem = memo(({ item }) => (
 ));
 
 /**
- * CartWidget component with dropdown functionality and elegant badge
- * Optimized for readability, semantics and performance
+ * CartWidget component with dropdown
  */
 export const CartWidget = () => {
   // State & hooks
@@ -154,13 +153,19 @@ export const CartWidget = () => {
 
           {/* Footer */}
           <footer className="mt-3">
+
+            {/* Total price */}
             <div className="d-flex justify-content-between mb-3">
               <span className="fw-bold">Total:</span>
               <span className="fw-bold" style={{ color: '#34C749' }}>
                 {formatPrice(total)}
               </span>
             </div>
+
+            {/* Buttons */}
             <div className="d-grid gap-2">
+
+              {/* View Cart */}
               <Link
                 to="/cart"
                 className="btn w-100"
@@ -169,6 +174,8 @@ export const CartWidget = () => {
               >
                 Ver Carrito
               </Link>
+
+              {/* Checkout */}
               <Link
                 to="/shop/checkout"
                 className="btn btn-outline-secondary w-100"
@@ -176,7 +183,9 @@ export const CartWidget = () => {
               >
                 Finalizar Compra
               </Link>
+
             </div>
+
           </footer>
         </section>
       )}
