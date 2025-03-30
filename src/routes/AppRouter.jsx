@@ -17,7 +17,8 @@ import { RequireAuth } from "../modules/auth/components/RequireAuth";
 // Anidado de rutas de perfil
 import { ProfileLayout } from '../modules/user/components/profile/index.js';
 import { OrdersPage, OrderDetailPage, AddressesPage, PaymentsPage, SettingsPage } from "../modules/user/pages";
-import { CheckoutPage } from '../modules/shop/pages/index.js'
+import { CheckoutPage } from '../modules/shop/pages/CheckoutPage.jsx'
+
 
 export const AppRouter = () => {
   return (

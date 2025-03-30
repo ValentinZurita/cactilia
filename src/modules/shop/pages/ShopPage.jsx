@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { HeroSection } from '../../public/components/home-page';
-import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMessage} from '../features/shop-page/index.js';
-import { useProducts, useModal, useCart } from '../hooks/index.js';
+import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMessage} from '../features/shop/index.js';
+
 import { heroImages } from '../../../shared/constants';
 import { getCollectionImages } from '../../admin/services/collectionsService';
 import { getShopPageContent } from '../../admin/components/content/shop/shopPageService.js'
+import { useProducts } from '../hooks/useProducts.js'
+import { useCart } from '../features/cart/hooks/useCart.js'
 
 export const ShopPage = () => {
   // Estado para el banner personalizado

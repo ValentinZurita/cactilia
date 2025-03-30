@@ -1,7 +1,10 @@
 // src/modules/shop/router/ShopRoutes.jsx
 
 import { Routes, Route } from "react-router-dom";
-import { ShopPage, OrderSuccessPage, CheckoutPage } from '../pages'
+import { ShopPage } from '../pages/ShopPage.jsx'
+import { CheckoutPage } from '../pages/CheckoutPage.jsx'
+import { OrderSuccessPage } from '../pages/OrderSuccesPage.jsx'
+
 
 export const ShopRoutes = () => {
   return (

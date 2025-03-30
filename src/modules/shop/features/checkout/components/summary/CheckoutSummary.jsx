@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { formatPrice } from '../../../cart/utils/cartUtilis.js';
+import { formatPrice } from '../../../cart/utils/cartUtils.js';
 import { StockAlert } from '../../../cart/components/StockAlert.jsx'
 
 /**

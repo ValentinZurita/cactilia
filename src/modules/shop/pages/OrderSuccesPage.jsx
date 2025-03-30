@@ -3,11 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { doc, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../firebase/firebaseConfig.js';
-import { OxxoVoucher } from '../features/checkout/components/payment/oxxoVoucher.jsx';
 import { clearCartWithSync } from '../../../store/cart/cartThunk.js';
 import { addMessage } from '../../../store/messages/messageSlice.js';
 
-// Importar componentes refactorizados
 import {
   OrderSummaryHeader,
   OrderOverview,
@@ -18,13 +16,14 @@ import {
   OrderActions,
   OrderNotes,
   OrderNextSteps
-} from './features/order-details/index.js';
+} from '../features/order/component/index.js';
 
-import { formatDate } from '../utils/dateUtils.js';
+
 
 // Estilos
 import '../features/checkout/styles/oxxoVoucher.css';
 import '../features/checkout/styles/orderSuccess.css';
+import { OxxoVoucher } from '../features/checkout/components/payment/index.js'
 
 // Nombre de la colección de órdenes en Firestore
 const ORDERS_COLLECTION = 'orders';

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart, updateQuantity, clearCart } from '../store/cartSlice.js';
 import { syncCartWithServer } from '../store/cartThunk.js';
-import { calculateCartTotals, getOutOfStockItems } from '../utils/cartUtilis.js';
+import { calculateCartTotals, getOutOfStockItems } from '../utils/cartUtils.js';
 
 /**
  * Hook personalizado para manejar las operaciones del carrito

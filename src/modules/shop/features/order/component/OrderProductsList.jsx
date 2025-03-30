@@ -1,4 +1,4 @@
-import { formatPrice } from '../../cart/utils/cartUtilis.js';
+import { formatPrice } from '../../cart/utils/cartUtils.js';
 
 export const OrderProductsList = ({ items }) => {
   return (

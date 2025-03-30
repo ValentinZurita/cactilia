@@ -3,6 +3,7 @@ export * from './ProductList.jsx';
 export * from './Pagination.jsx';
 export * from './ProductModal.jsx';
 export * from './ProductCard.jsx';
+export * from './ProductStatus.jsx';
 export * from './SearchBar.jsx';
 export * from './StatusMessage.jsx';
-export * from '../cart/components/CartButton.jsx';
+export * from './ProductModalCarousel.jsx';
