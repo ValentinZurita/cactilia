@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import '../styles/checkout.css';
-import { Section } from '../../../shared/components/Section.jsx'
+import { Section } from '../../../components/common/Section.jsx'
 
 /**
  * Componente para una sección en la página de checkout

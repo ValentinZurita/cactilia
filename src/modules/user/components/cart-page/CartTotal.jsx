@@ -1,5 +1,5 @@
 import '../../../../styles/pages/cart.css';
-import { calculateCartTotals, formatPrice } from '../../../shop/utils/cartUtilis.js'
+import { calculateCartTotals, formatPrice } from '../../../shop/features/cart/utils/cartUtilis.js'
 
 
 export const CartTotal = ({ items = [] }) => {

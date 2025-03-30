@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { addMessage } from '../../../store/messages/messageSlice';
-import { getOrderById, getUserOrders } from '../../shop/services/orderService.js';
+import { getOrderById, getUserOrders } from '../../shop/features/order/services/orderService.js';
 
 import { ORDER_STATUS_MAP } from '../constants/orderConstants.js';
 

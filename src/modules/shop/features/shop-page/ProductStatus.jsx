@@ -1,4 +1,4 @@
-import { useCart } from '../../../user/hooks/useCart.js'
+import { useCart } from '../cart/hooks/useCart.js'
 
 /**
  * Component to display the product's status in the cart

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import '../../../../styles/pages/shop.css';
 import { ProductImageCarousel } from './ProductModalCarousel.jsx';
-import { useCart } from '../../../user/hooks/useCart.js';
+import { useCart } from '../cart/hooks/useCart.js';
 
 /**
  * ProductModal component

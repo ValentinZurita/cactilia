@@ -8,7 +8,7 @@ import {
   decrementQuantity,
   clearCart
 } from './cartSlice';
-import { deleteCart, getCart, saveCart } from '../../modules/shop/services/cartService';
+import { deleteCart, getCart, saveCart } from '../../modules/shop/features/cart/services/cartService.js';
 
 
 // Sync cart with Firestore (only for authenticated users)

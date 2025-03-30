@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { useAsync } from '../../../shared/hooks/useAsync.js';
+import { useAsync } from '../../../hooks/useAsync.js';
 import { processPayment } from '../services/checkoutService.js';
 import { clearCartWithSync } from '../../../../../store/cart/cartThunk.js';
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useCart } from '../../../modules/user/hooks/useCart.js'
-import { formatPrice } from '../../../modules/shop/utils/cartUtilis.js'
+import { useCart } from '../../../modules/shop/features/cart/hooks/useCart.js'
+import { formatPrice } from '../../../modules/shop/features/cart/utils/cartUtilis.js'
 
 /**
  * CartWidget component that shows a mini preview of the cart

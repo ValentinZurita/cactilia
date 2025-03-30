@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
 import { addMessage } from '../../../../../store/messages/messageSlice.js';
 import { clearCartWithSync } from '../../../../../store/cart/cartThunk.js';
-import { useCart } from '../../../../user/hooks/useCart.js';
+import { useCart } from '../../cart/hooks/useCart.js';
 import { useCheckoutForm } from './useCheckoutForm';
 import { useOrderProcessing } from './useOrderProcessing';
 

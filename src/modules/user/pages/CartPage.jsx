@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import '../../../styles/pages/cart.css';
-import { useCart } from '../hooks/useCart.js'
+import { useCart } from '../../shop/features/cart/hooks/useCart.js'
 import { CartItem, CartTotal, EmptyCart } from '../components/cart-page/index.js'
 import { useSelector } from 'react-redux';
 

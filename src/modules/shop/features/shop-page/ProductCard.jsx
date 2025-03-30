@@ -1,5 +1,5 @@
 import '../../../../styles/pages/shop.css';
-import { CartButton } from './CartButton.jsx';
+import { CartButton } from '../cart/components/CartButton.jsx';
 import { ProductStatus } from './ProductStatus.jsx';
 
 export const ProductCard = ({ product, onProductClick }) => {

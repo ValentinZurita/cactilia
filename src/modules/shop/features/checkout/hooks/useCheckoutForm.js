@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUserAddresses } from '../../../../user/services/addressService';
 import { getUserPaymentMethods } from '../../../../user/services/paymentService';
-import { useAsync } from '../../../shared/hooks/useAsync.js'
+import { useAsync } from '../../../hooks/useAsync.js'
 
 /**
  * Hook para manejar los formularios y selecciones en el checkout
