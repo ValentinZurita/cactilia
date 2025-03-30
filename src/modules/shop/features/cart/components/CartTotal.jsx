@@ -1,6 +1,11 @@
-import '../../../../../styles/pages/cart.css';
-import { calculateCartTotals, formatPrice } from '../utils/cartUtils.js';
+import { calculateCartTotals, formatPrice } from '../utils/cartUtils.js'
 
+/**
+ * Muestra el resumen de totales del carrito
+ * @param {Object} props - Propiedades del componente
+ * @param {Array} props.items - Elementos del carrito
+ * @returns {JSX.Element}
+ */
 export const CartTotal = ({ items = [] }) => {
   // Calcular totales usando nuestra función de utilidad con el modelo mexicano (IVA incluido)
   const { subtotal, taxes, shipping, total, finalTotal, isFreeShipping } = calculateCartTotals(items, 0.16, 500, 50);

@@ -1,5 +1,11 @@
-import { formatPrice } from '../../cart/utils/cartUtils.js';
+import { formatPrice } from '../../../utils/index.js'
 
+/**
+ * Muestra los totales de una orden
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.totals - Objeto con los totales
+ * @returns {JSX.Element}
+ */
 export const OrderTotals = ({ totals }) => {
   return (
     <div className="order-summary-totals">

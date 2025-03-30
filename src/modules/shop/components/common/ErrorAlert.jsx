@@ -1,7 +1,7 @@
 /**
  * Componente para mostrar mensajes de error
  * @param {Object} props - Propiedades del componente
- * @param {string} props.message - Mensaje de error a mostrar
+ * @param {string} props.message - Mensaje de error
  * @returns {JSX.Element|null}
  */
 export const ErrorAlert = ({ message }) => {

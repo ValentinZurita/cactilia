@@ -1,7 +1,6 @@
-import React from 'react';
 import PropTypes from 'prop-types';
-import { formatPrice } from '../../../cart/utils/cartUtils.js';
-import { StockAlert } from '../../../cart/components/StockAlert.jsx'
+import { StockAlert } from '../../../cart/components/index.js'
+import { formatPrice } from '../../../../utils/index.js'
 
 /**
  * CheckoutSummary - Componente que muestra el resumen del pedido

@@ -1,5 +1,11 @@
-import { formatPrice } from '../../cart/utils/cartUtils.js';
+import { formatPrice } from '../../../utils/index.js'
 
+/**
+ * Muestra la lista de productos en una orden
+ * @param {Object} props - Propiedades del componente
+ * @param {Array} props.items - Productos de la orden
+ * @returns {JSX.Element}
+ */
 export const OrderProductsList = ({ items }) => {
   return (
     <div className="order-products-list">
@@ -10,6 +16,12 @@ export const OrderProductsList = ({ items }) => {
   );
 };
 
+/**
+ * Muestra un producto individual en la lista de orden
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.item - Datos del producto
+ * @returns {JSX.Element}
+ */
 export const OrderProductItem = ({ item }) => {
   return (
     <div className="order-product-item">

@@ -1,8 +1,9 @@
-import { CheckoutSummary } from './summary/index.js';
+
 import { CheckoutButton } from './CheckoutButton';
+import { CheckoutSummary } from './summary/index.js'
 
 /**
- * Panel de resumen de compra para checkout
+ * Panel de resumen y pago para checkout
  * @param {Object} props - Propiedades del componente
  * @returns {JSX.Element}
  */

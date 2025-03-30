@@ -1,9 +1,8 @@
-import React from 'react';
-import { CheckoutSection } from './CheckoutSection';
-import { AddressSelector } from './address/index.js';
-import { PaymentMethodSelector } from './payment/index.js';
-import { BillingInfoForm } from './billing/index.js';
+import { CheckoutSection } from './CheckoutSection.jsx'
 import { LoadingSpinner } from '../../../components/ui/index.js'
+import { AddressSelector } from './address/index.js'
+import { PaymentMethodSelector } from './payment/index.js'
+import { BillingInfoForm } from './billing/index.js'
 
 /**
  * Componente que muestra el formulario completo de checkout
@@ -81,7 +80,7 @@ export const CheckoutForm = ({
         )}
       </CheckoutSection>
 
-      {/* Sección: Información Fiscal (opcional) */}
+      {/* Sección: Información Fiscal */}
       <CheckoutSection
         title="Información Fiscal"
         stepNumber={3}

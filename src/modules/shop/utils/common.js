@@ -1,61 +1,84 @@
 /**
- * Utilidades comunes
+ * Utilidades para validación de datos
  */
 
 /**
- * Genera un ID único
- * @param {string} prefix - Prefijo para el ID
- * @returns {string} - ID único
+ * Valida un correo electrónico
+ * @param {string} email - Email a validar
+ * @returns {boolean} - Si el email es válido
  */
-export const generateUniqueId = (prefix = '') => {
-  const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2, 8);
-  return `${prefix}${timestamp}${randomStr}`;
+export const isValidEmail = (email) => {
+  if (!email) return false;
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
 };
 
 /**
- * Retorna un array de valores únicos
- * @param {Array} array - Array con posibles duplicados
- * @returns {Array} - Array con valores únicos
+ * Valida un RFC mexicano
+ * @param {string} rfc - RFC a validar
+ * @returns {boolean} - Si el RFC es válido
  */
-export const getUniqueValues = (array) => {
-  return [...new Set(array)];
+export const isValidRFC = (rfc) => {
+  if (!rfc) return false;
+
+  // Expresión regular para validar RFC
+  const rfcRegex = /^([A-ZÑ&]{3,4})(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))([A-Z\d]{2})([A\d])$/;
+  return rfcRegex.test(rfc);
 };
 
 /**
- * Agrupa elementos de un array por una propiedad
- * @param {Array} array - Array a agrupar
- * @param {string} key - Propiedad por la que agrupar
- * @returns {Object} - Objeto con elementos agrupados
+ * Valida un código postal mexicano
+ * @param {string} zipCode - Código postal a validar
+ * @returns {boolean} - Si el código postal es válido
  */
-export const groupBy = (array, key) => {
-  return array.reduce((result, item) => {
-    const keyValue = item[key] || 'other';
+export const isValidZipCode = (zipCode) => {
+  if (!zipCode) return false;
 
-    if (!result[keyValue]) {
-      result[keyValue] = [];
+  // Expresión regular para validar código postal de México (5 dígitos)
+  const zipRegex = /^\d{5}$/;
+  return zipRegex.test(zipCode);
+};
+
+/**
+ * Valida una tarjeta de crédito
+ * @param {string} cardNumber - Número de tarjeta
+ * @returns {boolean} - Si la tarjeta es válida
+ */
+export const isValidCreditCard = (cardNumber) => {
+  if (!cardNumber) return false;
+
+  // Eliminar espacios y guiones
+  const cleaned = cardNumber.replace(/[\s-]/g, '');
+
+  // Verificar si solo contiene dígitos y tiene longitud válida
+  if (!/^\d{13,19}$/.test(cleaned)) return false;
+
+  // Algoritmo de Luhn (módulo 10)
+  let sum = 0;
+  let shouldDouble = false;
+
+  for (let i = cleaned.length - 1; i >= 0; i--) {
+    let digit = parseInt(cleaned.charAt(i));
+
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
     }
 
-    result[keyValue].push(item);
-    return result;
-  }, {});
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+
+  return sum % 10 === 0;
 };
 
 /**
- * Delay asíncrono
- * @param {number} ms - Milisegundos a esperar
- * @returns {Promise} - Promesa que se resuelve después del tiempo especificado
+ * Comprueba si un objeto tiene todas las propiedades requeridas
+ * @param {Object} obj - Objeto a verificar
+ * @param {Array<string>} requiredProps - Lista de propiedades requeridas
+ * @returns {boolean} - True si todas las propiedades están presentes
  */
-export const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-/**
- * Trunca un texto a una longitud máxima
- * @param {string} text - Texto a truncar
- * @param {number} maxLength - Longitud máxima
- * @param {string} suffix - Sufijo a añadir si se trunca
- * @returns {string} - Texto truncado
- */
-export const truncateText = (text, maxLength = 100, suffix = '...') => {
-  if (!text || text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + suffix;
+export const hasRequiredProps = (obj, requiredProps = []) => {
+  if (!obj || typeof obj !== 'object') return false;
+  return requiredProps.every(prop => obj[prop] !== undefined);
 };

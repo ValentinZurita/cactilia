@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { isValidEmail, isValidRFC } from '../../../../utils/validation.js';
 
 /**
  * BillingInfoForm - Formulario para datos fiscales (facturación electrónica)
@@ -92,14 +93,8 @@ export const BillingInfoForm = ({
     }));
   };
 
-  // Validar RFC mexicano
-  const validateRFC = (rfc) => {
-    // Expresión regular para validar RFC
-    // Persona física: 13 caracteres
-    // Persona moral: 12 caracteres
-    const rfcRegex = /^([A-ZÑ&]{3,4})(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))([A-Z\d]{2})([A\d])$/;
-    return rfcRegex.test(rfc);
-  };
+  // Verificar si el email es válido
+  const isEmailValid = !localFiscalData.email || isValidEmail(localFiscalData.email);
 
   return (
     <div className="billing-info-form">
@@ -124,7 +119,7 @@ export const BillingInfoForm = ({
               <label htmlFor="rfc" className="form-label">RFC*</label>
               <input
                 type="text"
-                className={`form-control ${!validateRFC(localFiscalData.rfc) && localFiscalData.rfc ? 'is-invalid' : ''}`}
+                className={`form-control ${!isValidRFC(localFiscalData.rfc) && localFiscalData.rfc ? 'is-invalid' : ''}`}
                 id="rfc"
                 name="rfc"
                 value={localFiscalData.rfc}
@@ -132,7 +127,7 @@ export const BillingInfoForm = ({
                 placeholder="Ej. XAXX010101000"
                 required
               />
-              {!validateRFC(localFiscalData.rfc) && localFiscalData.rfc && (
+              {!isValidRFC(localFiscalData.rfc) && localFiscalData.rfc && (
                 <div className="invalid-feedback">
                   RFC inválido. Debe tener formato válido para persona física o moral.
                 </div>
@@ -182,7 +177,7 @@ export const BillingInfoForm = ({
               <label htmlFor="email" className="form-label">Email para facturación*</label>
               <input
                 type="email"
-                className="form-control"
+                className={`form-control ${!isEmailValid ? 'is-invalid' : ''}`}
                 id="email"
                 name="email"
                 value={localFiscalData.email}
@@ -190,6 +185,11 @@ export const BillingInfoForm = ({
                 placeholder="correo@ejemplo.com"
                 required
               />
+              {!isEmailValid && (
+                <div className="invalid-feedback">
+                  Email inválido. Por favor ingresa un correo electrónico válido.
+                </div>
+              )}
             </div>
 
             {/* Uso de CFDI */}

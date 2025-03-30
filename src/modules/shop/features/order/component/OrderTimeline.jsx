@@ -1,24 +1,12 @@
-const formatDate = (timestamp) => {
-  if (!timestamp) return 'Fecha no disponible';
+import { formatDate } from '../../../utils/index.js'
 
-  try {
-    const date = timestamp.toDate
-      ? timestamp.toDate()
-      : timestamp.seconds
-        ? new Date(timestamp.seconds * 1000)
-        : new Date(timestamp);
-
-    return date.toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  } catch (error) {
-    console.error('Error formateando fecha:', error);
-    return 'Fecha no disponible';
-  }
-};
-
+/**
+ * Muestra una línea de tiempo con el estado del pedido
+ * @param {Object} props - Propiedades del componente
+ * @param {string} props.status - Estado actual del pedido
+ * @param {Object} props.createdAt - Fecha de creación del pedido
+ * @returns {JSX.Element}
+ */
 export const OrderTimeline = ({ status, createdAt }) => {
   // Determinar los pasos completados según estado
   const getStepStatus = (stepName) => {

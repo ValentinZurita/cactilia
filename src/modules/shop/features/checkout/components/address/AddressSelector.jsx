@@ -1,22 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/addressSelector.css';
 import { AddressOption } from './AddressOption.jsx';
 import { NewAddressForm } from './NewAddressForm.jsx';
+import { formatAddress } from '../../../../utils/index.js'
 
 /**
- * AddressSelector - Componente para seleccionar dirección de envío
- * Permite seleccionar una dirección existente o usar una dirección nueva
- *
- * @param {Object} props
+ * Selector de direcciones para el checkout
+ * @param {Object} props - Propiedades del componente
  * @param {Array} props.addresses - Lista de direcciones disponibles
  * @param {string} props.selectedAddressId - ID de la dirección seleccionada
- * @param {string} props.selectedAddressType - Tipo de dirección seleccionada ('saved', 'new')
- * @param {Function} props.onAddressSelect - Función al seleccionar dirección guardada
- * @param {Function} props.onNewAddressSelect - Función al seleccionar "Usar dirección nueva"
- * @param {Function} props.onNewAddressDataChange - Función al cambiar datos de nueva dirección
+ * @param {string} props.selectedAddressType - Tipo de dirección seleccionada
+ * @param {Function} props.onAddressSelect - Función al seleccionar dirección
+ * @param {Function} props.onNewAddressSelect - Función al seleccionar nueva dirección
+ * @param {Function} props.onNewAddressDataChange - Función al cambiar datos
  * @param {boolean} props.loading - Indica si están cargando las direcciones
- * @param {Function} props.onAddAddress - Función para agregar una nueva dirección permanente
+ * @param {Function} props.onAddAddress - Función para agregar dirección
+ * @returns {JSX.Element}
  */
 export const AddressSelector = ({
                                   addresses = [],
@@ -29,10 +29,10 @@ export const AddressSelector = ({
                                   onAddAddress
                                 }) => {
   // Estado para mostrar el formulario de nueva dirección permanente
-  const [showManageForm, setShowManageForm] = React.useState(false);
+  const [showManageForm, setShowManageForm] = useState(false);
 
   // Estado para guardar dirección temporal
-  const [saveAddress, setSaveAddress] = React.useState(false);
+  const [saveAddress, setSaveAddress] = useState(false);
 
   // Detectar si se ha seleccionado dirección nueva
   const isNewAddressSelected = selectedAddressType === 'new';
@@ -149,21 +149,3 @@ export const AddressSelector = ({
     </div>
   );
 };
-
-/**
- * Formatear dirección para mostrarla
- * @param {Object} address - Objeto de dirección
- * @returns {string} - Dirección formateada
- */
-function formatAddress(address) {
-  const { street, numExt, numInt, colonia, city, state, zip } = address;
-  let formattedAddress = street;
-
-  if (numExt) formattedAddress += ` #${numExt}`;
-  if (numInt) formattedAddress += `, Int. ${numInt}`;
-  if (colonia) formattedAddress += `, ${colonia}`;
-
-  formattedAddress += `, ${city}, ${state} ${zip}`;
-
-  return formattedAddress;
-}

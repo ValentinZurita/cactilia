@@ -2,21 +2,21 @@ import React, { useCallback } from 'react';
 import { Elements, useCheckout } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js';
 import { Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { addMessage } from '../../../store/messages/messageSlice.js';
 
 // Componentes
-import { ErrorAlert } from '../components/common/ErrorAlert';
 import { CheckoutForm } from '../features/checkout/components/CheckoutForm';
 import { CheckoutSummaryPanel } from '../features/checkout/components/CheckoutSummaryPanel';
+import { ErrorAlert } from '../components/common/ErrorAlert';
 
-// Hooks y utilidades
+// Hooks
 import { useCart } from '../features/cart/hooks/useCart';
 
 // Estilos
 import '../features/checkout/styles/checkout.css';
 
-// Stripe config
+// Configuración de Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 const stripeOptions = {
   locale: 'es',
@@ -58,65 +58,32 @@ export const CheckoutPage = () => {
     return <Navigate to="/shop" replace />;
   }
 
-  // Obtener estado y métodos del checkout
-  const {
-    // Estados generales
-    step,
-    error,
-    isProcessing,
-
-    // Datos de dirección
-    selectedAddressId,
-    selectedAddressType,
-    addresses,
-    loadingAddresses,
-    newAddressData,
-
-    // Datos de pago
-    selectedPaymentId,
-    selectedPaymentType,
-    paymentMethods,
-    loadingPayments,
-    newCardData,
-
-    // Datos de facturación
-    requiresInvoice,
-    fiscalData,
-    orderNotes,
-
-    // Manejadores
-    handleAddressChange,
-    handleNewAddressSelect,
-    handleNewAddressDataChange,
-    handlePaymentChange,
-    handleNewCardSelect,
-    handleOxxoSelect,
-    handleNewCardDataChange,
-    handleInvoiceChange,
-    handleFiscalDataChange,
-    handleNotesChange,
-    handleProcessOrder
-  } = useCheckout();
+  // Obtener datos del checkout
+  const checkout = useCheckout();
 
   // Verificar si el botón debe estar deshabilitado
   const isButtonDisabled = () => {
-    // Si hay problemas de stock, deshabilitar el botón
+    // Si hay problemas de stock, deshabilitar
     if (hasStockIssues) return true;
 
     // Verificar dirección según el tipo
     const hasValidAddress = (
-      (selectedAddressType === 'saved' && selectedAddressId) ||
-      (selectedAddressType === 'new' && newAddressData.street && newAddressData.city && newAddressData.state && newAddressData.zip)
+      (checkout.selectedAddressType === 'saved' && checkout.selectedAddressId) ||
+      (checkout.selectedAddressType === 'new' &&
+        checkout.newAddressData.street &&
+        checkout.newAddressData.city &&
+        checkout.newAddressData.state &&
+        checkout.newAddressData.zip)
     );
 
     if (!hasValidAddress) return true;
 
     // Verificar según el tipo de pago
-    switch (selectedPaymentType) {
+    switch (checkout.selectedPaymentType) {
       case 'card':
-        return !selectedPaymentId;
+        return !checkout.selectedPaymentId;
       case 'new_card':
-        return !newCardData.cardholderName || !newCardData.isComplete;
+        return !checkout.newCardData.cardholderName || !checkout.newCardData.isComplete;
       case 'oxxo':
         return false; // Para OXXO no se necesita información adicional
       default:
@@ -124,7 +91,7 @@ export const CheckoutPage = () => {
     }
   };
 
-  // Manejador para procesar orden con verificación de stock
+  // Manejador de procesamiento de orden
   const processOrderWithChecks = useCallback(() => {
     const checkoutValidation = validateCheckout();
 
@@ -138,54 +105,47 @@ export const CheckoutPage = () => {
       return;
     }
 
-    handleProcessOrder();
-  }, [validateCheckout, handleProcessOrder, dispatch]);
+    checkout.handleProcessOrder();
+  }, [validateCheckout, checkout.handleProcessOrder, dispatch]);
 
   return (
     <Elements stripe={stripePromise} options={stripeOptions}>
       <div className="container checkout-page my-5">
-        {/* Título de la página */}
         <h1 className="checkout-title mb-4">Finalizar Compra</h1>
 
-        {/* Mensajes de error globales */}
-        <ErrorAlert message={error} />
+        <ErrorAlert message={checkout.error} />
 
         <div className="row">
-          {/* Columna izquierda: Formulario */}
+          {/* Formulario de checkout */}
           <CheckoutForm
-            // Datos de dirección
-            addresses={addresses}
-            selectedAddressId={selectedAddressId}
-            selectedAddressType={selectedAddressType}
-            loadingAddresses={loadingAddresses}
-            handleAddressChange={handleAddressChange}
-            handleNewAddressSelect={handleNewAddressSelect}
-            handleNewAddressDataChange={handleNewAddressDataChange}
+            addresses={checkout.addresses}
+            selectedAddressId={checkout.selectedAddressId}
+            selectedAddressType={checkout.selectedAddressType}
+            loadingAddresses={checkout.loadingAddresses}
+            handleAddressChange={checkout.handleAddressChange}
+            handleNewAddressSelect={checkout.handleNewAddressSelect}
+            handleNewAddressDataChange={checkout.handleNewAddressDataChange}
 
-            // Datos de pago
-            paymentMethods={paymentMethods}
-            selectedPaymentId={selectedPaymentId}
-            selectedPaymentType={selectedPaymentType}
-            loadingPayments={loadingPayments}
-            handlePaymentChange={handlePaymentChange}
-            handleNewCardSelect={handleNewCardSelect}
-            handleOxxoSelect={handleOxxoSelect}
-            handleNewCardDataChange={handleNewCardDataChange}
+            paymentMethods={checkout.paymentMethods}
+            selectedPaymentId={checkout.selectedPaymentId}
+            selectedPaymentType={checkout.selectedPaymentType}
+            loadingPayments={checkout.loadingPayments}
+            handlePaymentChange={checkout.handlePaymentChange}
+            handleNewCardSelect={checkout.handleNewCardSelect}
+            handleOxxoSelect={checkout.handleOxxoSelect}
+            handleNewCardDataChange={checkout.handleNewCardDataChange}
 
-            // Datos de facturación
-            requiresInvoice={requiresInvoice}
-            fiscalData={fiscalData}
-            handleInvoiceChange={handleInvoiceChange}
-            handleFiscalDataChange={handleFiscalDataChange}
+            requiresInvoice={checkout.requiresInvoice}
+            fiscalData={checkout.fiscalData}
+            handleInvoiceChange={checkout.handleInvoiceChange}
+            handleFiscalDataChange={checkout.handleFiscalDataChange}
 
-            // Notas
-            orderNotes={orderNotes}
-            handleNotesChange={handleNotesChange}
+            orderNotes={checkout.orderNotes}
+            handleNotesChange={checkout.handleNotesChange}
           />
 
-          {/* Columna derecha: Resumen y pago */}
+          {/* Resumen de checkout */}
           <CheckoutSummaryPanel
-            // Datos del carrito
             cartItems={cartItems}
             cartSubtotal={cartSubtotal}
             cartTaxes={cartTaxes}
@@ -193,19 +153,13 @@ export const CheckoutPage = () => {
             cartTotal={cartTotal}
             isFreeShipping={isFreeShipping}
 
-            // Estado del proceso
-            isProcessing={isProcessing}
+            isProcessing={checkout.isProcessing}
             isButtonDisabled={isButtonDisabled()}
             hasStockIssues={hasStockIssues}
 
-            // Tipo de pago
-            selectedPaymentType={selectedPaymentType}
-
-            // Manejadores
+            selectedPaymentType={checkout.selectedPaymentType}
             processOrderWithChecks={processOrderWithChecks}
-
-            // Paso actual
-            step={step}
+            step={checkout.step}
           />
         </div>
       </div>
