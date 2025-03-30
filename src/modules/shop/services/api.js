@@ -68,7 +68,7 @@ export const apiService = {
 
       // Aplicar ordenamiento
       if (sortBy) {
-        const [field, direction = 'asc'] = sortBy;
+        const [field, direction = 'asc'] = Array.isArray(sortBy) ? sortBy : [sortBy, 'asc'];
         queryRef = query(queryRef, orderBy(field, direction));
       }
 
@@ -168,21 +168,31 @@ export const apiService = {
   },
 
   /**
-   * Ejecuta una operación por lotes (batch)
+   * Guarda o actualiza un documento (upsert)
    *
-   * @param {Function} batchOperations - Función que recibe el batch
+   * @param {string} collectionName - Nombre de la colección
+   * @param {string} docId - ID del documento
+   * @param {Object} data - Datos a guardar
+   * @param {string} path - Ruta adicional (opcional)
    * @returns {Promise<Object>} - Resultado de la operación
    */
-  async executeBatch(batchOperations) {
+  async upsertDocument(collectionName, docId, data, path = '') {
     try {
-      const batch = writeBatch(FirebaseDB);
+      const docRef = path
+        ? doc(FirebaseDB, path, collectionName, docId)
+        : doc(FirebaseDB, collectionName, docId);
 
-      await batchOperations(batch);
-      await batch.commit();
+      const timestamp = serverTimestamp();
+      const docData = {
+        ...data,
+        updatedAt: timestamp
+      };
 
-      return { ok: true, error: null };
+      await setDoc(docRef, docData, { merge: true });
+
+      return { ok: true, id: docId, error: null };
     } catch (error) {
-      console.error('Error al ejecutar operación por lotes:', error);
+      console.error(`Error al guardar documento ${collectionName}/${docId}:`, error);
       return { ok: false, error: error.message };
     }
   },
@@ -206,38 +216,5 @@ export const apiService = {
       console.error(`Error al llamar a Cloud Function ${functionName}:`, error);
       return { ok: false, error: error.message };
     }
-  },
-
-  /**
-   * Guarda o actualiza un documento (upsert)
-   *
-   * @param {string} collectionName - Nombre de la colección
-   * @param {string} docId - ID del documento
-   * @param {Object} data - Datos a guardar
-   * @param {string} path - Ruta adicional (opcional)
-   * @returns {Promise<Object>} - Resultado de la operación
-   */
-  async upsertDocument(collectionName, docId, data, path = '') {
-    try {
-      const docRef = path
-        ? doc(FirebaseDB, path, collectionName, docId)
-        : doc(FirebaseDB, collectionName, docId);
-
-      const timestamp = serverTimestamp();
-      const docData = {
-        ...data,
-        updatedAt: timestamp
-      };
-
-      // Si no existe, añadir createdAt
-      await setDoc(docRef, docData, { merge: true });
-
-      return { ok: true, id: docId, error: null };
-    } catch (error) {
-      console.error(`Error al guardar documento ${collectionName}/${docId}:`, error);
-      return { ok: false, error: error.message };
-    }
   }
-
-
 };

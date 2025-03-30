@@ -8,7 +8,7 @@ import { useDispatch } from 'react-redux';
 // Componentes para el checkout
 import { CheckoutSummary } from '../features/checkout/components/summary/CheckoutSummary.jsx';
 import { CheckoutSection } from '../features/checkout/components/CheckoutSection.jsx';
-import { LoadingSpinner } from '../components/common/LoadingSpinner.jsx';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner.jsx';
 import { AddressSelector } from '../features/checkout/components/address/AddressSelector.jsx';
 import { PaymentMethodSelector } from '../features/checkout/components/payment/PaymentMethodSelector.jsx';
 import { BillingInfoForm } from '../features/checkout/components/billing/BillingInfoForm.jsx';

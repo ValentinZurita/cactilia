@@ -1,19 +1,20 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useCart } from '../hooks/useCart.js';
-import '../../../../../styles/pages/shop.css';
-
 
 /**
  * Reusable cart button that can be used in multiple places
  * with animation feedback
  *
- * @param {Object} product - The product to add to cart
- * @param {number} quantity - Quantity to add (defaults to 1)
- * @param {string} variant - Button style variant: "icon" or "button" (default)
- * @param {string} size - Button size: "sm", "md" (default), "lg"
+ * @param {Object} props - Component properties
+ * @param {Object} props.product - The product to add to cart
+ * @param {number} props.quantity - Quantity to add (defaults to 1)
+ * @param {string} props.variant - Button style variant: "icon" or "button" (default)
+ * @param {string} props.size - Button size: "sm", "md" (default), "lg"
+ * @param {boolean} props.disabled - Whether the button is disabled
+ * @param {string} props.className - Additional CSS classes
  * @returns {JSX.Element}
  */
-
 export const CartButton = ({
                              product,
                              quantity = 1,
@@ -22,11 +23,7 @@ export const CartButton = ({
                              disabled = false,
                              className = "",
                            }) => {
-
-  // Use our custom cart hook
   const { addToCart } = useCart();
-
-  // Local state
   const [adding, setAdding] = useState(false);
 
   // Handle adding to cart
@@ -66,7 +63,6 @@ export const CartButton = ({
 
   // Default button variant
   return (
-
     <button
       className={`btn btn-green-lg ${adding ? 'btn-added' : ''} ${sizeClasses[size]} ${className}`}
       disabled={disabled}
@@ -75,6 +71,14 @@ export const CartButton = ({
       <i className="bi bi-cart me-2"></i>
       {disabled ? "Sin stock" : adding ? "¡Agregado!" : "Agregar al carrito"}
     </button>
-
   );
+};
+
+CartButton.propTypes = {
+  product: PropTypes.object.isRequired,
+  quantity: PropTypes.number,
+  variant: PropTypes.oneOf(["button", "icon"]),
+  size: PropTypes.oneOf(["sm", "md", "lg"]),
+  disabled: PropTypes.bool,
+  className: PropTypes.string
 };

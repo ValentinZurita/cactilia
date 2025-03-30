@@ -1,13 +1,17 @@
 import { useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addToCart, removeFromCart, updateQuantity, clearCart } from '../store/cartSlice.js';
-import { syncCartWithServer } from '../store/cartThunk.js';
-import { calculateCartTotals, getOutOfStockItems } from '../utils/cartUtils.js';
+import {
+  addToCart,
+  removeFromCart,
+  updateQuantity,
+  clearCart
+} from '../store/index.js';
+import { syncCartWithServer } from '../store/index.js';
+import { calculateCartTotals, getOutOfStockItems } from '../utils/index.js';
 
 /**
  * Hook personalizado para manejar las operaciones del carrito
  * Proporciona métodos para añadir, eliminar, actualizar y verificar productos
- *
  * @returns {Object} - Métodos y datos del carrito
  */
 export const useCart = () => {
@@ -45,85 +49,38 @@ export const useCart = () => {
     [outOfStockItems, insufficientStockItems]
   );
 
-  /**
-   * Añadir producto al carrito
-   * @param {Object} product - Producto a añadir
-   * @param {number} quantity - Cantidad a añadir
-   * @returns {void}
-   */
+  // Funciones para manipular el carrito
   const handleAddToCart = useCallback((product, quantity = 1) => {
     dispatch(addToCart({ product, quantity }));
-
-    // Sincronizar con el servidor si el usuario está autenticado
-    if (uid) {
-      dispatch(syncCartWithServer(uid));
-    }
+    if (uid) dispatch(syncCartWithServer(uid));
   }, [dispatch, uid]);
 
-  /**
-   * Eliminar producto del carrito
-   * @param {string} productId - ID del producto a eliminar
-   * @returns {void}
-   */
   const handleRemoveFromCart = useCallback((productId) => {
     dispatch(removeFromCart(productId));
-
-    // Sincronizar con el servidor si el usuario está autenticado
-    if (uid) {
-      dispatch(syncCartWithServer(uid));
-    }
+    if (uid) dispatch(syncCartWithServer(uid));
   }, [dispatch, uid]);
 
-  /**
-   * Actualizar cantidad de un producto
-   * @param {string} productId - ID del producto
-   * @param {number} quantity - Nueva cantidad
-   * @returns {void}
-   */
   const handleUpdateQuantity = useCallback((productId, quantity) => {
     dispatch(updateQuantity({ id: productId, quantity }));
-
-    // Sincronizar con el servidor si el usuario está autenticado
-    if (uid) {
-      dispatch(syncCartWithServer(uid));
-    }
+    if (uid) dispatch(syncCartWithServer(uid));
   }, [dispatch, uid]);
 
-  /**
-   * Vaciar el carrito
-   * @returns {void}
-   */
   const handleClearCart = useCallback(() => {
     dispatch(clearCart());
-
-    // Sincronizar con el servidor si el usuario está autenticado
-    if (uid) {
-      dispatch(syncCartWithServer(uid));
-    }
+    if (uid) dispatch(syncCartWithServer(uid));
   }, [dispatch, uid]);
 
-  /**
-   * Verificar si un producto está en el carrito
-   * @param {string} productId - ID del producto a verificar
-   * @returns {boolean} - Si el producto está en el carrito
-   */
+  // Verificar si un producto está en el carrito
   const isInCart = useCallback((productId) => {
     return items.some(item => item.id === productId);
   }, [items]);
 
-  /**
-   * Obtener un producto del carrito
-   * @param {string} productId - ID del producto a obtener
-   * @returns {Object|undefined} - El producto o undefined si no existe
-   */
+  // Obtener un producto del carrito
   const getItem = useCallback((productId) => {
     return items.find(item => item.id === productId);
   }, [items]);
 
-  /**
-   * Validar si se puede proceder al checkout
-   * @returns {Object} - Resultado de la validación
-   */
+  // Validar si se puede proceder al checkout
   const validateCheckout = useCallback(() => {
     if (items.length === 0) {
       return {
