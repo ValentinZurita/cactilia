@@ -1,5 +1,5 @@
 // src/modules/shop/context/CheckoutContext.jsx
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useElements, useStripe } from '@stripe/react-stripe-js';
 import { useDispatch, useSelector } from 'react-redux';
 import { useCart } from '../features/cart/hooks/useCart';
@@ -45,7 +45,7 @@ export const CheckoutProvider = ({ children }) => {
     saveAddress: false
   });
 
-  // Estados de método de pago
+  // Estados para método de pago
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [selectedPaymentType, setSelectedPaymentType] = useState('');
@@ -57,7 +57,7 @@ export const CheckoutProvider = ({ children }) => {
     error: null
   });
 
-  // Estados de facturación
+  // Estados para facturación
   const [requiresInvoice, setRequiresInvoice] = useState(false);
   const [fiscalData, setFiscalData] = useState({
     rfc: '',
@@ -70,27 +70,42 @@ export const CheckoutProvider = ({ children }) => {
   // Estado para notas
   const [orderNotes, setOrderNotes] = useState('');
 
+  // Referencia para evitar múltiples llamadas durante el montaje inicial
+  const initialLoadComplete = useRef({
+    addresses: false,
+    payments: false
+  });
+
   // Cargar direcciones
   useEffect(() => {
     const loadAddresses = async () => {
-      if (!uid) return;
+      if (!uid) {
+        setLoadingAddresses(false);
+        return;
+      }
+
+      if (initialLoadComplete.current.addresses) return;
+
       setLoadingAddresses(true);
       try {
         const result = await getUserAddresses(uid);
         if (result.ok) {
-          setAddresses(result.data || []);
+          const addressData = result.data || [];
+          setAddresses(addressData);
 
           // Seleccionar dirección por defecto
-          if (result.data && result.data.length > 0 && !selectedAddressId) {
-            const defaultAddress = result.data.find(addr => addr.isDefault);
+          if (addressData.length > 0 && !selectedAddressId) {
+            const defaultAddress = addressData.find(addr => addr.isDefault);
             if (defaultAddress) {
               setSelectedAddressId(defaultAddress.id);
               setSelectedAddressType('saved');
             } else {
-              setSelectedAddressId(result.data[0].id);
+              setSelectedAddressId(addressData[0].id);
               setSelectedAddressType('saved');
             }
           }
+
+          initialLoadComplete.current.addresses = true;
         } else {
           console.error('Error cargando direcciones:', result.error);
           setAddresses([]);
@@ -104,29 +119,38 @@ export const CheckoutProvider = ({ children }) => {
     };
 
     loadAddresses();
-  }, [uid, selectedAddressId]);
+  }, [uid]);
 
   // Cargar métodos de pago
   useEffect(() => {
     const loadPaymentMethods = async () => {
-      if (!uid) return;
+      if (!uid) {
+        setLoadingPayments(false);
+        return;
+      }
+
+      if (initialLoadComplete.current.payments) return;
+
       setLoadingPayments(true);
       try {
         const result = await getUserPaymentMethods(uid);
         if (result.ok) {
-          setPaymentMethods(result.data || []);
+          const paymentData = result.data || [];
+          setPaymentMethods(paymentData);
 
           // Seleccionar método por defecto
-          if (result.data && result.data.length > 0 && !selectedPaymentId) {
-            const defaultMethod = result.data.find(method => method.isDefault);
+          if (paymentData.length > 0 && !selectedPaymentId) {
+            const defaultMethod = paymentData.find(method => method.isDefault);
             if (defaultMethod) {
               setSelectedPaymentId(defaultMethod.id);
               setSelectedPaymentType('card');
             } else {
-              setSelectedPaymentId(result.data[0].id);
+              setSelectedPaymentId(paymentData[0].id);
               setSelectedPaymentType('card');
             }
           }
+
+          initialLoadComplete.current.payments = true;
         } else {
           console.error('Error cargando métodos de pago:', result.error);
           setPaymentMethods([]);
@@ -140,7 +164,7 @@ export const CheckoutProvider = ({ children }) => {
     };
 
     loadPaymentMethods();
-  }, [uid, selectedPaymentId]);
+  }, [uid]);
 
   // Manejador para cambio de dirección
   const handleAddressChange = useCallback((addressId, addressType = 'saved') => {
