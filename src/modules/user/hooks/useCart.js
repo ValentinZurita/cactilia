@@ -1,106 +1,177 @@
 import { useCallback, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  selectCartError,
-  selectCartItems,
-  selectCartItemsCount,
-  selectCartLoading,
-  selectCartTotal,
-} from '../../../store/cart/cartSlice.js'
-import {
-  addToCartWithSync, clearCartWithSync,
-  decrementQuantityWithSync,
-  incrementQuantityWithSync, loadCartFromFirestore,
-  removeFromCartWithSync,
-} from '../../../store/cart/cartThunk.js'
-import { calculateCartTotals, getOutOfStockItems } from '../../shop/utils/cartUtilis.js'
-
+import { useSelector, useDispatch } from 'react-redux';
+import { addToCart, removeFromCart, updateQuantity, clearCart } from '../../shop/slices/cartSlice';
+import { syncCartWithServer } from '../../shop/thunks/cartThunk';
+import { calculateCartTotals, getOutOfStockItems } from '../../shop/utils/cartUtilis.js';
 
 /**
- * Custom hook to interact with the cart
- * Provides methods to add, remove, update items and get cart info
+ * Hook personalizado para manejar las operaciones del carrito
+ * Proporciona métodos para añadir, eliminar, actualizar y verificar productos
+ *
+ * @returns {Object} - Métodos y datos del carrito
  */
 export const useCart = () => {
   const dispatch = useDispatch();
 
-  // Get cart state from Redux
-  const items = useSelector(selectCartItems);
-  const total = useSelector(selectCartTotal);
-  const itemsCount = useSelector(selectCartItemsCount);
-  const loading = useSelector(selectCartLoading);
-  const error = useSelector(selectCartError);
+  // Obtener el estado del carrito desde Redux
+  const { items = [] } = useSelector(state => state.cart);
+  const { uid } = useSelector(state => state.auth);
 
-  // Add item to cart
-  const addToCart = useCallback((product, quantity = 1) => {
-    dispatch(addToCartWithSync(product, quantity));
-  }, [dispatch]);
+  // Verificar si hay productos sin stock
+  const outOfStockItems = useMemo(() =>
+      items.filter(item => item.stock === 0),
+    [items]
+  );
 
-  // Remove item from cart
-  const removeFromCart = useCallback((productId) => {
-    dispatch(removeFromCartWithSync(productId));
-  }, [dispatch]);
+  // Verificar si hay productos con stock insuficiente
+  const insufficientStockItems = useMemo(() =>
+      items.filter(item => item.stock > 0 && item.quantity > item.stock),
+    [items]
+  );
 
-  // Increase item quantity
-  const increaseQuantity = useCallback((productId) => {
-    dispatch(incrementQuantityWithSync(productId));
-  }, [dispatch]);
+  // Calcular los totales del carrito
+  const {
+    subtotal,
+    taxes,
+    shipping,
+    total,
+    finalTotal,
+    isFreeShipping
+  } = useMemo(() => calculateCartTotals(items), [items]);
 
-  // Decrease item quantity
-  const decreaseQuantity = useCallback((productId) => {
-    dispatch(decrementQuantityWithSync(productId));
-  }, [dispatch]);
+  // Verificar si hay problemas de stock
+  const hasStockIssues = useMemo(() =>
+      outOfStockItems.length > 0 || insufficientStockItems.length > 0,
+    [outOfStockItems, insufficientStockItems]
+  );
 
-  // Clear cart
-  const clearCart = useCallback(() => {
-    dispatch(clearCartWithSync());
-  }, [dispatch]);
+  /**
+   * Añadir producto al carrito
+   * @param {Object} product - Producto a añadir
+   * @param {number} quantity - Cantidad a añadir
+   * @returns {void}
+   */
+  const handleAddToCart = useCallback((product, quantity = 1) => {
+    dispatch(addToCart({ product, quantity }));
 
-  // Load cart from Firestore (useful when user logs in)
-  const loadCart = useCallback(() => {
-    dispatch(loadCartFromFirestore());
-  }, [dispatch]);
+    // Sincronizar con el servidor si el usuario está autenticado
+    if (uid) {
+      dispatch(syncCartWithServer(uid));
+    }
+  }, [dispatch, uid]);
 
-  // Get cart totals including tax, shipping, etc.
-  const cartTotals = useMemo(() => {
-    return calculateCartTotals(items);
-  }, [items]);
+  /**
+   * Eliminar producto del carrito
+   * @param {string} productId - ID del producto a eliminar
+   * @returns {void}
+   */
+  const handleRemoveFromCart = useCallback((productId) => {
+    dispatch(removeFromCart(productId));
 
-  // Check if cart has out-of-stock items
-  const outOfStockItems = useMemo(() => {
-    return getOutOfStockItems(items);
-  }, [items]);
+    // Sincronizar con el servidor si el usuario está autenticado
+    if (uid) {
+      dispatch(syncCartWithServer(uid));
+    }
+  }, [dispatch, uid]);
 
-  // Check if item is in cart
+  /**
+   * Actualizar cantidad de un producto
+   * @param {string} productId - ID del producto
+   * @param {number} quantity - Nueva cantidad
+   * @returns {void}
+   */
+  const handleUpdateQuantity = useCallback((productId, quantity) => {
+    dispatch(updateQuantity({ id: productId, quantity }));
+
+    // Sincronizar con el servidor si el usuario está autenticado
+    if (uid) {
+      dispatch(syncCartWithServer(uid));
+    }
+  }, [dispatch, uid]);
+
+  /**
+   * Vaciar el carrito
+   * @returns {void}
+   */
+  const handleClearCart = useCallback(() => {
+    dispatch(clearCart());
+
+    // Sincronizar con el servidor si el usuario está autenticado
+    if (uid) {
+      dispatch(syncCartWithServer(uid));
+    }
+  }, [dispatch, uid]);
+
+  /**
+   * Verificar si un producto está en el carrito
+   * @param {string} productId - ID del producto a verificar
+   * @returns {boolean} - Si el producto está en el carrito
+   */
   const isInCart = useCallback((productId) => {
     return items.some(item => item.id === productId);
   }, [items]);
 
-  // Get specific item from cart
+  /**
+   * Obtener un producto del carrito
+   * @param {string} productId - ID del producto a obtener
+   * @returns {Object|undefined} - El producto o undefined si no existe
+   */
   const getItem = useCallback((productId) => {
-    return items.find(item => item.id === productId) || null;
+    return items.find(item => item.id === productId);
   }, [items]);
 
+  /**
+   * Validar si se puede proceder al checkout
+   * @returns {Object} - Resultado de la validación
+   */
+  const validateCheckout = useCallback(() => {
+    if (items.length === 0) {
+      return {
+        valid: false,
+        error: 'Tu carrito está vacío'
+      };
+    }
+
+    if (outOfStockItems.length > 0) {
+      return {
+        valid: false,
+        error: 'Hay productos sin existencia en tu carrito',
+        outOfStockItems
+      };
+    }
+
+    if (insufficientStockItems.length > 0) {
+      return {
+        valid: false,
+        error: 'Hay productos con cantidades mayores al stock disponible',
+        insufficientStockItems
+      };
+    }
+
+    return { valid: true };
+  }, [items, outOfStockItems, insufficientStockItems]);
+
   return {
-    // Cart state
+    // Datos del carrito
     items,
+    subtotal,
+    taxes,
+    shipping,
     total,
-    itemsCount,
-    loading,
-    error,
-
-    // Extended cart info
-    ...cartTotals,
+    finalTotal,
+    isFreeShipping,
     outOfStockItems,
+    insufficientStockItems,
     hasOutOfStockItems: outOfStockItems.length > 0,
+    hasStockIssues,
 
-    // Cart actions
-    addToCart,
-    removeFromCart,
-    increaseQuantity: increaseQuantity,
-    decreaseQuantity: decreaseQuantity,
-    clearCart,
-    loadCart,
+    // Métodos
+    addToCart: handleAddToCart,
+    removeFromCart: handleRemoveFromCart,
+    updateQuantity: handleUpdateQuantity,
+    clearCart: handleClearCart,
     isInCart,
-    getItem
+    getItem,
+    validateCheckout
   };
 };

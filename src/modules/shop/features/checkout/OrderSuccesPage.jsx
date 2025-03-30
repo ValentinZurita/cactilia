@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { doc, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../../firebase/firebaseConfig.js';
 import { OxxoVoucher } from './components/oxxoVoucher.jsx';
-import './styles/oxxoVoucher.css';
-import './styles/orderSuccess.css';
+import { clearCartWithSync } from '../../../../store/cart/cartThunk.js';
+import { addMessage } from '../../../../store/messages/messageSlice.js';
 
 // Importar componentes refactorizados
 import {
@@ -18,9 +19,12 @@ import {
   OrderNotes,
   OrderNextSteps
 } from '../order-details/index.js';
-import { formatDate } from '../../utils/dateUtils.js'
-import { OxxoPaymentSimulator } from './components/OxxoPaymentSimulator.jsx'
-import { TempOxxoSimulator } from './components/TempOxxoSimulator.jsx'
+
+import { formatDate } from '../../utils/dateUtils.js';
+
+// Estilos
+import './styles/oxxoVoucher.css';
+import './styles/orderSuccess.css';
 
 // Nombre de la colección de órdenes en Firestore
 const ORDERS_COLLECTION = 'orders';
@@ -72,7 +76,7 @@ const ErrorState = ({ error }) => (
     <p className="text-muted">{error}</p>
     <div className="mt-4">
       <Link to="/profile/orders" className="btn btn-outline-secondary">
-        <i className="bi bi-arrow-left me-2"></i>
+        <i className="bi bi-arrow-left me-1"></i>
         Ver mis pedidos
       </Link>
     </div>
@@ -171,17 +175,12 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
           {/* Simuladores solo para desarrollo */}
           {process.env.NODE_ENV !== 'production' && (
             <>
-              {/* Simulador usando Cloud Function */}
-              <OxxoPaymentSimulator
-                orderId={orderId}
-                paymentIntentId={orderDetails.payment?.paymentIntentId}
-              />
-
-              {/* Simulador alternativo directo */}
-              <TempOxxoSimulator
-                orderId={orderId}
-                paymentIntentId={orderDetails.payment?.paymentIntentId}
-              />
+              {/* Nota: los componentes de simulación se muestran solo en desarrollo */}
+              {orderDetails?.payment?.paymentIntentId && (
+                <div className="alert alert-warning mt-3">
+                  <p className="mb-0"><strong>Modo Desarrollo:</strong> Herramientas de simulación disponibles.</p>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -231,16 +230,20 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
 export const OrderSuccessPage = () => {
   const { orderId } = useParams();       // orderId desde la URL "/order-success/:orderId"
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // Estado interno
   const [orderDetails, setOrderDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cartCleared, setCartCleared] = useState(false);
+
+  // Extraer parámetros de URL
   const searchParams = new URLSearchParams(window.location.search);
   const paymentType = searchParams.get('payment');
   const isOxxoPayment = paymentType === 'oxxo';
 
-
+  // Cargar detalles del pedido
   useEffect(() => {
     const getOrderData = async () => {
       if (!orderId) {
@@ -257,6 +260,23 @@ export const OrderSuccessPage = () => {
           setError('No se encontró la información del pedido');
         } else {
           setOrderDetails(data);
+
+          // Si no es pago OXXO y no hemos limpiado el carrito, hacerlo ahora
+          if (data.payment?.type !== 'oxxo' && !cartCleared) {
+            // Limpiar el carrito solo si venimos directamente del checkout
+            if (!window.location.pathname.includes('/profile/')) {
+              dispatch(clearCartWithSync());
+              setCartCleared(true);
+
+              // Mostrar mensaje de éxito
+              dispatch(addMessage({
+                type: 'success',
+                text: '¡Pedido completado correctamente!',
+                autoHide: true,
+                duration: 5000
+              }));
+            }
+          }
         }
       } catch (err) {
         console.error('OrderSuccessPage: Error al obtener detalles del pedido:', err);
@@ -267,7 +287,7 @@ export const OrderSuccessPage = () => {
     };
 
     getOrderData();
-  }, [orderId]);
+  }, [orderId, dispatch, cartCleared]);
 
   // Renderizado condicional con el wrapper principal
   return (

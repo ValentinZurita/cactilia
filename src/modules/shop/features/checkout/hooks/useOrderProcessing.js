@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAsync } from '../../../shared/hooks/useAsync.js'
-import { processPayment } from '../services/checkoutService.js'
+import { useDispatch } from 'react-redux';
+import { useAsync } from '../../../shared/hooks/useAsync.js';
+import { processPayment } from '../services/checkoutService.js';
+import { clearCartWithSync } from '../../../../../store/cart/cartThunk.js';
 
 /**
  * Hook para procesar órdenes en el checkout
@@ -22,18 +24,24 @@ export const useOrderProcessing = ({
                                      elements
                                    }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [step, setStep] = useState(1); // 1: Formulario, 2: Procesando
   const [orderId, setOrderId] = useState(null);
+  const [orderResult, setOrderResult] = useState(null);
 
   // Estado para el procesamiento asíncrono
   const {
     execute: processOrder,
     isPending: isProcessing,
     error,
+    isSuccess,
     reset: resetProcessingState
   } = useAsync(async () => {
     // Validar entrada
     validateCheckoutData();
+
+    // Verificar stock de productos
+    validateProductStock();
 
     // Preparar datos
     const orderData = prepareOrderData();
@@ -44,20 +52,33 @@ export const useOrderProcessing = ({
     // Crear orden y procesar pago
     const result = await createAndProcessOrder(orderData);
 
-    // Redirigir según resultado
+    // Guardar ID de orden y resultado
     if (result && result.orderId) {
-      const paymentType = form.selectedPaymentType;
-      const redirectPath = paymentType === 'oxxo'
-        ? `/shop/order-success/${result.orderId}?payment=oxxo`
-        : `/shop/order-success/${result.orderId}`;
-
-      setTimeout(() => {
-        navigate(redirectPath, { replace: true });
-      }, 100);
+      setOrderId(result.orderId);
+      setOrderResult(result);
     }
 
     return result;
   });
+
+  // Efecto para manejar navegación después de procesar orden
+  useEffect(() => {
+    if (orderResult && orderId) {
+      const paymentType = form.selectedPaymentType;
+
+      // Si el pago es exitoso, limpiar el carrito
+      if (paymentType !== 'oxxo') {
+        dispatch(clearCartWithSync());
+      }
+
+      // Redirigir a la página de éxito
+      const redirectPath = paymentType === 'oxxo'
+        ? `/shop/order-success/${orderId}?payment=oxxo`
+        : `/shop/order-success/${orderId}`;
+
+      navigate(redirectPath, { replace: true });
+    }
+  }, [orderResult, orderId, form.selectedPaymentType, dispatch, navigate]);
 
   // Validar datos del checkout
   const validateCheckoutData = useCallback(() => {
@@ -105,16 +126,34 @@ export const useOrderProcessing = ({
       throw new Error('Se requieren datos fiscales para la facturación');
     }
 
-    // Validar que no haya productos sin stock
-    if (cart.items.some(item => item.stock === 0)) {
-      throw new Error('Hay productos sin stock en tu carrito');
-    }
-
     // Validar Stripe
     if (!stripe || !elements) {
       throw new Error('El sistema de pagos no está listo. Por favor, inténtalo de nuevo.');
     }
-  }, [form, cart, stripe, elements]);
+  }, [form, stripe, elements]);
+
+  // Validar stock de productos
+  const validateProductStock = useCallback(() => {
+    const outOfStockItems = cart.items.filter(item => item.stock === 0);
+
+    if (outOfStockItems.length > 0) {
+      const itemNames = outOfStockItems.map(item => item.name).join(', ');
+      throw new Error(`Productos sin existencia: ${itemNames}`);
+    }
+
+    // Verificar si hay productos con cantidad mayor que stock disponible
+    const insufficientStockItems = cart.items.filter(item =>
+      item.stock > 0 && item.quantity > item.stock
+    );
+
+    if (insufficientStockItems.length > 0) {
+      const itemsList = insufficientStockItems.map(item =>
+        `${item.name} (solicitados: ${item.quantity}, disponibles: ${item.stock})`
+      ).join(', ');
+
+      throw new Error(`Stock insuficiente para: ${itemsList}`);
+    }
+  }, [cart.items]);
 
   // Preparar datos de la orden
   const prepareOrderData = useCallback(() => {
@@ -189,7 +228,8 @@ export const useOrderProcessing = ({
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        image: item.image
+        image: item.image,
+        stock: item.stock // Añadir stock actual para verificación posterior
       })),
       shipping: shippingInfo,
       payment: paymentInfo,
@@ -254,6 +294,7 @@ export const useOrderProcessing = ({
     step,
     orderId,
     isProcessing,
+    isSuccess,
     error,
     processOrder,
     resetProcessingState

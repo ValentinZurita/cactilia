@@ -1,24 +1,25 @@
-
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useCallback, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 
-// Componentes del checkout
+// Componentes para el checkout
 import { CheckoutSummary } from './components/CheckoutSummary';
+import { CheckoutSection } from './components/CheckoutSection.jsx';
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner.jsx';
+import { AddressSelector } from './components/AddressSelector.jsx';
+import { PaymentMethodSelector } from './components/PaymentMethodSelector.jsx';
+import { BillingInfoForm } from './components/BillingInfoForm.jsx';
+import { CheckoutButton } from './components/CheckoutButton.jsx';
 
+// Hooks y utilidades
+import { useCheckout } from './hooks/useCheckout';
+import { useCart } from '../../../user/hooks/useCart';
 
 // Estilos
 import './styles/checkout.css';
-
-// Hook personalizado
-import { useCheckout } from './hooks/useCheckout';
-import { CheckoutSection } from './components/CheckoutSection.jsx'
-import { LoadingSpinner } from '../../shared/components/LoadingSpinner.jsx'
-import { AddressSelector } from './components/AddressSelector.jsx'
-import { PaymentMethodSelector } from './components/PaymentMethodSelector.jsx'
-import { BillingInfoForm } from './components/BillingInfoForm.jsx'
-import { CheckoutButton } from './components/CheckoutButton.jsx'
 
 // Cargar instancia de Stripe con la key de entorno
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -39,6 +40,8 @@ const stripeOptions = {
  * @returns {JSX.Element} Pantalla principal del Checkout
  */
 export const CheckoutPage = () => {
+  const dispatch = useDispatch();
+
   // Obtener autenticación
   const { status } = useSelector(state => state.auth);
 
@@ -47,21 +50,30 @@ export const CheckoutPage = () => {
     return <Navigate to="/auth/login?redirect=checkout" replace />;
   }
 
+  // Obtener datos del carrito
+  const {
+    items: cartItems,
+    subtotal: cartSubtotal,
+    taxes: cartTaxes,
+    shipping: cartShipping,
+    finalTotal: cartTotal,
+    isFreeShipping,
+    hasStockIssues,
+    validateCheckout
+  } = useCart();
+
+  // Verificar si el carrito está vacío
+  if (!cartItems || cartItems.length === 0) {
+    return <Navigate to="/shop" replace />;
+  }
+
   // Obtener todo el estado y métodos necesarios del hook useCheckout
   const {
     // Estados generales
     step,
     error,
     isProcessing,
-
-    // Estados del carrito
-    cartItems,
-    cartSubtotal,
-    cartTaxes,
-    cartShipping,
-    cartTotal,
-    isFreeShipping,
-    hasOutOfStockItems,
+    isSuccess,
 
     // Estados de dirección
     selectedAddressId,
@@ -96,13 +108,11 @@ export const CheckoutPage = () => {
     handleProcessOrder
   } = useCheckout();
 
-  // Verificar si el carrito está vacío
-  if (!cartItems || cartItems.length === 0) {
-    return <Navigate to="/shop" replace />;
-  }
-
   // Verificar si el botón debe estar deshabilitado
   const isButtonDisabled = () => {
+    // Si hay problemas de stock, deshabilitar el botón
+    if (hasStockIssues) return true;
+
     // Verificar dirección según el tipo
     const hasValidAddress = (
       (selectedAddressType === 'saved' && selectedAddressId) ||
@@ -124,9 +134,40 @@ export const CheckoutPage = () => {
     }
   };
 
+  // Manejador de revisión de stock
+  const handleStockCheck = useCallback(() => {
+    const checkoutValidation = validateCheckout();
+
+    if (!checkoutValidation.valid) {
+      dispatch(addMessage({
+        type: 'error',
+        text: checkoutValidation.error,
+        autoHide: true,
+        duration: 5000
+      }));
+      return false;
+    }
+
+    return true;
+  }, [validateCheckout, dispatch]);
+
+  // Manejador de procesamiento de orden personalizado
+  const processOrderWithChecks = useCallback(() => {
+    // Verificar stock antes de procesar
+    if (!handleStockCheck()) {
+      return;
+    }
+
+    handleProcessOrder();
+  }, [handleStockCheck, handleProcessOrder]);
+
   // Obtener texto del botón según el método de pago
   const getButtonText = () => {
     if (isProcessing) return "Procesando...";
+
+    if (hasStockIssues) {
+      return "Revisar problemas de stock";
+    }
 
     if (selectedPaymentType === 'oxxo') {
       return "Generar voucher OXXO";
@@ -235,17 +276,17 @@ export const CheckoutPage = () => {
                 shipping={cartShipping}
                 total={cartTotal}
                 isFreeShipping={isFreeShipping}
-                hasOutOfStockItems={hasOutOfStockItems}
               />
 
               {/* Botón para procesar la compra */}
               <div className="mt-4 px-3">
                 <CheckoutButton
-                  onCheckout={handleProcessOrder}
+                  onCheckout={processOrderWithChecks}
                   isProcessing={isProcessing}
                   disabled={isButtonDisabled()}
                   buttonText={getButtonText()}
                   paymentType={selectedPaymentType}
+                  hasStockIssues={hasStockIssues}
                 />
 
                 {/* Términos y condiciones */}

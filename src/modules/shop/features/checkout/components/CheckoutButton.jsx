@@ -9,6 +9,7 @@ import PropTypes from 'prop-types';
  * @param {boolean} props.disabled - Inhabilita el botón si es true
  * @param {string} props.buttonText - Texto personalizado del botón (opcional)
  * @param {string} props.paymentType - Tipo de pago ('card', 'oxxo', etc.) para mostrar icono apropiado
+ * @param {boolean} props.hasStockIssues - Indica si hay problemas de stock
  * @returns {JSX.Element}
  */
 export const CheckoutButton = ({
@@ -16,11 +17,13 @@ export const CheckoutButton = ({
                                  isProcessing = false,
                                  disabled = false,
                                  buttonText = null,
-                                 paymentType = 'card'
+                                 paymentType = 'card',
+                                 hasStockIssues = false
                                }) => {
   // Determinar el icono según el tipo de pago
   const getButtonIcon = () => {
     if (isProcessing) return 'spinner-border spinner-border-sm';
+    if (hasStockIssues) return 'bi-exclamation-triangle-fill';
 
     switch (paymentType) {
       case 'oxxo':
@@ -35,6 +38,10 @@ export const CheckoutButton = ({
   // Determinar el texto del botón
   const getButtonText = () => {
     if (buttonText) return buttonText;
+
+    if (hasStockIssues) {
+      return 'Resolver problemas de stock';
+    }
 
     if (isProcessing) {
       return paymentType === 'oxxo' ?
@@ -52,9 +59,17 @@ export const CheckoutButton = ({
     }
   };
 
+  // Determinar la clase del botón
+  const getButtonClass = () => {
+    if (hasStockIssues) {
+      return 'btn-warning';
+    }
+    return 'btn-green-checkout';
+  };
+
   return (
     <button
-      className="btn btn-green-checkout w-100 py-3"
+      className={`btn ${getButtonClass()} w-100 py-3`}
       onClick={onCheckout}
       disabled={disabled || isProcessing}
     >
@@ -71,5 +86,6 @@ CheckoutButton.propTypes = {
   isProcessing: PropTypes.bool,
   disabled: PropTypes.bool,
   buttonText: PropTypes.string,
-  paymentType: PropTypes.string
+  paymentType: PropTypes.string,
+  hasStockIssues: PropTypes.bool
 };

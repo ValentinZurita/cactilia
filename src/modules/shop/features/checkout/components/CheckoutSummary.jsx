@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { formatPrice } from '../../../utils/cartUtilis.js';
+import { StockAlert } from '../../shop-page/StockAlert.jsx'
 
 /**
  * CheckoutSummary - Componente que muestra el resumen del pedido
@@ -13,7 +14,6 @@ import { formatPrice } from '../../../utils/cartUtilis.js';
  * @param {number} props.shipping - Costos de envío
  * @param {number} props.total - Total final
  * @param {boolean} props.isFreeShipping - Si el envío es gratuito
- * @param {boolean} props.hasOutOfStockItems - Si hay productos sin stock
  */
 export const CheckoutSummary = ({
                                   items = [],
@@ -22,19 +22,13 @@ export const CheckoutSummary = ({
                                   shipping = 0,
                                   total = 0,
                                   isFreeShipping = false,
-                                  hasOutOfStockItems = false
                                 }) => {
   return (
     <div className="checkout-summary">
       <h3 className="summary-title mb-4">Resumen del Pedido</h3>
 
-      {/* Advertencia de productos sin stock */}
-      {hasOutOfStockItems && (
-        <div className="alert alert-warning mb-3">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          Hay productos sin stock en tu carrito que no podrán ser procesados.
-        </div>
-      )}
+      {/* Alertas de stock */}
+      <StockAlert items={items} className="mb-3" />
 
       {/* Lista de productos */}
       <div className="product-list mb-4">
@@ -60,6 +54,11 @@ export const CheckoutSummary = ({
               </div>
               {item.stock === 0 && (
                 <span className="badge bg-danger text-white mt-1">Sin stock</span>
+              )}
+              {item.stock > 0 && item.stock < item.quantity && (
+                <span className="badge bg-warning text-dark mt-1">
+                  Stock disponible: {item.stock}
+                </span>
               )}
             </div>
           </div>
@@ -117,6 +116,5 @@ CheckoutSummary.propTypes = {
   taxes: PropTypes.number,
   shipping: PropTypes.number,
   total: PropTypes.number,
-  isFreeShipping: PropTypes.bool,
-  hasOutOfStockItems: PropTypes.bool
+  isFreeShipping: PropTypes.bool
 };
