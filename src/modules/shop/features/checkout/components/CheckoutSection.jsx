@@ -1,10 +1,10 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import '../styles/checkout.css';
+import { Section } from '../../../shared/components/Section.jsx'
 
 /**
  * Componente para una sección en la página de checkout
- * Proporciona una estructura consistente con título y contenido
+ * Envuelve el componente Section básico con estilos específicos de checkout
  *
  * @param {Object} props
  * @param {string} props.title - Título de la sección
@@ -15,13 +15,9 @@ import '../styles/checkout.css';
 export const CheckoutSection = ({ title, stepNumber, children }) => {
   return (
     <div className="checkout-section">
-      <h2 className="section-title">
-        <span className="step-number">{stepNumber}</span>
-        {title}
-      </h2>
-      <div className="section-content">
+      <Section title={title} stepNumber={stepNumber}>
         {children}
-      </div>
+      </Section>
     </div>
   );
 };

@@ -1,23 +1,36 @@
-import React from 'react';
+
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 // Componentes del checkout
 import { CheckoutSummary } from './components/CheckoutSummary';
-import { AddressSelector } from './components/AddressSelector';
-import { PaymentMethodSelector } from './components/PaymentMethodSelector';
-import { BillingInfoForm } from './components/BillingInfoForm';
-import { CheckoutButton } from './components/CheckoutButton';
-import { CheckoutSection } from './components/CheckoutSection';
 
-// Importar estilos
+
+// Estilos
 import './styles/checkout.css';
 
-// Importar nuestro custom hook
+// Hook personalizado
 import { useCheckout } from './hooks/useCheckout';
+import { CheckoutSection } from './components/CheckoutSection.jsx'
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner.jsx'
+import { AddressSelector } from './components/AddressSelector.jsx'
+import { PaymentMethodSelector } from './components/PaymentMethodSelector.jsx'
+import { BillingInfoForm } from './components/BillingInfoForm.jsx'
+import { CheckoutButton } from './components/CheckoutButton.jsx'
 
 // Cargar instancia de Stripe con la key de entorno
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripeOptions = {
+  locale: 'es',
+  appearance: {
+    theme: 'stripe',
+    variables: {
+      colorPrimary: '#34C749',
+    },
+  },
+};
 
 /**
  * Componente principal de la página de Checkout
@@ -26,60 +39,67 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
  * @returns {JSX.Element} Pantalla principal del Checkout
  */
 export const CheckoutPage = () => {
-  // Obtenemos todo el estado y métodos necesarios del hook useCheckout
+  // Obtener autenticación
+  const { status } = useSelector(state => state.auth);
+
+  // Verificar si el usuario está autenticado
+  if (status !== 'authenticated') {
+    return <Navigate to="/auth/login?redirect=checkout" replace />;
+  }
+
+  // Obtener todo el estado y métodos necesarios del hook useCheckout
   const {
-    // Estados
-    selectedAddressId,
-    selectedAddressType,
-    selectedPaymentId,
-    selectedPaymentType,
-    requiresInvoice,
-    fiscalData,
-    orderNotes,
+    // Estados generales
     step,
     error,
     isProcessing,
-    addresses,
-    paymentMethods,
-    loadingAddresses,
-    loadingPayments,
 
-    // Estado para dirección nueva
-    useNewAddress,
+    // Estados del carrito
+    cartItems,
+    cartSubtotal,
+    cartTaxes,
+    cartShipping,
+    cartTotal,
+    isFreeShipping,
+    hasOutOfStockItems,
+
+    // Estados de dirección
+    selectedAddressId,
+    selectedAddressType,
+    addresses,
+    loadingAddresses,
     newAddressData,
 
-    // Estado para tarjeta nueva
-    useNewCard,
+    // Estados de pago
+    selectedPaymentId,
+    selectedPaymentType,
+    paymentMethods,
+    loadingPayments,
     newCardData,
 
-    // Manejadores para dirección
+    // Estados para facturación
+    requiresInvoice,
+    fiscalData,
+    orderNotes,
+
+    // Manejadores
     handleAddressChange,
     handleNewAddressSelect,
     handleNewAddressDataChange,
-
-    // Manejadores para pago
     handlePaymentChange,
+    handleNewCardSelect,
+    handleOxxoSelect,
+    handleNewCardDataChange,
     handleInvoiceChange,
     handleFiscalDataChange,
     handleNotesChange,
-    handleProcessOrder,
-
-    // Manejadores para tarjeta nueva y OXXO
-    handleNewCardSelect,
-    handleOxxoSelect,
-    handleNewCardDataChange
+    handleProcessOrder
   } = useCheckout();
 
-  // Opciones de configuración para Stripe Elements
-  const stripeOptions = {
-    locale: 'es',
-    appearance: {
-      theme: 'stripe',
-      variables: {
-        colorPrimary: '#34C749',
-      },
-    },
-  };
+  // Verificar si el carrito está vacío
+  if (!cartItems || cartItems.length === 0) {
+    return <Navigate to="/shop" replace />;
+  }
 
   // Verificar si el botón debe estar deshabilitado
   const isButtonDisabled = () => {
@@ -137,15 +157,18 @@ export const CheckoutPage = () => {
               title="Dirección de Envío"
               stepNumber={1}
             >
-              <AddressSelector
-                addresses={addresses}
-                selectedAddressId={selectedAddressId}
-                selectedAddressType={selectedAddressType}
-                onAddressSelect={handleAddressChange}
-                onNewAddressSelect={handleNewAddressSelect}
-                onNewAddressDataChange={handleNewAddressDataChange}
-                loading={loadingAddresses}
-              />
+              {loadingAddresses ? (
+                <LoadingSpinner size="sm" text="Cargando direcciones..." />
+              ) : (
+                <AddressSelector
+                  addresses={addresses}
+                  selectedAddressId={selectedAddressId}
+                  selectedAddressType={selectedAddressType}
+                  onAddressSelect={handleAddressChange}
+                  onNewAddressSelect={handleNewAddressSelect}
+                  onNewAddressDataChange={handleNewAddressDataChange}
+                />
+              )}
             </CheckoutSection>
 
             {/* Sección: Método de Pago */}
@@ -153,16 +176,19 @@ export const CheckoutPage = () => {
               title="Método de Pago"
               stepNumber={2}
             >
-              <PaymentMethodSelector
-                paymentMethods={paymentMethods}
-                selectedPaymentId={selectedPaymentId}
-                selectedPaymentType={selectedPaymentType}
-                onPaymentSelect={handlePaymentChange}
-                onNewCardSelect={handleNewCardSelect}
-                onOxxoSelect={handleOxxoSelect}
-                onNewCardDataChange={handleNewCardDataChange}
-                loading={loadingPayments}
-              />
+              {loadingPayments ? (
+                <LoadingSpinner size="sm" text="Cargando métodos de pago..." />
+              ) : (
+                <PaymentMethodSelector
+                  paymentMethods={paymentMethods}
+                  selectedPaymentId={selectedPaymentId}
+                  selectedPaymentType={selectedPaymentType}
+                  onPaymentSelect={handlePaymentChange}
+                  onNewCardSelect={handleNewCardSelect}
+                  onOxxoSelect={handleOxxoSelect}
+                  onNewCardDataChange={handleNewCardDataChange}
+                />
+              )}
             </CheckoutSection>
 
             {/* Sección: Información Fiscal (opcional) */}
@@ -202,7 +228,15 @@ export const CheckoutPage = () => {
           <div className="col-lg-4">
             <div className="checkout-summary-container">
               {/* Resumen del carrito */}
-              <CheckoutSummary />
+              <CheckoutSummary
+                items={cartItems}
+                subtotal={cartSubtotal}
+                taxes={cartTaxes}
+                shipping={cartShipping}
+                total={cartTotal}
+                isFreeShipping={isFreeShipping}
+                hasOutOfStockItems={hasOutOfStockItems}
+              />
 
               {/* Botón para procesar la compra */}
               <div className="mt-4 px-3">

@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
 import { addMessage } from '../../../../../store/messages/messageSlice.js';
+import { clearCartWithSync } from '../../../../../store/cart/cartThunk.js';
 import { useCart } from '../../../../user/hooks/useCart.js';
-import { useAddressSelection } from './useAddressSelection';
-import { usePaymentSelection } from './usePaymentSelection';
-import { useOrderProcessing } from './useOrderProcessing.js';
-import { useFiscalData } from './useFiscalData';
+import { useCheckoutForm } from './useCheckoutForm';
+import { useOrderProcessing } from './useOrderProcessing';
 
 /**
  * Hook principal para el flujo de checkout
@@ -25,100 +24,105 @@ export const useCheckout = () => {
   const auth = useSelector(state => state.auth);
   const { uid, status } = auth;
 
-  // Datos del carrito
-  const { items, subtotal, taxes, shipping, finalTotal, isFreeShipping, hasOutOfStockItems } = useCart();
+  // Obtener datos del carrito
+  const {
+    items: cartItems,
+    subtotal: cartSubtotal,
+    taxes: cartTaxes,
+    shipping: cartShipping,
+    finalTotal: cartTotal,
+    isFreeShipping,
+    hasOutOfStockItems
+  } = useCart();
 
-  // Estados básicos para el proceso de checkout
-  const [orderNotes, setOrderNotes] = useState('');
-  const [step, setStep] = useState(1);   // 1: Formulario, 2: Procesando
-  const [error, setError] = useState(null);
-  const [orderId, setOrderId] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [clientSecret, setClientSecret] = useState(null);
+  // Obtener formulario de checkout (direcciones, pagos, facturación)
+  const form = useCheckoutForm(uid);
 
-  // Importar hooks especializados
-  const addressSelection = useAddressSelection(uid, dispatch);
-  const paymentSelection = usePaymentSelection(uid, dispatch);
-  const fiscalData = useFiscalData();
+  // Obtener procesamiento de órdenes
   const orderProcessing = useOrderProcessing({
     auth,
-    items,
-    subtotal,
-    taxes,
-    shipping,
-    finalTotal,
-    isFreeShipping,
-    addressSelection,
-    paymentSelection,
-    fiscalData,
-    orderNotes,
+    cart: {
+      items: cartItems,
+      subtotal: cartSubtotal,
+      taxes: cartTaxes,
+      shipping: cartShipping,
+      finalTotal: cartTotal,
+      isFreeShipping,
+      hasOutOfStockItems
+    },
+    form,
     stripe,
-    elements,
-    dispatch,
-    setStep,
-    setError,
-    setOrderId,
-    setIsProcessing,
-    setClientSecret
+    elements
   });
 
-  // Redireccionar si no está autenticado
+  // Manejar éxito en el proceso de orden
   useEffect(() => {
-    if (status !== 'authenticated') {
-      navigate('/auth/login?redirect=checkout');
+    if (orderProcessing.isSuccess) {
+      if (form.selectedPaymentType === 'oxxo') {
+        dispatch(addMessage({
+          type: 'success',
+          text: 'Pedido registrado correctamente. Revisa tu correo para el voucher de pago OXXO.',
+          autoHide: true,
+          duration: 8000
+        }));
+      } else {
+        dispatch(clearCartWithSync());
+        dispatch(addMessage({
+          type: 'success',
+          text: '¡Pedido completado correctamente!',
+          autoHide: true,
+          duration: 5000
+        }));
+      }
     }
-  }, [status, navigate]);
+  }, [orderProcessing.isSuccess, form.selectedPaymentType, dispatch]);
 
-  // Redireccionar si el carrito está vacío
-  useEffect(() => {
-    if (items.length === 0 && status === 'authenticated') {
-      navigate('/shop');
+  // Manejador para procesar la orden
+  const handleProcessOrder = async () => {
+    try {
+      // Validar stock de productos
+      if (hasOutOfStockItems) {
+        dispatch(addMessage({
+          type: 'error',
+          text: 'Hay productos sin stock en tu carrito. Por favor elimínalos antes de continuar.',
+          autoHide: true,
+          duration: 5000
+        }));
+        return;
+      }
+
+      await orderProcessing.processOrder();
+    } catch (error) {
+      console.error('Error al procesar orden:', error);
+      dispatch(addMessage({
+        type: 'error',
+        text: error.message || 'Error al procesar el pedido. Intenta nuevamente.',
+        autoHide: true,
+        duration: 5000
+      }));
     }
-  }, [items, status, navigate]);
+  };
 
-  // Manejar notas del pedido
-  const handleNotesChange = useCallback((e) => {
-    setOrderNotes(e.target.value);
-  }, []);
-
-  // Devolver todos los estados y funciones necesarias
   return {
-    // Datos de selección de dirección
-    selectedAddressId: addressSelection.selectedAddressId,
-    selectedAddressType: addressSelection.selectedAddressType,
-    addresses: addressSelection.addresses,
-    loadingAddresses: addressSelection.loading,
-    useNewAddress: addressSelection.useNewAddress,
-    newAddressData: addressSelection.newAddressData,
-    handleAddressChange: addressSelection.handleAddressChange,
-    handleNewAddressSelect: addressSelection.handleNewAddressSelect,
-    handleNewAddressDataChange: addressSelection.handleNewAddressDataChange,
+    // Estados del carrito
+    cartItems,
+    cartSubtotal,
+    cartTaxes,
+    cartShipping,
+    cartTotal,
+    isFreeShipping,
+    hasOutOfStockItems,
 
-    // Datos de selección de método de pago
-    selectedPaymentId: paymentSelection.selectedPaymentId,
-    selectedPaymentType: paymentSelection.selectedPaymentType,
-    paymentMethods: paymentSelection.paymentMethods,
-    loadingPayments: paymentSelection.loading,
-    useNewCard: paymentSelection.useNewCard,
-    newCardData: paymentSelection.newCardData,
-    handlePaymentChange: paymentSelection.handlePaymentChange,
-    handleNewCardSelect: paymentSelection.handleNewCardSelect,
-    handleOxxoSelect: paymentSelection.handleOxxoSelect,
-    handleNewCardDataChange: paymentSelection.handleNewCardDataChange,
+    // Estados y funciones de formulario
+    ...form,
 
-    // Datos de facturación
-    requiresInvoice: fiscalData.requiresInvoice,
-    fiscalData: fiscalData.data,
-    handleInvoiceChange: fiscalData.handleInvoiceChange,
-    handleFiscalDataChange: fiscalData.handleFiscalDataChange,
+    // Estados de procesamiento
+    step: orderProcessing.step,
+    error: orderProcessing.error,
+    isProcessing: orderProcessing.isProcessing,
+    orderId: orderProcessing.orderId,
 
-    // Datos del proceso de checkout
-    orderNotes,
-    step,
-    error,
-    orderId,
-    isProcessing,
-    handleNotesChange,
-    handleProcessOrder: orderProcessing.processOrder
+    // Manejador para procesar la orden
+    handleProcessOrder
   };
 };

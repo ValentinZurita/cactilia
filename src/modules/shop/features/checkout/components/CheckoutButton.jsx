@@ -1,7 +1,7 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
- * CheckoutButton - Botón para finalizar el proceso de compra
+ * Botón para finalizar el proceso de compra
  *
  * @param {Object} props - Propiedades del componente
  * @param {Function} props.onCheckout - Función que se ejecuta al hacer clic en el botón
@@ -64,4 +64,12 @@ export const CheckoutButton = ({
       {getButtonText()}
     </button>
   );
+};
+
+CheckoutButton.propTypes = {
+  onCheckout: PropTypes.func.isRequired,
+  isProcessing: PropTypes.bool,
+  disabled: PropTypes.bool,
+  buttonText: PropTypes.string,
+  paymentType: PropTypes.string
 };

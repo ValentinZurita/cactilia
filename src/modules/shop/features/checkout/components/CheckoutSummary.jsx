@@ -1,23 +1,29 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { formatPrice } from '../../../utils/cartUtilis.js';
-import { useCart } from '../../../../user/hooks/useCart.js';
 
 /**
  * CheckoutSummary - Componente que muestra el resumen del pedido
  * Incluye lista de productos, subtotal, impuestos, envío y total
+ *
+ * @param {Object} props - Propiedades del componente
+ * @param {Array} props.items - Elementos del carrito
+ * @param {number} props.subtotal - Subtotal
+ * @param {number} props.taxes - Impuestos
+ * @param {number} props.shipping - Costos de envío
+ * @param {number} props.total - Total final
+ * @param {boolean} props.isFreeShipping - Si el envío es gratuito
+ * @param {boolean} props.hasOutOfStockItems - Si hay productos sin stock
  */
-export const CheckoutSummary = () => {
-  // Usar nuestro hook personalizado para obtener la información del carrito
-  const {
-    items,
-    subtotal,
-    taxes,
-    shipping,
-    finalTotal,
-    isFreeShipping,
-    hasOutOfStockItems
-  } = useCart();
-
+export const CheckoutSummary = ({
+                                  items = [],
+                                  subtotal = 0,
+                                  taxes = 0,
+                                  shipping = 0,
+                                  total = 0,
+                                  isFreeShipping = false,
+                                  hasOutOfStockItems = false
+                                }) => {
   return (
     <div className="checkout-summary">
       <h3 className="summary-title mb-4">Resumen del Pedido</h3>
@@ -85,7 +91,7 @@ export const CheckoutSummary = () => {
 
         <div className="d-flex justify-content-between total-line">
           <span className="fw-bold">Total:</span>
-          <span className="fw-bold fs-5 text-green-1">{formatPrice(finalTotal)}</span>
+          <span className="fw-bold fs-5 text-green-1">{formatPrice(total)}</span>
         </div>
       </div>
 
@@ -103,4 +109,14 @@ export const CheckoutSummary = () => {
       </div>
     </div>
   );
+};
+
+CheckoutSummary.propTypes = {
+  items: PropTypes.array,
+  subtotal: PropTypes.number,
+  taxes: PropTypes.number,
+  shipping: PropTypes.number,
+  total: PropTypes.number,
+  isFreeShipping: PropTypes.bool,
+  hasOutOfStockItems: PropTypes.bool
 };
