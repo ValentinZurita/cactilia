@@ -1,3 +1,6 @@
+// src/modules/shop/components/common/ErrorAlert.jsx
+import React from 'react';
+
 /**
  * Componente para mostrar mensajes de error
  * @param {Object} props - Propiedades del componente

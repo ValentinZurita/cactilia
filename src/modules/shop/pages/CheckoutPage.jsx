@@ -1,9 +1,9 @@
-import React, { useCallback } from 'react';
-import { Elements, useCheckout } from '@stripe/react-stripe-js'
+// src/modules/shop/pages/CheckoutPage.jsx
+import React from 'react';
+import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Navigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { addMessage } from '../../../store/messages/messageSlice.js';
+import { useSelector } from 'react-redux';
 
 // Componentes
 import { CheckoutForm } from '../features/checkout/components/CheckoutForm';
@@ -12,6 +12,8 @@ import { ErrorAlert } from '../components/common/ErrorAlert';
 
 // Hooks
 import { useCart } from '../features/cart/hooks/useCart';
+import { CheckoutProvider } from '../context/CheckoutContext';
+import { useCheckout } from '../features/checkout/hooks/useCheckout';
 
 // Estilos
 import '../features/checkout/styles/checkout.css';
@@ -29,12 +31,9 @@ const stripeOptions = {
 };
 
 /**
- * Página principal de checkout
- * @returns {JSX.Element}
+ * Contenido interno de la página de checkout
  */
-export const CheckoutPage = () => {
-  const dispatch = useDispatch();
-
+const CheckoutPageContent = () => {
   // Verificar autenticación
   const { status } = useSelector(state => state.auth);
   if (status !== 'authenticated') {
@@ -91,78 +90,72 @@ export const CheckoutPage = () => {
     }
   };
 
-  // Manejador de procesamiento de orden
-  const processOrderWithChecks = useCallback(() => {
-    const checkoutValidation = validateCheckout();
+  return (
+    <div className="container checkout-page my-5">
+      <h1 className="checkout-title mb-4">Finalizar Compra</h1>
 
-    if (!checkoutValidation.valid) {
-      dispatch(addMessage({
-        type: 'error',
-        text: checkoutValidation.error,
-        autoHide: true,
-        duration: 5000
-      }));
-      return;
-    }
+      <ErrorAlert message={checkout.error} />
 
-    checkout.handleProcessOrder();
-  }, [validateCheckout, checkout.handleProcessOrder, dispatch]);
+      <div className="row">
+        {/* Formulario de checkout */}
+        <CheckoutForm
+          addresses={checkout.addresses}
+          selectedAddressId={checkout.selectedAddressId}
+          selectedAddressType={checkout.selectedAddressType}
+          loadingAddresses={checkout.loadingAddresses}
+          handleAddressChange={checkout.handleAddressChange}
+          handleNewAddressSelect={checkout.handleNewAddressSelect}
+          handleNewAddressDataChange={checkout.handleNewAddressDataChange}
 
+          paymentMethods={checkout.paymentMethods}
+          selectedPaymentId={checkout.selectedPaymentId}
+          selectedPaymentType={checkout.selectedPaymentType}
+          loadingPayments={checkout.loadingPayments}
+          handlePaymentChange={checkout.handlePaymentChange}
+          handleNewCardSelect={checkout.handleNewCardSelect}
+          handleOxxoSelect={checkout.handleOxxoSelect}
+          handleNewCardDataChange={checkout.handleNewCardDataChange}
+
+          requiresInvoice={checkout.requiresInvoice}
+          fiscalData={checkout.fiscalData}
+          handleInvoiceChange={checkout.handleInvoiceChange}
+          handleFiscalDataChange={checkout.handleFiscalDataChange}
+
+          orderNotes={checkout.orderNotes}
+          handleNotesChange={checkout.handleNotesChange}
+        />
+
+        {/* Resumen de checkout */}
+        <CheckoutSummaryPanel
+          cartItems={cartItems}
+          cartSubtotal={cartSubtotal}
+          cartTaxes={cartTaxes}
+          cartShipping={cartShipping}
+          cartTotal={cartTotal}
+          isFreeShipping={isFreeShipping}
+
+          isProcessing={checkout.isProcessing}
+          isButtonDisabled={isButtonDisabled()}
+          hasStockIssues={hasStockIssues}
+
+          selectedPaymentType={checkout.selectedPaymentType}
+          processOrderWithChecks={checkout.handleProcessOrder}
+          step={checkout.step}
+        />
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Página principal de checkout
+ */
+export const CheckoutPage = () => {
   return (
     <Elements stripe={stripePromise} options={stripeOptions}>
-      <div className="container checkout-page my-5">
-        <h1 className="checkout-title mb-4">Finalizar Compra</h1>
-
-        <ErrorAlert message={checkout.error} />
-
-        <div className="row">
-          {/* Formulario de checkout */}
-          <CheckoutForm
-            addresses={checkout.addresses}
-            selectedAddressId={checkout.selectedAddressId}
-            selectedAddressType={checkout.selectedAddressType}
-            loadingAddresses={checkout.loadingAddresses}
-            handleAddressChange={checkout.handleAddressChange}
-            handleNewAddressSelect={checkout.handleNewAddressSelect}
-            handleNewAddressDataChange={checkout.handleNewAddressDataChange}
-
-            paymentMethods={checkout.paymentMethods}
-            selectedPaymentId={checkout.selectedPaymentId}
-            selectedPaymentType={checkout.selectedPaymentType}
-            loadingPayments={checkout.loadingPayments}
-            handlePaymentChange={checkout.handlePaymentChange}
-            handleNewCardSelect={checkout.handleNewCardSelect}
-            handleOxxoSelect={checkout.handleOxxoSelect}
-            handleNewCardDataChange={checkout.handleNewCardDataChange}
-
-            requiresInvoice={checkout.requiresInvoice}
-            fiscalData={checkout.fiscalData}
-            handleInvoiceChange={checkout.handleInvoiceChange}
-            handleFiscalDataChange={checkout.handleFiscalDataChange}
-
-            orderNotes={checkout.orderNotes}
-            handleNotesChange={checkout.handleNotesChange}
-          />
-
-          {/* Resumen de checkout */}
-          <CheckoutSummaryPanel
-            cartItems={cartItems}
-            cartSubtotal={cartSubtotal}
-            cartTaxes={cartTaxes}
-            cartShipping={cartShipping}
-            cartTotal={cartTotal}
-            isFreeShipping={isFreeShipping}
-
-            isProcessing={checkout.isProcessing}
-            isButtonDisabled={isButtonDisabled()}
-            hasStockIssues={hasStockIssues}
-
-            selectedPaymentType={checkout.selectedPaymentType}
-            processOrderWithChecks={processOrderWithChecks}
-            step={checkout.step}
-          />
-        </div>
-      </div>
+      <CheckoutProvider>
+        <CheckoutPageContent />
+      </CheckoutProvider>
     </Elements>
   );
 };
