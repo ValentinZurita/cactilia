@@ -18,8 +18,6 @@ import {
   OrderNextSteps
 } from '../features/order/component/index.js';
 
-
-
 // Estilos
 import '../features/checkout/styles/oxxoVoucher.css';
 import '../features/checkout/styles/orderSuccess.css';
@@ -35,20 +33,36 @@ const ORDERS_COLLECTION = 'orders';
  * @returns {Promise<Object|null>} - Datos del pedido o null si no existe.
  */
 const fetchOrderDetails = async (orderId) => {
-  console.log('OrderSuccessPage: Cargando detalles del pedido con ID:', orderId);
-  const orderRef = doc(FirebaseDB, ORDERS_COLLECTION, orderId);
-  const orderSnap = await getDoc(orderRef);
+  try {
+    console.log('OrderSuccessPage: Cargando detalles del pedido con ID:', orderId);
+    const orderRef = doc(FirebaseDB, ORDERS_COLLECTION, orderId);
+    const orderSnap = await getDoc(orderRef);
 
-  if (!orderSnap.exists()) {
-    console.error('OrderSuccessPage: No se encontró el pedido:', orderId);
+    if (!orderSnap.exists()) {
+      console.error('OrderSuccessPage: No se encontró el pedido:', orderId);
+      return null;
+    }
+
+    const orderData = {
+      id: orderSnap.id,
+      ...orderSnap.data(),
+    };
+
+    // Aseguramos que los datos tengan los campos mínimos necesarios
+    if (!orderData.status) {
+      orderData.status = 'pending';
+    }
+
+    if (!orderData.createdAt) {
+      orderData.createdAt = new Date();
+    }
+
+    console.log('OrderSuccessPage: Datos del pedido cargados:', orderData);
+    return orderData;
+  } catch (error) {
+    console.error('Error al obtener detalles del pedido:', error);
     return null;
   }
-
-  console.log('OrderSuccessPage: Datos del pedido cargados:', orderSnap.data());
-  return {
-    id: orderSnap.id,
-    ...orderSnap.data(),
-  };
 };
 
 /**
@@ -138,10 +152,15 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
       {/* Detalles de productos */}
       <div className="order-details-section">
         <h3>Productos</h3>
-        <OrderProductsList items={orderDetails.items} />
+        <OrderProductsList items={orderDetails.items || []} />
 
         {/* Totales */}
-        <OrderTotals totals={orderDetails.totals} />
+        <OrderTotals totals={orderDetails.totals || {
+          subtotal: 0,
+          tax: 0,
+          shipping: 0,
+          total: 0
+        }} />
       </div>
 
       {/* Dirección de Envío */}
@@ -303,4 +322,4 @@ export const OrderSuccessPage = () => {
       )}
     </div>
   );
-};
+}

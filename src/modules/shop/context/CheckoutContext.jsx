@@ -345,7 +345,9 @@ export const CheckoutProvider = ({ children }) => {
           tax: taxes,
           shipping: shipping,
           total: finalTotal // Total incluyendo envío
-        }
+        },
+        status: 'pending', // Aseguramos que el estado inicial sea 'pending'
+        createdAt: new Date() // Aseguramos que tenga fecha de creación
       };
 
       // Verificar que el total sea válido
@@ -363,6 +365,21 @@ export const CheckoutProvider = ({ children }) => {
       );
 
       if (!result.ok) {
+        // Si hay productos sin stock, mostrar mensaje amigable
+        if (result.outOfStockItems && result.outOfStockItems.length > 0) {
+          // Crear un mensaje más amigable sin mostrar cantidades específicas
+          const productNames = result.outOfStockItems.map(item => item.name).join(', ');
+
+          // Si hay varios productos
+          if (result.outOfStockItems.length > 1) {
+            throw new Error(`Algunos productos en tu carrito no están disponibles en este momento. Por favor, revisa tu carrito y ajusta tu pedido.`);
+          }
+          // Si hay solo un producto
+          else {
+            throw new Error(`"${productNames}" no está disponible en la cantidad solicitada. Por favor, ajusta la cantidad en tu carrito.`);
+          }
+        }
+
         throw new Error(result.error || 'Error al procesar el pago');
       }
 
@@ -408,6 +425,7 @@ export const CheckoutProvider = ({ children }) => {
     // Estados generales
     step,
     error,
+    setError, // Exponemos setError para permitir que componentes hijos limpien el error
     isProcessing,
     orderId,
 

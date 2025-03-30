@@ -1,8 +1,11 @@
+import React from 'react';
 import { CheckoutSection } from './CheckoutSection.jsx'
 import { LoadingSpinner } from '../../../components/ui/index.js'
 import { AddressSelector } from './address/index.js'
 import { PaymentMethodSelector } from './payment/index.js'
 import { BillingInfoForm } from './billing/index.js'
+import { StockErrorAlert } from '../../../components/common/StockErrorAlert.jsx'
+import '../../../styles/stockErrorAlert.css'
 
 /**
  * Componente que muestra el formulario completo de checkout
@@ -37,10 +40,23 @@ export const CheckoutForm = ({
 
                                // Notas
                                orderNotes,
-                               handleNotesChange
+                               handleNotesChange,
+
+                               // Error
+                               error,
+                               setError
                              }) => {
   return (
     <div className="col-lg-8">
+      {/* Mostrar el error si existe usando nuestro componente personalizado */}
+      {error && (
+        <StockErrorAlert
+          message={error}
+          onClose={() => setError(null)}
+          className="mb-4"
+        />
+      )}
+
       {/* Sección: Dirección de Envío */}
       <CheckoutSection
         title="Dirección de Envío"

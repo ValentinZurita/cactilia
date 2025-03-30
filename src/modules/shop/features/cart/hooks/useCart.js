@@ -38,12 +38,20 @@ export const useCart = () => {
 
   // Verificar si hay productos sin stock o con stock insuficiente
   const outOfStockItems = useMemo(() =>
-      items.filter(item => item.stock === 0),
+      items.filter(item => {
+        // Manejar caso donde stock es undefined o null
+        const stock = item.stock !== undefined && item.stock !== null ? item.stock : 0;
+        return stock === 0;
+      }),
     [items]
   );
 
   const insufficientStockItems = useMemo(() =>
-      items.filter(item => item.stock > 0 && item.quantity > item.stock),
+      items.filter(item => {
+        // Manejar caso donde stock es undefined o null
+        const stock = item.stock !== undefined && item.stock !== null ? item.stock : 0;
+        return stock > 0 && item.quantity > stock;
+      }),
     [items]
   );
 
@@ -61,7 +69,7 @@ export const useCart = () => {
     }
 
     // Verificar stock disponible
-    const stock = product.stock || 0;
+    const stock = product.stock !== undefined && product.stock !== null ? product.stock : 0;
     if (stock <= 0) {
       console.warn('Producto sin stock disponible:', product.id);
       return;
@@ -112,7 +120,8 @@ export const useCart = () => {
     }
 
     // Validar stock disponible
-    if (item.stock <= 0 || item.quantity >= item.stock) {
+    const stock = item.stock !== undefined && item.stock !== null ? item.stock : 0;
+    if (stock <= 0 || item.quantity >= stock) {
       console.warn('No hay suficiente stock para incrementar:', productId);
       return;
     }

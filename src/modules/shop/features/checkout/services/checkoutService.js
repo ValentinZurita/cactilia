@@ -39,10 +39,10 @@ export const verifyAndUpdateStock = async (items) => {
     return { ok: false, error: 'No hay productos para verificar' };
   }
 
-  try {
-    // Lista para almacenar productos sin stock suficiente
-    const outOfStockItems = [];
+  // Declaramos outOfStockItems fuera del bloque try para que esté disponible en el catch
+  let outOfStockItems = [];
 
+  try {
     // Usar runTransaction para garantizar consistencia en la base de datos
     await runTransaction(FirebaseDB, async (transaction) => {
       // PASO 1: Realizar todas las lecturas primero
@@ -253,7 +253,7 @@ export const processPayment = async (
       return {
         ok: false,
         error: stockResult.error,
-        outOfStockItems: stockResult.outOfStockItems
+        outOfStockItems: stockResult.outOfStockItems || []
       };
     }
 
