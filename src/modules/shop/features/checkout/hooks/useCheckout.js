@@ -1,128 +1,124 @@
-import { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { addMessage } from '../../../../../store/messages/messageSlice.js';
-import { clearCartWithSync } from '../../../../../store/cart/cartThunk.js';
-import { useCart } from '../../cart/hooks/useCart.js';
-import { useCheckoutForm } from './useCheckoutForm';
-import { useOrderProcessing } from './useOrderProcessing';
+import { useState, useEffect, useCallback } from 'react';
+import { getUserAddresses } from '../../../../user/services/addressService';
 
 /**
- * Hook principal para el flujo de checkout
- * Combina múltiples hooks especializados para manejar diferentes partes del proceso
- *
- * @returns {Object} Estado y funciones para manejar el flujo de Checkout
+ * Hook para manejar el formulario de direcciones
+ * @param {string} uid - ID del usuario
+ * @returns {Object} Estado y funciones para el manejo de direcciones
  */
-export const useCheckout = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const stripe = useStripe();
-  const elements = useElements();
-
-  // Obtener datos de autenticación del usuario
-  const auth = useSelector(state => state.auth);
-  const { uid, status } = auth;
-
-  // Obtener datos del carrito
-  const {
-    items: cartItems,
-    subtotal: cartSubtotal,
-    taxes: cartTaxes,
-    shipping: cartShipping,
-    finalTotal: cartTotal,
-    isFreeShipping,
-    hasOutOfStockItems
-  } = useCart();
-
-  // Obtener formulario de checkout (direcciones, pagos, facturación)
-  const form = useCheckoutForm(uid);
-
-  // Obtener procesamiento de órdenes
-  const orderProcessing = useOrderProcessing({
-    auth,
-    cart: {
-      items: cartItems,
-      subtotal: cartSubtotal,
-      taxes: cartTaxes,
-      shipping: cartShipping,
-      finalTotal: cartTotal,
-      isFreeShipping,
-      hasOutOfStockItems
-    },
-    form,
-    stripe,
-    elements
+export const useAddressForm = (uid) => {
+  // Estados para dirección
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [selectedAddressType, setSelectedAddressType] = useState('');
+  const [addresses, setAddresses] = useState([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [newAddressData, setNewAddressData] = useState({
+    name: '',
+    street: '',
+    numExt: '',
+    numInt: '',
+    colonia: '',
+    city: '',
+    state: '',
+    zip: '',
+    references: '',
+    saveAddress: false
   });
 
-  // Manejar éxito en el proceso de orden
+  // Cargar direcciones
   useEffect(() => {
-    if (orderProcessing.isSuccess) {
-      if (form.selectedPaymentType === 'oxxo') {
-        dispatch(addMessage({
-          type: 'success',
-          text: 'Pedido registrado correctamente. Revisa tu correo para el voucher de pago OXXO.',
-          autoHide: true,
-          duration: 8000
-        }));
-      } else {
-        dispatch(clearCartWithSync());
-        dispatch(addMessage({
-          type: 'success',
-          text: '¡Pedido completado correctamente!',
-          autoHide: true,
-          duration: 5000
-        }));
-      }
-    }
-  }, [orderProcessing.isSuccess, form.selectedPaymentType, dispatch]);
+    const loadAddresses = async () => {
+      if (!uid) return;
 
-  // Manejador para procesar la orden
-  const handleProcessOrder = async () => {
-    try {
-      // Validar stock de productos
-      if (hasOutOfStockItems) {
-        dispatch(addMessage({
-          type: 'error',
-          text: 'Hay productos sin stock en tu carrito. Por favor elimínalos antes de continuar.',
-          autoHide: true,
-          duration: 5000
-        }));
-        return;
-      }
+      setLoadingAddresses(true);
 
-      await orderProcessing.processOrder();
-    } catch (error) {
-      console.error('Error al procesar orden:', error);
-      dispatch(addMessage({
-        type: 'error',
-        text: error.message || 'Error al procesar el pedido. Intenta nuevamente.',
-        autoHide: true,
-        duration: 5000
-      }));
-    }
-  };
+      try {
+        const result = await getUserAddresses(uid);
+
+        if (result.ok) {
+          setAddresses(result.data || []);
+
+          // Seleccionar dirección por defecto
+          if (result.data && result.data.length > 0 && !selectedAddressId) {
+            const defaultAddress = result.data.find(addr => addr.isDefault);
+            if (defaultAddress) {
+              setSelectedAddressId(defaultAddress.id);
+              setSelectedAddressType('saved');
+            } else {
+              setSelectedAddressId(result.data[0].id);
+              setSelectedAddressType('saved');
+            }
+          }
+        } else {
+          console.error('Error cargando direcciones:', result.error);
+          setAddresses([]);
+        }
+      } catch (error) {
+        console.error('Error en loadAddresses:', error);
+        setAddresses([]);
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    loadAddresses();
+  }, [uid, selectedAddressId]);
+
+  // Handler para cambio de dirección
+  const handleAddressChange = useCallback((addressId, addressType = 'saved') => {
+    setSelectedAddressId(addressId);
+    setSelectedAddressType(addressType);
+  }, []);
+
+  // Handler para seleccionar nueva dirección
+  const handleNewAddressSelect = useCallback(() => {
+    setSelectedAddressId(null);
+    setSelectedAddressType('new');
+  }, []);
+
+  // Handler para cambios en datos de nueva dirección
+  const handleNewAddressDataChange = useCallback((data) => {
+    setNewAddressData(prev => ({ ...prev, ...data }));
+  }, []);
+
+  // Obtener dirección seleccionada
+  const selectedAddress = selectedAddressType === 'saved'
+    ? addresses.find(addr => addr.id === selectedAddressId)
+    : null;
 
   return {
-    // Estados del carrito
-    cartItems,
-    cartSubtotal,
-    cartTaxes,
-    cartShipping,
-    cartTotal,
-    isFreeShipping,
-    hasOutOfStockItems,
+    // Estados
+    selectedAddressId,
+    selectedAddressType,
+    selectedAddress,
+    addresses,
+    loadingAddresses,
+    newAddressData,
 
-    // Estados y funciones de formulario
-    ...form,
+    // Handlers
+    handleAddressChange,
+    handleNewAddressSelect,
+    handleNewAddressDataChange,
 
-    // Estados de procesamiento
-    step: orderProcessing.step,
-    error: orderProcessing.error,
-    isProcessing: orderProcessing.isProcessing,
-    orderId: orderProcessing.orderId,
+    // Funciones
+    reloadAddresses: () => loadAddresses(),
 
-    // Manejador para procesar la orden
-    handleProcessOrder
+    // Reset
+    resetAddressForm: () => {
+      setSelectedAddressId(null);
+      setSelectedAddressType('');
+      setNewAddressData({
+        name: '',
+        street: '',
+        numExt: '',
+        numInt: '',
+        colonia: '',
+        city: '',
+        state: '',
+        zip: '',
+        references: '',
+        saveAddress: false
+      });
+    }
   };
 };
