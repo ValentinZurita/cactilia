@@ -1,15 +1,11 @@
-import '../../../../styles/pages/cart.css';
-import { calculateCartTotals, formatPrice } from '../../../shop/features/cart/utils/cartUtils.js'
-
+import '../../../../../styles/pages/cart.css';
+import { calculateCartTotals, formatPrice } from '../utils/cartUtils.js';
 
 export const CartTotal = ({ items = [] }) => {
-
   // Calcular totales usando nuestra función de utilidad con el modelo mexicano (IVA incluido)
   const { subtotal, taxes, shipping, total, finalTotal, isFreeShipping } = calculateCartTotals(items, 0.16, 500, 50);
 
-
   return (
-
     // Cart total container
     <div className="cart-total">
       <h4>Resumen del Pedido</h4>
@@ -44,7 +40,6 @@ export const CartTotal = ({ items = [] }) => {
 
       {/* Seguridad y envío */}
       <div className="mt-4">
-
         {/* Iconos */}
         <div className="d-flex align-items-center text-muted mb-2">
           <i className="bi bi-shield-check me-2 text-success"></i>
@@ -56,7 +51,6 @@ export const CartTotal = ({ items = [] }) => {
           <i className="bi bi-truck me-2 text-success"></i>
           <small>Envío gratis en compras mayores a $500</small>
         </div>
-
       </div>
     </div>
   );

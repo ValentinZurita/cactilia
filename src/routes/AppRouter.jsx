@@ -11,7 +11,7 @@ import { ContactPage } from "../modules/public/pages/ContactPage";
 
 // Páginas/routers de shop y user
 import { ShopRoutes } from "../modules/shop/router/ShopRoutes";
-import { CartPage } from "../modules/user/pages/CartPage";
+import { CartPage } from "../modules/shop/pages/CartPage.jsx";
 import { RequireAuth } from "../modules/auth/components/RequireAuth";
 
 // Anidado de rutas de perfil

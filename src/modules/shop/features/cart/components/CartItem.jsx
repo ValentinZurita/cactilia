@@ -1,4 +1,4 @@
-import '../../../../styles/pages/cart.css';
+import '../../../../../styles/pages/cart.css';
 
 export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
   // Verificar si el producto tiene stock
@@ -6,14 +6,12 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
 
   return (
     <div className="cart-item-container d-flex align-items-start py-3">
-
       {/* Contenedor de detalles y controles */}
       <div className="cart-item-details flex-grow-1">
         <h5 className="cart-item-title">{product.name}</h5>
         <p className="cart-item-subtitle text-muted mb-1">{product.category}</p>
 
         <div className="cart-item-price-stock d-flex align-items-center mb-2">
-
           {/* Se calcula el total del producto según la cantidad */}
           <span className="me-2 fw-bold">${(product.price * product.quantity).toFixed(2)}</span>
           {inStock
@@ -26,7 +24,6 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
         <div className="cart-item-actions d-flex align-items-center">
           <div className="quantity-controls d-flex align-items-center">
             <div className="btn-group" role="group" aria-label="Cantidad del producto">
-
               {/* Botones de cantidad */}
               <button
                 type="button"
@@ -51,7 +48,6 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
               >
                 +
               </button>
-
             </div>
 
             {/* Botón de eliminar (gris) */}
@@ -63,7 +59,6 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
             >
               <i className="bi bi-trash"></i>
             </button>
-
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import '../../../styles/pages/cart.css';
-import { useCart } from '../../shop/features/cart/hooks/useCart.js'
-import { CartItem, CartTotal, EmptyCart } from '../components/cart-page/index.js'
+import { useCart } from '../features/cart/hooks/useCart.js'
+import { CartItem, CartTotal, EmptyCart } from '../features/cart/components/index.js'
 import { useSelector } from 'react-redux';
 
 export const CartPage = () => {
@@ -44,10 +44,8 @@ export const CartPage = () => {
 
   return (
     <div className="container cart-page pt-5 mt-5">
-
       {/* Encabezado y botón de regreso */}
       <div className="d-flex align-items-center mb-4">
-
         {/* Botón de regreso */}
         <button
           className="btn-arrow-back me-3"
@@ -64,7 +62,6 @@ export const CartPage = () => {
             {itemsCount} {itemsCount === 1 ? 'artículo' : 'artículos'}
           </p>
         </div>
-
       </div>
 
       {/* Alerta de productos sin stock */}
@@ -77,7 +74,6 @@ export const CartPage = () => {
 
       {/* Layout con dos columnas en desktop */}
       <div className="row">
-
         {/* Columna izquierda: Lista de productos */}
         <div className="cart-items-column">
           <div className="card border-0 shadow-sm mb-4">

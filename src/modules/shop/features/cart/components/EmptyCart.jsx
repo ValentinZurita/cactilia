@@ -1,15 +1,11 @@
 import { Link } from 'react-router-dom';
-import '../../../../styles/pages/cart.css';
+import '../../../../../styles/pages/cart.css';
 
 export const EmptyCart = ({ onContinueShopping }) => {
-
-
   return (
     <div className="container empty-cart-container pt-5 mt-5">
-
       {/* Empty cart content */}
       <div className="empty-cart-content">
-
         {/* Empty cart icon */}
         <i className="bi bi-cart-x empty-cart-icon"></i>
 
@@ -30,7 +26,6 @@ export const EmptyCart = ({ onContinueShopping }) => {
           <i className="bi bi-shop me-2"></i>
           Ir a la tienda
         </Link>
-
       </div>
     </div>
   );

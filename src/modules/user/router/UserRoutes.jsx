@@ -1,9 +1,6 @@
-// src/modules/user/router/UserRoutes.jsx
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { RequireAuth } from "../../auth/components/RequireAuth";
 import {
-  CartPage,
   OrdersPage,
   OrderDetailPage,
   AddressesPage,
@@ -16,9 +13,6 @@ import { CheckoutPage } from '../../shop/pages/index.js'
 export const UserRoutes = () => {
   return (
     <Routes>
-      {/* Carrito sin protección */}
-      <Route path="cart" element={<CartPage />} />
-
       {/* Checkout requiere autenticación */}
       <Route
         path="checkout"

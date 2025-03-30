@@ -5,7 +5,7 @@ import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMess
 import { heroImages } from '../../../shared/constants';
 import { getCollectionImages } from '../../admin/services/collectionsService';
 import { getShopPageContent } from '../../admin/components/content/shop/shopPageService.js'
-import { useProducts } from '../hooks/useProducts.js'
+import { useModal, useProducts } from '../hooks/index.js'
 import { useCart } from '../features/cart/hooks/useCart.js'
 
 export const ShopPage = () => {

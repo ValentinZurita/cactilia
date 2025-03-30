@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { HomePage } from "../pages/HomePage.jsx";
 import { ShopPage } from "../../shop/pages/ShopPage.jsx";
-import { CartPage } from "../../user/pages/CartPage.jsx";
+import { CartPage } from "../../shop/pages/CartPage.jsx";
 import { ContactPage } from "../pages/ContactPage.jsx";
 import { AuthRoutes } from "../../auth/router/AuthRoutes.jsx";
 import { PublicLayout } from '../../../layout/PublicLayout.jsx';

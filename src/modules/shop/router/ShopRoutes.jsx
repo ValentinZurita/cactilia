@@ -1,16 +1,15 @@
-// src/modules/shop/router/ShopRoutes.jsx
-
 import { Routes, Route } from "react-router-dom";
-import { ShopPage } from '../pages/ShopPage.jsx'
-import { CheckoutPage } from '../pages/CheckoutPage.jsx'
-import { OrderSuccessPage } from '../pages/OrderSuccesPage.jsx'
-
+import { CartPage, CheckoutPage, OrderSuccessPage, ShopPage } from '../pages/index.js'
 
 export const ShopRoutes = () => {
+
   return (
     <Routes>
       {/** /shop -> ShopPage */}
       <Route index element={<ShopPage />} />
+
+      {/** /shop/cart -> CartPage */}
+      <Route path="cart" element={<CartPage />} />
 
       <Route path="checkout" element={<CheckoutPage />} />
 
@@ -19,4 +18,5 @@ export const ShopRoutes = () => {
 
     </Routes>
   );
+
 };
