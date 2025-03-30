@@ -110,32 +110,6 @@ body {
     color: #2AAD46 !important;
 }
 
-/* Estilo para el badge del carrito de compras
-   Este estilo debe agregarse a tu archivo CSS global o al archivo CSS relacionado con el navbar */
-
-.cart-badge {
-    background-color: var(--green-3, #34C749) !important;
-    color: white;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(52, 199, 73, 0.25);
-    transition: all 0.2s ease;
-}
-
-.cart-badge:hover {
-    transform: scale(1.1);
-}
-
-/* Si necesitas un efecto de animación cuando se actualiza el carrito */
-@keyframes cartBadgePulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-.cart-badge-pulse {
-    animation: cartBadgePulse 0.3s ease;
-}
-
 
 /*
     ✅ Button styles

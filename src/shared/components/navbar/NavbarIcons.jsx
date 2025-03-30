@@ -3,7 +3,6 @@ import { CartWidget } from './CartWidget';
 import { useSelector } from 'react-redux';
 
 export const NavbarIcons = () => {
-
   // Get only the first name of the user
   const getFirstName = (fullName) => fullName ? fullName.split(' ')[0] : "Perfil";
 
@@ -16,7 +15,7 @@ export const NavbarIcons = () => {
   // Labels
   const profileLabel = status === "authenticated" ? getFirstName(displayName) || "Perfil" : "Iniciar sesión";
 
-  // 📌 The profile icon and label are displayed according to the user's authentication status.
+  // The profile icon and label are displayed according to the user's authentication status.
   const profileHref =
     status !== "authenticated"
       ? "/auth/login"
@@ -26,7 +25,6 @@ export const NavbarIcons = () => {
 
   return (
     <div className="d-flex align-items-center order-lg-2 ms-auto justify-content-between">
-
       {/* User Icon */}
       <NavbarIcon
         iconClass={profileIcon}
@@ -37,7 +35,6 @@ export const NavbarIcons = () => {
 
       {/* Cart Widget with dropdown */}
       <CartWidget />
-
     </div>
   );
 };

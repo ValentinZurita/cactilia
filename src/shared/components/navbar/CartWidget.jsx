@@ -1,18 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useCart } from '../../../modules/shop/features/cart/hooks/useCart.js'
-import { formatPrice } from '../../../modules/shop/features/cart/utils/cartUtils.js'
+import { useCart } from '../../../modules/shop/features/cart/hooks/useCart.js';
+import { formatPrice } from '../../../modules/shop/features/cart/utils/cartUtils.js';
 
 /**
- * CartWidget component that shows a mini preview of the cart
- * when hovering over the cart icon. Includes a badge with the
- * number of items in the cart styled in the brand green color.
+ * CartWidget component with dropdown functionality and elegant badge
  */
 export const CartWidget = () => {
   const [showPreview, setShowPreview] = useState(false);
-  const { items, total, itemsCount } = useCart();
+  const { items, total } = useCart();
   const previewRef = useRef(null);
   const timerRef = useRef(null);
+
+  // Calcular el número de items directamente
+  const itemsCount = items.reduce((count, item) => count + item.quantity, 0);
 
   // Close the preview when clicking outside
   useEffect(() => {
@@ -28,7 +29,7 @@ export const CartWidget = () => {
     };
   }, []);
 
-  // Handle mouse enter with delay
+  // Handle mouse events
   const handleMouseEnter = () => {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
@@ -36,7 +37,6 @@ export const CartWidget = () => {
     }, 300);
   };
 
-  // Handle mouse leave with delay
   const handleMouseLeave = () => {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
@@ -44,9 +44,23 @@ export const CartWidget = () => {
     }, 500);
   };
 
-  // Close preview when navigating to cart
-  const handleGoToCart = () => {
-    setShowPreview(false);
+  // Elegant badge styles for perfect circle
+  const badgeStyle = {
+    position: 'absolute',
+    top: '-8px',
+    left: '-8px',
+    backgroundColor: '#34C749',
+    color: 'white',
+    borderRadius: '50%',
+    width: '18px',
+    height: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.7rem',
+    fontWeight: 'bold',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+    // Removed white border for cleaner look
   };
 
   return (
@@ -56,26 +70,28 @@ export const CartWidget = () => {
       onMouseLeave={handleMouseLeave}
       ref={previewRef}
     >
-      {/* Cart Icon with number badge */}
-      <Link to="/cart" className="nav-link d-flex align-items-center px-2 text-dark navbar-hover">
-        <i className="bi bi-cart-fill fs-5 me-1 text-muted fw-light" />
-        <span className="fw-light d-none d-lg-inline">
+      {/* Cart Icon with badge */}
+      <Link to="/cart" className="nav-link d-flex align-items-center px-2 text-dark">
+        <div className="position-relative">
+          <i className="bi bi-cart-fill fs-5 text-muted fw-light"></i>
+
+          {/* Badge - positioned absolutely */}
+          {itemsCount > 0 && (
+            <div style={badgeStyle}>
+              {itemsCount > 99 ? '9+' : itemsCount}
+            </div>
+          )}
+        </div>
+
+        <span className="fw-light d-none d-lg-inline ms-1">
           Carrito
         </span>
-
-        {/* Cart badge showing number of items - now with brand green color */}
-        {itemsCount > 0 && (
-          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge" style={{ marginLeft: '-1rem' }}>
-            {itemsCount > 99 ? '99+' : itemsCount}
-            <span className="visually-hidden">productos en el carrito</span>
-          </span>
-        )}
       </Link>
 
-      {/* Cart preview popup */}
+      {/* Cart preview dropdown */}
       {showPreview && items.length > 0 && (
         <div
-          className="cart-preview-dropdown position-absolute bg-white shadow-lg rounded-3 p-3"
+          className="position-absolute bg-white shadow-lg rounded-3 p-3"
           style={{
             right: 0,
             top: '100%',
@@ -84,32 +100,17 @@ export const CartWidget = () => {
             marginTop: '10px'
           }}
         >
-          {/* Header */}
+          {/* Dropdown content */}
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h6 className="m-0">Tu Carrito ({itemsCount})</h6>
-
-            {/* Close button */}
-            <button
-              className="btn-close btn-sm"
-              onClick={() => setShowPreview(false)}
-              aria-label="Cerrar"
-            ></button>
-
+            <button className="btn-close btn-sm" onClick={() => setShowPreview(false)}></button>
           </div>
 
-          {/* Cart items */}
-          <div
-            className="cart-preview-items"
-            style={{
-              maxHeight: '300px',
-              overflowY: 'auto'
-            }}
-          >
-
-            {/* Show only the first 3 items */}
+          {/* Preview items */}
+          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
             {items.slice(0, 3).map(item => (
-              <div key={item.id} className="cart-preview-item d-flex py-2 border-bottom">
-                <div className="cart-preview-image me-2">
+              <div key={item.id} className="d-flex py-2 border-bottom">
+                <div className="me-2">
                   <img
                     src={item.image}
                     alt={item.name}
@@ -117,25 +118,19 @@ export const CartWidget = () => {
                     style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                   />
                 </div>
-
-                {/* Product details */}
-                <div className="cart-preview-details flex-grow-1">
+                <div className="flex-grow-1">
                   <div className="d-flex justify-content-between">
                     <p className="mb-0 text-truncate" style={{ maxWidth: '150px' }}>{item.name}</p>
                     <span className="text-muted">{formatPrice(item.price)}</span>
                   </div>
-
-                  {/* Quantity and total */}
                   <div className="d-flex justify-content-between">
                     <small className="text-muted">Cantidad: {item.quantity}</small>
                     <small className="fw-bold">{formatPrice(item.price * item.quantity)}</small>
                   </div>
-
                 </div>
               </div>
             ))}
 
-            {/* Show a message if there are more than 3 items */}
             {items.length > 3 && (
               <div className="text-center text-muted my-2">
                 <small>Y {items.length - 3} productos más...</small>
@@ -143,30 +138,28 @@ export const CartWidget = () => {
             )}
           </div>
 
-          {/* Footer with total and buttons */}
-          <div className="cart-preview-footer mt-3">
+          {/* Footer */}
+          <div className="mt-3">
             <div className="d-flex justify-content-between mb-3">
               <span className="fw-bold">Total:</span>
-              <span className="fw-bold text-green-1">{formatPrice(total)}</span>
+              <span className="fw-bold" style={{ color: '#34C749' }}>{formatPrice(total)}</span>
             </div>
-
-            {/* Buttons */}
             <div className="d-grid gap-2">
-
-              {/* Go to cart button */}
               <Link
                 to="/cart"
-                className="btn btn-green-lg w-100"
-                onClick={handleGoToCart}
+                className="btn w-100"
+                style={{ backgroundColor: '#34C749', color: 'white' }}
+                onClick={() => setShowPreview(false)}
               >
                 Ver Carrito
               </Link>
-
-              {/* Pay now button */}
-              <button className="btn btn-outline-secondary w-100">
-                Pagar Ahora
-              </button>
-
+              <Link
+                to="/shop/checkout"
+                className="btn btn-outline-secondary w-100"
+                onClick={() => setShowPreview(false)}
+              >
+                Finalizar Compra
+              </Link>
             </div>
           </div>
         </div>
