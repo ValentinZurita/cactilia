@@ -111,7 +111,7 @@ describe('CheckoutPage', () => {
     renderWithProviders(<CheckoutPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('stripe-elements')).toBeInTheDocument();
+      expect(screen.getByTestId('app-elements')).toBeInTheDocument();
       expect(screen.getByTestId('checkout-provider')).toBeInTheDocument();
     });
   });

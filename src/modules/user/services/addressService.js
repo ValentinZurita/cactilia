@@ -1,5 +1,5 @@
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, getDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../firebase/firebaseConfig';
+import { FirebaseDB } from '../../../config/firebase/firebaseConfig';
 
 /**
  * Servicio mejorado para gestionar direcciones de usuario en Firestore

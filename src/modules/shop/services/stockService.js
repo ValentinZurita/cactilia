@@ -1,5 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../firebase/firebaseConfig.js';
+import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js';
 import { logError } from '../utils/errorLogger.js';
 
 /**

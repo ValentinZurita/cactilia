@@ -1,7 +1,7 @@
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, getDoc } from "firebase/firestore";
 import { ref, getDownloadURL, deleteObject } from "firebase/storage";
-import { FirebaseDB, FirebaseStorage } from "../../../firebase/firebaseConfig";
-import { uploadFile } from "../../../firebase/firebaseStorage";
+import { FirebaseDB, FirebaseStorage } from "../../../config/firebase/firebaseConfig";
+import { uploadFile } from "../../../config/firebase/firebaseStorage";
 
 /**
  * Upload a new media item to Firebase Storage and save metadata to Firestore

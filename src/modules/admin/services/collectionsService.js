@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import { FirebaseDB } from '../../../firebase/firebaseConfig.js'
+import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js'
 
 // Colección de Firestore
 const COLLECTIONS_COLLECTION = 'mediaCollections';

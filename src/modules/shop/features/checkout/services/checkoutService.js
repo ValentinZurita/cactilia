@@ -1,7 +1,7 @@
 import { shouldUseMocks } from '../../../../user/services/stripeMock.js';
 import { apiService } from '../../../services/api.js';
 import { doc, runTransaction, getDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../../../firebase/firebaseConfig';
+import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig';
 
 const ORDERS_COLLECTION = 'orders';
 const PRODUCTS_COLLECTION = 'products';

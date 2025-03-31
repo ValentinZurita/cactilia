@@ -1,7 +1,7 @@
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { FirebaseDB, FirebaseAuth } from '../../../firebase/firebaseConfig';
-import { uploadFile } from '../../../firebase/firebaseStorage';
+import { FirebaseDB, FirebaseAuth } from '../../../config/firebase/firebaseConfig';
+import { uploadFile } from '../../../config/firebase/firebaseStorage';
 
 const USERS_COLLECTION = 'users';
 

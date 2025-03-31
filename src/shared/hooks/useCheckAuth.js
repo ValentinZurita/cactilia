@@ -3,8 +3,8 @@ import { useEffect } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import { useDispatch, useSelector } from 'react-redux'
 import { checkingCredentials, login, logout } from '../../store/auth/authSlice.js'
-import { FirebaseAuth } from '../../firebase/firebaseConfig.js'
-import { getUserRole } from '../../firebase/authUtils.js'  // ✅ Importación corregida
+import { FirebaseAuth } from '../../config/firebase/firebaseConfig.js'
+import { getUserRole } from '../../config/firebase/authUtils.js'  // ✅ Importación corregida
 
 export const useCheckAuth = () => {
   const dispatch = useDispatch();

@@ -2,9 +2,9 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from 'firebase/auth'
-import { FirebaseAuth } from '../../../../firebase/firebaseConfig.js'
+import { FirebaseAuth } from '../../../../config/firebase/firebaseConfig.js'
 import { logout } from '../../../../store/auth/authSlice.js'
-import { getUserRole } from '../../../../firebase/authUtils.js'
+import { getUserRole } from '../../../../config/firebase/authUtils.js'
 
 /*
  * ++++++++++++++++++++++++++++++++++++++++++++++

@@ -1,5 +1,5 @@
 import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { FirebaseDB } from '../../../firebase/firebaseConfig.js'
+import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js'
 
 
 

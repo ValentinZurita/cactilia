@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 
 // Importación correcta de FirebaseDB
-import { FirebaseDB } from '../../../../../firebase/firebaseConfig.js';
+import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig.js';
 
 // Colección de órdenes en Firestore
 const ORDERS_COLLECTION = 'orders';

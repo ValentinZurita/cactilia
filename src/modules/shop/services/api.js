@@ -4,7 +4,7 @@ import {
   serverTimestamp, writeBatch, setDoc,
 } from 'firebase/firestore'
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { FirebaseDB } from '../../../firebase/firebaseConfig.js'
+import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js'
 
 /**
  * Servicio base para operaciones con Firebase

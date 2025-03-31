@@ -1,4 +1,4 @@
-import { FirebaseStorage } from './firebaseConfig';
+import { FirebaseStorage } from './firebaseConfig.js';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 

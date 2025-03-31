@@ -1,6 +1,6 @@
 // src/modules/user/services/paymentService.js
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, getDoc } from 'firebase/firestore'
-import { FirebaseDB } from '../../../firebase/firebaseConfig';
+import { FirebaseDB } from '../../../config/firebase/firebaseConfig';
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 
 // Collection name for payment methods

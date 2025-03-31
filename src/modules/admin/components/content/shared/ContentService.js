@@ -1,6 +1,6 @@
 // src/modules/admin/services/contentService.js
 import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
-import { FirebaseDB } from '../../../../../firebase/firebaseConfig.js'
+import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig.js'
 
 // Colecciones de Firestore
 const DRAFT_COLLECTION = 'content';

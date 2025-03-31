@@ -1,6 +1,6 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { FirebaseDB, FirebaseStorage } from '../../../../../firebase/firebaseConfig.js'
+import { FirebaseDB, FirebaseStorage } from '../../../../../config/firebase/firebaseConfig.js'
 
 /**
  * Sube archivos de facturación (PDF y XML) para un pedido específico

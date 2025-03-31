@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { FirebaseDB } from '../../../../../../firebase/firebaseConfig.js';
+import { FirebaseDB } from '../../../../../../config/firebase/firebaseConfig.js';
 import { addMessage } from '../../../../../../store/messages/messageSlice.js';
 
 /**

@@ -1,7 +1,7 @@
 import {GoogleAuthProvider, signInWithPopup, OAuthProvider} from 'firebase/auth';
 import { FirebaseAuth, FirebaseDB } from './firebaseConfig.js'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { getUserDoc, saveUserDoc } from '../modules/auth/services/userService.js';
+import { getUserDoc, saveUserDoc } from '../../modules/auth/services/userService.js';
 
 
 const googleProvider = new GoogleAuthProvider();

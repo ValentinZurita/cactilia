@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getUserRole } from '../../../firebase/authUtils';
-import { FirebaseAuth } from '../../../firebase/firebaseConfig';
+import { getUserRole } from '../../../config/firebase/authUtils';
+import { FirebaseAuth } from '../../../config/firebase/firebaseConfig';
 
 /**
  * Hook personalizado para obtener y observar el rol del usuario actual

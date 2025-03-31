@@ -1,7 +1,7 @@
-// src/modules/shop/hooks/useStripeLoader.js
 import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
-import { getConfig } from '../../config/appConfig';
+import { getStripeConfig } from '../../../config/app/appConfig.js'
+
 
 /**
  * Hook para cargar la instancia de Stripe
@@ -19,15 +19,15 @@ export const useStripeLoader = () => {
       try {
         setIsLoading(true);
 
-        // Obtener la clave pública de Stripe de la configuración
-        const config = await getConfig();
-        const stripePublicKey = config.stripe?.publicKey;
+        // Obtener la configuración de Stripe
+        const stripeConfig = getStripeConfig();
+        const stripePublicKey = stripeConfig.publicKey;
 
         if (!stripePublicKey) {
           throw new Error('Clave pública de Stripe no configurada');
         }
 
-        // Cargar instancia de Stripe
+        // Cargar instancia de Stripe con las opciones de configuración
         const stripeInstance = await loadStripe(stripePublicKey);
         setStripePromise(stripeInstance);
         setError(null);

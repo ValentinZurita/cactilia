@@ -11,8 +11,8 @@ import {
   orderBy,
   serverTimestamp
 } from "firebase/firestore";
-import { FirebaseDB } from "../../../firebase/firebaseConfig";
-import { FirebaseAuth } from "../../../firebase/firebaseConfig";
+import { FirebaseDB } from "../../../config/firebase/firebaseConfig";
+import { FirebaseAuth } from "../../../config/firebase/firebaseConfig";
 
 /**
  * Obtiene el documento de usuario desde Firestore

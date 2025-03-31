@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getUserRole } from '../../../../firebase/authUtils.js';
-import { FirebaseAuth } from '../../../../firebase/firebaseConfig.js'
+import { getUserRole } from '../../../../config/firebase/authUtils.js';
+import { FirebaseAuth } from '../../../../config/firebase/firebaseConfig.js'
 
 
 /*

@@ -4,7 +4,7 @@ import {
   getDoc,
   serverTimestamp
 } from "firebase/firestore";
-import { FirebaseDB } from "../../../firebase/firebaseConfig";
+import { FirebaseDB } from "../../../config/firebase/firebaseConfig";
 
 /**
  * Servicio para gestionar los bloques de contenido de las páginas

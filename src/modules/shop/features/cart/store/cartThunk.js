@@ -2,7 +2,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { setCartItems, setSyncStatus, setSyncError, setLastSync, clearCart } from './cartSlice';
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../../../firebase/firebaseConfig.js'
+import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig.js'
 
 /**
  * Carga el carrito desde Firestore para el usuario autenticado

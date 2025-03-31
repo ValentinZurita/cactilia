@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { addProduct, updateProduct } from '../../services/productService';
 import { getCategories } from '../../services/categoryService';
-import { uploadFile, deleteFile } from '../../../../firebase/firebaseStorage.js';
+import { uploadFile, deleteFile } from '../../../../config/firebase/firebaseStorage.js';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { ImageUploader } from './ImageUploader';
 import { ImagePreview } from './ImagePreview';

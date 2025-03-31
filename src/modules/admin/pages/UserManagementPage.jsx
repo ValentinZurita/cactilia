@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getUserRole } from "../../../firebase/authUtils";
+import { getUserRole } from "../../../config/firebase/authUtils";
 import { Spinner } from "../../../shared/components/spinner/Spinner";
 
 // Componentes

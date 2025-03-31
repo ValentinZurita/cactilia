@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { createCategory, updateCategory } from "../../services/categoryService";
 import { useImageUpload } from "../../hooks/useImageUpload";
-import { uploadFile, deleteFile } from '../../../../firebase/firebaseStorage.js'
+import { uploadFile, deleteFile } from '../../../../config/firebase/firebaseStorage.js'
 import { ImageUploader, ImagePreview, SelectField, InputField } from './index.js'
 
 

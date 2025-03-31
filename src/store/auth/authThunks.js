@@ -12,8 +12,8 @@ import {
   updateProfile,
   getAuth,
 } from 'firebase/auth'
-import { FirebaseAuth } from '../../firebase/firebaseConfig.js'
-import { signInWithApple, signInWithGoogle } from '../../firebase/providers.js'
+import { FirebaseAuth } from '../../config/firebase/firebaseConfig.js'
+import { signInWithApple, signInWithGoogle } from '../../config/firebase/providers.js'
 import { getUserFromFirestore, saveUserToFirestore } from '../../modules/auth/services/userService.js'
 import { getFunctions, httpsCallable } from "firebase/functions";
 

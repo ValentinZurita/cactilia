@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux'
 import { signOut } from 'firebase/auth';
-import { FirebaseAuth } from '../../../../firebase/firebaseConfig';
+import { FirebaseAuth } from '../../../../config/firebase/firebaseConfig';
 import { logout } from '../../../../store/auth/authSlice';
 import '../../styles/profileNavigation.css';
 

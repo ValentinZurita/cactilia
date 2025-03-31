@@ -1,6 +1,6 @@
 // mockFirebaseFunctions.js
 import { getFirestore, doc, setDoc, collection, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../firebase/firebaseConfig';
+import { FirebaseDB } from '../../../config/firebase/firebaseConfig';
 
 /**
  * Simulación de función Cloud para crear un Setup Intent

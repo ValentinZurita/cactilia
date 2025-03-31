@@ -1,7 +1,7 @@
 
 import { apiService } from '../../../services/api.js';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { FirebaseDB } from '../../../../../firebase/firebaseConfig.js';
+import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig.js';
 
 /**
  * Guarda el carrito de un usuario en Firestore

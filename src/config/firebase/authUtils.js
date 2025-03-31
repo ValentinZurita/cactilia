@@ -1,4 +1,4 @@
-import { FirebaseAuth } from "./firebaseConfig";
+import { FirebaseAuth } from "./firebaseConfig.js";
 
 // ✅ Obtener el rol del usuario autenticado
 export const getUserRole = async () => {

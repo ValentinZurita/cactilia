@@ -1,6 +1,5 @@
-// src/modules/shop/features/checkout/hooks/useStockValidation.js
 import { useState, useEffect, useRef } from 'react';
-import { validateCartStock } from '../../../services/stockService';
+import { validateCartStock } from '../../../utils/stockValidation.js'
 
 /**
  * Hook para gestionar la validación de stock en el checkout
