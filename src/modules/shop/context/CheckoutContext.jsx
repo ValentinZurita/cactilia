@@ -1,12 +1,8 @@
-// src/modules/shop/context/CheckoutContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
 import { useDispatch, useSelector } from 'react-redux';
 import { useCart } from '../features/cart/hooks/useCart';
-import { useAddressManager } from './hooks/useAddressManager';
-import { usePaymentManager } from './hooks/usePaymentManager';
-import { useBillingManager } from './hooks/useBillingManager';
-import { useOrderProcessor } from './hooks/useOrderProcessor';
+import { useAddressManager, useBillingManager, usePaymentManager, useOrderProcessor } from './hooks/index.js';
 
 // Crear el contexto
 const CheckoutContext = createContext(null);

@@ -1,4 +1,3 @@
-// src/modules/shop/context/hooks/usePaymentManager.js
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getUserPaymentMethods } from '../../../user/services/paymentService.js'
 

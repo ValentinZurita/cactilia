@@ -1,4 +1,3 @@
-// src/modules/shop/context/hooks/useBillingManager.js
 import { useState, useCallback } from 'react';
 
 /**

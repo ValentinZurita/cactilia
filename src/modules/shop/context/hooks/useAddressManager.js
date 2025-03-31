@@ -1,4 +1,3 @@
-// src/modules/shop/context/hooks/useAddressManager.js
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getUserAddresses } from '../../../user/services/addressService.js'
 

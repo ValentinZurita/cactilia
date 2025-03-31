@@ -1,4 +1,3 @@
-// src/modules/shop/context/hooks/useOrderProcessor.js
 import { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { processPayment } from '../../features/checkout/services/index.js';
