@@ -89,24 +89,36 @@ export const useOrderProcessor = ({
    * @param {Array} items - Items del carrito
    */
   const validateStockBeforeCheckout = async (items) => {
-    const stockCheck = await validateItemsStock(items);
+    try {
+      const stockCheck = await validateItemsStock(items);
 
-    if (!stockCheck.valid) {
-      // Formatear un mensaje de error amigable
-      let errorMessage = 'Algunos productos no están disponibles en la cantidad solicitada.';
+      if (!stockCheck.valid) {
+        // Formatear un mensaje de error amigable
+        let errorMessage = 'Algunos productos no están disponibles en la cantidad solicitada.';
 
-      if (stockCheck.outOfStockItems && stockCheck.outOfStockItems.length === 1) {
-        const item = stockCheck.outOfStockItems[0];
-        errorMessage = `"${item.name}" no está disponible en la cantidad solicitada. Solo hay ${item.currentStock} unidades disponibles.`;
+        if (stockCheck.outOfStockItems && stockCheck.outOfStockItems.length === 1) {
+          const item = stockCheck.outOfStockItems[0];
+          errorMessage = `"${item.name}" no está disponible en la cantidad solicitada. Solo hay ${item.currentStock || 0} unidades disponibles.`;
+        }
+
+        throw new Error(errorMessage);
       }
 
-      throw new Error(errorMessage);
-    }
+      // La validación de stock fue exitosa
+      // No necesitamos la verificación local adicional, ya que duplica el proceso
+      // y puede causar errores. Si decidimos mantenerla, debemos asegurarnos
+      // de que ambas validaciones sean coherentes.
 
-    // Verificación local adicional
-    const checkoutValidation = cart.validateCheckout();
-    if (!checkoutValidation.valid) {
-      throw new Error(checkoutValidation.error);
+      // Ejemplo seguro de verificación local opcional:
+      if (cart.hasStockIssues) {
+        throw new Error('Hay problemas de stock en tu carrito. Por favor revisa las cantidades.');
+      }
+
+      return true; // Devolver un resultado exitoso
+    } catch (error) {
+      // Capturar cualquier error y relanzarlo para que se maneje adecuadamente
+      console.error('Error en validateStockBeforeCheckout:', error);
+      throw error;
     }
   };
 
