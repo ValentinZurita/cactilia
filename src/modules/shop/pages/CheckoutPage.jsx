@@ -1,16 +1,10 @@
-// src/modules/shop/pages/CheckoutPage.jsx
-import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-
 import { CheckoutProvider } from '../context/CheckoutContext';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useCart } from '../features/cart/hooks/useCart';
 import { useStripeLoader } from '../hooks/useStripeLoader';
 import { CheckoutContent } from '../features/checkout/components/CheckoutContent';
-
-// Estilos
 import '../features/checkout/styles/checkout.css';
 
 /**
@@ -25,6 +19,7 @@ import '../features/checkout/styles/checkout.css';
  * @returns {JSX.Element} Página de checkout o redirección según el estado
  */
 export const CheckoutPage = () => {
+
   // Verificar autenticación
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
@@ -39,13 +34,16 @@ export const CheckoutPage = () => {
   }
 
   return <AuthenticatedCheckout />;
+
 };
+
 
 /**
  * Componente para usuarios autenticados
  * Maneja la carga de Stripe y verificación del carrito
  */
 const AuthenticatedCheckout = () => {
+
   const { items: cartItems, isLoading: isCartLoading } = useCart();
   const { stripePromise, isLoading: isStripeLoading } = useStripeLoader();
 
@@ -64,7 +62,7 @@ const AuthenticatedCheckout = () => {
     return <CheckoutLoadingState message="Inicializando sistema de pagos..." />;
   }
 
-  // Todo listo, renderizar el contenido del checkout con los proveedores necesarios
+  // Renderizar el contenido del checkout con los proveedores necesarios
   return (
     <Elements stripe={stripePromise}>
       <CheckoutProvider>
@@ -72,7 +70,9 @@ const AuthenticatedCheckout = () => {
       </CheckoutProvider>
     </Elements>
   );
+
 };
+
 
 /**
  * Componente para estados de carga

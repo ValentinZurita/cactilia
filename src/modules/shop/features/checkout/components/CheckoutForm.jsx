@@ -1,14 +1,6 @@
-// src/modules/shop/features/checkout/components/CheckoutForm.jsx
-import React from 'react';
 import { useStockValidation } from '../hooks/useStockValidation';
-import { CheckoutSection } from './sections/CheckoutSection';
 import { StockValidationBanner } from './StockValidationBanner';
-import { ErrorSummary } from './ErrorSummary';
-import { AddressSection } from './sections/AddressSection';
-import { PaymentSection } from './sections/PaymentSection';
-import { BillingSection } from './sections/BillingSection';
-import { NotesSection } from './sections/NotesSection';
-import { StockStatusSummary } from './StockStatusSummary';
+import { AddressSection, BillingSection, NotesSection, PaymentSection } from './sections/index.js'
 
 /**
  * Componente que muestra el formulario completo de checkout
@@ -48,32 +40,16 @@ export const CheckoutForm = ({
                                // Notas
                                orderNotes,
                                handleNotesChange,
-
-                               // Estado y errores
-                               error,
-                               setError,
                                cartItems = []
                              }) => {
+
   // Hook para validación de stock
-  const {
-    isValidatingStock,
-    stockValidationResult,
-    validationError,
-    setValidationError
-  } = useStockValidation(cartItems);
+  const { isValidatingStock } = useStockValidation(cartItems);
 
   return (
     <div className="col-lg-8">
       {/* Banner de validación de stock */}
       <StockValidationBanner isValidating={isValidatingStock} />
-
-      {/* Mostrar errores */}
-      <ErrorSummary
-        error={error}
-        validationError={validationError}
-        onClearError={() => setError(null)}
-        onClearValidationError={() => setValidationError(null)}
-      />
 
       {/* Sección: Dirección de Envío */}
       <AddressSection
@@ -86,7 +62,7 @@ export const CheckoutForm = ({
         onNewAddressDataChange={handleNewAddressDataChange}
       />
 
-      {/* Sección: Método de Pago */}
+      {/* Sección: Metodo de Pago */}
       <PaymentSection
         paymentMethods={paymentMethods}
         selectedPaymentId={selectedPaymentId}
@@ -112,11 +88,6 @@ export const CheckoutForm = ({
         onNotesChange={handleNotesChange}
       />
 
-      {/* Información sobre validación de stock */}
-      <StockStatusSummary
-        validationResult={stockValidationResult}
-        isValidating={isValidatingStock}
-      />
     </div>
   );
 };

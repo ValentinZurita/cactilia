@@ -1,9 +1,7 @@
-// src/modules/shop/features/checkout/components/CheckoutContent.jsx
 import React, { useCallback } from 'react';
 import { useCart } from '../../cart/hooks/useCart';
 import { CheckoutForm } from './CheckoutForm';
 import { CheckoutSummaryPanel } from './CheckoutSummaryPanel';
-import { ErrorAlert } from '../../../components/common/ErrorAlert';
 import { useCheckout } from '../hooks/index.js'
 
 /**
@@ -13,6 +11,7 @@ import { useCheckout } from '../hooks/index.js'
  * @returns {JSX.Element} Contenido completo del proceso de checkout
  */
 export const CheckoutContent = () => {
+
   // Obtener datos del contexto de checkout
   const checkout = useCheckout();
 
@@ -32,6 +31,7 @@ export const CheckoutContent = () => {
    * basado en el estado actual del checkout
    */
   const isButtonDisabled = useCallback(() => {
+
     // Si hay problemas de stock, deshabilitar
     if (hasStockIssues) return true;
 
@@ -77,13 +77,10 @@ export const CheckoutContent = () => {
     <div className="container checkout-page my-5">
       <h1 className="checkout-title mb-4">Finalizar Compra</h1>
 
-      {/* Mostrar errores si existen */}
-      {checkout.error && <ErrorAlert message={checkout.error} />}
-
       <div className="row">
+
         {/* Formulario de checkout */}
         <CheckoutForm
-          // Pasar solo las props necesarias
           addresses={checkout.addresses}
           selectedAddressId={checkout.selectedAddressId}
           selectedAddressType={checkout.selectedAddressType}

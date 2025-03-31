@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useCart } from '../features/cart/hooks/useCart';
 import { useAddressManager, useBillingManager, usePaymentManager, useOrderProcessor } from './hooks/index.js';
 
@@ -10,13 +10,12 @@ const CheckoutContext = createContext(null);
 /**
  * Proveedor para el contexto de checkout
  * Este componente centraliza la gestión del proceso de checkout
- * pero delega las responsabilidades específicas a hooks personalizados
+ * delegando las responsabilidades específicas a hooks personalizados
  *
  * @param {Object} props - Propiedades del componente
  * @param {React.ReactNode} props.children - Componentes hijos
  */
 export const CheckoutProvider = ({ children }) => {
-  const dispatch = useDispatch();
   const stripe = useStripe();
   const elements = useElements();
   const { uid } = useSelector(state => state.auth);

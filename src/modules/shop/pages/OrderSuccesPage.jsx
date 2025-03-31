@@ -5,7 +5,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js';
 import { addMessage } from '../../../store/messages/messageSlice.js';
 import { formatDate } from '../utils/date.js';
-
 import {
   OrderSummaryHeader,
   OrderOverview,
@@ -17,14 +16,11 @@ import {
   OrderNotes,
   OrderNextSteps
 } from '../features/order/component/index.js';
-
-// Estilos
 import '../features/checkout/styles/oxxoVoucher.css';
 import '../features/checkout/styles/orderSuccess.css';
 import { OxxoVoucher } from '../features/checkout/components/payment/index.js'
 import { clearCartWithSync } from '../features/cart/store/index.js'
 
-// Nombre de la colección de órdenes en Firestore
 const ORDERS_COLLECTION = 'orders';
 
 /**
