@@ -7,6 +7,7 @@ import { getUserAddresses } from '../../user/services/addressService';
 import { getUserPaymentMethods } from '../../user/services/paymentService';
 import { processPayment } from '../features/checkout/services/index.js';
 import { clearCartWithSync } from '../features/cart/store/index.js';
+import { validateItemsStock } from '../services/productServices.js'
 
 // Crear el contexto
 const CheckoutContext = createContext(null);
@@ -239,7 +240,21 @@ export const CheckoutProvider = ({ children }) => {
     setError(null);
 
     try {
-      // Verificar stock
+      // Verificar stock en tiempo real
+      const stockCheck = await validateItemsStock(items);
+      if (!stockCheck.valid) {
+        // Formatear un mensaje de error amigable
+        let errorMessage = 'Algunos productos no están disponibles en la cantidad solicitada.';
+
+        if (stockCheck.outOfStockItems && stockCheck.outOfStockItems.length === 1) {
+          const item = stockCheck.outOfStockItems[0];
+          errorMessage = `"${item.name}" no está disponible en la cantidad solicitada. Solo hay ${item.currentStock} unidades disponibles.`;
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      // Verificar stock local (validación adicional)
       const checkoutValidation = validateCheckout();
       if (!checkoutValidation.valid) {
         throw new Error(checkoutValidation.error);
@@ -409,7 +424,7 @@ export const CheckoutProvider = ({ children }) => {
     selectedPaymentType, selectedPaymentId, paymentMethods, newCardData,
     requiresInvoice, fiscalData, orderNotes,
     uid, items, dispatch,
-    subtotal, taxes, shipping, finalTotal
+    subtotal, taxes, shipping, finalTotal, validateItemsStock
   ]);
 
   // Obtener dirección y método de pago seleccionados

@@ -1,0 +1,70 @@
+/* Estilos para el botón de carrito con validación de stock */
+.cart-btn-container {
+    position: relative;
+    display: inline-block;
+}
+
+.cart-btn {
+    transition: all 0.3s ease;
+}
+
+.cart-btn.adding {
+    background-color: var(--green-3, #34C749);
+    color: white;
+    transform: scale(1.1);
+}
+
+.cart-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Tooltip para mensajes de stock */
+.stock-tooltip {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease;
+    max-width: 200px;
+    text-align: center;
+}
+
+.stock-tooltip::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 6px 6px 6px;
+    border-style: solid;
+    border-color: transparent transparent #f5c6cb transparent;
+}
+
+/* Animación para la aparición del tooltip */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Animaciones para el botón */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.btn-green-lg.btn-added {
+    background-color: var(--green-3, #34C749);
+    color: white;
+    animation: pulse 0.5s ease;
+}

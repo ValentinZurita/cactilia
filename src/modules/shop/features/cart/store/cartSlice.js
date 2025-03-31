@@ -1,4 +1,3 @@
-// src/modules/shop/features/cart/store/cartSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
 export const cartSlice = createSlice({
@@ -31,6 +30,38 @@ export const cartSlice = createSlice({
           stock: product.stock || 0
         });
       }
+    },
+
+    // Actualizar un solo item con stock actualizado
+    updateCartItemStock: (state, action) => {
+      const { id, stock } = action.payload;
+
+      const item = state.items.find(item => item.id === id);
+      if (item) {
+        item.stock = stock;
+
+        // Ajustar cantidad si excede el stock
+        if (item.quantity > stock) {
+          item.quantity = Math.max(0, stock);
+        }
+      }
+    },
+
+    // Actualizar múltiples items con stock actualizado
+    updateMultipleItemsStock: (state, action) => {
+      const stockMap = action.payload;
+
+      state.items.forEach(item => {
+        if (stockMap[item.id] !== undefined) {
+          const newStock = stockMap[item.id];
+          item.stock = newStock;
+
+          // Ajustar cantidad si excede el stock
+          if (item.quantity > newStock) {
+            item.quantity = Math.max(0, newStock);
+          }
+        }
+      });
     },
 
     removeFromCart: (state, action) => {
@@ -80,7 +111,9 @@ export const {
   setCartItems,
   setSyncStatus,
   setSyncError,
-  setLastSync
+  setLastSync,
+  updateCartItemStock,
+  updateMultipleItemsStock,
 } = cartSlice.actions;
 
 // Exportar el reducer directamente

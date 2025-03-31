@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+// src/modules/shop/features/cart/components/CartButton.jsx
+import { useState, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useCart } from '../hooks/useCart.js';
+import '../styles/cartButton.css';
 
 /**
  * Botón reutilizable para añadir productos al carrito
@@ -25,37 +27,71 @@ export const CartButton = ({
                            }) => {
   const { addToCart, isInCart, getItem } = useCart();
   const [adding, setAdding] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   // Verificar stock disponible
   const hasStock = product && product.stock > 0;
-  const isDisabled = disabled || !hasStock;
+  const isDisabled = disabled || !hasStock || validating;
 
   // Verificar si está en el carrito y si tiene stock suficiente
   const cartItem = isInCart(product?.id) ? getItem(product.id) : null;
-  let stockWarning = null;
+  const [stockWarning, setStockWarning] = useState(null);
 
-  if (cartItem) {
-    const totalQuantity = cartItem.quantity + quantity;
-    if (totalQuantity > product.stock) {
-      stockWarning = `Stock máximo: ${product.stock}`;
+  // Actualizar el estado de stock cuando cambia el carrito
+  useEffect(() => {
+    if (product && cartItem) {
+      const totalQuantity = cartItem.quantity + quantity;
+      if (product.stock <= 0) {
+        setStockWarning('Sin stock disponible');
+      } else if (totalQuantity > product.stock) {
+        setStockWarning(`Solo quedan ${product.stock} unidades disponibles`);
+      } else {
+        setStockWarning(null);
+      }
+    } else if (product && product.stock <= 0) {
+      setStockWarning('Sin stock disponible');
+    } else {
+      setStockWarning(null);
     }
-  }
+  }, [product, cartItem, quantity]);
 
   // Manejar clic en el botón
-  const handleClick = useCallback((e) => {
+  const handleClick = useCallback(async (e) => {
     e.stopPropagation(); // Prevenir propagación de eventos
 
     if (isDisabled || adding) return;
 
     // Si ya está en el carrito y excedería el stock, no hacer nada
-    if (stockWarning) return;
+    if (stockWarning) {
+      setErrorMessage(stockWarning);
+      setTimeout(() => setErrorMessage(null), 3000);
+      return;
+    }
 
-    // Añadir al carrito
-    addToCart(product, quantity);
+    try {
+      // Mostrar indicador de validación
+      setValidating(true);
 
-    // Mostrar animación de retroalimentación
-    setAdding(true);
-    setTimeout(() => setAdding(false), 800);
+      // Añadir al carrito con validación en tiempo real
+      const result = await addToCart(product, quantity);
+
+      if (result.success) {
+        // Mostrar animación de retroalimentación
+        setAdding(true);
+        setTimeout(() => setAdding(false), 800);
+      } else {
+        // Mostrar mensaje de error
+        setErrorMessage(result.message);
+        setTimeout(() => setErrorMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error('Error al agregar al carrito:', error);
+      setErrorMessage('Error al agregar al carrito. Intente nuevamente.');
+      setTimeout(() => setErrorMessage(null), 3000);
+    } finally {
+      setValidating(false);
+    }
   }, [isDisabled, adding, stockWarning, addToCart, product, quantity]);
 
   // Clases de tamaño
@@ -68,21 +104,32 @@ export const CartButton = ({
   // Versión de icono
   if (variant === "icon") {
     return (
-      <button
-        className={`btn cart-btn ${adding ? 'adding' : ''} ${sizeClasses[size]} ${className}`}
-        disabled={isDisabled || !!stockWarning}
-        onClick={handleClick}
-        aria-label="Agregar al carrito"
-        title={
-          !hasStock
-            ? "Sin stock disponible"
-            : stockWarning
-              ? stockWarning
-              : "Agregar al carrito"
-        }
-      >
-        <i className="bi bi-cart cart-icon"></i>
-      </button>
+      <div className="cart-btn-container position-relative">
+        <button
+          className={`btn cart-btn ${adding ? 'adding' : ''} ${sizeClasses[size]} ${className}`}
+          disabled={isDisabled || !!stockWarning}
+          onClick={handleClick}
+          aria-label="Agregar al carrito"
+          title={
+            validating ? "Verificando disponibilidad..." :
+              !hasStock ? "Sin stock disponible" :
+                stockWarning ? stockWarning :
+                  "Agregar al carrito"
+          }
+        >
+          {validating ? (
+            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          ) : (
+            <i className="bi bi-cart cart-icon"></i>
+          )}
+        </button>
+
+        {errorMessage && (
+          <div className="stock-tooltip">
+            {errorMessage}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -94,15 +141,24 @@ export const CartButton = ({
       onClick={handleClick}
       title={stockWarning || ""}
     >
-      <i className="bi bi-cart me-2"></i>
-      {!hasStock ? (
-        "Sin stock"
-      ) : stockWarning ? (
-        stockWarning
-      ) : adding ? (
-        "¡Agregado!"
+      {validating ? (
+        <>
+          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Verificando...
+        </>
       ) : (
-        "Agregar al carrito"
+        <>
+          <i className="bi bi-cart me-2"></i>
+          {!hasStock ? (
+            "Sin stock"
+          ) : stockWarning ? (
+            stockWarning
+          ) : adding ? (
+            "¡Agregado!"
+          ) : (
+            "Agregar al carrito"
+          )}
+        </>
       )}
     </button>
   );

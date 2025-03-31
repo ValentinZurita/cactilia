@@ -1,4 +1,5 @@
 import '../../../../../styles/pages/cart.css';
+import { useState } from 'react';
 
 /**
  * Componente que representa un item individual en el carrito
@@ -11,6 +12,8 @@ import '../../../../../styles/pages/cart.css';
  * @returns {JSX.Element}
  */
 export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
+  const [errorMessage, setErrorMessage] = useState(null);
+
   // Verificar disponibilidad de stock
   const hasStock = product.stock > 0;
   const stockSufficient = hasStock && product.quantity <= product.stock;
@@ -22,7 +25,16 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
   // Handler seguro para incremento
   const handleIncrement = () => {
     if (canIncrement) {
-      onIncrement();
+      const result = onIncrement();
+
+      // Mostrar mensaje de error si la operación falla
+      if (result && !result.success && result.message) {
+        setErrorMessage(result.message);
+        setTimeout(() => setErrorMessage(null), 3000);
+      }
+    } else {
+      setErrorMessage(`Máximo stock disponible: ${product.stock}`);
+      setTimeout(() => setErrorMessage(null), 3000);
     }
   };
 
@@ -31,6 +43,20 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
     if (product.quantity > 1) {
       onDecrement();
     }
+  };
+
+  // Calcular mensaje de stock
+  const getStockMessage = () => {
+    if (!hasStock) return "Sin stock";
+    if (!stockSufficient) return `Stock disponible: ${product.stock}`;
+    return "En stock";
+  };
+
+  // Calcular clase CSS para mensaje de stock
+  const getStockClass = () => {
+    if (!hasStock) return "text-danger";
+    if (!stockSufficient) return "text-warning";
+    return "text-success";
   };
 
   return (
@@ -45,18 +71,18 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
           <span className="me-2 fw-bold">${totalPrice}</span>
 
           {/* Indicador de stock */}
-          {hasStock ? (
-            stockSufficient ? (
-              <span className="text-success fw-light">En stock</span>
-            ) : (
-              <span className="text-warning fw-light">
-                Stock disponible: {product.stock}
-              </span>
-            )
-          ) : (
-            <span className="text-danger fw-light">Sin stock</span>
-          )}
+          <span className={`${getStockClass()} fw-light`}>
+            {getStockMessage()}
+          </span>
         </div>
+
+        {/* Mensaje de error si existe */}
+        {errorMessage && (
+          <div className="stock-error-message text-danger small mb-2">
+            <i className="bi bi-exclamation-circle me-1"></i>
+            {errorMessage}
+          </div>
+        )}
 
         {/* Acciones: cantidad y botón eliminar */}
         <div className="cart-item-actions d-flex align-items-center">
