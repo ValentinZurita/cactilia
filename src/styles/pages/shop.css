@@ -181,6 +181,157 @@
  */
 
 
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Fondo más oscuro para mejor visibilidad */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Asegurar que esté por encima de todo */
+    overflow: auto; /* Permitir scroll si es necesario */
+
+    /* Importante: asegurarse que estos valores no estén siendo sobrescritos */
+    opacity: 1 !important;
+    visibility: visible !important;
+
+    /* Agregar transition para mejor experiencia */
+    transition: opacity 0.3s ease;
+}
+
+/*
+   Solución para el contenedor del modal
+   - Es posible que esté fuera de la vista (top/left incorrectos)
+   - Podría tener dimensiones erróneas
+*/
+.modal-container {
+    background-color: white;
+    width: 90%;
+    max-width: 1000px;
+    min-height: 300px; /* Usar min-height en lugar de height fija */
+    max-height: 90vh; /* Limitar altura máxima */
+    display: flex;
+    flex-direction: row;
+    border-radius: 12px;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); /* Sombra más prominente */
+    overflow: auto; /* Permitir scroll dentro del modal si el contenido es grande */
+    margin: 20px; /* Margen para evitar que quede pegado a los bordes */
+
+    /* Asegurar visibilidad */
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important; /* Evitar que transformaciones lo saquen de vista */
+}
+
+/*
+   Corrección para la animación
+   Esta puede estar haciendo que el modal sea invisible durante o después de la animación
+*/
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/*
+   Responsive fixes para diferentes tamaños de pantalla
+*/
+@media (max-width: 768px) {
+    .modal-container {
+        flex-direction: column;
+        width: 95%;
+        height: auto;
+        max-height: 85vh;
+    }
+
+    .modal-img-container {
+        width: 100% !important;
+        height: 250px !important;
+        border-radius: 12px 12px 0 0 !important;
+    }
+
+    .modal-content {
+        width: 100% !important;
+        border-radius: 0 0 12px 12px !important;
+    }
+}
+
+/*
+   Asegurar que el botón de cierre sea visible y tenga el z-index adecuado
+*/
+.modal-close {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    background: var(--green-3);
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10000; /* Asegurar que esté por encima del modal */
+    padding: 0; /* Evitar padding que pueda afectar el alineamiento */
+    line-height: 1; /* Centrar correctamente el símbolo X */
+}
+
+/* Asegurar que la imagen del producto se muestre correctamente */
+.modal-img-container {
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px 0 0 12px;
+    background-color: #f8f8f8; /* Color de fondo por si la imagen no carga */
+}
+
+.modal-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block; /* Eliminar espacio blanco bajo la imagen */
+}
+
+/* Corrección para el contenido del modal */
+.modal-content {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 0 12px 12px 0;
+    overflow: auto; /* Permitir scroll si el contenido es grande */
+}
+
+.modal-details {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+
+
+
+
+
+
+
+
 .modal-backdrop {
     position: fixed;
     top: 0;
