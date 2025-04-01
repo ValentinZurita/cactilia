@@ -1,0 +1,130 @@
+/* Estilos para mejorar las tarjetas de productos con efectos hover */
+
+.product-card {
+    transition: all 0.3s ease-in-out;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: white;
+    position: relative;
+    z-index: 1;
+    will-change: transform, box-shadow;
+}
+
+/* Efecto de elevación al pasar el mouse */
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.05);
+    z-index: 2;
+}
+
+/* Efecto sutil en la imagen al hacer hover */
+.product-card:hover .card-img-top {
+    transform: scale(1.04);
+    transition: transform 0.5s ease;
+}
+
+.card-img-top {
+    transition: transform 0.3s ease;
+    object-fit: cover;
+    height: 200px;
+    width: 100%;
+}
+
+/* Mejora en la presentación del nombre y precio */
+.product-card h5 {
+    transition: color 0.3s ease;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.product-card:hover h5 {
+
+}
+
+/* Estilo para la categoría */
+.category-label {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #f5f5f5;
+    font-size: 0.5rem;
+    color: #555;
+    transition: all 0.3s ease;
+}
+
+.product-card:hover .category-label {
+    background-color: #e8f5e9;
+    color: var(--green-3);
+}
+
+
+.product-price {
+    margin-top: 0.1rem;
+    font-size: 0.7rem;
+}
+
+
+/* Efecto para el precio al hacer hover */
+.product-card:hover .text-soft-black,
+.product-card:hover .product-price {
+
+
+}
+
+/* Animación de "respiración" para el botón de carrito en hover */
+.product-card:hover .cart-button-wrapper button {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(52, 199, 73, 0.2);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 5px rgba(52, 199, 73, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(52, 199, 73, 0);
+    }
+}
+
+/* Badge de agotado con más estilo */
+.status-badge {
+    color: white;
+    font-size: .5rem;
+    border-radius: 12px;
+    backdrop-filter: blur(2px);
+    padding: 4px 8px;
+    transition: all 0.3s ease;
+}
+
+.product-card:hover .status-badge {
+    background-color: rgba(161, 161, 161, 0.60);
+    transform: scale(1.05);
+}
+
+/* Badge para stock bajo */
+.low-stock-badge {
+    font-size: .5rem;
+    border-radius: 12px;
+    padding: 4px 8px;
+    transition: all 0.3s ease;
+}
+
+.product-card:hover .low-stock-badge {
+    transform: scale(1.05);
+}
+
+/* Efecto táctil para dispositivos móviles */
+@media (hover: none) {
+    .product-card:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+}

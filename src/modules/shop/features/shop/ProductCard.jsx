@@ -1,9 +1,11 @@
+import React from 'react';
 import '../../../../styles/pages/shop.css';
-import { CartButton } from '../cart/components/index.js'
+import '../../../shop/features/shop/styles/ProductCartd.css';
+import { CartButton } from '../cart/components/index.js';
 
 export const ProductCard = ({ product, onProductClick }) => {
   // Destructure product data
-  const { id, name, mainImage, price, category } = product;
+  const { id, name, mainImage, price, category, stock } = product;
 
   /**
    * Handle the entire card click => open modal
@@ -31,44 +33,50 @@ export const ProductCard = ({ product, onProductClick }) => {
     console.log('ProductCard: Propagación detenida en wrapper del CartButton');
   };
 
+  // Determinar si el producto está agotado
+  const isOutOfStock = stock === 0;
+
   return (
     <div
-      className="card shadow-sm h-100 product-card"
-      style={{ cursor: 'pointer' }}
+      className="card product-card"
       onClick={handleCardClick}
     >
-      {/* Product image container - sin badges */}
-      <div className="position-relative">
+      {/* Contenedor de imagen con efecto de elevación */}
+      <div className="product-image-container">
         <img
           src={mainImage}
           className="card-img-top"
           alt={name}
-          style={{ objectFit: 'cover', height: '200px' }}
         />
 
-        {/* Solo mantenemos el badge de sin stock que es importante */}
-        {product.stock === 0 && (
+        {/* Badge de disponibilidad */}
+        {isOutOfStock && (
           <span className="position-absolute top-0 start-0 m-2 badge status-badge">
             Agotado
           </span>
         )}
+
+        {/* Badge de stock bajo (opcional) */}
+        {!isOutOfStock && stock <= 5 && stock > 0 && (
+          <span className="position-absolute top-0 start-0 m-2 badge bg-warning text-dark low-stock-badge">
+            ¡Solo {stock} disponibles!
+          </span>
+        )}
       </div>
 
-      {/* Product name, price, category */}
-      <div className="card-body d-flex flex-column">
-        {/* Product name */}
-        <h5 className="text-md mb-xs">{name}</h5>
+      {/* Información del producto */}
+      <div className="card-body product-info d-flex flex-column">
+        <h5 className="product-title">{name}</h5>
 
-        {/* Price and category */}
-        <div className="d-flex justify-content-between align-items-center">
+        <div className="d-flex justify-content-between align-items-center mt-auto">
           <div>
             <div className="d-flex gap-2">
               <p className="category-label">{category}</p>
             </div>
-            <p className="text-soft-black text-xs mb-xs">${price.toFixed(2)}</p>
+            <p className="text-soft-black product-price">${price.toFixed(2)}</p>
           </div>
 
-          {/* Add to Cart button - Con un div que detiene la propagación */}
+          {/* Botón de carrito */}
           <div
             className="cart-button-wrapper"
             onClick={handleCartButtonWrapperClick}
@@ -76,7 +84,7 @@ export const ProductCard = ({ product, onProductClick }) => {
             <CartButton
               product={product}
               variant="icon"
-              disabled={product.stock === 0}
+              disabled={isOutOfStock}
             />
           </div>
         </div>
