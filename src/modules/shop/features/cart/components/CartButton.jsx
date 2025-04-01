@@ -1,5 +1,5 @@
 import { useCart } from '../hooks/useCart';
-import '../../shop/styles/cartButton.css';
+import '../styles/cartButton.css';
 
 /**
  * Botón de carrito elegante y minimalista

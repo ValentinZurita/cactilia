@@ -1,6 +1,6 @@
 import React from 'react';
 import '../../../../styles/pages/shop.css';
-import '../../../shop/features/shop/styles/ProductCartd.css';
+import '../cart/styles/ProductCartd.css';
 import { CartButton } from '../cart/components/index.js';
 import { useAsync } from '../../hooks/useAsync';
 import { getProductCurrentStock } from '../../services/productServices.js'

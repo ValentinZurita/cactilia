@@ -9,6 +9,7 @@ import { formatPrice } from '../../../utils/index.js';
  * @returns {JSX.Element}
  */
 export const CartTotal = ({ items = [] }) => {
+
   // Cálculos memoizados para evitar recálculos innecesarios
   const calculatedValues = useMemo(() => {
     // Validar que items sea un array
