@@ -1,7 +1,5 @@
 import '../../../../styles/pages/shop.css';
-import { ProductStatus } from './ProductStatus.jsx'
 import { CartButton } from '../cart/components/index.js'
-
 
 export const ProductCard = ({ product, onProductClick }) => {
   // Destructure product data
@@ -39,7 +37,7 @@ export const ProductCard = ({ product, onProductClick }) => {
       style={{ cursor: 'pointer' }}
       onClick={handleCardClick}
     >
-      {/* Product image container with status badge */}
+      {/* Product image container - sin badges */}
       <div className="position-relative">
         <img
           src={mainImage}
@@ -48,15 +46,10 @@ export const ProductCard = ({ product, onProductClick }) => {
           style={{ objectFit: 'cover', height: '200px' }}
         />
 
-        {/* Status badge - top right */}
-        <div className="position-absolute top-0 end-0 m-2">
-          <ProductStatus productId={id} />
-        </div>
-
-        {/* Stock badge - top left */}
+        {/* Solo mantenemos el badge de sin stock que es importante */}
         {product.stock === 0 && (
-          <span className="position-absolute top-0 start-0 m-2 badge bg-danger">
-            Sin Stock
+          <span className="position-absolute top-0 start-0 m-2 badge status-badge">
+            Agotado
           </span>
         )}
       </div>
