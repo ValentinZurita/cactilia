@@ -173,30 +173,3 @@
     color: var(--gray-500);
     cursor: not-allowed;
 }
-
-
-
-/*
-    PRODUCT IMAGE CAROUSEL FOR MODAL
- */
-
-
-.product-image-carousel-container {
-    position: relative;
-    height: 100px;
-    margin: 20px 0;
-}
-
-.carousel-image-wrapper {
-    height: 100%;
-    width: 100%;
-    border-radius: 10px;
-    overflow: hidden;
-
-}
-
-.product-image-swiper .swiper-slide {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
