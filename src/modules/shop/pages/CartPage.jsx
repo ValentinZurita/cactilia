@@ -1,27 +1,27 @@
-// src/modules/shop/pages/CartPage.jsx
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import '../../../styles/pages/cart.css';
 import { useCart } from '../features/cart/hooks/useCart';
-import { CartItem, CartTotal, EmptyCart, StockAlert } from '../features/cart/components/index.js';
-import { useSelector } from 'react-redux';
+import { CartItem, CartTotal, EmptyCart } from '../features/cart/components/index.js';
+import { useDispatch, useSelector } from 'react-redux'
+import { addMessage } from '../../../store/messages/messageSlice.js'
 
 export const CartPage = () => {
   const navigate = useNavigate();
   const { status } = useSelector((state) => state.auth);
-  const [actionError, setActionError] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
 
   // Referencias para control de validación
   const validationTimerRef = useRef(null);
   const hasValidatedRef = useRef(false);
 
+  // Referencia para el dispatch de Redux
+  const dispatch = useDispatch();
+
   const {
     items: cartItems,
     itemsCount,
-    hasOutOfStockItems,
     hasStockIssues,
-    insufficientStockItems,
     increaseQuantity,
     decreaseQuantity,
     removeFromCart,
@@ -74,24 +74,30 @@ export const CartPage = () => {
       return;
     }
 
-    // Verificar stock en tiempo real antes de proceder
     setIsValidating(true);
     try {
       const stockValidation = await forceStockValidation();
 
       if (!stockValidation.valid) {
-        setActionError(
-          stockValidation.error ||
-          'Hay productos con problemas de stock en tu carrito. Por favor, revisa las cantidades antes de continuar.'
-        );
-        setTimeout(() => setActionError(null), 5000);
+        // Usando el slice de mensajes para mostrar un toast
+        dispatch(addMessage({
+          type: 'warning',
+          text: stockValidation.error || 'Hay productos con problemas de stock',
+          autoHide: true,
+          duration: 3000
+        }));
         return;
       }
 
       navigate('/shop/checkout');
     } catch (error) {
       console.error('Error validando stock para checkout:', error);
-      setActionError('Error al verificar disponibilidad. Por favor, inténtalo de nuevo.');
+      dispatch(addMessage({
+        type: 'error',
+        text: 'Error al verificar disponibilidad',
+        autoHide: true,
+        duration: 3000
+      }));
     } finally {
       setIsValidating(false);
     }
@@ -120,31 +126,6 @@ export const CartPage = () => {
           </p>
         </div>
       </div>
-
-      {/* Banner de validación - Mostrar solo mientras se valida */}
-      {(isValidating || isValidatingStock) && (
-        <div className="alert alert-info mb-4">
-          <div className="d-flex align-items-center">
-            <div className="spinner-border spinner-border-sm me-2" role="status">
-              <span className="visually-hidden">Validando...</span>
-            </div>
-            <span>Verificando disponibilidad de productos...</span>
-          </div>
-        </div>
-      )}
-
-      {/* Mostrar alerta de error si existe */}
-      {actionError && (
-        <div className="alert alert-danger mb-4">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          {actionError}
-        </div>
-      )}
-
-      {/* Mostrar alerta de stock si hay problemas */}
-      {hasStockIssues && (
-        <StockAlert items={cartItems} className="mb-4" />
-      )}
 
       {/* Layout con dos columnas en desktop */}
       <div className="row">
@@ -191,16 +172,6 @@ export const CartPage = () => {
                 </>
               )}
             </button>
-
-            <div className="text-center mt-3">
-              <button
-                className="btn btn-link text-muted text-decoration-none"
-                onClick={() => navigate('/shop')}
-              >
-                <i className="bi bi-arrow-left me-1"></i>
-                Continuar comprando
-              </button>
-            </div>
           </div>
         </div>
       </div>

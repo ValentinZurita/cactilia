@@ -9,7 +9,6 @@ import { formatPrice } from '../../../utils/index.js';
  * @returns {JSX.Element}
  */
 export const CartTotal = ({ items = [] }) => {
-
   // Cálculos memoizados para evitar recálculos innecesarios
   const calculatedValues = useMemo(() => {
     // Validar que items sea un array
@@ -17,9 +16,7 @@ export const CartTotal = ({ items = [] }) => {
       return {
         subtotal: 0,
         taxes: 0,
-        shipping: 0,
-        total: 0,
-        isFreeShipping: true
+        total: 0
       };
     }
 
@@ -32,29 +29,21 @@ export const CartTotal = ({ items = [] }) => {
 
     // Constantes para cálculos
     const taxRate = 0.16; // 16%
-    const minFreeShipping = 500;
-    const shippingCost = 50;
 
     // Calcular impuestos (IVA incluido en el precio en México)
     const taxes = subtotal * taxRate / (1 + taxRate);
 
-    // Determinar si el envío es gratuito
-    const isFreeShipping = subtotal >= minFreeShipping;
-    const shipping = isFreeShipping ? 0 : shippingCost;
-
     // Calcular total final
-    const total = subtotal + shipping;
+    const total = subtotal;
 
     return {
       subtotal,
       taxes,
-      shipping,
-      total,
-      isFreeShipping
+      total
     };
   }, [items]);
 
-  const { subtotal, taxes, shipping, total, isFreeShipping } = calculatedValues;
+  const { subtotal, taxes, total } = calculatedValues;
 
   return (
     <div className="cart-total">
@@ -75,9 +64,7 @@ export const CartTotal = ({ items = [] }) => {
       {/* Shipping */}
       <div className="d-flex justify-content-between mb-3">
         <span className="text-muted">Envío:</span>
-        <span className={isFreeShipping ? "text-success" : ""}>
-          {isFreeShipping ? 'Gratis' : formatPrice(shipping)}
-        </span>
+        <span className="text-muted text-sm">Pendiente</span>
       </div>
 
       <hr />
@@ -94,10 +81,9 @@ export const CartTotal = ({ items = [] }) => {
           <i className="bi bi-shield-check me-2 text-success"></i>
           <small>Pago seguro garantizado</small>
         </div>
-
         <div className="d-flex align-items-center text-muted">
           <i className="bi bi-truck me-2 text-success"></i>
-          <small>Envío gratis en compras mayores a $500</small>
+          <small>Costo de envío calculado al finalizar la compra</small>
         </div>
       </div>
     </div>

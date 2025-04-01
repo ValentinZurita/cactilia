@@ -1,4 +1,3 @@
-// src/modules/shop/features/cart/components/StockAlert.jsx
 import React from 'react';
 import PropTypes from 'prop-types';
 
