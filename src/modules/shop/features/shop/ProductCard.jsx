@@ -1,24 +1,41 @@
 import '../../../../styles/pages/shop.css';
-import { CartButton } from '../cart/components/CartButton.jsx';
-import { ProductStatus } from './ProductStatus.jsx';
+import { ProductStatus } from './ProductStatus.jsx'
+import { CartButton } from '../cart/components/index.js'
+
 
 export const ProductCard = ({ product, onProductClick }) => {
-
   // Destructure product data
   const { id, name, mainImage, price, category } = product;
 
   /**
    * Handle the entire card click => open modal
+   * Verificar que el clic no fue en el botón de carrito
    */
-  const handleCardClick = () => {
+  const handleCardClick = (e) => {
+    // Verificar que el clic no fue en el botón de carrito o sus descendientes
+    if (e.target.closest('.cart-btn')) {
+      console.log('Clic en botón de carrito, ignorando apertura de modal');
+      return;
+    }
+
+    console.log('ProductCard: handleCardClick ejecutado para producto:', name);
+
     if (onProductClick) {
       onProductClick(product);
     }
   };
 
+  /**
+   * Prevenir la propagación del evento al hacer clic en el botón de carrito
+   */
+  const handleCartButtonWrapperClick = (e) => {
+    e.stopPropagation();
+    console.log('ProductCard: Propagación detenida en wrapper del CartButton');
+  };
+
   return (
     <div
-      className="card shadow-sm h-100"
+      className="card shadow-sm h-100 product-card"
       style={{ cursor: 'pointer' }}
       onClick={handleCardClick}
     >
@@ -58,12 +75,17 @@ export const ProductCard = ({ product, onProductClick }) => {
             <p className="text-soft-black text-xs mb-xs">${price.toFixed(2)}</p>
           </div>
 
-          {/* Add to Cart button */}
-          <CartButton
-            product={product}
-            variant="icon"
-            disabled={product.stock === 0}
-          />
+          {/* Add to Cart button - Con un div que detiene la propagación */}
+          <div
+            className="cart-button-wrapper"
+            onClick={handleCartButtonWrapperClick}
+          >
+            <CartButton
+              product={product}
+              variant="icon"
+              disabled={product.stock === 0}
+            />
+          </div>
         </div>
       </div>
     </div>
