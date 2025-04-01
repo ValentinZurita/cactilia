@@ -2,10 +2,21 @@ import React from 'react';
 import '../../../../styles/pages/shop.css';
 import '../../../shop/features/shop/styles/ProductCartd.css';
 import { CartButton } from '../cart/components/index.js';
+import { useAsync } from '../../hooks/useAsync';
+import { getProductCurrentStock } from '../../services/productServices.js'
 
 export const ProductCard = ({ product, onProductClick }) => {
   // Destructure product data
-  const { id, name, mainImage, price, category, stock } = product;
+  const { id, name, mainImage, price, category } = product;
+
+  // Hook para obtener stock actual en tiempo real
+  const {
+    data: currentStock,
+    isPending: isLoadingStock
+  } = useAsync(() => getProductCurrentStock(id), true);
+
+  // Determinar si el producto está agotado
+  const isOutOfStock = currentStock === 0 || isLoadingStock;
 
   /**
    * Handle the entire card click => open modal
@@ -33,9 +44,6 @@ export const ProductCard = ({ product, onProductClick }) => {
     console.log('ProductCard: Propagación detenida en wrapper del CartButton');
   };
 
-  // Determinar si el producto está agotado
-  const isOutOfStock = stock === 0;
-
   return (
     <div
       className="card product-card"
@@ -57,9 +65,9 @@ export const ProductCard = ({ product, onProductClick }) => {
         )}
 
         {/* Badge de stock bajo (opcional) */}
-        {!isOutOfStock && stock <= 5 && stock > 0 && (
+        {!isOutOfStock && currentStock <= 5 && currentStock > 0 && (
           <span className="position-absolute top-0 start-0 m-2 badge bg-warning text-dark low-stock-badge">
-            ¡Solo {stock} disponibles!
+            ¡Solo {currentStock} disponibles!
           </span>
         )}
       </div>
@@ -82,7 +90,7 @@ export const ProductCard = ({ product, onProductClick }) => {
             onClick={handleCartButtonWrapperClick}
           >
             <CartButton
-              product={product}
+              product={{...product, stock: currentStock}}
               variant="icon"
               disabled={isOutOfStock}
             />
