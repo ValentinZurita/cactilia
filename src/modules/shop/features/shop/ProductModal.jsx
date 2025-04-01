@@ -4,7 +4,7 @@ import { ProductImageCarousel } from './ProductModalCarousel.jsx';
 import { useCart } from '../cart/hooks/useCart.js';
 
 /**
- * ProductModal component
+ * ProductModal component - Optimizado para móvil
  * @param {Object} product - The currently selected product
  * @param {boolean} isOpen - Whether the modal is open
  * @param {Function} onClose - Function to close the modal
@@ -94,77 +94,81 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
           ✕
         </button>
 
-        {/* Contenedor de la imagen */}
-        <div className="prod-modal__image-wrap">
-          <img
-            src={currentImage || product.mainImage}
-            alt={product.name}
-            className="prod-modal__image"
-          />
-        </div>
+        {/* Contenedor interno */}
+        <div className="prod-modal__inner-container">
+          {/* Contenedor de la imagen */}
+          <div className="prod-modal__image-wrap">
+            <img
+              src={currentImage || product.mainImage}
+              alt={product.name}
+              className="prod-modal__image"
+            />
+          </div>
 
-        {/* Contenedor del contenido */}
-        <div className="prod-modal__content">
-          <div className="prod-modal__details">
-            {/* Nombre del producto */}
-            <h3 className="prod-modal__title">{product.name}</h3>
+          {/* Contenedor del contenido */}
+          <div className="prod-modal__content">
+            <div className="prod-modal__details">
+              {/* Nombre del producto (ahora sin margen inferior en móvil) */}
+              <h3 className="prod-modal__title">{product.name}</h3>
 
-            {/* Categoría */}
-            <div className="prod-modal__category-wrap">
-              <span className="prod-modal__category">{product.category || 'Sin categoría'}</span>
-              {product.stock === 0 && (
-                <span className="prod-modal__stock-label">Sin Stock</span>
+              {/* Categoría (ahora junto al título en móvil) */}
+              <div className="prod-modal__category-wrap">
+                <span className="prod-modal__category">{product.category || 'Sin categoría'}</span>
+                {product.stock === 0 && (
+                  <span className="prod-modal__stock-label">Sin Stock</span>
+                )}
+              </div>
+
+              {/* Precio */}
+              <p className="prod-modal__price">${product.price.toFixed(2)}</p>
+
+              {/* Descripción */}
+              <p className="prod-modal__desc">{product.description || 'Sin descripción disponible'}</p>
+
+              {/* Carrusel de imágenes (solo si hay más de una imagen) */}
+              {hasMultipleImages && (
+                <div className="prod-modal__carousel-container">
+                  {/* Título opcional (ahora oculto en móvil) */}
+                  <h4 className="prod-modal__section-title">Imágenes del producto</h4>
+                  <ProductImageCarousel
+                    images={product.images}
+                    onSelectImage={(img) => setCurrentImage(img)}
+                  />
+                </div>
               )}
-            </div>
 
-            {/* Precio */}
-            <p className="prod-modal__price">${product.price.toFixed(2)}</p>
-
-            {/* Descripción */}
-            <p className="prod-modal__desc">{product.description || 'Sin descripción disponible'}</p>
-
-            {/* Carrusel de imágenes (solo si hay más de una imagen) */}
-            {hasMultipleImages && (
-              <div className="prod-modal__carousel-container">
-                <h4 className="prod-modal__section-title">Imágenes del producto</h4>
-                <ProductImageCarousel
-                  images={product.images}
-                  onSelectImage={(img) => setCurrentImage(img)}
-                />
+              {/* Control de cantidad (simplificado en móvil) */}
+              <div className="prod-modal__quantity-row">
+                <div className="prod-modal__quantity">
+                  <button
+                    className="prod-modal__quantity-btn"
+                    onClick={handleDecrement}
+                    disabled={product.stock === 0}
+                  >
+                    <i className="bi bi-dash"></i>
+                  </button>
+                  <span className="prod-modal__quantity-num">{quantity}</span>
+                  <button
+                    className="prod-modal__quantity-btn"
+                    onClick={handleIncrement}
+                    disabled={product.stock === 0}
+                  >
+                    <i className="bi bi-plus"></i>
+                  </button>
+                </div>
+                <p className="prod-modal__total">Total: ${totalPrice}</p>
               </div>
-            )}
 
-            {/* Control de cantidad */}
-            <div className="prod-modal__quantity-row">
-              <div className="prod-modal__quantity">
-                <button
-                  className="prod-modal__quantity-btn"
-                  onClick={handleDecrement}
-                  disabled={product.stock === 0}
-                >
-                  <i className="bi bi-dash"></i>
-                </button>
-                <span className="prod-modal__quantity-num">{quantity}</span>
-                <button
-                  className="prod-modal__quantity-btn"
-                  onClick={handleIncrement}
-                  disabled={product.stock === 0}
-                >
-                  <i className="bi bi-plus"></i>
-                </button>
-              </div>
-              <p className="prod-modal__total">Total: ${totalPrice}</p>
+              {/* Botón de agregar al carrito */}
+              <button
+                className={`prod-modal__cart-btn ${added ? "prod-modal__cart-btn--added" : ""}`}
+                onClick={handleAddToCartClick}
+                disabled={added || product.stock === 0}
+              >
+                <i className="bi bi-cart me-2"></i>
+                {product.stock === 0 ? "Sin stock" : added ? "Producto agregado" : "Agregar al Carrito"}
+              </button>
             </div>
-
-            {/* Botón de agregar al carrito */}
-            <button
-              className={`prod-modal__cart-btn ${added ? "prod-modal__cart-btn--added" : ""}`}
-              onClick={handleAddToCartClick}
-              disabled={added || product.stock === 0}
-            >
-              <i className="bi bi-cart me-2"></i>
-              {product.stock === 0 ? "Sin stock" : added ? "Producto agregado" : "Agregar al Carrito"}
-            </button>
           </div>
         </div>
       </div>

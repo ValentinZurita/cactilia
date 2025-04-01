@@ -1,12 +1,11 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { Pagination } from 'swiper/modules';
 import 'swiper/css';
-import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import '../../../shop/styles/productModalCarousel.css';
 
 /**
- * ProductImageCarousel Component - Versión mejorada
+ * ProductImageCarousel Component - Versión optimizada
  *
  * Muestra un carrusel compacto con imágenes del producto
  * Optimizado para manejar 1 o más imágenes correctamente
@@ -42,29 +41,24 @@ export const ProductImageCarousel = ({ images, onSelectImage }) => {
   return (
     <div className="prod-carousel__container">
       <Swiper
-        modules={[Navigation, Pagination]}
+        modules={[Pagination]}
         className="prod-carousel__swiper"
-        spaceBetween={15}
-        slidesPerView={images.length < 3 ? images.length : 3}
-        navigation={{
-          nextEl: '.swiper-button-next',
-          prevEl: '.swiper-button-prev',
-        }}
+        spaceBetween={10}
+        slidesPerView={3}
         pagination={{
           clickable: true,
-          dynamicBullets: true,
           el: '.swiper-pagination'
         }}
         grabCursor={true}
         loop={images.length >= 4}
         breakpoints={{
           320: {
-            slidesPerView: 2,
-            spaceBetween: 10
+            slidesPerView: 3,
+            spaceBetween: 8
           },
           480: {
-            slidesPerView: images.length < 3 ? images.length : 3,
-            spaceBetween: 15
+            slidesPerView: 3,
+            spaceBetween: 10
           }
         }}
       >
@@ -82,8 +76,6 @@ export const ProductImageCarousel = ({ images, onSelectImage }) => {
             </div>
           </SwiperSlide>
         ))}
-        <div className="swiper-button-next"></div>
-        <div className="swiper-button-prev"></div>
         <div className="swiper-pagination"></div>
       </Swiper>
     </div>

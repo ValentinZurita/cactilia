@@ -1,37 +1,55 @@
-/* ======= PRODUCT CAROUSEL STYLES - IMÁGENES CUADRADAS ======= */
+/* ======= PRODUCT CAROUSEL STYLES - OPTIMIZADO PARA MÓVIL ======= */
 
-/* Contenedor principal del carrusel - altura fija */
+/* Contenedor principal del carrusel */
 .prod-carousel__container {
     width: 100%;
-    max-width: 100%;
-    margin: 0 0 15px 0;
     position: relative;
-    overflow: hidden;
-    height: 100px; /* Altura fija para el contenedor */
+    margin: 0;
+    height: 100px;
 }
 
-/* Estilos base del Swiper */
+/* Swiper - configuración básica */
 .prod-carousel__swiper {
     width: 100%;
-    height: auto;
-    padding-bottom: 25px; /* Espacio para paginación */
-    padding-left: 20px; /* Espacio adicional para la flecha de navegación izquierda */
-    padding-right: 20px; /* Espacio adicional para la flecha de navegación derecha */
+    height: 100px;
+    padding: 0 0 25px 0;
 }
 
-/* Contenedor individual para cada imagen - AHORA CUADRADO */
+/* Slide wrapper */
+.swiper-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+/* Slides individuales */
+.swiper-slide {
+    width: 33.33%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 0.25rem;
+}
+
+/* Contenedor individual para cada imagen */
 .prod-carousel__image-wrapper {
-    width: 80px; /* Ancho fijo reducido */
-    height: 80px; /* Alto igual al ancho para hacerlo cuadrado */
-    border-radius: 8px;
+    width: 70px;
+    height: 70px;
+    border-radius: 6px;
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     position: relative;
-    margin: 0 auto; /* Centrar en el slide */
+    margin: 0 auto;
 }
 
+.prod-carousel__image-wrapper:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Efecto overlay en hover */
 .prod-carousel__image-wrapper::after {
     content: '';
     position: absolute;
@@ -44,16 +62,11 @@
     transition: opacity 0.3s ease;
 }
 
-.prod-carousel__image-wrapper:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
 .prod-carousel__image-wrapper:hover::after {
     opacity: 0;
 }
 
-/* Estilos para la imagen */
+/* Imagen */
 .prod-carousel__image {
     width: 100%;
     height: 100%;
@@ -61,56 +74,19 @@
     display: block;
 }
 
-/* Asegurar que Swiper respete el ancho del contenedor */
-.swiper-wrapper {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* Controlar el tamaño de los slides - limitado a 3 visibles */
-.swiper-slide {
-    width: 33.33% !important; /* Fijar exactamente a 1/3 del ancho */
-    max-width: 33.33%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-sizing: border-box;
-}
-
-/* Botones de navegación personalizados */
-.prod-carousel__container .swiper-button-next,
-.prod-carousel__container .swiper-button-prev {
-    color: #34C749;
-    width: 28px;
-    height: 28px;
-    background-color: white;
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
-    margin-top: -20px; /* Centrar verticalmente */
-}
-
-.prod-carousel__container .swiper-button-next:hover,
-.prod-carousel__container .swiper-button-prev:hover {
-    background-color: #34C749;
-    color: white;
-    transform: scale(1.1);
-}
-
-.prod-carousel__container .swiper-button-next::after,
-.prod-carousel__container .swiper-button-prev::after {
-    font-size: 14px;
-    font-weight: bold;
-}
-
-/* Paginación personalizada */
+/* Paginación del carrusel */
 .prod-carousel__container .swiper-pagination {
+    position: absolute;
     bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
 }
 
 .prod-carousel__container .swiper-pagination-bullet {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
+    margin: 0 4px;
     background-color: #ccc;
     opacity: 1;
     transition: all 0.3s ease;
@@ -118,23 +94,21 @@
 
 .prod-carousel__container .swiper-pagination-bullet-active {
     background-color: #34C749;
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
 }
 
-/* Estilos para cuando solo hay una imagen */
+/* Solo una imagen */
 .prod-carousel__single-image {
     width: 100%;
-    max-width: 100%;
-    margin: 0 0 15px 0;
-    overflow: hidden;
+    margin: 0 0 0.75rem 0;
     display: flex;
     justify-content: center;
 }
 
 .prod-carousel__single-image .prod-carousel__image-wrapper {
-    width: 100px; /* Un poco más grande cuando es una sola */
-    height: 100px; /* Mantener cuadrado */
+    width: 80px;
+    height: 80px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
@@ -146,41 +120,44 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Responsive */
+/* VERSIÓN MÓVIL - OPTIMIZADO */
 @media (max-width: 768px) {
-    .prod-carousel__image-wrapper {
-        width: 70px;
-        height: 70px;
+    /* Carrusel más compacto en móvil */
+    .prod-carousel__container {
+        height: 80px;
+        margin-bottom: 0.5rem;
     }
 
+    .prod-carousel__swiper {
+        height: 80px;
+        padding-bottom: 20px;
+    }
+
+    /* Miniaturas más pequeñas pero suficientes */
+    .prod-carousel__image-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+
+    /* Si es una sola imagen, hacerla más grande */
     .prod-carousel__single-image .prod-carousel__image-wrapper {
         width: 80px;
         height: 80px;
     }
 
-    .swiper-slide {
-        max-width: 50%; /* Para móviles, mostrar 2 por fila */
+    /* Paginación más compacta */
+    .prod-carousel__container .swiper-pagination {
+        bottom: 0;
     }
-}
 
-/* Solución para el carrusel dentro del modal */
-/* Contener el carrusel dentro de sus límites */
-.prod-modal__carousel-container .swiper {
-    width: 100% !important;
-    overflow: hidden !important;
-}
+    .prod-carousel__container .swiper-pagination-bullet {
+        width: 6px;
+        height: 6px;
+        margin: 0 3px;
+    }
 
-/* Asegurar espacio adecuado entre slides */
-.prod-carousel__swiper .swiper-slide {
-    padding: 0 5px;
-    box-sizing: border-box;
-}
-
-/* Asegurar que el botón de navegación no sobresalga demasiado */
-.prod-carousel__container .swiper-button-next {
-    right: 5px; /* Más espacio desde el borde */
-}
-
-.prod-carousel__container .swiper-button-prev {
-    left: 5px; /* Más espacio desde el borde */
+    .prod-carousel__container .swiper-pagination-bullet-active {
+        width: 8px;
+        height: 8px;
+    }
 }
