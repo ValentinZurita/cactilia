@@ -77,14 +77,29 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
 
   // Resetear estado al abrir el modal
   useEffect(() => {
-    if (isOpen && product) {
-      setQuantity(1);
-      setAdded(false);
-      setStockError(null);
-      setCurrentImage(product.mainImage);
-      setIsOutOfStockState(false);
-    }
-  }, [isOpen, product]);
+    const checkInitialStock = async () => {
+      if (isOpen && product) {
+        const itemInCartQty = getItem(product.id)?.quantity || 0;
+        const productStock = product?.stock || 0;
+        const available = Math.max(productStock - itemInCartQty, 0);
+
+        setCurrentImage(product.mainImage);
+        setAdded(false);
+        setStockError(null);
+
+        const result = await validateStock(1);
+        if (!result.valid || result.quantity <= 0) {
+          setIsOutOfStockState(true);
+          setQuantity(0);
+        } else {
+          setIsOutOfStockState(false);
+          setQuantity(1);
+        }
+      }
+    };
+
+    checkInitialStock();
+  }, [isOpen, product, getItem]);
 
   // Datos de stock
   const productStock = product?.stock || 0;
