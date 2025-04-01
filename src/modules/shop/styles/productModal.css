@@ -1,0 +1,434 @@
+/* ======= PRODUCT MODAL STYLES - VERSIÓN COMPACTA Y ELEGANTE ======= */
+
+/* Fondo del modal con efecto de desenfoque */
+.prod-modal__backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 40px; /* Más padding para dar espacio alrededor del modal */
+}
+
+/* Manejo de visibilidad con transiciones suaves */
+.prod-modal--visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.prod-modal--hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+/* Contenedor principal - Tamaño más compacto */
+.prod-modal__container {
+    display: table;
+    width: 85%; /* Reducido del 90% */
+    max-width: 850px; /* Reducido de 950px */
+    background-color: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
+    height: 500px; /* Reducido de 550px */
+    animation: modalAppear 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Botón de cierre por encima del modal */
+.prod-modal__close {
+    position: absolute;
+    top: -15px; /* Posicionado por encima del modal */
+    right: -15px; /* Extendiéndose fuera del modal */
+    width: 36px;
+    height: 36px;
+    background-color: #34C749;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 101;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.prod-modal__close:hover {
+    background-color: #28A745;
+    transform: rotate(90deg);
+}
+
+/* Contenedor de imagen con efecto de zoom suave */
+.prod-modal__image-wrap {
+    display: table-cell;
+    width: 50%;
+    height: 100%;
+    background-color: #f9f9f9;
+    vertical-align: top;
+    position: relative;
+    overflow: hidden;
+}
+
+.prod-modal__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.prod-modal__image-wrap:hover .prod-modal__image {
+    transform: scale(1.03);
+}
+
+/* Contenedor del contenido con sombra sutil */
+.prod-modal__content {
+    display: table-cell;
+    width: 50%;
+    height: 100%;
+    background-color: white;
+    vertical-align: top;
+    box-shadow: -10px 0 15px -10px rgba(0, 0, 0, 0.1);
+}
+
+.prod-modal__details {
+    padding: 35px; /* Reducido de 40px */
+    height: 100%;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* Efecto de scroll elegante */
+.prod-modal__details::-webkit-scrollbar {
+    width: 6px;
+}
+
+.prod-modal__details::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.prod-modal__details::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.prod-modal__details::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Título del producto con estilos mejorados */
+.prod-modal__title {
+    font-size: 1.6rem; /* Reducido de 1.8rem */
+    font-weight: 600;
+    margin: 0 0 15px 0;
+    color: #222;
+    padding: 0;
+    line-height: 1.2;
+}
+
+/* Contenedor de categoría con diseño mejorado */
+.prod-modal__category-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.prod-modal__category {
+    display: inline-block;
+    background-color: #34C749;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(52, 199, 73, 0.3);
+}
+
+/* Etiqueta de sin stock con diseño de alerta */
+.prod-modal__stock-label {
+    display: inline-block;
+    background-color: #dc3545;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
+}
+
+/* Precio con estilo destacado */
+.prod-modal__price {
+    font-size: 1.4rem; /* Reducido de 1.5rem */
+    color: #28A745;
+    font-weight: 700;
+    margin-bottom: 15px; /* Reducido de 20px */
+    padding: 0;
+}
+
+/* Descripción con mejor legibilidad */
+.prod-modal__desc {
+    font-size: 0.95rem; /* Reducido de 1rem */
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 20px; /* Reducido de 25px */
+    padding: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px; /* Reducido de 25px */
+}
+
+/* Título de sección para el carrusel */
+.prod-modal__section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #444;
+    margin: 0 0 10px 0;
+    padding: 0;
+}
+
+/* Contenedor del carrusel */
+.prod-modal__carousel-container {
+    margin-bottom: 20px; /* Reducido de 25px */
+    padding-bottom: 15px; /* Reducido de 20px */
+    border-bottom: 1px solid #eee;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Controles de cantidad con diseño moderno */
+.prod-modal__quantity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 15px 0 25px; /* Reducido de 20px 0 30px */
+    padding: 0;
+}
+
+.prod-modal__quantity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #f5f5f5;
+    padding: 6px 12px; /* Reducido de 8px 15px */
+    border-radius: 50px;
+}
+
+.prod-modal__quantity-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #34C749;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    box-shadow: 0 2px 5px rgba(52, 199, 73, 0.2);
+}
+
+.prod-modal__quantity-btn:hover {
+    background-color: #28A745;
+    transform: scale(1.1);
+}
+
+.prod-modal__quantity-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.prod-modal__quantity-num {
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-width: 30px;
+    text-align: center;
+    color: #444;
+}
+
+.prod-modal__total {
+    font-size: 1.2rem; /* Reducido de 1.3rem */
+    font-weight: 700;
+    color: #28A745;
+    margin: 0;
+    padding: 0;
+}
+
+/* Botón de agregar al carrito con efectos modernos */
+.prod-modal__cart-btn {
+    width: 100%;
+    background-color: #34C749;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px; /* Reducido de 14px 20px */
+    font-size: 1rem; /* Reducido de 1.1rem */
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 0;
+    margin-bottom: 0;
+    box-shadow: 0 4px 15px rgba(52, 199, 73, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.prod-modal__cart-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.2),
+            rgba(255, 255, 255, 0)
+    );
+    transition: all 0.6s ease;
+}
+
+.prod-modal__cart-btn:hover {
+    background-color: #28A745;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(40, 167, 69, 0.35);
+}
+
+.prod-modal__cart-btn:hover::before {
+    left: 100%;
+}
+
+.prod-modal__cart-btn--added {
+    background-color: #28A745;
+}
+
+.prod-modal__cart-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.prod-modal__cart-btn:disabled::before {
+    display: none;
+}
+
+/* Responsive para diferentes dispositivos */
+@media (max-width: 992px) {
+    .prod-modal__container {
+        height: 480px;
+        width: 90%;
+    }
+
+    .prod-modal__details {
+        padding: 25px;
+    }
+
+    .prod-modal__title {
+        font-size: 1.4rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .prod-modal__backdrop {
+        padding: 20px;
+    }
+
+    .prod-modal__container {
+        display: block;
+        height: auto;
+        max-height: 90vh;
+        width: 95%;
+    }
+
+    .prod-modal__image-wrap {
+        display: block;
+        width: 100%;
+        height: 250px;
+    }
+
+    .prod-modal__content {
+        display: block;
+        width: 100%;
+        max-height: 60vh;
+        box-shadow: none;
+    }
+
+    .prod-modal__details {
+        padding: 20px 16px;
+        height: auto;
+        max-height: 50vh;
+    }
+
+    .prod-modal__title {
+        font-size: 1.3rem;
+    }
+
+    .prod-modal__price {
+        font-size: 1.2rem;
+    }
+
+    .prod-modal__desc {
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+    }
+
+    .prod-modal__quantity-row {
+        margin: 15px 0 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .prod-modal__quantity {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .prod-modal__total {
+        width: 100%;
+        text-align: center;
+    }
+
+    .prod-modal__cart-btn {
+        padding: 10px 15px;
+        font-size: 0.95rem;
+    }
+}

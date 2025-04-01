@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import '../../../../styles/pages/shop.css';
+import '../../../shop/styles/productModal.css';
 import { ProductImageCarousel } from './ProductModalCarousel.jsx';
 import { useCart } from '../cart/hooks/useCart.js';
 
@@ -10,8 +10,6 @@ import { useCart } from '../cart/hooks/useCart.js';
  * @param {Function} onClose - Function to close the modal
  */
 export const ProductModal = ({ product, isOpen, onClose }) => {
-  console.log("ProductModal props:", { isOpen, product: product?.name });
-
   // Local state
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -23,8 +21,6 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
 
   // Reset quantity and handle image when modal opens/closes
   useEffect(() => {
-    console.log("useEffect triggered, isOpen:", isOpen);
-
     if (isOpen && product) {
       // Cuando se abre el modal, configuramos los valores iniciales
       setQuantity(1);
@@ -32,10 +28,9 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
       setCurrentImage(product.mainImage);
 
       // Aseguramos que el modal sea visible después de un pequeño retraso
-      // para permitir que el DOM se actualice
       setTimeout(() => {
         setModalVisible(true);
-        document.body.style.overflow = 'hidden'; // Prevenir scroll del body cuando el modal está abierto
+        document.body.style.overflow = 'hidden';
       }, 10);
     } else {
       // Cuando se cierra el modal, ocultamos primero visualmente
@@ -53,16 +48,12 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
 
   // Si modal is not open or product is not set, return null
   if (!isOpen || !product) {
-    console.log("Modal no renderizado - isOpen:", isOpen, "product:", product ? true : false);
     return null;
   }
 
-  console.log("Renderizando modal con producto:", product.name);
-
   // Handle clicking outside of modal
   const handleBackdropClick = (e) => {
-    console.log("Backdrop click - target:", e.target.classList.contains('modal-backdrop'));
-    if (e.target.classList.contains('modal-backdrop')) {
+    if (e.target.classList.contains('prod-modal__backdrop')) {
       onClose();
     }
   };
@@ -73,9 +64,7 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
 
   // Add to cart handler
   const handleAddToCartClick = (e) => {
-    // Evitar que se propague el evento (por si acaso)
-    e.stopPropagation();
-
+    e.stopPropagation(); // Evitar que se propague el evento
     addToCart(product, quantity);
     setAdded(true);
 
@@ -89,117 +78,92 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
   const totalPrice = (product.price * quantity).toFixed(2);
 
   // Clase adicional para controlar la visibilidad del modal con CSS
-  const modalVisibilityClass = modalVisible ? 'modal-visible' : 'modal-hidden';
+  const modalVisibilityClass = modalVisible ? 'prod-modal--visible' : 'prod-modal--hidden';
+
+  // Verificar si hay suficientes imágenes para mostrar el carrusel
+  const hasMultipleImages = product.images && product.images.length > 1;
 
   return (
     <div
-      className={`modal-backdrop ${modalVisibilityClass}`}
+      className={`prod-modal__backdrop ${modalVisibilityClass}`}
       onClick={handleBackdropClick}
-      style={{
-        display: 'flex', // Garantizar que sea flex
-        position: 'fixed', // Garantizar que sea fixed
-        zIndex: 9999,    // Alto z-index
-      }}
     >
-      {/* Modal container */}
-      <div
-        className="modal-container"
-        style={{
-          position: 'relative',
-          zIndex: 10000, // Mayor que el backdrop
-          backgroundColor: 'white', // Garantizar que sea visible
-          display: 'flex'
-        }}
-        onClick={(e) => e.stopPropagation()} // Evitar cierre accidental
-      >
-        {/* Close button */}
-        <button
-          className="modal-close"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          style={{
-            zIndex: 10001 // Mayor que el contenedor
-          }}
-        >
+      <div className="prod-modal__container">
+        {/* Botón de cierre */}
+        <button className="prod-modal__close" onClick={onClose}>
           ✕
         </button>
 
-        {/* Product image */}
-        <div className="modal-img-container">
+        {/* Contenedor de la imagen */}
+        <div className="prod-modal__image-wrap">
           <img
             src={currentImage || product.mainImage}
             alt={product.name}
-            className="modal-img"
+            className="prod-modal__image"
           />
         </div>
 
-        {/* Modal content */}
-        <div className="modal-content">
-          <div className="modal-details">
-            {/* Product name */}
-            <h3 className="modal-title">{product.name}</h3>
+        {/* Contenedor del contenido */}
+        <div className="prod-modal__content">
+          <div className="prod-modal__details">
+            {/* Nombre del producto */}
+            <h3 className="prod-modal__title">{product.name}</h3>
 
-            {/* Category */}
-            <div className="modal-category-container">
-              <p className="modal-category">{product.category || 'Sin categoría'}</p>
+            {/* Categoría */}
+            <div className="prod-modal__category-wrap">
+              <span className="prod-modal__category">{product.category || 'Sin categoría'}</span>
               {product.stock === 0 && (
-                <span className="stock-label">Sin Stock</span>
+                <span className="prod-modal__stock-label">Sin Stock</span>
               )}
             </div>
 
-            {/* Price */}
-            <p className="modal-price">${product.price.toFixed(2)}</p>
+            {/* Precio */}
+            <p className="prod-modal__price">${product.price.toFixed(2)}</p>
 
-            {/* Description */}
-            <p className="modal-desc">{product.description || 'Sin descripción disponible'}</p>
+            {/* Descripción */}
+            <p className="prod-modal__desc">{product.description || 'Sin descripción disponible'}</p>
 
-            {/* Image carousel */}
-            {product.images && product.images.length > 0 && (
-              <ProductImageCarousel
-                images={product.images}
-                onSelectImage={(img) => setCurrentImage(img)}
-              />
+            {/* Carrusel de imágenes (solo si hay más de una imagen) */}
+            {hasMultipleImages && (
+              <div className="prod-modal__carousel-container">
+                <h4 className="prod-modal__section-title">Imágenes del producto</h4>
+                <ProductImageCarousel
+                  images={product.images}
+                  onSelectImage={(img) => setCurrentImage(img)}
+                />
+              </div>
             )}
 
-            {/* Quantity controls */}
-            <div className="modal-quantity-row">
-              <div className="modal-quantity">
-                <button className="quantity-btn" onClick={handleDecrement} disabled={product.stock === 0}>
+            {/* Control de cantidad */}
+            <div className="prod-modal__quantity-row">
+              <div className="prod-modal__quantity">
+                <button
+                  className="prod-modal__quantity-btn"
+                  onClick={handleDecrement}
+                  disabled={product.stock === 0}
+                >
                   <i className="bi bi-dash"></i>
                 </button>
-                <span className="quantity-number">{quantity}</span>
-                <button className="quantity-btn" onClick={handleIncrement} disabled={product.stock === 0}>
+                <span className="prod-modal__quantity-num">{quantity}</span>
+                <button
+                  className="prod-modal__quantity-btn"
+                  onClick={handleIncrement}
+                  disabled={product.stock === 0}
+                >
                   <i className="bi bi-plus"></i>
                 </button>
               </div>
-              <p className="modal-total">Total: ${totalPrice}</p>
+              <p className="prod-modal__total">Total: ${totalPrice}</p>
             </div>
 
-            {/* Add to cart button */}
+            {/* Botón de agregar al carrito */}
             <button
-              className={`btn btn-green-lg d-flex align-items-center ${added ? "btn-added" : ""}`}
+              className={`prod-modal__cart-btn ${added ? "prod-modal__cart-btn--added" : ""}`}
               onClick={handleAddToCartClick}
               disabled={added || product.stock === 0}
             >
               <i className="bi bi-cart me-2"></i>
               {product.stock === 0 ? "Sin stock" : added ? "Producto agregado" : "Agregar al Carrito"}
-            </button>
-
-            {/* Botón para depuración */}
-            <button
-              className="btn btn-sm btn-warning mt-2"
-              onClick={() => console.log("Estado del modal:", {
-                isOpen,
-                product: product?.name,
-                quantity,
-                added,
-                modalVisible,
-                currentImage
-              })}
-            >
-              Debug: Log Modal State
             </button>
           </div>
         </div>
