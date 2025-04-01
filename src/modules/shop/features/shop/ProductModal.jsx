@@ -15,9 +15,10 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
   const [added, setAdded] = useState(false);
   const [currentImage, setCurrentImage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [stockError, setStockError] = useState(null);
 
-  // Use our cart hook
-  const { addToCart } = useCart();
+  // Use cart hook
+  const { addToCart, isInCart, getItem } = useCart();
 
   // Reset quantity and handle image when modal opens/closes
   useEffect(() => {
@@ -25,6 +26,7 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
       // Cuando se abre el modal, configuramos los valores iniciales
       setQuantity(1);
       setAdded(false);
+      setStockError(null);
       setCurrentImage(product.mainImage);
 
       // Aseguramos que el modal sea visible después de un pequeño retraso
@@ -58,20 +60,76 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
     }
   };
 
+  // Verificamos stock disponible
+  const productStock = product.stock || 0;
+  const isOutOfStock = productStock === 0;
+
+  // Verificar si el producto ya está en el carrito
+  const itemInCart = isInCart ? isInCart(product.id) : false;
+  const cartQuantity = itemInCart && getItem ? getItem(product.id)?.quantity || 0 : 0;
+
+  // Verificar si se puede incrementar considerando el carrito actual
+  const canIncrement = productStock > 0 && (quantity + cartQuantity) < productStock;
+
   // Handlers for increment/decrement
-  const handleIncrement = () => setQuantity((q) => q + 1);
-  const handleDecrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
+  const handleIncrement = () => {
+    if (canIncrement) {
+      setQuantity((q) => q + 1);
+      setStockError(null);
+    } else {
+      // Si llega al límite, mostrar mensaje de error
+      const remainingStock = Math.max(0, productStock - cartQuantity);
+      if (remainingStock > 0) {
+        setStockError(`Solo puedes agregar ${remainingStock} unidad(es) más. Ya tienes ${cartQuantity} en tu carrito.`);
+      } else {
+        setStockError(`No puedes agregar más unidades. Ya tienes ${cartQuantity} en tu carrito.`);
+      }
+    }
+  };
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      setQuantity((q) => q - 1);
+      setStockError(null);
+    }
+  };
 
   // Add to cart handler
-  const handleAddToCartClick = (e) => {
+  const handleAddToCartClick = async (e) => {
     e.stopPropagation(); // Evitar que se propague el evento
-    addToCart(product, quantity);
-    setAdded(true);
 
-    // Cerrar el modal después de un tiempo
-    setTimeout(() => {
-      onClose();
-    }, 2000);
+    // Validar stock antes de agregar al carrito
+    if (isOutOfStock) {
+      setStockError("Este producto está agotado");
+      return;
+    }
+
+    // Verificar stock considerando lo que ya está en el carrito
+    if (quantity + cartQuantity > productStock) {
+      const remainingStock = Math.max(0, productStock - cartQuantity);
+      if (remainingStock > 0) {
+        setStockError(`Solo puedes agregar ${remainingStock} unidad(es) más. Ya tienes ${cartQuantity} en tu carrito.`);
+      } else {
+        setStockError(`No puedes agregar más unidades. Ya tienes ${cartQuantity} en tu carrito.`);
+      }
+      return;
+    }
+
+    // Agregar al carrito usando la función del hook
+    const result = await addToCart(product, quantity);
+
+    if (result && result.success) {
+      setAdded(true);
+      setStockError(null);
+
+      // Cerrar el modal después de un tiempo
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } else if (result && !result.success) {
+      // Mostrar mensaje de error del resultado
+      setStockError(result.message || "Error al agregar al carrito");
+    }
   };
 
   // Calculate total
@@ -114,8 +172,11 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
               {/* Categoría (ahora junto al título en móvil) */}
               <div className="prod-modal__category-wrap">
                 <span className="prod-modal__category">{product.category || 'Sin categoría'}</span>
-                {product.stock === 0 && (
+                {isOutOfStock && (
                   <span className="prod-modal__stock-label">Sin Stock</span>
+                )}
+                {!isOutOfStock && productStock <= 5 && (
+                  <span className="prod-modal__stock-limited">¡Quedan solo {productStock}!</span>
                 )}
               </div>
 
@@ -137,13 +198,21 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
                 </div>
               )}
 
+              {/* Mensaje de error de stock */}
+              {stockError && (
+                <div className="prod-modal__stock-error">
+                  <i className="bi bi-exclamation-triangle me-2"></i>
+                  {stockError}
+                </div>
+              )}
+
               {/* Control de cantidad (simplificado en móvil) */}
               <div className="prod-modal__quantity-row">
                 <div className="prod-modal__quantity">
                   <button
                     className="prod-modal__quantity-btn"
                     onClick={handleDecrement}
-                    disabled={product.stock === 0}
+                    disabled={isOutOfStock || quantity <= 1}
                   >
                     <i className="bi bi-dash"></i>
                   </button>
@@ -151,7 +220,7 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
                   <button
                     className="prod-modal__quantity-btn"
                     onClick={handleIncrement}
-                    disabled={product.stock === 0}
+                    disabled={isOutOfStock || !canIncrement}
                   >
                     <i className="bi bi-plus"></i>
                   </button>
@@ -159,14 +228,24 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
                 <p className="prod-modal__total">Total: ${totalPrice}</p>
               </div>
 
+              {/* Info de carrito si el producto ya está en el carrito */}
+              {itemInCart && (
+                <div className="prod-modal__cart-info">
+                  <i className="bi bi-cart-check me-2"></i>
+                  Ya tienes {cartQuantity} {cartQuantity === 1 ? 'unidad' : 'unidades'} en tu carrito
+                </div>
+              )}
+
               {/* Botón de agregar al carrito */}
               <button
                 className={`prod-modal__cart-btn ${added ? "prod-modal__cart-btn--added" : ""}`}
                 onClick={handleAddToCartClick}
-                disabled={added || product.stock === 0}
+                disabled={added || isOutOfStock || (productStock > 0 && quantity + cartQuantity > productStock)}
               >
                 <i className="bi bi-cart me-2"></i>
-                {product.stock === 0 ? "Sin stock" : added ? "Producto agregado" : "Agregar al Carrito"}
+                {isOutOfStock ? "Sin stock" :
+                  added ? "Producto agregado" :
+                    "Agregar al Carrito"}
               </button>
             </div>
           </div>

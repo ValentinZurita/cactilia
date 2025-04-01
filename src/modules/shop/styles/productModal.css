@@ -436,3 +436,95 @@
         font-size: 0.8rem;
     }
 }
+
+
+
+/* Añadir estos estilos al archivo productModal.css existente */
+
+/* Mensaje de error de stock */
+.prod-modal__stock-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Animación para elementos que aparecen */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Etiqueta para stock limitado */
+.prod-modal__stock-limited {
+    background-color: #fff3cd;
+    color: #856404;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Información del carrito */
+.prod-modal__cart-info {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Mejora visual para botón deshabilitado */
+.prod-modal__cart-btn:disabled {
+    background-color: #e0e0e0;
+    color: #9e9e9e;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Mejora visual para botón de cantidad deshabilitado */
+.prod-modal__quantity-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Transiciones suaves */
+.prod-modal__cart-btn,
+.prod-modal__quantity-btn {
+    transition: all 0.2s ease;
+}
+
+/* Animación para el botón cuando se agrega */
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.prod-modal__cart-btn--added {
+    animation: successPulse 0.5s ease;
+}
+
+/* Mejoras para dispositivos móviles */
+@media (max-width: 576px) {
+    .prod-modal__stock-error {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .prod-modal__cart-info {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+}
