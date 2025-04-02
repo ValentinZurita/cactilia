@@ -83,7 +83,7 @@ export const AddressSelector = ({
         isSelected={isNewAddressSelected}
         onSelect={onNewAddressSelect}
         icon="bi-plus-circle"
-        name="Usar dirección nueva"
+        name="Ingresa tu dirección"
         description="Ingresa los datos de una dirección para esta compra"
         id="address-new"
       >
@@ -142,8 +142,6 @@ export const AddressSelector = ({
       {/* Modal para nueva dirección guardada - Se implementaría en un componente separado */}
       {showManageForm && (
         <div className="modal-placeholder">
-          {/* Aquí irá el modal de formulario de dirección permanente */}
-          {/* Se mantiene por compatibilidad pero debe implementarse por separado */}
         </div>
       )}
     </div>

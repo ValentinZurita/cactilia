@@ -85,12 +85,11 @@ export const CheckoutSummary = ({
           )}
         </div>
 
-        <hr className="my-3" />
-
-        <div className="d-flex justify-content-between total-line">
+        <div className="d-flex justify-content-between">
           <span className="fw-bold">Total:</span>
           <span className="fw-bold fs-5 text-green-1">{formatPrice(total)}</span>
         </div>
+
       </div>
 
       {/* Información adicional */}
@@ -102,7 +101,7 @@ export const CheckoutSummary = ({
 
         <div className="d-flex align-items-center text-muted">
           <i className="bi bi-truck me-2 text-success"></i>
-          <small>Envío gratis en compras mayores a $500</small>
+          <small>Envío sujeto a zona o monto de compra</small>
         </div>
       </div>
     </div>

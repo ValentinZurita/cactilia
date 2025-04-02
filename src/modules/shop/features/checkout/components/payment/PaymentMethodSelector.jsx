@@ -109,7 +109,7 @@ export const PaymentMethodSelector = ({
           isSelected={isNewCardSelected}
           onSelect={onNewCardSelect}
           icon="bi-plus-circle"
-          name="Usar tarjeta nueva"
+          name="Ingresa los datos de tu tarjeta"
           description="Ingresa los datos de una tarjeta para esta compra"
           id="payment-new-card"
         >

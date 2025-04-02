@@ -55,16 +55,17 @@ export const OxxoPaymentOption = ({ selected, onSelect }) => {
         <div className="oxxo-payment-info mt-3">
           <div className="oxxo-steps">
             <div className="oxxo-step">
-              <span className="oxxo-step-number">1</span>
-              <span className="oxxo-step-text">Recibirás un voucher al completar tu pedido</span>
+              <i className="bi bi-dot"></i>
+              <span className="oxxo-step-text">  Recibirás un voucher al completar tu pedido</span>
             </div>
             <div className="oxxo-step">
-              <span className="oxxo-step-number">2</span>
-              <span className="oxxo-step-text">Acude a cualquier tienda OXXO y presenta el voucher</span>
+              <i className="bi bi-dot"></i>
+              <span className="oxxo-step-text"> Acude a cualquier tienda OXXO y presenta el voucher</span>
             </div>
             <div className="oxxo-step">
-              <span className="oxxo-step-number">3</span>
-              <span className="oxxo-step-text">Tu pedido será procesado una vez recibamos la confirmación del pago</span>
+              <i className="bi bi-dot"></i>
+              <span
+                className="oxxo-step-text"> Tu pedido será procesado una vez recibamos la confirmación del pago</span>
             </div>
           </div>
 

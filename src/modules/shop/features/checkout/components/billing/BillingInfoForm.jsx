@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { isValidEmail, isValidRFC } from '../../../../utils/validation.js';
+import { isValidEmail, isValidRFC } from '../../../../utils/index.js';
 
 /**
  * BillingInfoForm - Formulario para datos fiscales (facturación electrónica)
@@ -213,10 +213,10 @@ export const BillingInfoForm = ({
             </div>
           </div>
 
-          <div className="mt-3 alert alert-info">
-            <i className="bi bi-info-circle me-2"></i>
-            Los campos marcados con * son obligatorios para generar tu factura electrónica.
-          </div>
+          <footer className="d-flex align-items-center my-4">
+            <i className="bi bi-info-circle me-2 text-muted"></i>
+            <p className="text-muted mb-0 small">Los campos marcados con * son obligatorios</p>
+          </footer>
         </div>
       )}
     </div>

@@ -1,6 +1,223 @@
 /* Estilos mejorados para la página de checkout */
 
-/* Estilos generales para la página */
+/*
+ * CHECKOUT FIXES - CORRECCIONES DE ESTILOS PARA LA PÁGINA DE CHECKOUT
+ * ------------------------------------------------------------------
+ * Este archivo contiene correcciones para problemas visuales y de consistencia
+ * en la página de checkout, con especial atención a los estados hover vs active,
+ * y la apariencia de los checkboxes y radio buttons.
+ */
+
+/* ======================================
+   VARIABLES CSS - DISPONIBLES GLOBALMENTE
+   ====================================== */
+:root {
+    --green-1: #289f43;
+    --green-3: #34C749;
+    --green-light: rgba(52, 199, 73, 0.05);
+    --white: #ffffff;
+}
+
+/* ======================================
+   KEYFRAMES COMPARTIDOS
+   ====================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    80% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/*
+ * CORRECCIÓN 1: CONFLICTO HOVER VS ACTIVE/SELECTED
+ * -----------------------------------------------
+ * Corregir el problema donde el hover sobrescribe el estilo selected
+ */
+
+/* Estilo base para opciones activas/seleccionadas */
+.address-option.active-address-option,
+.payment-method-option.active-payment-option {
+    border-color: var(--green-3);
+    background-color: var(--green-light);
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+}
+
+/* Importante: este selector debe ir después del hover normal para tener prioridad */
+.address-option.active-address-option:hover,
+.payment-method-option.active-payment-option:hover {
+    border-color: var(--green-3);
+    background-color: var(--green-light);
+}
+
+/*
+ * CORRECCIÓN 2: INCONSISTENCIA EN ELEMENTOS DE FORMULARIO
+ * -----------------------------------------------------
+ * Unificar la apariencia de los radio buttons y checkboxes
+ */
+
+/* Radio buttons con apariencia consistente */
+.address-option input[type="radio"],
+.payment-method-option input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    outline: none;
+    border: 2px solid #c8c8c8;
+    position: relative;
+    margin-right: 15px;
+    margin-top: 0.3rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.address-option input[type="radio"]:checked,
+.payment-method-option input[type="radio"]:checked {
+    border-color: var(--green-3);
+    background-color: var(--green-3);
+    box-shadow: 0 0 0 2px rgba(52, 199, 73, 0.2);
+}
+
+/* Eliminar explícitamente el punto blanco en el centro */
+.address-option input[type="radio"]:checked::before,
+.payment-method-option input[type="radio"]:checked::before {
+    content: none;
+}
+
+/* Checkboxes con apariencia consistente en todos los formularios */
+.billing-info-form .form-check-input,
+.new-address-form .form-check-input,
+.new-card-form .form-check-input,
+.form-check .form-check-input {
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid #c8c8c8;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.billing-info-form .form-check-input:checked,
+.new-address-form .form-check-input:checked,
+.new-card-form .form-check-input:checked,
+.form-check .form-check-input:checked {
+    background-color: var(--green-3) !important;
+    border-color: var(--green-3) !important;
+    box-shadow: 0 0 0 2px rgba(52, 199, 73, 0.2) !important;
+}
+
+/*
+ * CORRECCIÓN 3: CONTENEDORES DE FORMULARIOS INCONSISTENTES
+ * ------------------------------------------------------
+ * Unificar la apariencia y comportamiento de los contenedores
+ */
+.new-address-form-container,
+.new-card-form-container,
+.oxxo-payment-info {
+    margin-top: 15px;
+    padding: 15px;
+    border-top: 1px dashed #ddd;
+    background-color: rgba(248, 249, 250, 0.5);
+    border-radius: 8px;
+    animation: fadeIn 0.3s ease;
+}
+
+/*
+ * CORRECCIÓN 4: ESTILOS DE FOCO INCONSISTENTES
+ * -------------------------------------------
+ * Mejorar los estados de foco para mayor accesibilidad
+ */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--green-3);
+    box-shadow: 0 0 0 3px rgba(52, 199, 73, 0.25);
+}
+
+/*
+ * CORRECCIÓN 5: MEJORAR BOTÓN DE CHECKOUT
+ * --------------------------------------
+ * Asegurar consistencia visual en el botón principal
+ */
+
+/* Botón de checkout unificado */
+.btn-green-checkout {
+    background-color: var(--green-3);
+    color: var(--white);
+    font-weight: 600;
+    font-size: 1.1rem;
+    padding: 15px 25px;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(52, 199, 73, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-green-checkout::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: width 0.3s ease;
+}
+
+.btn-green-checkout:hover:not(:disabled) {
+    background-color: var(--green-1);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(52, 199, 73, 0.3);
+    color: var(--white);
+}
+
+.btn-green-checkout:hover:not(:disabled)::after {
+    width: 100%;
+}
+
+.btn-green-checkout:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(52, 199, 73, 0.2);
+}
+
+.btn-green-checkout:disabled {
+    background-color: #a0e0ad;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-green-checkout .spinner-border {
+    width: 1.2rem;
+    height: 1.2rem;
+    border-width: 0.2em;
+}
+
+/* -------------------------------------
+   ESTILOS GENERALES PARA LA PÁGINA
+   ------------------------------------- */
 .checkout-page {
     min-height: calc(100vh - 200px);
     padding-bottom: 40px;
@@ -58,7 +275,7 @@
     height: 34px;
     border-radius: 50%;
     background-color: var(--green-3);
-    color: white;
+    color: #fff;
     font-size: 1rem;
     font-weight: 500;
     margin-right: 15px;
@@ -102,7 +319,7 @@
     width: 20px !important;
     height: 20px !important;
     border: 2px solid #c8c8c8;
-    background-color: white;
+    background-color: #fff;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -151,7 +368,7 @@
 
 .address-option.selected {
     border-color: var(--green-3);
-    background-color: rgba(52, 199, 73, 0.05);
+    background-color: var(--green-light);
 }
 
 .address-actions {
@@ -225,7 +442,7 @@
 
 .payment-method-option.selected {
     border-color: var(--green-3);
-    background-color: rgba(52, 199, 73, 0.05);
+    background-color: var(--green-light);
 }
 
 .payment-method-actions {
@@ -243,10 +460,11 @@
 .billing-info-form .form-check {
     margin-bottom: 15px;
     padding: 10px 15px;
-    background-color: #f9f9f9;
+    background-color: rgba(248, 249, 250, 0.5);
     border-radius: 8px;
     transition: all 0.2s ease;
     cursor: pointer;
+    border: 1px solid #c8c8c8;
 }
 
 .billing-info-form .form-check:hover {
@@ -273,20 +491,18 @@
 }
 
 .fiscal-data-form {
+    border: 1px solid #c8c8c8;
+    background-color: var(--green-light);
+    border-color: var(--green-3);
     padding: 20px;
-    background-color: #f8f9fa;
     border-radius: 10px;
     margin-top: 20px;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
     animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 .fiscal-data-form .form-label {
+
     font-weight: 500;
     color: #444;
     margin-bottom: 6px;
@@ -295,6 +511,7 @@
 
 .fiscal-data-form .form-control,
 .fiscal-data-form .form-select {
+
     padding: 10px 15px;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -303,6 +520,7 @@
 
 .fiscal-data-form .form-control:focus,
 .fiscal-data-form .form-select:focus {
+
     border-color: var(--green-3);
     box-shadow: 0 0 0 3px rgba(52, 199, 73, 0.15);
 }
@@ -444,13 +662,6 @@
     padding-bottom: 0;
 }
 
-.total-line {
-    font-size: 1.2rem;
-    color: #111;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 2px solid #eee;
-}
 
 .text-green-1 {
     color: var(--green-3) !important;
@@ -473,64 +684,10 @@
     font-size: 1.1rem;
 }
 
-/* Botón de checkout - Estilo mejorado */
-.btn-green-checkout {
-    background-color: var(--green-3);
-    color: white;
-    font-weight: 600;
-    font-size: 1.1rem;
-    padding: 15px 25px;
-    border: none;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(52, 199, 73, 0.25);
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-green-checkout::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.1);
-    transition: width 0.3s ease;
-}
-
-.btn-green-checkout:hover {
-    background-color: var(--green-1);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(52, 199, 73, 0.3);
-    color: var(--white);
-}
-
-.btn-green-checkout:hover::after {
-    width: 100%;
-}
-
-.btn-green-checkout:active {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(52, 199, 73, 0.2);
-}
-
-.btn-green-checkout:disabled {
-    background-color: #a0e0ad;
-    transform: none;
-    box-shadow: none;
-    cursor: not-allowed;
-}
-
-.btn-green-checkout .spinner-border {
-    width: 1.2rem;
-    height: 1.2rem;
-    border-width: 0.2em;
-}
-
+/* Términos y condiciones */
 .checkout-terms {
+    padding: 20px;
     text-align: center;
-    margin-top: 20px;
     font-size: 0.85rem;
     color: #777;
 }
@@ -568,12 +725,6 @@
     font-size: 5rem !important;
     color: var(--green-3) !important;
     animation: scaleIn 0.5s ease;
-}
-
-@keyframes scaleIn {
-    0% { transform: scale(0); opacity: 0; }
-    80% { transform: scale(1.2); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
 }
 
 .confirmation-title {
@@ -640,7 +791,7 @@
 
 .confirmation-actions .btn-green-3 {
     background-color: var(--green-3);
-    color: white;
+    color: #fff;
     box-shadow: 0 4px 8px rgba(52, 199, 73, 0.25);
 }
 
@@ -765,10 +916,4 @@
     .confirmation-actions .btn {
         width: 100%;
     }
-}
-
-/* Variables CSS a nivel global */
-:root {
-    --green-1: #289f43;
-    --green-3: #34C749;
 }

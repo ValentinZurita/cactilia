@@ -48,6 +48,7 @@ export const CheckoutSummaryPanel = ({
   return (
     <div className="col-lg-4">
       <div className="checkout-summary-container">
+
         {/* Resumen del carrito */}
         <CheckoutSummary
           items={cartItems}
@@ -59,7 +60,7 @@ export const CheckoutSummaryPanel = ({
         />
 
         {/* Botón para procesar la compra */}
-        <div className="mt-4 px-3">
+        <div className="px-3">
           <CheckoutButton
             onCheckout={processOrderWithChecks}
             isProcessing={isProcessing}
@@ -70,7 +71,7 @@ export const CheckoutSummaryPanel = ({
           />
 
           {/* Términos y condiciones */}
-          <div className="checkout-terms mt-3">
+          <div className="checkout-terms">
             <small className="text-muted">
               Al completar tu compra, aceptas nuestros{' '}
               <a href="/terms" target="_blank" rel="noopener noreferrer">Términos y Condiciones</a> y{' '}
