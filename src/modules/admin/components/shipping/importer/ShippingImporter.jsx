@@ -4,11 +4,7 @@ import { ImportSummary } from './ImportSummary';
 
 /**
  * Componente para importar reglas de envío desde un archivo CSV.
- *
- * @param {Object} props - Propiedades del componente
- * @param {Function} props.onImport - Función para importar las reglas
- * @param {Function} props.onCancel - Función para cancelar la importación
- * @param {Function} props.onComplete - Función a llamar cuando se completa la importación
+ * Versión renovada con diseño minimalista
  */
 export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
   const [file, setFile] = useState(null);
@@ -95,11 +91,6 @@ export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
     reader.readAsText(selectedFile);
   };
 
-  // Manejar el cambio de estrategia de importación
-  const handleStrategyChange = (e) => {
-    setImportStrategy(e.target.value);
-  };
-
   // Manejar la importación del CSV
   const handleImport = async () => {
     if (!file) return;
@@ -148,14 +139,6 @@ export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
     }
   };
 
-  // Seleccionar otro archivo
-  const handleChangeFile = () => {
-    setImportResult(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
   // Renderizar resultado de importación si está disponible
   if (importResult) {
     return (
@@ -168,57 +151,86 @@ export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
   }
 
   return (
-    <div className="shipping-importer card border-0 shadow-sm rounded-4">
+    <div className="card border-0 shadow-sm rounded-4">
       <div className="card-body p-4">
         {/* Guía de importación */}
         <div className="mb-4">
-          <h5 className="card-title mb-3">Importar Reglas de Envío</h5>
-          <p className="card-text text-muted">
-            Sube un archivo CSV con las reglas de envío. El archivo debe contener las siguientes columnas:
-          </p>
-          <div className="bg-light p-3 rounded-3 mb-3">
-            <code>zipcode,zona,precio_envio,envio_gratis,servicios</code>
-          </div>
-          <p className="small text-muted mb-0">
-            <strong>Ejemplo:</strong><br />
-            <code>72000,Puebla Centro,50,false,estandar|express</code><br />
-            <code>72001,Puebla Norte,60,false,express</code>
-          </p>
-        </div>
+          <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Instrucciones de Importación</h6>
 
-        {/* Mensaje de error */}
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            <i className="bi bi-exclamation-triangle me-2"></i>
-            {error}
+          <div className="alert alert-secondary py-3 mb-3">
+            <div className="d-flex">
+              <i className="bi bi-info-circle fs-5 text-secondary me-3 mt-1"></i>
+              <div>
+                <p className="mb-2">El archivo CSV debe contener las siguientes columnas:</p>
+                <div className="bg-light p-2 rounded mb-2">
+                  <code>zipcode,zona,precio_envio,envio_gratis,servicios</code>
+                </div>
+                <p className="mb-0 small">
+                  <strong>Ejemplo:</strong> 72000,Puebla Centro,50,false,estandar|express
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Mensaje de error */}
+          {error && (
+            <div className="alert alert-danger py-2 mb-3">
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              {error}
+            </div>
+          )}
+        </div>
 
         {/* Selector de archivo */}
         <div className="mb-4">
-          <label htmlFor="csv-file" className="form-label">Seleccionar Archivo CSV</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            id="csv-file"
-            className="form-control"
-            accept=".csv"
-            onChange={handleFileSelect}
-            disabled={processing}
-          />
+          <div className="mb-3">
+            <label htmlFor="csv-file" className="form-label text-secondary small">Seleccionar Archivo CSV</label>
+            <div className="input-group">
+              <input
+                ref={fileInputRef}
+                type="file"
+                id="csv-file"
+                className="form-control"
+                accept=".csv"
+                onChange={handleFileSelect}
+                disabled={processing}
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={processing}
+              >
+                <i className="bi bi-upload"></i>
+              </button>
+            </div>
+          </div>
+
+          {file && (
+            <div className="alert alert-success py-2 d-flex align-items-center">
+              <i className="bi bi-file-earmark-text me-2"></i>
+              <div>
+                <strong>{file.name}</strong>
+                <span className="ms-2 small text-muted">({(file.size / 1024).toFixed(2)} KB)</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Previsualización si hay datos */}
         {csvData && (
           <>
-            <CSVPreview data={csvData} />
+            <div className="mb-4">
+              <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Vista Previa</h6>
+              <CSVPreview data={csvData} />
+            </div>
 
             {/* Opciones de importación */}
-            <div className="mb-4 mt-4">
-              <label className="form-label">Opciones de Importación</label>
-              <div className="card bg-light border-0 rounded-3">
-                <div className="card-body">
-                  <div className="form-check mb-2">
+            <div className="mb-4">
+              <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Opciones de Importación</h6>
+              <div className="card border-0 rounded-4 bg-light">
+                <div className="card-body p-3">
+                  <div className="form-check mb-3">
                     <input
                       type="radio"
                       id="strategy-skip"
@@ -226,11 +238,12 @@ export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
                       className="form-check-input"
                       value="skip"
                       checked={importStrategy === 'skip'}
-                      onChange={handleStrategyChange}
+                      onChange={(e) => setImportStrategy(e.target.value)}
                       disabled={processing}
                     />
                     <label className="form-check-label" htmlFor="strategy-skip">
-                      <strong>Omitir duplicados</strong> - No importar códigos postales que ya existen
+                      <span className="fw-medium">Omitir duplicados</span>
+                      <p className="mb-0 small text-muted">No importar códigos postales que ya existen</p>
                     </label>
                   </div>
                   <div className="form-check">
@@ -241,11 +254,12 @@ export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
                       className="form-check-input"
                       value="overwrite"
                       checked={importStrategy === 'overwrite'}
-                      onChange={handleStrategyChange}
+                      onChange={(e) => setImportStrategy(e.target.value)}
                       disabled={processing}
                     />
                     <label className="form-check-label" htmlFor="strategy-overwrite">
-                      <strong>Sobrescribir duplicados</strong> - Reemplazar códigos postales existentes
+                      <span className="fw-medium">Sobrescribir duplicados</span>
+                      <p className="mb-0 small text-muted">Reemplazar códigos postales existentes</p>
                     </label>
                   </div>
                 </div>
@@ -258,7 +272,7 @@ export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
         <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
           <button
             type="button"
-            className="btn btn-outline-secondary"
+            className="btn btn-outline-secondary rounded-3"
             onClick={onCancel}
             disabled={processing}
           >
@@ -266,7 +280,7 @@ export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
           </button>
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-outline-dark rounded-3"
             onClick={handleImport}
             disabled={!csvData || processing}
           >
@@ -286,4 +300,4 @@ export const ShippingImporter = ({ onImport, onCancel, onComplete }) => {
       </div>
     </div>
   );
-};
+}

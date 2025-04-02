@@ -4,11 +4,10 @@ import { ShippingTable } from '../table/ShippingTable';
 import { ShippingForm } from '../form/ShippingForm';
 import { ShippingImporter } from '../importer/ShippingImporter';
 import { useShippingRules } from '../hooks/useShippingRules';
-import { SearchBar } from '../../shared/SearchBar.jsx';
 
 /**
  * Página principal para la gestión de reglas de envío.
- * Maneja la visualización, creación, edición e importación de reglas de envío.
+ * Versión renovada con estilo similar al módulo de Orders
  */
 export const ShippingManagementPage = () => {
   const { mode, id } = useParams();
@@ -36,42 +35,36 @@ export const ShippingManagementPage = () => {
   }, [mode, id, getShippingRuleById]);
 
   // Manejar cambio en la búsqueda
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    filterShippingRules(e.target.value);
-  };
-
-  // Limpiar búsqueda
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    filterShippingRules('');
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    filterShippingRules(term);
   };
 
   // Manejar navegación
-  const goToList = () => navigate('/admin/shipping');
-  const goToCreate = () => navigate('/admin/shipping/create');
-  const goToEdit = (ruleId) => navigate(`/admin/shipping/edit/${ruleId}`);
-  const goToImport = () => navigate('/admin/shipping/import');
+  const handleBackToList = () => navigate('/admin/shipping');
+  const handleCreateNew = () => navigate('/admin/shipping/create');
+  const handleEditRule = (ruleId) => navigate(`/admin/shipping/edit/${ruleId}`);
+  const handleImport = () => navigate('/admin/shipping/import');
 
-  // Manejar guardado
-  const handleRuleSaved = () => {
-    goToList();
+  // Título dinámico según el modo
+  const getPageTitle = () => {
+    switch (mode) {
+      case 'create': return 'Nueva Regla de Envío';
+      case 'edit': return 'Editar Regla de Envío';
+      case 'import': return 'Importar Reglas de Envío';
+      default: return 'Gestión de Envíos';
+    }
   };
 
-  // Manejar importación
-  const handleImportComplete = () => {
-    goToList();
-  };
-
-  // Renderizar según el modo
+  // Renderizar vista según el modo
   const renderContent = () => {
     switch (mode) {
       case 'create':
         return (
           <ShippingForm
             onSave={createShippingRule}
-            onCancel={goToList}
-            onComplete={handleRuleSaved}
+            onCancel={handleBackToList}
+            onComplete={handleBackToList}
           />
         );
       case 'edit':
@@ -80,77 +73,47 @@ export const ShippingManagementPage = () => {
             rule={selectedRule}
             isEdit={true}
             onSave={updateShippingRule}
-            onCancel={goToList}
-            onComplete={handleRuleSaved}
+            onCancel={handleBackToList}
+            onComplete={handleBackToList}
           />
         );
       case 'import':
         return (
           <ShippingImporter
             onImport={importShippingRules}
-            onCancel={goToList}
-            onComplete={handleImportComplete}
+            onCancel={handleBackToList}
+            onComplete={handleBackToList}
           />
         );
       default:
         return (
-          <>
-            {/* Barra de búsqueda */}
-            <div className="d-flex justify-content-between mb-4">
-              <div className="w-75">
-                <SearchBar
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  onClear={handleClearSearch}
-                  placeholder="Buscar por código postal o zona..."
-                  size="lg"
-                />
-              </div>
-              <div className="d-flex gap-2">
-                <button
-                  className="btn btn-outline-primary"
-                  onClick={goToImport}
-                >
-                  <i className="bi bi-file-earmark-arrow-up me-2"></i>
-                  Importar CSV
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={goToCreate}
-                >
-                  <i className="bi bi-plus-lg me-2"></i>
-                  Nueva Regla
-                </button>
-              </div>
-            </div>
-
-            {/* Tabla de reglas de envío */}
-            <ShippingTable
-              rules={shippingRules}
-              loading={loading}
-              error={error}
-              onEdit={goToEdit}
-              onDelete={deleteShippingRule}
-            />
-          </>
+          <ShippingTable
+            rules={shippingRules}
+            loading={loading}
+            error={error}
+            onEdit={handleEditRule}
+            onDelete={deleteShippingRule}
+            onSearch={handleSearch}
+            searchTerm={searchTerm}
+            onCreateNew={handleCreateNew}
+            onImport={handleImport}
+          />
         );
     }
   };
 
   return (
-    <div className="shipping-management-container">
+    <div className="order-management-page">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-          {mode === 'create' && 'Crear Nueva Regla de Envío'}
-          {mode === 'edit' && 'Editar Regla de Envío'}
-          {mode === 'import' && 'Importar Reglas de Envío'}
-          {!mode && 'Gestión de Envíos'}
-        </h2>
+        <h3 className="page-title fw-medium mb-0">
+          {getPageTitle()}
+        </h3>
 
+        {/* Botón para volver en vistas de detalle/creación/edición */}
         {(mode === 'create' || mode === 'edit' || mode === 'import') && (
           <button
-            className="btn btn-outline-secondary"
-            onClick={goToList}
+            className="btn btn-outline-secondary rounded-3"
+            onClick={handleBackToList}
           >
             <i className="bi bi-arrow-left me-2"></i>
             Volver
@@ -158,9 +121,10 @@ export const ShippingManagementPage = () => {
         )}
       </div>
 
-      {error && (
-        <div className="alert alert-danger mb-4">
-          <i className="bi bi-exclamation-triangle me-2"></i>
+      {/* Mostrar error global si existe */}
+      {error && !['create', 'edit', 'import'].includes(mode) && (
+        <div className="alert alert-danger py-2 mb-4">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
           {error}
         </div>
       )}

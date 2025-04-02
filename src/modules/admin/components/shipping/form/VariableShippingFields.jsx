@@ -3,88 +3,105 @@ import { Controller } from 'react-hook-form';
 
 /**
  * Campos para configurar las opciones de envío variable.
- *
- * @param {Object} props - Propiedades del componente
- * @param {Object} props.control - Control de react-hook-form
- * @param {Object} props.errors - Errores del formulario
- * @param {string} props.className - Clases adicionales
+ * Renovado con diseño minimalista
  */
 export const VariableShippingFields = ({ control, errors, className = '' }) => {
   return (
-    <div className={`variable-shipping-fields card border-0 bg-light rounded-3 p-3 ${className}`}>
-      <div className="card-body">
-        <div className="row g-3">
-          {/* Monto mínimo para envío gratis */}
-          <div className="col-md-6">
-            <label htmlFor="envio_gratis_monto_minimo" className="form-label">
-              Monto mínimo para envío gratis (MXN)
-            </label>
-            <Controller
-              name="envio_variable.envio_gratis_monto_minimo"
-              control={control}
-              rules={{
-                min: {
-                  value: 0,
-                  message: 'El monto debe ser mayor o igual a 0'
-                }
-              }}
-              render={({ field }) => (
-                <input
-                  type="number"
-                  step="0.01"
-                  id="envio_gratis_monto_minimo"
-                  className={`form-control ${
-                    errors?.envio_variable?.envio_gratis_monto_minimo ? 'is-invalid' : ''
-                  }`}
-                  placeholder="Ej: 999.00"
-                  {...field}
-                />
-              )}
-            />
-            {errors?.envio_variable?.envio_gratis_monto_minimo && (
-              <div className="invalid-feedback">
-                {errors.envio_variable.envio_gratis_monto_minimo.message}
-              </div>
-            )}
-            <div className="form-text">
-              Establece 0 para desactivar el envío gratis por monto
+    <div className={`variable-shipping-fields ${className}`}>
+      <div className="card border-0 rounded-4 bg-light p-0">
+        <div className="card-body p-3">
+          <div className="alert alert-secondary py-2 mb-3">
+            <div className="d-flex">
+              <i className="bi bi-info-circle text-secondary me-2 mt-1"></i>
+              <p className="mb-0 small">
+                Configura cómo se calcula el envío según el monto total y la cantidad de productos
+              </p>
             </div>
           </div>
 
-          {/* Costo por producto extra */}
-          <div className="col-md-6">
-            <label htmlFor="costo_por_producto_extra" className="form-label">
-              Costo por producto adicional (MXN)
-            </label>
-            <Controller
-              name="envio_variable.costo_por_producto_extra"
-              control={control}
-              rules={{
-                min: {
-                  value: 0,
-                  message: 'El costo debe ser mayor o igual a 0'
-                }
-              }}
-              render={({ field }) => (
-                <input
-                  type="number"
-                  step="0.01"
-                  id="costo_por_producto_extra"
-                  className={`form-control ${
-                    errors?.envio_variable?.costo_por_producto_extra ? 'is-invalid' : ''
-                  }`}
-                  placeholder="Ej: 15.00"
-                  {...field}
+          <div className="row g-3">
+            {/* Monto mínimo para envío gratis */}
+            <div className="col-md-6">
+              <label htmlFor="envio_gratis_monto_minimo" className="form-label text-secondary small">
+                Monto mínimo para envío gratis
+              </label>
+              <div className="input-group">
+                <span className="input-group-text bg-white">$</span>
+                <Controller
+                  name="envio_variable.envio_gratis_monto_minimo"
+                  control={control}
+                  rules={{
+                    min: {
+                      value: 0,
+                      message: 'El monto debe ser mayor o igual a 0'
+                    }
+                  }}
+                  render={({ field }) => (
+                    <input
+                      type="number"
+                      step="0.01"
+                      id="envio_gratis_monto_minimo"
+                      className={`form-control ${
+                        errors?.envio_variable?.envio_gratis_monto_minimo ? 'is-invalid' : ''
+                      }`}
+                      placeholder="Ej: 999.00"
+                      {...field}
+                    />
+                  )}
                 />
-              )}
-            />
-            {errors?.envio_variable?.costo_por_producto_extra && (
-              <div className="invalid-feedback">
-                {errors.envio_variable.costo_por_producto_extra.message}
+                <span className="input-group-text bg-white">MXN</span>
               </div>
-            )}
-            <div className="form-text">
-              Establece 0 para no cobrar por productos adicionales
+              {errors?.envio_variable?.envio_gratis_monto_minimo && (
+                <div className="invalid-feedback d-block">
+                  {errors.envio_variable.envio_gratis_monto_minimo.message}
+                </div>
+              )}
+              <div className="form-text small">
+                <i className="bi bi-lightbulb me-1"></i>
+                Establece 0 para desactivar el envío gratis por monto
+              </div>
+            </div>
+
+            {/* Costo por producto extra */}
+            <div className="col-md-6">
+              <label htmlFor="costo_por_producto_extra" className="form-label text-secondary small">
+                Costo por producto adicional
+              </label>
+              <div className="input-group">
+                <span className="input-group-text bg-white">$</span>
+                <Controller
+                  name="envio_variable.costo_por_producto_extra"
+                  control={control}
+                  rules={{
+                    min: {
+                      value: 0,
+                      message: 'El costo debe ser mayor o igual a 0'
+                    }
+                  }}
+                  render={({ field }) => (
+                    <input
+                      type="number"
+                      step="0.01"
+                      id="costo_por_producto_extra"
+                      className={`form-control ${
+                        errors?.envio_variable?.costo_por_producto_extra ? 'is-invalid' : ''
+                      }`}
+                      placeholder="Ej: 15.00"
+                      {...field}
+                    />
+                  )}
+                />
+                <span className="input-group-text bg-white">MXN</span>
+              </div>
+              {errors?.envio_variable?.costo_por_producto_extra && (
+                <div className="invalid-feedback d-block">
+                  {errors.envio_variable.costo_por_producto_extra.message}
+                </div>
+              )}
+              <div className="form-text small">
+                <i className="bi bi-lightbulb me-1"></i>
+                Establece 0 para no cobrar por productos adicionales
+              </div>
             </div>
           </div>
         </div>
