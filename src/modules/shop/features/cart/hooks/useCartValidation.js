@@ -20,17 +20,9 @@ export const useCartValidation = (items) => {
 
   // Referencias para control de validación
   const lastStockCheck = useRef(null);
+  const validationLock = useRef(false);
   const stockValidationTimer = useRef(null);
-  const validationInProgress = useRef(false);
-
-  // Limpiar temporizador al desmontar
-  useEffect(() => {
-    return () => {
-      if (stockValidationTimer.current) {
-        clearTimeout(stockValidationTimer.current);
-      }
-    };
-  }, []);
+  const isInitialMount = useRef(true);
 
   /**
    * Identifica productos sin stock
@@ -69,82 +61,108 @@ export const useCartValidation = (items) => {
   ), [outOfStockItems]);
 
   /**
-   * Verificar y actualizar stock de manera controlada periódicamente
+   * Función interna para actualizar el stock
+   * @private
+   */
+  const updateStockInfo = useCallback(async () => {
+    // Prevenir múltiples ejecuciones
+    if (validationLock.current) {
+      console.log('Validación de stock bloqueada por otra en progreso');
+      return;
+    }
+
+    // Verificar si hay elementos en el carrito
+    if (!items || items.length === 0) {
+      return;
+    }
+
+    // Verificar el tiempo desde la última validación
+    const now = Date.now();
+    if (lastStockCheck.current && (now - lastStockCheck.current) < 30000) {
+      console.log('Validación de stock omitida - última realizada hace menos de 30 segundos');
+      return;
+    }
+
+    try {
+      // Activar el bloqueo
+      validationLock.current = true;
+      setIsValidatingStock(true);
+
+      // Registrar una única vez
+      console.log('Ejecutando validación de stock programada', new Date().toISOString());
+
+      const result = await validateItemsStock(items);
+      lastStockCheck.current = now;
+
+      // Si hay productos con stock desactualizado, actualizarlos en el carrito
+      if (!result.valid && result.outOfStockItems && result.outOfStockItems.length > 0) {
+        // Actualizar el stock en el carrito
+        result.outOfStockItems.forEach(item => {
+          dispatch(updateCartItemStock({
+            id: item.id,
+            stock: item.currentStock
+          }));
+        });
+      }
+    } catch (error) {
+      console.error('Error al actualizar información de stock:', error);
+    } finally {
+      // Liberar el bloqueo
+      validationLock.current = false;
+      setIsValidatingStock(false);
+    }
+  }, [dispatch, items]);
+
+  /**
+   * Iniciar validación programada en montaje y limpieza al desmontar
    */
   useEffect(() => {
-    // Limpiar temporizador anterior si existe
-    if (stockValidationTimer.current) {
-      clearTimeout(stockValidationTimer.current);
+    // Validación inicial después del primer renderizado
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+
+      // Ejecutar primera validación con retraso
+      if (items.length > 0) {
+        stockValidationTimer.current = setTimeout(() => {
+          updateStockInfo();
+        }, 2000);
+      }
     }
 
-    // Skip si no hay items o si está en progreso una validación
-    if (!items.length || validationInProgress.current) {
-      return;
-    }
-
-    // Verificar si se debe ejecutar una validación (máximo cada 30 segundos)
-    const shouldValidate = !lastStockCheck.current ||
-      (Date.now() - lastStockCheck.current) > 30000;
-
-    if (!shouldValidate) {
-      return;
-    }
-
-    const updateStockInfo = async () => {
-      try {
-        validationInProgress.current = true;
-        setIsValidatingStock(true);
-        console.log('Ejecutando validación de stock programada', new Date().toISOString());
-
-        const result = await validateItemsStock(items);
-        lastStockCheck.current = Date.now();
-
-        // Si hay productos con stock desactualizado, actualizarlos en el carrito
-        if (!result.valid && result.outOfStockItems.length > 0) {
-          // Actualizar el stock en el carrito
-          result.outOfStockItems.forEach(item => {
-            dispatch(updateCartItemStock({
-              id: item.id,
-              stock: item.currentStock
-            }));
-          });
-        }
-      } catch (error) {
-        console.error('Error al actualizar información de stock:', error);
-      } finally {
-        setIsValidatingStock(false);
-        validationInProgress.current = false;
+    // Limpieza al desmontar
+    return () => {
+      if (stockValidationTimer.current) {
+        clearTimeout(stockValidationTimer.current);
+        stockValidationTimer.current = null;
       }
     };
-
-    // Usar un timeout para evitar múltiples validaciones simultáneas
-    stockValidationTimer.current = setTimeout(updateStockInfo, 500);
-  }, [dispatch, items]);
+  }, [updateStockInfo, items]);
 
   /**
    * Fuerza una validación inmediata de stock
    * @returns {Promise<Object>} Resultado de la validación
    */
   const forceStockValidation = useCallback(async () => {
-    // Si ya hay una validación en curso, no iniciar otra
-    if (validationInProgress.current) {
-      console.log('Validación ya en progreso, esperando...');
-      // Esperar a que termine la validación actual
-      for (let i = 0; i < 10; i++) { // Máximo 10 intentos (5 segundos)
+    // Si ya hay una validación en curso, esperar
+    if (validationLock.current) {
+      console.log('Validación forzada en espera...');
+      // Intentar hasta 5 segundos (10 intentos x 500ms)
+      for (let i = 0; i < 10; i++) {
         await new Promise(resolve => setTimeout(resolve, 500));
-        if (!validationInProgress.current) break;
+        if (!validationLock.current) break;
       }
 
-      // Si después de esperar sigue en progreso, devolver el resultado más reciente
-      if (validationInProgress.current) {
-        console.log('Timeout esperando validación, usando datos actuales');
-        return { valid: true }; // Asumir válido por defecto para evitar bloqueo
+      // Si después de esperar sigue bloqueado, usar datos actuales
+      if (validationLock.current) {
+        console.log('Tiempo de espera agotado, usando datos actuales');
+        return { valid: true };
       }
     }
 
     try {
-      validationInProgress.current = true;
+      validationLock.current = true;
       setIsValidatingStock(true);
+
       console.log('Forzando validación de stock', new Date().toISOString());
 
       const result = await validateItemsStock(items);
@@ -165,8 +183,8 @@ export const useCartValidation = (items) => {
       console.error('Error al validar stock:', error);
       return { valid: false, error: error.message };
     } finally {
+      validationLock.current = false;
       setIsValidatingStock(false);
-      validationInProgress.current = false;
     }
   }, [dispatch, items]);
 
