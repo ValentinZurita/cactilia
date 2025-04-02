@@ -36,15 +36,20 @@ export const useOrderProcessor = ({
    * Procesa la orden completa: validación, pago y redirección
    */
   const processOrder = useCallback(async () => {
+
+    // Verificar que Stripe y Elements estén disponibles
     if (!stripe || !elements) {
       setError('El sistema de pagos no está listo. Por favor, inténtalo de nuevo.');
       return;
     }
 
+    // Limpiar errores previos, iniciar el estado de procesamiento y deshabilitar el botón
+    // para evitar múltiples clics en el botón de pago
     setIsProcessing(true);
     setError(null);
 
     try {
+
       // 1. Verificar stock en tiempo real
       await validateStockBeforeCheckout(cart.items);
 
@@ -61,23 +66,36 @@ export const useOrderProcessor = ({
       const result = await createAndProcessOrder(orderData);
 
       // 6. Establecer ID de la orden resultado
-      setOrderId(result.orderId);
+      if (result && result.orderId) {
+        setOrderId(result.orderId);
 
-      // 7. Si es OXXO, no limpiar el carrito
-      if (paymentManager.selectedPaymentType !== 'oxxo') {
-        dispatch(clearCartWithSync());
+        // 7. Si es OXXO, no limpiar el carrito
+        if (paymentManager.selectedPaymentType !== 'oxxo') {
+          dispatch(clearCartWithSync());
+        }
+
+        // 8. Redirigir a la página de éxito usando window.location para una navegación forzada
+        const redirectPath = paymentManager.selectedPaymentType === 'oxxo'
+          ? `/shop/order-success/${result.orderId}?payment=oxxo`
+          : `/shop/order-success/${result.orderId}`;
+
+        // Usar window.location para una redirección dura que evita problemas con React Router
+        window.location.href = redirectPath;
       }
 
-      // 8. Redirectionar a página de éxito (esto se hace en el componente superior)
+      // 9. Devolver el resultado del procesamiento
       return result;
+
     } catch (error) {
       console.error('Error en processOrder:', error);
       setError(error.message || 'Error desconocido al procesar la orden');
       setStep(1); // Volver al paso de formulario en caso de error
       return { success: false, error: error.message };
+
     } finally {
       setIsProcessing(false);
     }
+
   }, [
     stripe, elements, cart,
     addressManager, paymentManager, billingManager,
@@ -143,7 +161,7 @@ export const useOrderProcessor = ({
       throw new Error('Selecciona una dirección de envío');
     }
 
-    // Validar método de pago según tipo
+    // Validar metodo de pago según tipo
     if (paymentManager.selectedPaymentType === 'card') {
       const paymentMethod = paymentManager.paymentMethods.find(
         method => method.id === paymentManager.selectedPaymentId
