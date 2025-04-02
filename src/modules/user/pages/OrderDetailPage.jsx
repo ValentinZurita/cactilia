@@ -3,12 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import '../styles/orderDetail.css';
 import '../../shop/features/checkout/styles/orderSuccess.css';
 import { useOrders } from '../hooks/userOrders.js';
-import { OrderOverview } from '../../shop/features/order/component/OrderOverview.jsx'
-import { OrderProductsList } from '../../shop/features/order/component/OrderProductsList.jsx'
-import { OrderTotals } from '../../shop/features/order/component/OrderTotals.jsx'
-import { OrderAddressCard } from '../../shop/features/order/component/OrderAddressCard.jsx'
-import { OrderPaymentInfo } from '../../shop/features/order/component/OrderPaymentInfo.jsx'
-import { OrderNotes } from '../../admin/components/orders/notes/OrderNotes.jsx'
+import { OrderOverview } from '../../shop/features/order/component/index.js'
+import { OrderProductsList } from '../../shop/features/order/component/index.js'
+import { OrderTotals } from '../../shop/features/order/component/index.js'
+import { OrderAddressCard } from '../../shop/features/order/component/index.js'
+import { OrderPaymentInfo } from '../../shop/features/order/component/index.js'
+import { OrderNotes } from '../../shop/features/order/component/index.js'
 
 // Import components from shop module
 

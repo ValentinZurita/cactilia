@@ -282,14 +282,6 @@ export const OrderSuccessPage = () => {
             if (!window.location.pathname.includes('/profile/')) {
               dispatch(clearCartWithSync());
               setCartCleared(true);
-
-              // Mostrar mensaje de éxito
-              dispatch(addMessage({
-                type: 'success',
-                text: '¡Pedido completado correctamente!',
-                autoHide: true,
-                duration: 5000
-              }));
             }
           }
         }
