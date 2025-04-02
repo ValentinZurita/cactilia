@@ -1,5 +1,3 @@
-// src/modules/admin/routes/AdminRoutes.jsx
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AdminLayout } from "../../../layout/AdminLayout";
 import {
@@ -16,6 +14,7 @@ import { HomePageManagementPage } from "../components/content/homepage/HomePageM
 import { ShopPageManagementPage } from "../components/content/shop/ShopPageManagementPage";
 import ContactPageManagementPage from "../components/content/contact/ContactPageManagementPage";
 import { OrderManagementPage } from '../components/orders/OrderManagementPage.jsx'
+import { ShippingManagementPage } from '../components/shipping/pages/ShippingManagementPage.jsx'
 
 export const AdminRoutes = () => {
   return (
@@ -50,6 +49,10 @@ export const AdminRoutes = () => {
           {/* Orders */}
           <Route path="orders" element={<Navigate to="orders/view" />} />
           <Route path="orders/:mode/:id?" element={<OrderManagementPage />} />
+
+          {/* Shipping */}
+          <Route path="shipping" element={<ShippingManagementPage />} />
+          <Route path="shipping/:mode/:id?" element={<ShippingManagementPage />} />
 
           {/* Users */}
           <Route path="users" element={<Navigate to="users/customers" />} />

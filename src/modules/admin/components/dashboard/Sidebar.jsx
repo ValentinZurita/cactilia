@@ -143,6 +143,19 @@ export const Sidebar = ({ onLinkClick }) => {
         </SidebarDropdown>
 
 
+        {/* NUEVA SECCIÓN: */}
+        <SidebarDropdown
+          label="Envíos"
+          icon="bi-truck"
+          isOpen={openMenus.shipping}
+          toggle={() => toggleMenu("shipping")}
+        >
+          <SidebarItem to="/admin/shipping" label="Reglas de Envío" onClick={handleNavClick} />
+          <SidebarItem to="/admin/shipping/create" label="Nueva Regla" onClick={handleNavClick} />
+          <SidebarItem to="/admin/shipping/import" label="Importar CSV" onClick={handleNavClick} />
+        </SidebarDropdown>
+
+
         {/* Usuarios */}
         <SidebarDropdown
           label="Usuarios"
