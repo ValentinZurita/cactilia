@@ -73,13 +73,13 @@ const ZipCodeSection = ({ zipCodes = [], setZipCodes, setValue }) => {
     // Resetear errores
     setErrorMsg('');
     
-    // Si cambiamos a cobertura nacional, limpiar todos los demás códigos
+    // Limpiar todos los códigos al cambiar de tipo de cobertura
     if (tipo === TIPOS_COBERTURA.NACIONAL) {
+      // Si cambiamos a cobertura nacional, establecer solo 'nacional'
       setZipCodes(['nacional']);
       setValue('zipcodes', ['nacional']);
-    } 
-    // Si cambiamos desde nacional a otro tipo, limpiar 'nacional'
-    else if (zipCodes.includes('nacional')) {
+    } else {
+      // Para otros tipos, limpiar completamente
       setZipCodes([]);
       setValue('zipcodes', []);
     }
@@ -221,7 +221,7 @@ const ZipCodeSection = ({ zipCodes = [], setZipCodes, setValue }) => {
           <label className="form-label fw-medium mb-3">Tipo de cobertura:</label>
           
           <div className="d-flex flex-wrap gap-3 mb-3">
-            <div className="form-check form-check-inline mb-0">
+            <div className="form-check mb-0">
               <input 
                 type="radio" 
                 className="form-check-input" 
@@ -236,7 +236,7 @@ const ZipCodeSection = ({ zipCodes = [], setZipCodes, setValue }) => {
               </label>
             </div>
             
-            <div className="form-check form-check-inline mb-0">
+            <div className="form-check mb-0">
               <input 
                 type="radio" 
                 className="form-check-input" 
@@ -251,7 +251,7 @@ const ZipCodeSection = ({ zipCodes = [], setZipCodes, setValue }) => {
               </label>
             </div>
             
-            <div className="form-check form-check-inline mb-0">
+            <div className="form-check mb-0">
               <input 
                 type="radio" 
                 className="form-check-input" 
@@ -265,18 +265,12 @@ const ZipCodeSection = ({ zipCodes = [], setZipCodes, setValue }) => {
                 <i className="bi bi-geo-alt me-1"></i> Códigos específicos
               </label>
             </div>
-            
-            {zipCodes.length > 0 && (
-              <span className="badge bg-dark rounded-pill ms-auto" title="Zonas configuradas">
-                {zipCodes.length}
-              </span>
-            )}
           </div>
 
           {/* Controles específicos según el tipo de cobertura */}
           {coberturaTipo === TIPOS_COBERTURA.NACIONAL && (
             <div className="mb-3 text-center">
-              {!zipCodes.includes('nacional') ? (
+              {!zipCodes.includes('nacional') && (
                 <button 
                   type="button" 
                   className="btn btn-dark px-3" 
@@ -285,11 +279,6 @@ const ZipCodeSection = ({ zipCodes = [], setZipCodes, setValue }) => {
                   <i className="bi bi-globe me-1"></i>
                   Configurar cobertura nacional
                 </button>
-              ) : (
-                <div className="text-success py-2">
-                  <i className="bi bi-check-circle me-1"></i>
-                  Cobertura nacional configurada
-                </div>
               )}
             </div>
           )}

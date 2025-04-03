@@ -14,7 +14,7 @@ const StatusField = (props) => {
     return (
       <div className="mb-4">
         <label htmlFor="status" className="form-label fw-medium mb-2">
-          Estado
+          Estado de la regla
         </label>
         
         <div className="form-check form-switch">
@@ -28,17 +28,7 @@ const StatusField = (props) => {
             }}
           />
           <label htmlFor="status" className="form-check-label">
-            {status ? (
-              <span className="text-success">
-                <i className="bi bi-check-circle me-1"></i>
-                Activo
-              </span>
-            ) : (
-              <span className="text-danger">
-                <i className="bi bi-x-circle me-1"></i>
-                Inactivo
-              </span>
-            )}
+            {status ? 'Activo' : 'Inactivo'}
           </label>
         </div>
         
@@ -57,7 +47,7 @@ const StatusField = (props) => {
   return (
     <div className="mb-4">
       <label className="form-label fw-medium mb-2">
-        Estado
+        Estado de la regla
       </label>
       
       <Controller
@@ -76,17 +66,7 @@ const StatusField = (props) => {
               {...field}
             />
             <label className="form-check-label" htmlFor="status-switch">
-              {value ? (
-                <span className="text-success">
-                  <i className="bi bi-check-circle me-1"></i>
-                  Activo
-                </span>
-              ) : (
-                <span className="text-danger">
-                  <i className="bi bi-x-circle me-1"></i>
-                  Inactivo
-                </span>
-              )}
+              {value ? 'Activo' : 'Inactivo'}
             </label>
           </div>
         )}

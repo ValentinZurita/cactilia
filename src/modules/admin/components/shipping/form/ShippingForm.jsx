@@ -78,7 +78,7 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
           )}
         </div>
         
-        <div className="d-flex justify-content-end gap-2 p-3 bg-light">
+        <div className="d-flex justify-content-end gap-2 p-3 border-top">
           <button 
             type="button" 
             className="btn btn-outline-secondary px-3" 
