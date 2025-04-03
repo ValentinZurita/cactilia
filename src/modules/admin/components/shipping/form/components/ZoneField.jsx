@@ -6,36 +6,38 @@ import { Controller } from 'react-hook-form';
  */
 const ZoneField = ({ control, errors }) => {
   return (
-    <div className="mb-3">
-      <label htmlFor="zona" className="form-label">
-        Nombre de la zona <span className="text-danger">*</span>
-      </label>
+    <div className="mb-0">
+      <div className="d-flex justify-content-between align-items-center">
+        <label className="form-label text-secondary small mb-1">
+          Nombre de la zona
+        </label>
+        {errors?.name && (
+          <span className="badge text-bg-danger rounded-pill small">
+            Requerido
+          </span>
+        )}
+      </div>
+      
       <Controller
-        name="zona"
+        name="name"
         control={control}
-        rules={{
-          required: 'El nombre de la zona es obligatorio',
-          minLength: {
-            value: 3,
-            message: 'El nombre debe tener al menos 3 caracteres'
-          }
-        }}
+        defaultValue=""
+        rules={{ required: true }}
         render={({ field }) => (
           <input
             type="text"
-            id="zona"
-            className={`form-control ${errors.zona ? 'is-invalid' : ''}`}
-            placeholder="Ej: Zona Centro, Envíos Locales, etc."
+            className={`form-control form-control-sm ${errors?.name ? 'is-invalid' : ''}`}
+            placeholder="Ej: Zona Metropolitana, Resto del País..."
             {...field}
           />
         )}
       />
-      {errors.zona && (
-        <div className="invalid-feedback d-block">{errors.zona.message}</div>
+      
+      {errors?.name && (
+        <div className="invalid-feedback small">
+          El nombre de la zona es obligatorio
+        </div>
       )}
-      <div className="form-text">
-        Nombre descriptivo para identificar esta regla de envío
-      </div>
     </div>
   );
 };

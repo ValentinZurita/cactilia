@@ -1,33 +1,36 @@
 import React from 'react';
 
 /**
- * Tabs de navegación entre las diferentes secciones del formulario
+ * Componente de navegación por pestañas para el formulario de envío
+ * Estilo similar al módulo de Orders
  */
-const NavigationTabs = ({ activeSection, setActiveSection }) => {
-  // Definición de las secciones del formulario
+const NavigationTabs = ({ activeSection, onSectionChange }) => {
+  // Definición de las secciones
   const sections = [
-    { id: 'basic', label: 'Información Básica', icon: 'tag' },
-    { id: 'services', label: 'Servicios', icon: 'truck' },
-    { id: 'advanced', label: 'Avanzado', icon: 'gear' }
+    { id: 'info', label: 'Información', icon: 'info-circle' },
+    { id: 'price', label: 'Precio', icon: 'currency-dollar' },
+    { id: 'delivery', label: 'Entrega', icon: 'truck' },
   ];
 
   return (
-    <div className="mb-4">
-      <ul className="nav nav-tabs">
-        {sections.map((section) => (
-          <li className="nav-item" key={section.id}>
-            <button
-              type="button"
-              className={`nav-link ${activeSection === section.id ? 'active' : ''}`}
-              onClick={() => setActiveSection(section.id)}
-            >
-              <i className={`bi bi-${section.icon} me-2`}></i>
-              {section.label}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="nav nav-tabs border-bottom-0 mb-3">
+      {sections.map((section) => (
+        <li className="nav-item" key={section.id}>
+          <button
+            type="button"
+            className={`nav-link border-0 px-4 py-2 ${
+              activeSection === section.id 
+                ? 'active bg-dark text-white' 
+                : 'text-secondary'
+            }`}
+            onClick={() => onSectionChange(section.id)}
+          >
+            <i className={`bi bi-${section.icon} me-2`}></i>
+            {section.label}
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 };
 

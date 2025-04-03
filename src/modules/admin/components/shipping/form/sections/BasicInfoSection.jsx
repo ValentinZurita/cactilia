@@ -1,51 +1,43 @@
 import React from 'react';
-import { ZoneField, StatusField, ShippingConfigSection } from '../components';
+import ZoneField from '../components/ZoneField';
+import StatusField from '../components/StatusField';
+import ShippingConfigSection from '../components/ShippingConfigSection';
+import ZipCodeSection from '../components/ZipCodeSection';
 
 /**
  * Componente que contiene toda la sección de información básica
  */
-export const BasicInfoSection = ({ zipCodes, setZipCodes, control, watch, setValue, errors }) => {
+const BasicInfoSection = ({ zipCodes, setZipCodes, control, errors, setValue }) => {
   return (
-    <div className="basic-info">
-      <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Información General</h6>
-
-      <div className="row g-4 mb-4">
-        {/* Configuración de Envío (incluye ZipCodeSection) */}
-        <div className="col-12">
-          <ShippingConfigSection 
-            zipCodes={zipCodes}
-            setZipCodes={setZipCodes}
-            control={control}
-            watch={watch}
-            setValue={setValue}
-            errors={errors}
-          />
-        </div>
-
-        <div className="col-12">
-          <hr className="text-muted opacity-25 my-1" />
-        </div>
-
-        {/* Zona */}
-        <div className="col-12">
+    <div className="py-2">
+      {/* Información de jerarquía */}
+      <ShippingConfigSection />
+      
+      {/* Configuración de Cobertura */}
+      <h6 className="text-secondary mb-3">Cobertura geográfica</h6>
+      <ZipCodeSection 
+        zipCodes={zipCodes}
+        setZipCodes={setZipCodes}
+        setValue={setValue}
+      />
+      
+      {/* Información de la Zona */}
+      <h6 className="text-secondary mb-3">Identificación de la regla</h6>
+      <div className="d-flex align-items-start gap-4">
+        <div className="flex-grow-1">
           <ZoneField 
             control={control}
             errors={errors}
           />
         </div>
-
-        <div className="col-12">
-          <hr className="text-muted opacity-25 my-1" />
-        </div>
-
-        {/* Estado */}
-        <div className="col-12">
+        <div>
           <StatusField 
             control={control}
-            errors={errors}
           />
         </div>
       </div>
     </div>
   );
 };
+
+export default BasicInfoSection;
