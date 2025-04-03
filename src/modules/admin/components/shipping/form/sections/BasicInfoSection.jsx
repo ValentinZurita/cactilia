@@ -13,6 +13,21 @@ const BasicInfoSection = ({ zipCodes, setZipCodes, control, errors, setValue, wa
       {/* Información de jerarquía */}
       <ShippingConfigSection />
       
+      {/* Información de la Zona */}
+      <h6 className="text-dark mb-4">Identificación de la regla</h6>
+      <div className="mb-4">
+        <ZoneField 
+          control={control}
+          errors={errors}
+        />
+        <StatusField 
+          register={register}
+          errors={errors}
+          setValue={setValue}
+          watch={watch}
+        />
+      </div>
+      
       {/* Configuración de Cobertura */}
       <h6 className="text-dark mb-4">Cobertura geográfica</h6>
       <ZipCodeSection 
@@ -20,25 +35,6 @@ const BasicInfoSection = ({ zipCodes, setZipCodes, control, errors, setValue, wa
         setZipCodes={setZipCodes}
         setValue={setValue}
       />
-      
-      {/* Información de la Zona */}
-      <h6 className="text-dark mb-4">Identificación de la regla</h6>
-      <div className="d-flex align-items-start gap-4 mb-4">
-        <div className="flex-grow-1">
-          <ZoneField 
-            control={control}
-            errors={errors}
-          />
-        </div>
-        <div>
-          <StatusField 
-            register={register}
-            errors={errors}
-            setValue={setValue}
-            watch={watch}
-          />
-        </div>
-      </div>
     </div>
   );
 };

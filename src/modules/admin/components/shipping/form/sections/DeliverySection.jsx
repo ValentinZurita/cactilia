@@ -4,7 +4,7 @@ import { Controller } from 'react-hook-form';
 /**
  * Componente para la configuración de métodos de envío disponibles
  */
-const DeliverySection = ({ control, errors, watch }) => {
+const DeliverySection = ({ control, errors, watch, setValue }) => {
   // Obtener los valores actuales
   const shippingTypes = watch('shippingTypes') || [];
   
@@ -87,7 +87,7 @@ const DeliverySection = ({ control, errors, watch }) => {
       }
     ];
     
-    control.setValue('shippingTypes', updatedTypes);
+    setValue('shippingTypes', updatedTypes);
     
     // Resetear el formulario manteniendo el carrier seleccionado
     setNewShippingType({
@@ -102,7 +102,7 @@ const DeliverySection = ({ control, errors, watch }) => {
   // Elimina un tipo de envío
   const handleRemoveShippingType = (id) => {
     const updatedTypes = shippingTypes.filter(type => type.id !== id);
-    control.setValue('shippingTypes', updatedTypes);
+    setValue('shippingTypes', updatedTypes);
   };
   
   return (

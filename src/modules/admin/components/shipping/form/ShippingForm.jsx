@@ -8,7 +8,7 @@ import DeliverySection from './sections/DeliverySection';
 /**
  * Formulario para crear o editar reglas de envío
  */
-export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
+export const ShippingForm = ({ initialData = {}, onSubmit = () => {}, onCancel }) => {
   const [activeSection, setActiveSection] = useState('info');
   
   const {
@@ -19,11 +19,16 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
     watch,
     register
   } = useForm({
-    defaultValues: initialData
+    defaultValues: {
+      ...initialData,
+      activo: initialData?.activo !== undefined ? initialData.activo : true
+    }
   });
   
   // Valores actuales del formulario
   const zipCodes = watch('zipcodes') || [];
+  const zoneName = watch('name') || '';
+  const shippingTypes = watch('shippingTypes') || [];
   
   // Manejar el cambio de sección
   const handleSectionChange = (section) => {
@@ -32,12 +37,53 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
   
   // Manejar el envío del formulario
   const submitForm = (data) => {
+    // Validaciones
+    const validationErrors = [];
+    
     // Validar que haya al menos un código postal
     if (!data.zipcodes || data.zipcodes.length === 0) {
-      alert('Debe agregar al menos un código postal o zona de cobertura');
+      validationErrors.push('Debe agregar al menos un código postal o zona de cobertura');
+    }
+    
+    // Validar que tenga un nombre
+    if (!data.name || data.name.trim() === '') {
+      validationErrors.push('Debe especificar un nombre para la zona');
+    }
+    
+    // Validar que tenga al menos un método de envío
+    if (!data.shippingTypes || data.shippingTypes.length === 0) {
+      validationErrors.push('Debe agregar al menos un método de envío');
+    }
+    
+    // Si hay errores, mostrarlos y cambiar a la sección correspondiente
+    if (validationErrors.length > 0) {
+      // Mostrar el primer error
+      alert(validationErrors[0]);
+      
+      // Cambiar a la sección correspondiente según el error
+      if (validationErrors[0].includes('código postal')) {
+        setActiveSection('info');
+      } else if (validationErrors[0].includes('nombre')) {
+        setActiveSection('info');
+      } else if (validationErrors[0].includes('método de envío')) {
+        setActiveSection('delivery');
+      }
+      
       return;
     }
-    onSubmit(data);
+    
+    // Asegurarnos de que el objeto tenga la propiedad activo
+    const formData = {
+      ...data,
+      activo: data.status !== undefined ? data.status : true
+    };
+    
+    if (typeof onSubmit === 'function') {
+      onSubmit(formData);
+    } else {
+      console.error('Error: onSubmit handler is not a function');
+      alert('Error al guardar la regla. Por favor, inténtalo de nuevo más tarde.');
+    }
   };
   
   return (
@@ -66,6 +112,7 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
               control={control} 
               errors={errors}
               watch={watch}
+              setValue={setValue}
             />
           )}
           
@@ -74,6 +121,7 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
               control={control} 
               errors={errors}
               watch={watch}
+              setValue={setValue}
             />
           )}
         </div>
@@ -82,7 +130,7 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
           <button 
             type="button" 
             className="btn btn-outline-secondary px-3" 
-            onClick={onCancel}
+            onClick={typeof onCancel === 'function' ? onCancel : () => window.history.back()}
             disabled={isSubmitting}
           >
             Cancelar
