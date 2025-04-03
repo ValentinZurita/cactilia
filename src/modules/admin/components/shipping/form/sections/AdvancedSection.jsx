@@ -1,12 +1,10 @@
 import React from 'react';
-import { VariableShippingFields } from '../VariableShippingFields';
-import { RestrictedProductsSelector } from '../RestrictedProductsSelector';
 import { Controller } from 'react-hook-form';
 
 /**
  * Componente para la sección de configuración avanzada
  */
-export const AdvancedSection = ({ control, errors, watchVariableShipping, watchRestrictedProducts }) => {
+export const AdvancedSection = ({ control, errors, variableShipping, watchRestrictedProducts }) => {
   return (
     <div className="advanced-settings">
       <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Configuración Avanzada</h6>
@@ -37,28 +35,32 @@ export const AdvancedSection = ({ control, errors, watchVariableShipping, watchR
           />
         </div>
 
-        {/* Campos de envío variable */}
-        {watchVariableShipping && (
-          <VariableShippingFields
-            control={control}
-            errors={errors}
-            className="mb-4"
-          />
+        {/* Campos de envío variable - Temporalmente deshabilitado hasta crear el componente */}
+        {variableShipping && (
+          <div className="alert alert-info">
+            <p className="mb-0">
+              <i className="bi bi-info-circle me-2"></i>
+              Aquí se mostrarán las opciones para configurar precios variables por cantidad de productos o monto.
+            </p>
+          </div>
         )}
       </div>
 
-      {/* Productos restringidos */}
+      {/* Productos restringidos - Temporalmente deshabilitado hasta crear el componente */}
       <div className="mb-3">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <span className="fw-medium">Productos restringidos</span>
           <small className="text-muted">
-            {watchRestrictedProducts.length} producto(s) configurado(s)
+            {watchRestrictedProducts ? watchRestrictedProducts.length : 0} producto(s) configurado(s)
           </small>
         </div>
 
-        <RestrictedProductsSelector
-          control={control}
-        />
+        <div className="alert alert-info">
+          <p className="mb-0">
+            <i className="bi bi-info-circle me-2"></i>
+            Aquí se mostrará el selector de productos restringidos.
+          </p>
+        </div>
       </div>
     </div>
   );

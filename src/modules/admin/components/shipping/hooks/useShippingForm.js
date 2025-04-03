@@ -3,6 +3,19 @@ import { useForm } from 'react-hook-form';
 
 /**
  * Hook personalizado para manejar la lógica del formulario de reglas de envío
+ * 
+ * COBERTURA GEOGRÁFICA:
+ * 
+ * El sistema ahora maneja los siguientes formatos en el array de códigos postales (zipcodes):
+ * 
+ * 1. 'nacional' - Cobertura para todo el país
+ * 2. 'estado_XXX' - Cobertura para el estado con código XXX (ej: 'estado_PUE' para Puebla)
+ * 3. '12345' - Códigos postales específicos (5 dígitos)
+ * 
+ * El backend debe priorizar las reglas en este orden:
+ * 1. Código postal específico (5 dígitos exactos)
+ * 2. Estado (cualquier código postal que comience con los prefijos del estado)
+ * 3. Nacional (aplica a cualquier código postal)
  */
 export const useShippingForm = (rule = null, isEdit = false, onSave, onComplete) => {
   const [processing, setProcessing] = useState(false);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { DeliveryServicesSelector } from '../DeliveryServicesSelector';
+import { DeliveryServicesSelector } from '../components';
 
 /**
  * Componente para la sección de servicios de mensajería

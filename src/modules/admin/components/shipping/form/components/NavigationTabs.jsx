@@ -1,35 +1,34 @@
 import React from 'react';
 
 /**
- * Componente para las pestañas de navegación del formulario
+ * Tabs de navegación entre las diferentes secciones del formulario
  */
-export const NavigationTabs = ({ activeSection, setActiveSection }) => {
+const NavigationTabs = ({ activeSection, setActiveSection }) => {
+  // Definición de las secciones del formulario
+  const sections = [
+    { id: 'basic', label: 'Información Básica', icon: 'tag' },
+    { id: 'services', label: 'Servicios', icon: 'truck' },
+    { id: 'advanced', label: 'Avanzado', icon: 'gear' }
+  ];
+
   return (
-    <nav className="nav nav-tabs flex-nowrap mb-4 overflow-auto">
-      <button
-        className={`nav-link border-0 ${activeSection === 'basic' ? 'active bg-dark text-white fw-medium' : 'text-secondary'}`}
-        onClick={() => setActiveSection('basic')}
-        type="button"
-      >
-        <i className={`bi bi-info-circle me-2 ${activeSection === 'basic' ? 'text-white' : ''}`}></i>
-        <span className="d-none d-sm-inline">Información Básica</span>
-      </button>
-      <button
-        className={`nav-link border-0 ${activeSection === 'services' ? 'active bg-dark text-white fw-medium' : 'text-secondary'}`}
-        onClick={() => setActiveSection('services')}
-        type="button"
-      >
-        <i className={`bi bi-truck me-2 ${activeSection === 'services' ? 'text-white' : ''}`}></i>
-        <span className="d-none d-sm-inline">Servicios</span>
-      </button>
-      <button
-        className={`nav-link border-0 ${activeSection === 'advanced' ? 'active bg-dark text-white fw-medium' : 'text-secondary'}`}
-        onClick={() => setActiveSection('advanced')}
-        type="button"
-      >
-        <i className={`bi bi-gear me-2 ${activeSection === 'advanced' ? 'text-white' : ''}`}></i>
-        <span className="d-none d-sm-inline">Configuración Avanzada</span>
-      </button>
-    </nav>
+    <div className="mb-4">
+      <ul className="nav nav-tabs">
+        {sections.map((section) => (
+          <li className="nav-item" key={section.id}>
+            <button
+              type="button"
+              className={`nav-link ${activeSection === section.id ? 'active' : ''}`}
+              onClick={() => setActiveSection(section.id)}
+            >
+              <i className={`bi bi-${section.icon} me-2`}></i>
+              {section.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
-}; 
+};
+
+export default NavigationTabs; 

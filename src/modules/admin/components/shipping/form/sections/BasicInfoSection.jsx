@@ -1,21 +1,22 @@
 import React from 'react';
-import { ZipCodeSection, ZoneField, StatusField, ShippingConfigSection } from '../components';
+import { ZoneField, StatusField, ShippingConfigSection } from '../components';
 
 /**
  * Componente que contiene toda la sección de información básica
  */
-export const BasicInfoSection = ({ control, watch, setValue, errors, zipCodes, setZipCodes }) => {
+export const BasicInfoSection = ({ zipCodes, setZipCodes, control, watch, setValue, errors }) => {
   return (
     <div className="basic-info">
       <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Información General</h6>
 
       <div className="row g-4 mb-4">
-        {/* Códigos Postales */}
-        <div className="col-12 mb-2">
-          <ZipCodeSection 
-            control={control}
+        {/* Configuración de Envío (incluye ZipCodeSection) */}
+        <div className="col-12">
+          <ShippingConfigSection 
             zipCodes={zipCodes}
             setZipCodes={setZipCodes}
+            control={control}
+            watch={watch}
             setValue={setValue}
             errors={errors}
           />
@@ -37,27 +38,14 @@ export const BasicInfoSection = ({ control, watch, setValue, errors, zipCodes, s
           <hr className="text-muted opacity-25 my-1" />
         </div>
 
-        {/* Envío Gratis */}
-        <div className="col-12">
-          <ShippingConfigSection 
-            control={control}
-            watch={watch}
-            setValue={setValue}
-            errors={errors}
-          />
-        </div>
-
-        <div className="col-12">
-          <hr className="text-muted opacity-25 my-1" />
-        </div>
-
         {/* Estado */}
         <div className="col-12">
           <StatusField 
             control={control}
+            errors={errors}
           />
         </div>
       </div>
     </div>
   );
-}; 
+};
