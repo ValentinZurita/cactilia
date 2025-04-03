@@ -4,7 +4,7 @@ import { Controller } from 'react-hook-form';
 /**
  * Componente para la configuración de condiciones especiales de precio
  */
-const PriceSection = ({ control, errors, watch }) => {
+const PriceSection = ({ control, errors, watch, setValue }) => {
   // Obtener los valores actuales
   const freeShipping = watch('freeShipping');
   const freeShippingThreshold = watch('freeShippingThreshold');
@@ -35,7 +35,7 @@ const PriceSection = ({ control, errors, watch }) => {
                 
                 // Si se marca, también deshabilitar el umbral de envío gratis
                 if (e.target.checked) {
-                  control.setValue('freeShippingThreshold', false);
+                  setValue('freeShippingThreshold', false);
                 }
               }}
             />
@@ -69,7 +69,7 @@ const PriceSection = ({ control, errors, watch }) => {
               onChange={(e) => {
                 onChange(e.target.checked);
                 if (!e.target.checked) {
-                  control.setValue('minOrderAmount', 0);
+                  setValue('minOrderAmount', 0);
                 }
               }}
               disabled={freeShipping}

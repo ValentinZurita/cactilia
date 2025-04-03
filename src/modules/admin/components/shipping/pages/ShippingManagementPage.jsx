@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShippingTable } from '../table/ShippingTable';
 import { ShippingForm } from '../form/ShippingForm';
-import { ShippingImporter } from '../importer/ShippingImporter';
 import { useShippingRules } from '../hooks/useShippingRules';
 
 /**
@@ -13,6 +12,7 @@ export const ShippingManagementPage = () => {
   const { mode, id } = useParams();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [submissionError, setSubmissionError] = useState(null);
 
   const {
     shippingRules,
@@ -23,7 +23,6 @@ export const ShippingManagementPage = () => {
     updateShippingRule,
     deleteShippingRule,
     getShippingRuleById,
-    importShippingRules,
     filterShippingRules
   } = useShippingRules();
 
@@ -44,14 +43,70 @@ export const ShippingManagementPage = () => {
   const handleBackToList = () => navigate('/admin/shipping');
   const handleCreateNew = () => navigate('/admin/shipping/create');
   const handleEditRule = (ruleId) => navigate(`/admin/shipping/edit/${ruleId}`);
-  const handleImport = () => navigate('/admin/shipping/import');
+
+  // Función para manejar el guardado de una regla
+  const handleSaveRule = async (data) => {
+    setSubmissionError(null);
+    
+    // Adaptar el formato de los datos para el backend
+    const adaptedData = {
+      // Datos básicos
+      zipcode: data.zipcodes && data.zipcodes.length > 0 ? data.zipcodes[0] : '',
+      zipcodes: data.zipcodes || [],
+      zona: data.name || '',
+      activo: data.activo !== undefined ? data.activo : true,
+      
+      // Métodos de envío
+      opciones_mensajeria: data.shippingTypes
+        ? data.shippingTypes.map(type => ({
+            nombre: type.carrier,
+            label: type.label,
+            precio: type.price,
+            tiempo_entrega: `${type.minDays}-${type.maxDays} días`,
+            minDays: type.minDays,
+            maxDays: type.maxDays
+          }))
+        : [],
+      
+      // Reglas de precio
+      envio_gratis: data.freeShipping || false,
+      precio_base: 0, // Este campo es para compatibilidad
+      
+      // Otras propiedades
+      envio_variable: {
+        aplica: !!data.freeShippingThreshold,
+        envio_gratis_monto_minimo: data.minOrderAmount || 0,
+        costo_por_producto_extra: 0 // Por ahora no se usa
+      }
+    };
+    
+    try {
+      let result;
+      
+      if (mode === 'edit' && id) {
+        result = await updateShippingRule(id, adaptedData);
+      } else {
+        result = await createShippingRule(null, adaptedData);
+      }
+      
+      if (result.ok) {
+        handleBackToList();
+      } else {
+        setSubmissionError(result.error || 'Error al guardar la regla');
+        alert(result.error || 'Error al guardar la regla');
+      }
+    } catch (err) {
+      console.error('Error al guardar la regla:', err);
+      setSubmissionError(err.message || 'Error inesperado al guardar la regla');
+      alert(err.message || 'Error inesperado al guardar la regla');
+    }
+  };
 
   // Título dinámico según el modo
   const getPageTitle = () => {
     switch (mode) {
       case 'create': return 'Nueva Regla de Envío';
       case 'edit': return 'Editar Regla de Envío';
-      case 'import': return 'Importar Reglas de Envío';
       default: return 'Gestión de Envíos';
     }
   };
@@ -62,27 +117,42 @@ export const ShippingManagementPage = () => {
       case 'create':
         return (
           <ShippingForm
-            onSave={createShippingRule}
+            initialData={{}}
+            onSubmit={handleSaveRule}
             onCancel={handleBackToList}
-            onComplete={handleBackToList}
           />
         );
       case 'edit':
+        // Adaptar los datos existentes al formato del nuevo formulario
+        const adaptedInitialData = selectedRule ? {
+          name: selectedRule.zona || '',
+          zipcodes: selectedRule.zipcodes || [selectedRule.zipcode].filter(Boolean),
+          activo: selectedRule.activo !== undefined ? selectedRule.activo : true,
+          status: selectedRule.activo !== undefined ? selectedRule.activo : true,
+          
+          // Reglas
+          freeShipping: selectedRule.envio_gratis || false,
+          freeShippingThreshold: selectedRule.envio_variable?.aplica || false,
+          minOrderAmount: selectedRule.envio_variable?.envio_gratis_monto_minimo || 0,
+          
+          // Métodos de envío
+          shippingTypes: selectedRule.opciones_mensajeria
+            ? selectedRule.opciones_mensajeria.map((option, index) => ({
+                id: `${index + 1}`,
+                carrier: option.nombre || '',
+                label: option.label || option.nombre || '',
+                price: option.precio || 0,
+                minDays: option.minDays || 1,
+                maxDays: option.maxDays || 3
+              }))
+            : []
+        } : {};
+        
         return (
           <ShippingForm
-            rule={selectedRule}
-            isEdit={true}
-            onSave={updateShippingRule}
+            initialData={adaptedInitialData}
+            onSubmit={handleSaveRule}
             onCancel={handleBackToList}
-            onComplete={handleBackToList}
-          />
-        );
-      case 'import':
-        return (
-          <ShippingImporter
-            onImport={importShippingRules}
-            onCancel={handleBackToList}
-            onComplete={handleBackToList}
           />
         );
       default:
@@ -96,7 +166,6 @@ export const ShippingManagementPage = () => {
             onSearch={handleSearch}
             searchTerm={searchTerm}
             onCreateNew={handleCreateNew}
-            onImport={handleImport}
           />
         );
     }
@@ -110,7 +179,7 @@ export const ShippingManagementPage = () => {
         </h3>
 
         {/* Botón para volver en vistas de detalle/creación/edición */}
-        {(mode === 'create' || mode === 'edit' || mode === 'import') && (
+        {(mode === 'create' || mode === 'edit') && (
           <button
             className="btn btn-outline-secondary rounded-3"
             onClick={handleBackToList}
@@ -122,10 +191,10 @@ export const ShippingManagementPage = () => {
       </div>
 
       {/* Mostrar error global si existe */}
-      {error && !['create', 'edit', 'import'].includes(mode) && (
+      {(error || submissionError) && !['create', 'edit'].includes(mode) && (
         <div className="alert alert-danger py-2 mb-4">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          {error}
+          {error || submissionError}
         </div>
       )}
 
