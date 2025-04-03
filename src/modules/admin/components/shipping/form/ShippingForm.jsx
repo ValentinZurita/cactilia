@@ -13,6 +13,8 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('basic');
+  const [newZipCode, setNewZipCode] = useState('');
+  const [zipCodes, setZipCodes] = useState([]);
 
   // Obtener servicios de envío disponibles
   const { services, loading: loadingServices } = useShippingServices();
@@ -27,6 +29,7 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
   } = useForm({
     defaultValues: {
       zipcode: '',
+      zipcodes: [],
       zona: '',
       precio_base: 0,
       activo: true,
@@ -45,12 +48,22 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
   const watchVariableShipping = watch('envio_variable.aplica');
   const watchRestrictedProducts = watch('productos_restringidos', []);
   const watchEnvioGratis = watch('envio_gratis');
+  const watchZipCodes = watch('zipcodes', []);
 
   // Cargar datos de la regla si estamos en modo edición
   useEffect(() => {
     if (isEdit && rule) {
       // Establecer los valores del formulario
-      setValue('zipcode', rule.zipcode);
+      if (rule.zipcodes && Array.isArray(rule.zipcodes)) {
+        setValue('zipcodes', rule.zipcodes);
+        setZipCodes(rule.zipcodes);
+      } else if (rule.zipcode) {
+        // Compatibilidad con versión anterior
+        setValue('zipcode', rule.zipcode);
+        setValue('zipcodes', [rule.zipcode]);
+        setZipCodes([rule.zipcode]);
+      }
+      
       setValue('zona', rule.zona);
       setValue('precio_base', rule.precio_base);
       setValue('activo', rule.activo);
@@ -82,7 +95,8 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
       // Formatear valores numéricos
       const formattedData = {
         ...data,
-        precio_base: parseFloat(data.precio_base)
+        precio_base: parseFloat(data.precio_base),
+        zipcodes: data.zipcodes
       };
 
       // Configurar envío variable
@@ -110,6 +124,37 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
     } finally {
       setProcessing(false);
     }
+  };
+
+  // Manejar la adición de un nuevo código postal
+  const handleAddZipCode = () => {
+    if (!newZipCode) return;
+    
+    // Validar formato del código postal
+    if (!/^\d{5}$|^nacional$/.test(newZipCode)) {
+      setError('Ingresa un código postal válido (5 dígitos) o "nacional"');
+      return;
+    }
+    
+    // Verificar si ya existe
+    if (zipCodes.includes(newZipCode)) {
+      setError('Este código postal ya ha sido agregado');
+      return;
+    }
+    
+    // Agregar el nuevo código postal
+    const updatedZipCodes = [...zipCodes, newZipCode];
+    setZipCodes(updatedZipCodes);
+    setValue('zipcodes', updatedZipCodes);
+    setNewZipCode('');
+    setError(null);
+  };
+
+  // Eliminar un código postal
+  const handleRemoveZipCode = (zipToRemove) => {
+    const updatedZipCodes = zipCodes.filter(zip => zip !== zipToRemove);
+    setZipCodes(updatedZipCodes);
+    setValue('zipcodes', updatedZipCodes);
   };
 
   return (
@@ -156,31 +201,59 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
                 <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Información General</h6>
 
                 <div className="row g-3 mb-4">
-                  {/* Código Postal */}
-                  <div className="col-md-6">
-                    <label htmlFor="zipcode" className="form-label text-secondary small">Código Postal</label>
+                  {/* Códigos Postales */}
+                  <div className="col-md-12 mb-3">
+                    <label className="form-label text-secondary small">Códigos Postales</label>
+                    <div className="input-group mb-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej: 72000 o nacional"
+                        value={newZipCode}
+                        onChange={(e) => setNewZipCode(e.target.value)}
+                      />
+                      <button 
+                        type="button" 
+                        className="btn btn-outline-secondary" 
+                        onClick={handleAddZipCode}
+                      >
+                        <i className="bi bi-plus-lg"></i> Agregar
+                      </button>
+                    </div>
+                    <small className="text-muted">Agrega uno o más códigos postales para esta regla de envío</small>
+                    
+                    {/* Lista de códigos postales */}
+                    {zipCodes.length > 0 && (
+                      <div className="mt-3">
+                        <div className="d-flex flex-wrap gap-2">
+                          {zipCodes.map((zip, index) => (
+                            <div key={index} className="badge bg-light text-dark border d-flex align-items-center p-2">
+                              <span>{zip}</span>
+                              <button 
+                                type="button" 
+                                className="btn-close ms-2" 
+                                onClick={() => handleRemoveZipCode(zip)}
+                                aria-label="Eliminar código postal"
+                              ></button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Campo oculto para almacenar los códigos postales */}
                     <Controller
-                      name="zipcode"
+                      name="zipcodes"
                       control={control}
                       rules={{
-                        required: 'El código postal es obligatorio',
-                        pattern: {
-                          value: /^\d{5}$|^nacional$/,
-                          message: 'Ingresa un código postal válido (5 dígitos) o "nacional"'
-                        }
+                        validate: value => value.length > 0 || 'Agrega al menos un código postal'
                       }}
                       render={({ field }) => (
-                        <input
-                          type="text"
-                          id="zipcode"
-                          className={`form-control ${errors.zipcode ? 'is-invalid' : ''}`}
-                          placeholder="Ej: 72000 o nacional"
-                          {...field}
-                        />
+                        <input type="hidden" {...field} value={JSON.stringify(field.value)} />
                       )}
                     />
-                    {errors.zipcode && (
-                      <div className="invalid-feedback">{errors.zipcode.message}</div>
+                    {errors.zipcodes && (
+                      <div className="text-danger small mt-1">{errors.zipcodes.message}</div>
                     )}
                   </div>
 
