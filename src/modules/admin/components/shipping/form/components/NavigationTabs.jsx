@@ -13,24 +13,27 @@ const NavigationTabs = ({ activeSection, onSectionChange }) => {
   ];
 
   return (
-    <ul className="nav nav-tabs border-bottom-0 mb-3">
-      {sections.map((section) => (
-        <li className="nav-item" key={section.id}>
-          <button
-            type="button"
-            className={`nav-link border-0 px-4 py-2 ${
-              activeSection === section.id 
-                ? 'active bg-dark text-white' 
-                : 'text-secondary'
-            }`}
-            onClick={() => onSectionChange(section.id)}
-          >
-            <i className={`bi bi-${section.icon} me-2`}></i>
-            {section.label}
-          </button>
-        </li>
-      ))}
-    </ul>
+    <div className="mb-4">
+      <ul className="nav nav-tabs border-0 mb-0">
+        {sections.map((section) => (
+          <li className="nav-item" key={section.id}>
+            <button
+              type="button"
+              className={`nav-link border-0 px-4 py-2 ${
+                activeSection === section.id 
+                  ? 'active bg-dark text-white' 
+                  : 'text-secondary'
+              }`}
+              onClick={() => onSectionChange(section.id)}
+            >
+              <i className={`bi bi-${section.icon} me-2`}></i>
+              {section.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="border-bottom mb-3"></div>
+    </div>
   );
 };
 

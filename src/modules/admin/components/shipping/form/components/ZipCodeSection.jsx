@@ -192,169 +192,186 @@ const ZipCodeSection = ({ zipCodes = [], setZipCodes, setValue }) => {
     let displayText = zipCode;
     let badgeClass = '';
     let iconClass = 'geo-alt';
+    let btnCloseClass = '';
     
     if (zipCode === 'nacional') {
       displayText = 'Todo México';
       badgeClass = 'bg-dark';
       iconClass = 'globe';
+      btnCloseClass = 'btn-close-white';
     } else if (zipCode.startsWith('estado_')) {
       const estadoCode = zipCode.replace('estado_', '');
       displayText = `${getStateNameFromCode(estadoCode)}`;
       badgeClass = 'bg-secondary';
       iconClass = 'map';
+      btnCloseClass = 'btn-close-white';
     } else {
-      badgeClass = 'border';
+      badgeClass = 'bg-light text-dark border';
+      btnCloseClass = '';
     }
     
-    return { displayText, badgeClass, iconClass };
+    return { displayText, badgeClass, iconClass, btnCloseClass };
   };
 
   return (
     <div className="mb-4">
-      {/* Selector de tipo de cobertura - Estilo pills */}
-      <div className="d-flex mb-3">
-        <div className="btn-group btn-group-sm" role="group">
-          <input 
-            type="radio" 
-            className="btn-check" 
-            name="coberturaTipo" 
-            id="tipo-nacional" 
-            value={TIPOS_COBERTURA.NACIONAL}
-            checked={coberturaTipo === TIPOS_COBERTURA.NACIONAL}
-            onChange={handleCoberturaChange}
-          />
-          <label className="btn btn-sm btn-outline-dark rounded-pill me-1" htmlFor="tipo-nacional">
-            <i className="bi bi-globe me-1"></i> Nacional
-          </label>
+      {/* Selector de tipo de cobertura */}
+      <div className="card border-0 bg-light mb-4">
+        <div className="card-body">
+          <label className="form-label fw-medium mb-3">Tipo de cobertura:</label>
           
-          <input 
-            type="radio" 
-            className="btn-check" 
-            name="coberturaTipo" 
-            id="tipo-estatal" 
-            value={TIPOS_COBERTURA.ESTATAL}
-            checked={coberturaTipo === TIPOS_COBERTURA.ESTATAL}
-            onChange={handleCoberturaChange}
-          />
-          <label className="btn btn-sm btn-outline-dark rounded-pill me-1" htmlFor="tipo-estatal">
-            <i className="bi bi-map me-1"></i> Por Estado
-          </label>
-          
-          <input 
-            type="radio" 
-            className="btn-check" 
-            name="coberturaTipo" 
-            id="tipo-especifico" 
-            value={TIPOS_COBERTURA.ESPECIFICO}
-            checked={coberturaTipo === TIPOS_COBERTURA.ESPECIFICO}
-            onChange={handleCoberturaChange}
-          />
-          <label className="btn btn-sm btn-outline-dark rounded-pill" htmlFor="tipo-especifico">
-            <i className="bi bi-geo-alt me-1"></i> Códigos específicos
-          </label>
-        </div>
-        
-        {zipCodes.length > 0 && (
-          <span className="badge bg-dark ms-auto" title="Zonas configuradas">
-            {zipCodes.length}
-          </span>
-        )}
-      </div>
+          <div className="d-flex flex-wrap gap-3 mb-3">
+            <div className="form-check form-check-inline mb-0">
+              <input 
+                type="radio" 
+                className="form-check-input" 
+                name="coberturaTipo" 
+                id="tipo-nacional" 
+                value={TIPOS_COBERTURA.NACIONAL}
+                checked={coberturaTipo === TIPOS_COBERTURA.NACIONAL}
+                onChange={handleCoberturaChange}
+              />
+              <label className="form-check-label fw-medium" htmlFor="tipo-nacional">
+                <i className="bi bi-globe me-1"></i> Nacional
+              </label>
+            </div>
+            
+            <div className="form-check form-check-inline mb-0">
+              <input 
+                type="radio" 
+                className="form-check-input" 
+                name="coberturaTipo" 
+                id="tipo-estatal" 
+                value={TIPOS_COBERTURA.ESTATAL}
+                checked={coberturaTipo === TIPOS_COBERTURA.ESTATAL}
+                onChange={handleCoberturaChange}
+              />
+              <label className="form-check-label fw-medium" htmlFor="tipo-estatal">
+                <i className="bi bi-map me-1"></i> Por Estado
+              </label>
+            </div>
+            
+            <div className="form-check form-check-inline mb-0">
+              <input 
+                type="radio" 
+                className="form-check-input" 
+                name="coberturaTipo" 
+                id="tipo-especifico" 
+                value={TIPOS_COBERTURA.ESPECIFICO}
+                checked={coberturaTipo === TIPOS_COBERTURA.ESPECIFICO}
+                onChange={handleCoberturaChange}
+              />
+              <label className="form-check-label fw-medium" htmlFor="tipo-especifico">
+                <i className="bi bi-geo-alt me-1"></i> Códigos específicos
+              </label>
+            </div>
+            
+            {zipCodes.length > 0 && (
+              <span className="badge bg-dark rounded-pill ms-auto" title="Zonas configuradas">
+                {zipCodes.length}
+              </span>
+            )}
+          </div>
 
-      {/* Controles específicos según el tipo de cobertura */}
-      {coberturaTipo === TIPOS_COBERTURA.NACIONAL && (
-        <div className="mb-3 text-center">
-          {!zipCodes.includes('nacional') ? (
-            <button 
-              type="button" 
-              className="btn btn-sm btn-dark rounded-pill px-3" 
-              onClick={handleSetNacional}
-            >
-              <i className="bi bi-globe me-1"></i>
-              Configurar cobertura nacional
-            </button>
-          ) : (
-            <div className="text-success small py-1">
-              <i className="bi bi-check-circle me-1"></i>
-              Cobertura nacional configurada
+          {/* Controles específicos según el tipo de cobertura */}
+          {coberturaTipo === TIPOS_COBERTURA.NACIONAL && (
+            <div className="mb-3 text-center">
+              {!zipCodes.includes('nacional') ? (
+                <button 
+                  type="button" 
+                  className="btn btn-dark px-3" 
+                  onClick={handleSetNacional}
+                >
+                  <i className="bi bi-globe me-1"></i>
+                  Configurar cobertura nacional
+                </button>
+              ) : (
+                <div className="text-success py-2">
+                  <i className="bi bi-check-circle me-1"></i>
+                  Cobertura nacional configurada
+                </div>
+              )}
+            </div>
+          )}
+
+          {coberturaTipo === TIPOS_COBERTURA.ESTATAL && (
+            <div className="input-group mb-3">
+              <select
+                className="form-select"
+                value={estadoSeleccionado}
+                onChange={(e) => setEstadoSeleccionado(e.target.value)}
+              >
+                <option value="">Seleccionar estado</option>
+                {ESTADOS_MEXICO.map((estado) => (
+                  <option key={estado.value} value={estado.value}>
+                    {estado.label}
+                  </option>
+                ))}
+              </select>
+              <button 
+                type="button" 
+                className="btn btn-dark" 
+                onClick={handleAddEstado}
+              >
+                <i className="bi bi-plus"></i>
+              </button>
+            </div>
+          )}
+
+          {coberturaTipo === TIPOS_COBERTURA.ESPECIFICO && (
+            <div className="input-group mb-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Códigos postales (ej: 86610, 86612)"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              <button 
+                type="button" 
+                className="btn btn-dark" 
+                onClick={handleAddZipCode}
+              >
+                <i className="bi bi-plus"></i>
+              </button>
+            </div>
+          )}
+
+          {errorMsg && (
+            <div className="text-danger mb-3">
+              <i className="bi bi-exclamation-triangle me-1"></i>
+              {errorMsg}
             </div>
           )}
         </div>
-      )}
-
-      {coberturaTipo === TIPOS_COBERTURA.ESTATAL && (
-        <div className="input-group input-group-sm mb-3">
-          <select
-            className="form-select"
-            value={estadoSeleccionado}
-            onChange={(e) => setEstadoSeleccionado(e.target.value)}
-          >
-            <option value="">Seleccionar estado</option>
-            {ESTADOS_MEXICO.map((estado) => (
-              <option key={estado.value} value={estado.value}>
-                {estado.label}
-              </option>
-            ))}
-          </select>
-          <button 
-            type="button" 
-            className="btn btn-dark" 
-            onClick={handleAddEstado}
-          >
-            <i className="bi bi-plus"></i>
-          </button>
-        </div>
-      )}
-
-      {coberturaTipo === TIPOS_COBERTURA.ESPECIFICO && (
-        <div className="input-group input-group-sm mb-3">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Códigos postales (ej: 86610, 86612)"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <button 
-            type="button" 
-            className="btn btn-dark" 
-            onClick={handleAddZipCode}
-          >
-            <i className="bi bi-plus"></i>
-          </button>
-        </div>
-      )}
-
-      {errorMsg && (
-        <div className="small text-danger mb-3">
-          <i className="bi bi-exclamation-triangle me-1"></i>
-          {errorMsg}
-        </div>
-      )}
+      </div>
 
       {/* Listado de zonas configuradas */}
       {zipCodes.length > 0 && (
-        <div className="d-flex flex-wrap gap-1 mb-1">
-          {zipCodes.map((zipCode, index) => {
-            const { displayText, badgeClass, iconClass } = getZipCodeDisplay(zipCode);
-            return (
-              <span 
-                key={index} 
-                className={`badge ${badgeClass} d-flex align-items-center py-1 px-2`}
-              >
-                <i className={`bi bi-${iconClass} me-1`}></i>
-                <span>{displayText}</span>
-                <button 
-                  type="button" 
-                  className="btn-close btn-close-white ms-2" 
-                  style={{ fontSize: '0.5rem' }} 
-                  onClick={() => handleRemoveZipCode(zipCode)}
-                  aria-label="Eliminar"
-                ></button>
-              </span>
-            );
-          })}
+        <div>
+          <label className="form-label fw-medium mb-2">Zonas configuradas:</label>
+          <div className="d-flex flex-wrap gap-2 mb-3">
+            {zipCodes.map((zipCode, index) => {
+              const { displayText, badgeClass, iconClass, btnCloseClass } = getZipCodeDisplay(zipCode);
+              return (
+                <span 
+                  key={index} 
+                  className={`badge ${badgeClass} d-flex align-items-center py-2 px-3`}
+                >
+                  <i className={`bi bi-${iconClass} me-2`}></i>
+                  <span>{displayText}</span>
+                  <button 
+                    type="button" 
+                    className={`btn-close ${btnCloseClass} ms-2`} 
+                    style={{ fontSize: '0.7rem' }} 
+                    onClick={() => handleRemoveZipCode(zipCode)}
+                    aria-label="Eliminar"
+                  ></button>
+                </span>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

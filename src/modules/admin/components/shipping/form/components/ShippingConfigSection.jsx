@@ -1,49 +1,39 @@
 import React, { useState } from 'react';
 
 /**
- * Componente que muestra información sobre la configuración de envíos
+ * Componente para mostrar información de la jerarquía de reglas de envío
  */
 const ShippingConfigSection = () => {
   const [showInfo, setShowInfo] = useState(true);
   
   return (
-    <>
+    <div className="mb-4">
       {showInfo && (
-        <div className="bg-light rounded-3 p-3 mb-4 border-start border-4 border-dark">
-          <div className="d-flex justify-content-between align-items-start mb-2">
-            <h6 className="mb-0 fw-semibold d-flex align-items-center">
-              <i className="bi bi-info-circle me-2"></i>
-              Prioridad de reglas
-            </h6>
-            <button 
-              type="button" 
-              className="btn-close" 
-              onClick={() => setShowInfo(false)}
-              aria-label="Cerrar"
-            />
-          </div>
+        <div className="alert alert-light border mb-4 position-relative small">
+          <button 
+            type="button" 
+            className="position-absolute top-0 end-0 btn-close mt-2 me-2" 
+            onClick={() => setShowInfo(false)}
+            aria-label="Cerrar"
+          ></button>
           
-          <p className="small mb-2">
-            Las reglas de envío se aplican con la siguiente prioridad:
+          <h6 className="fw-medium mb-2">
+            <i className="bi bi-info-circle me-2"></i>
+            Información sobre jerarquía de reglas
+          </h6>
+          
+          <p className="mb-2">
+            Las reglas de envío se evalúan en el siguiente orden de prioridad:
           </p>
           
-          <ol className="small mb-0 ps-3">
-            <li className="mb-1">
-              <span className="fw-medium">Códigos postales específicos</span> - 
-              Reglas para códigos postales individuales (ej: 86000)
-            </li>
-            <li className="mb-1">
-              <span className="fw-medium">Estados</span> - 
-              Reglas que aplican a todos los códigos postales de un estado
-            </li>
-            <li>
-              <span className="fw-medium">Cobertura nacional</span> - 
-              Reglas que aplican a todo el país
-            </li>
+          <ol className="mb-0">
+            <li>Códigos postales específicos</li>
+            <li>Estados</li>
+            <li>Cobertura nacional</li>
           </ol>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

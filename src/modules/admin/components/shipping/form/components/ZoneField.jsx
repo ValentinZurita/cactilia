@@ -6,13 +6,13 @@ import { Controller } from 'react-hook-form';
  */
 const ZoneField = ({ control, errors }) => {
   return (
-    <div className="mb-0">
-      <div className="d-flex justify-content-between align-items-center">
-        <label className="form-label text-secondary small mb-1">
+    <div className="mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <label className="form-label fw-medium mb-0">
           Nombre de la zona
         </label>
         {errors?.name && (
-          <span className="badge text-bg-danger rounded-pill small">
+          <span className="badge text-bg-danger rounded-pill">
             Requerido
           </span>
         )}
@@ -26,7 +26,7 @@ const ZoneField = ({ control, errors }) => {
         render={({ field }) => (
           <input
             type="text"
-            className={`form-control form-control-sm ${errors?.name ? 'is-invalid' : ''}`}
+            className={`form-control ${errors?.name ? 'is-invalid' : ''}`}
             placeholder="Ej: Zona Metropolitana, Resto del País..."
             {...field}
           />
@@ -34,7 +34,7 @@ const ZoneField = ({ control, errors }) => {
       />
       
       {errors?.name && (
-        <div className="invalid-feedback small">
+        <div className="invalid-feedback">
           El nombre de la zona es obligatorio
         </div>
       )}

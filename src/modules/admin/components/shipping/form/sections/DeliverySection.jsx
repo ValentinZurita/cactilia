@@ -106,14 +106,14 @@ const DeliverySection = ({ control, errors, watch }) => {
   };
   
   return (
-    <div className="py-2">
+    <div className="py-3">
       {/* Métodos de envío */}
       <div className="mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h6 className="text-secondary mb-0">Opciones de envío disponibles</h6>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h6 className="text-dark mb-0">Opciones de envío disponibles</h6>
           <button 
             type="button" 
-            className="btn btn-sm btn-outline-dark"
+            className="btn btn-outline-dark px-3"
             onClick={() => setShowAddForm(!showAddForm)}
           >
             <i className={`bi bi-${showAddForm ? 'x' : 'plus'}`}></i>
@@ -123,12 +123,12 @@ const DeliverySection = ({ control, errors, watch }) => {
         
         {/* Formulario para añadir un tipo de envío */}
         {showAddForm && (
-          <div className="card border-0 bg-light mb-3">
+          <div className="card bg-light mb-4">
             <div className="card-body">
               <div className="mb-3">
-                <label className="form-label text-secondary small mb-1">1. Servicio de mensajería</label>
+                <label className="form-label fw-medium mb-2">1. Servicio de mensajería</label>
                 <select
-                  className="form-select form-select-sm"
+                  className="form-select"
                   name="carrier"
                   value={newShippingType.carrier}
                   onChange={handleNewTypeChange}
@@ -141,24 +141,24 @@ const DeliverySection = ({ control, errors, watch }) => {
               </div>
               
               <div className="mb-3">
-                <label className="form-label text-secondary small mb-1">2. Nombre para el cliente</label>
+                <label className="form-label fw-medium mb-2">2. Nombre para el cliente</label>
                 <input
                   type="text"
-                  className="form-control form-control-sm"
+                  className="form-control"
                   placeholder="Ej: Envío Express 24h"
                   name="label"
                   value={newShippingType.label}
                   onChange={handleNewTypeChange}
                 />
-                <div className="form-text small">
+                <div className="form-text">
                   Nombre mostrado al cliente en checkout
                 </div>
               </div>
               
-              <div className="row g-3 mb-3">
-                <div className="col-md-4">
-                  <label className="form-label text-secondary small mb-1">3. Precio</label>
-                  <div className="input-group input-group-sm">
+              <div className="row g-4 mb-4">
+                <div className="col-md-5">
+                  <label className="form-label fw-medium mb-2">3. Precio</label>
+                  <div className="input-group">
                     <span className="input-group-text">$</span>
                     <input
                       type="number"
@@ -172,11 +172,11 @@ const DeliverySection = ({ control, errors, watch }) => {
                     <span className="input-group-text">MXN</span>
                   </div>
                 </div>
-                <div className="col-md-8">
-                  <label className="form-label text-secondary small mb-1">4. Tiempo de entrega</label>
+                <div className="col-md-7">
+                  <label className="form-label fw-medium mb-2">4. Tiempo de entrega</label>
                   <div className="row g-2">
-                    <div className="col">
-                      <div className="input-group input-group-sm">
+                    <div className="col-sm-5">
+                      <div className="input-group">
                         <span className="input-group-text">De</span>
                         <input
                           type="number"
@@ -189,8 +189,8 @@ const DeliverySection = ({ control, errors, watch }) => {
                         />
                       </div>
                     </div>
-                    <div className="col">
-                      <div className="input-group input-group-sm">
+                    <div className="col-sm-7">
+                      <div className="input-group">
                         <span className="input-group-text">a</span>
                         <input
                           type="number"
@@ -211,7 +211,7 @@ const DeliverySection = ({ control, errors, watch }) => {
               <div className="d-flex justify-content-end">
                 <button 
                   type="button" 
-                  className="btn btn-sm btn-dark px-3"
+                  className="btn btn-dark px-4"
                   onClick={handleAddShippingType}
                 >
                   Añadir
@@ -229,13 +229,13 @@ const DeliverySection = ({ control, errors, watch }) => {
           render={({ field }) => (
             <div>
               {shippingTypes.length === 0 ? (
-                <div className="text-center text-muted py-3 bg-light rounded">
+                <div className="text-center text-muted py-4 bg-light rounded">
                   <i className="bi bi-box me-2"></i>
                   No hay opciones de envío configuradas
                 </div>
               ) : (
                 <div className="table-responsive">
-                  <table className="table table-sm table-hover bg-white">
+                  <table className="table table-hover bg-white">
                     <thead className="table-light">
                       <tr>
                         <th>Servicio</th>
@@ -259,7 +259,7 @@ const DeliverySection = ({ control, errors, watch }) => {
                           <td className="text-end">
                             <button
                               type="button"
-                              className="btn btn-sm btn-outline-danger"
+                              className="btn btn-outline-danger"
                               onClick={() => handleRemoveShippingType(type.id)}
                             >
                               <i className="bi bi-trash"></i>
@@ -274,7 +274,7 @@ const DeliverySection = ({ control, errors, watch }) => {
               
               {/* Mensaje informativo */}
               {shippingTypes.length > 0 && (
-                <div className="small text-muted mt-2">
+                <div className="form-text mt-2">
                   <i className="bi bi-info-circle me-1"></i>
                   Los clientes podrán elegir entre estas opciones durante el checkout.
                 </div>

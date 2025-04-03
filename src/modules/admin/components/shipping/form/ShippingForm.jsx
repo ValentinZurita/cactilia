@@ -16,7 +16,8 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
-    watch
+    watch,
+    register
   } = useForm({
     defaultValues: initialData
   });
@@ -51,6 +52,7 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
           {activeSection === 'info' && (
             <BasicInfoSection 
               control={control} 
+              register={register}
               errors={errors} 
               zipCodes={zipCodes} 
               setZipCodes={(codes) => setValue('zipcodes', codes)} 
@@ -76,7 +78,7 @@ export const ShippingForm = ({ initialData = {}, onSubmit, onCancel }) => {
           )}
         </div>
         
-        <div className="d-flex justify-content-end gap-2 mt-4 pt-2 border-top p-3">
+        <div className="d-flex justify-content-end gap-2 p-3 bg-light">
           <button 
             type="button" 
             className="btn btn-outline-secondary px-3" 

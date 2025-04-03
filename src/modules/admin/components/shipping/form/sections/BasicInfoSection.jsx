@@ -7,14 +7,14 @@ import ZipCodeSection from '../components/ZipCodeSection';
 /**
  * Componente que contiene toda la sección de información básica
  */
-const BasicInfoSection = ({ zipCodes, setZipCodes, control, errors, setValue }) => {
+const BasicInfoSection = ({ zipCodes, setZipCodes, control, errors, setValue, watch, register }) => {
   return (
-    <div className="py-2">
+    <div className="py-3">
       {/* Información de jerarquía */}
       <ShippingConfigSection />
       
       {/* Configuración de Cobertura */}
-      <h6 className="text-secondary mb-3">Cobertura geográfica</h6>
+      <h6 className="text-dark mb-4">Cobertura geográfica</h6>
       <ZipCodeSection 
         zipCodes={zipCodes}
         setZipCodes={setZipCodes}
@@ -22,8 +22,8 @@ const BasicInfoSection = ({ zipCodes, setZipCodes, control, errors, setValue }) 
       />
       
       {/* Información de la Zona */}
-      <h6 className="text-secondary mb-3">Identificación de la regla</h6>
-      <div className="d-flex align-items-start gap-4">
+      <h6 className="text-dark mb-4">Identificación de la regla</h6>
+      <div className="d-flex align-items-start gap-4 mb-4">
         <div className="flex-grow-1">
           <ZoneField 
             control={control}
@@ -32,7 +32,10 @@ const BasicInfoSection = ({ zipCodes, setZipCodes, control, errors, setValue }) 
         </div>
         <div>
           <StatusField 
-            control={control}
+            register={register}
+            errors={errors}
+            setValue={setValue}
+            watch={watch}
           />
         </div>
       </div>
