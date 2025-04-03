@@ -24,43 +24,42 @@ export const ShippingTable = ({
 
   return (
     <div className="shipping-rules-list">
-      {/* Barra de herramientas */}
-      <div className="d-flex flex-wrap justify-content-between gap-3 mb-4">
-        {/* Buscador */}
-        <div className="search-container flex-grow-1" style={{ maxWidth: '500px' }}>
-          <div className="input-group">
-            <span className="input-group-text bg-white border-end-0">
-              <i className="bi bi-search text-muted"></i>
-            </span>
-            <input
-              type="text"
-              className="form-control border-start-0"
-              placeholder="Buscar por zona..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              aria-label="Buscar reglas de envío"
-            />
-            {searchTerm && (
-              <button
-                className="btn btn-outline-secondary border-start-0"
-                type="button"
-                onClick={() => onSearch('')}
-                aria-label="Limpiar búsqueda"
-              >
-                <i className="bi bi-x"></i>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Botón de acción */}
+      {/* Botón de acción superior */}
+      <div className="d-flex justify-content-end mb-3">
         <button
-          className="btn btn-dark rounded-3"
+          className="btn btn-dark"
           onClick={onCreateNew}
         >
           <i className="bi bi-plus-lg me-2"></i>
           Nueva Regla
         </button>
+      </div>
+      
+      {/* Barra de búsqueda */}
+      <div className="mb-4">
+        <div className="input-group">
+          <span className="input-group-text bg-white border-end-0">
+            <i className="bi bi-search text-muted"></i>
+          </span>
+          <input
+            type="text"
+            className="form-control border-start-0"
+            placeholder="Buscar por zona..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            aria-label="Buscar reglas de envío"
+          />
+          {searchTerm && (
+            <button
+              className="btn btn-outline-secondary border-start-0"
+              type="button"
+              onClick={() => onSearch('')}
+              aria-label="Limpiar búsqueda"
+            >
+              <i className="bi bi-x"></i>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Mostrar indicador de carga */}
@@ -89,7 +88,7 @@ export const ShippingTable = ({
         <div className="card border-0 shadow-sm overflow-hidden">
           <div className="table-responsive">
             <table className="table table-hover mb-0">
-              <thead className="bg-dark text-white">
+              <thead style={{backgroundColor: '#212529', color: 'white'}}>
                 <tr>
                   <th scope="col" className="px-3 py-3 border-0">Tipo</th>
                   <th scope="col" className="px-3 py-3 border-0">Zona</th>

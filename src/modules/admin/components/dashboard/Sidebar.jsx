@@ -99,7 +99,7 @@ export const Sidebar = ({ onLinkClick }) => {
 
 
   return (
-    <div className="sidebar-container d-flex flex-column bg-dark text-light min-vh-100 p-3">
+    <div className="sidebar-container d-flex flex-column bg-dark text-light min-vh-100 p-3" style={{fontSize: "0.9rem"}}>
 
       {/* Sidebar Header */}
       <h5 className="mb-4 fw-medium">Panel de Administración</h5>
@@ -152,7 +152,6 @@ export const Sidebar = ({ onLinkClick }) => {
         >
           <SidebarItem to="/admin/shipping" label="Reglas de Envío" onClick={handleNavClick} />
           <SidebarItem to="/admin/shipping/create" label="Nueva Regla" onClick={handleNavClick} />
-          <SidebarItem to="/admin/shipping/import" label="Importar CSV" onClick={handleNavClick} />
         </SidebarDropdown>
 
 

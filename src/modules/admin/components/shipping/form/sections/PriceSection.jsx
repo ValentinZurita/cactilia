@@ -10,6 +10,13 @@ const PriceSection = ({ control, errors, watch, setValue }) => {
   const freeShippingThreshold = watch('freeShippingThreshold');
   const shippingTypes = watch('shippingTypes') || [];
   
+  // Función segura para setValue
+  const safeSetValue = (field, value) => {
+    if (setValue && typeof setValue === 'function') {
+      setValue(field, value);
+    }
+  };
+  
   return (
     <div className="py-3">
       <h6 className="text-dark mb-4">Política de envío gratuito</h6>
@@ -35,7 +42,7 @@ const PriceSection = ({ control, errors, watch, setValue }) => {
                 
                 // Si se marca, también deshabilitar el umbral de envío gratis
                 if (e.target.checked) {
-                  setValue('freeShippingThreshold', false);
+                  safeSetValue('freeShippingThreshold', false);
                 }
               }}
             />
@@ -69,7 +76,7 @@ const PriceSection = ({ control, errors, watch, setValue }) => {
               onChange={(e) => {
                 onChange(e.target.checked);
                 if (!e.target.checked) {
-                  setValue('minOrderAmount', 0);
+                  safeSetValue('minOrderAmount', 0);
                 }
               }}
               disabled={freeShipping}
