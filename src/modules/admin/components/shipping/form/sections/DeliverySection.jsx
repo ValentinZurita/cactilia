@@ -1,134 +1,279 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Controller } from 'react-hook-form';
 
 /**
- * Componente para la configuración de tiempos de entrega y opciones de envío
+ * Componente para la configuración de métodos de entrega y servicios de envío
  */
 const DeliverySection = ({ control, errors, watch }) => {
   // Obtener los valores actuales
-  const minDeliveryTime = watch('minDeliveryTime') || 1;
-  const freeShippingThreshold = watch('freeShippingThreshold');
+  const shippingTypes = watch('shippingTypes') || [];
+  
+  // Lista de servicios de mensajería disponibles
+  const availableCarriers = ['DHL', 'Estafeta', 'FedEx', 'Redpack', 'Correos de México'];
+  
+  // Estado para el formulario de añadir tipo de envío
+  const [newShippingType, setNewShippingType] = useState({
+    carrier: '',
+    label: '',
+    price: '',
+    minDays: '1',
+    maxDays: '3'
+  });
+  const [showAddForm, setShowAddForm] = useState(false);
+  
+  // Maneja el cambio en los campos del nuevo tipo de envío
+  const handleNewTypeChange = (e) => {
+    const { name, value } = e.target;
+    setNewShippingType(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // Genera un código único basado en el servicio y el nombre
+  const generateUniqueCode = (carrier, label) => {
+    if (!carrier || !label) return '';
+    
+    // Crear un código simple basado en el carrier y el label
+    const carrierPrefix = carrier.substring(0, 3).toLowerCase();
+    const labelPrefix = label.trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '')
+      .substring(0, 10);
+    
+    // Añadir timestamp para garantizar unicidad
+    const timestamp = Date.now().toString().slice(-4);
+    
+    return `${carrierPrefix}_${labelPrefix}_${timestamp}`;
+  };
+  
+  // Añade un nuevo tipo de envío
+  const handleAddShippingType = () => {
+    if (!newShippingType.carrier || !newShippingType.label || !newShippingType.price) {
+      return; // Validación básica
+    }
+    
+    // Validar rango de días
+    const minDays = parseInt(newShippingType.minDays) || 1;
+    const maxDays = parseInt(newShippingType.maxDays) || minDays;
+    
+    if (maxDays < minDays) {
+      alert('El máximo de días debe ser mayor o igual al mínimo');
+      return;
+    }
+    
+    // Generar código único
+    const code = generateUniqueCode(newShippingType.carrier, newShippingType.label);
+    
+    const updatedTypes = [
+      ...shippingTypes,
+      {
+        id: Date.now().toString(), // ID único
+        carrier: newShippingType.carrier,
+        name: code,
+        label: newShippingType.label,
+        price: parseFloat(newShippingType.price),
+        minDays,
+        maxDays
+      }
+    ];
+    
+    control.setValue('shippingTypes', updatedTypes);
+    
+    // Resetear el formulario manteniendo el carrier seleccionado
+    setNewShippingType({
+      carrier: newShippingType.carrier,
+      label: '',
+      price: '',
+      minDays: '1',
+      maxDays: '3'
+    });
+  };
+  
+  // Elimina un tipo de envío
+  const handleRemoveShippingType = (id) => {
+    const updatedTypes = shippingTypes.filter(type => type.id !== id);
+    control.setValue('shippingTypes', updatedTypes);
+  };
   
   return (
     <div className="py-2">
-      <h6 className="text-secondary mb-3">Tiempos de entrega</h6>
-      
-      <div className="card border-0 bg-light mb-4">
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label text-secondary small mb-1">Tiempo mínimo</label>
-              <Controller
-                name="minDeliveryTime"
-                control={control}
-                defaultValue={1}
-                rules={{
-                  required: 'Este campo es obligatorio',
-                  min: {
-                    value: 1,
-                    message: 'Debe ser al menos 1 día'
-                  }
-                }}
-                render={({ field }) => (
-                  <div className="input-group input-group-sm">
-                    <input
-                      type="number"
-                      className={`form-control ${errors?.minDeliveryTime ? 'is-invalid' : ''}`}
-                      min="1"
-                      {...field}
-                    />
-                    <span className="input-group-text">días</span>
-                  </div>
-                )}
-              />
-              {errors?.minDeliveryTime && (
-                <div className="invalid-feedback d-block small">
-                  {errors.minDeliveryTime.message}
-                </div>
-              )}
-            </div>
-            
-            <div className="col-md-6">
-              <label className="form-label text-secondary small mb-1">Tiempo máximo</label>
-              <Controller
-                name="maxDeliveryTime"
-                control={control}
-                defaultValue={3}
-                rules={{
-                  required: 'Este campo es obligatorio',
-                  min: {
-                    value: 1,
-                    message: 'Debe ser al menos 1 día'
-                  },
-                  validate: value => {
-                    return value >= minDeliveryTime || 'Debe ser mayor o igual al tiempo mínimo';
-                  }
-                }}
-                render={({ field }) => (
-                  <div className="input-group input-group-sm">
-                    <input
-                      type="number"
-                      className={`form-control ${errors?.maxDeliveryTime ? 'is-invalid' : ''}`}
-                      min={minDeliveryTime}
-                      {...field}
-                    />
-                    <span className="input-group-text">días</span>
-                  </div>
-                )}
-              />
-              {errors?.maxDeliveryTime && (
-                <div className="invalid-feedback d-block small">
-                  {errors.maxDeliveryTime.message}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="form-text small mt-2">
-            Este rango se mostrará a los clientes durante el proceso de compra.
-          </div>
+      {/* Métodos de envío */}
+      <div className="mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h6 className="text-secondary mb-0">Métodos de envío</h6>
+          <button 
+            type="button" 
+            className="btn btn-sm btn-outline-dark"
+            onClick={() => setShowAddForm(!showAddForm)}
+          >
+            <i className={`bi bi-${showAddForm ? 'x' : 'plus'}`}></i>
+            {showAddForm ? ' Cancelar' : ' Añadir método'}
+          </button>
         </div>
-      </div>
-      
-      <h6 className="text-secondary mb-3">Servicios de mensajería</h6>
-      
-      <div className="card border-0 bg-light">
-        <div className="card-body">
-          <Controller
-            name="carriers"
-            control={control}
-            defaultValue={[]}
-            render={({ field: { value, onChange } }) => (
-              <div className="row g-2">
-                {['DHL', 'Estafeta', 'FedEx', 'Redpack', 'Correos de México'].map(carrier => (
-                  <div className="col-md-4" key={carrier}>
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id={`carrier-${carrier}`}
-                        checked={value.includes(carrier)}
-                        onChange={(e) => {
-                          const newValue = e.target.checked
-                            ? [...value, carrier]
-                            : value.filter(c => c !== carrier);
-                          onChange(newValue);
-                        }}
-                      />
-                      <label className="form-check-label small" htmlFor={`carrier-${carrier}`}>
-                        {carrier}
-                      </label>
+        
+        {/* Formulario para añadir un tipo de envío */}
+        {showAddForm && (
+          <div className="card border-0 bg-light mb-3">
+            <div className="card-body">
+              <div className="mb-3">
+                <label className="form-label text-secondary small mb-1">1. Servicio de mensajería</label>
+                <select
+                  className="form-select form-select-sm"
+                  name="carrier"
+                  value={newShippingType.carrier}
+                  onChange={handleNewTypeChange}
+                >
+                  <option value="">Seleccionar servicio...</option>
+                  {availableCarriers.map(carrier => (
+                    <option key={carrier} value={carrier}>{carrier}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="mb-3">
+                <label className="form-label text-secondary small mb-1">2. Nombre para el cliente</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Ej: Envío Express 24h"
+                  name="label"
+                  value={newShippingType.label}
+                  onChange={handleNewTypeChange}
+                />
+                <div className="form-text small">
+                  Nombre mostrado al cliente en checkout
+                </div>
+              </div>
+              
+              <div className="row g-3 mb-3">
+                <div className="col-md-4">
+                  <label className="form-label text-secondary small mb-1">3. Precio</label>
+                  <div className="input-group input-group-sm">
+                    <span className="input-group-text">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      placeholder="Ej: 99.90"
+                      name="price"
+                      value={newShippingType.price}
+                      onChange={handleNewTypeChange}
+                    />
+                    <span className="input-group-text">MXN</span>
+                  </div>
+                </div>
+                <div className="col-md-8">
+                  <label className="form-label text-secondary small mb-1">4. Tiempo de entrega</label>
+                  <div className="row g-2">
+                    <div className="col">
+                      <div className="input-group input-group-sm">
+                        <span className="input-group-text">De</span>
+                        <input
+                          type="number"
+                          min="0"
+                          className="form-control"
+                          placeholder="1"
+                          name="minDays"
+                          value={newShippingType.minDays}
+                          onChange={handleNewTypeChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col">
+                      <div className="input-group input-group-sm">
+                        <span className="input-group-text">a</span>
+                        <input
+                          type="number"
+                          min="0"
+                          className="form-control"
+                          placeholder="3"
+                          name="maxDays"
+                          value={newShippingType.maxDays}
+                          onChange={handleNewTypeChange}
+                        />
+                        <span className="input-group-text">días</span>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
-            )}
-          />
-          
-          <div className="form-text small mt-2">
-            Seleccione los servicios de mensajería disponibles para esta zona.
+              
+              <div className="d-flex justify-content-end">
+                <button 
+                  type="button" 
+                  className="btn btn-sm btn-dark px-3"
+                  onClick={handleAddShippingType}
+                >
+                  Añadir método
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+        
+        {/* Lista de tipos de envío */}
+        <Controller
+          name="shippingTypes"
+          control={control}
+          defaultValue={[]}
+          render={({ field }) => (
+            <div>
+              {shippingTypes.length === 0 ? (
+                <div className="text-center text-muted py-3 bg-light rounded">
+                  <i className="bi bi-box me-2"></i>
+                  No hay métodos de envío configurados
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover bg-white">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Servicio</th>
+                        <th>Nombre</th>
+                        <th className="text-end">Precio</th>
+                        <th className="text-center">Entrega</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shippingTypes.map(type => (
+                        <tr key={type.id}>
+                          <td>{type.carrier}</td>
+                          <td>{type.label}</td>
+                          <td className="text-end">${type.price.toFixed(2)}</td>
+                          <td className="text-center">
+                            {type.minDays === type.maxDays
+                              ? `${type.minDays} día${type.minDays !== 1 ? 's' : ''}`
+                              : `${type.minDays}-${type.maxDays} días`}
+                          </td>
+                          <td className="text-end">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleRemoveShippingType(type.id)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              
+              {/* Mensaje informativo */}
+              {shippingTypes.length > 0 && (
+                <div className="small text-muted mt-2">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Los clientes podrán elegir entre estos métodos de envío durante el checkout.
+                </div>
+              )}
+            </div>
+          )}
+        />
       </div>
     </div>
   );
