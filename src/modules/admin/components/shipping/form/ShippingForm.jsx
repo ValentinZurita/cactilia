@@ -200,10 +200,10 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
               <div className="basic-info">
                 <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Información General</h6>
 
-                <div className="row g-3 mb-4">
+                <div className="row g-4 mb-4">
                   {/* Códigos Postales */}
-                  <div className="col-md-12 mb-3">
-                    <label className="form-label text-secondary small">Códigos Postales</label>
+                  <div className="col-12 mb-2">
+                    <label className="form-label text-secondary fw-medium">Códigos Postales</label>
                     <div className="input-group mb-2">
                       <input
                         type="text"
@@ -257,9 +257,13 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
                     )}
                   </div>
 
+                  <div className="col-12">
+                    <hr className="text-muted opacity-25 my-1" />
+                  </div>
+
                   {/* Zona */}
-                  <div className="col-md-6">
-                    <label htmlFor="zona" className="form-label text-secondary small">Zona</label>
+                  <div className="col-12">
+                    <label htmlFor="zona" className="form-label text-secondary fw-medium">Zona</label>
                     <Controller
                       name="zona"
                       control={control}
@@ -279,41 +283,110 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
                     {errors.zona && (
                       <div className="invalid-feedback">{errors.zona.message}</div>
                     )}
+                    <small className="text-muted d-block mt-1">
+                      Define un nombre descriptivo para la zona de cobertura
+                    </small>
                   </div>
 
-                  {/* Precio Base */}
-                  <div className="col-md-4">
-                    <label htmlFor="precio_base" className="form-label text-secondary small">Precio Base (MXN)</label>
-                    <Controller
-                      name="precio_base"
-                      control={control}
-                      rules={{
-                        required: 'El precio base es obligatorio',
-                        min: {
-                          value: 0,
-                          message: 'El precio debe ser mayor o igual a 0'
-                        }
-                      }}
-                      render={({ field }) => (
-                        <input
-                          type="number"
-                          step="0.01"
-                          id="precio_base"
-                          className={`form-control ${errors.precio_base ? 'is-invalid' : ''}`}
-                          placeholder="Ej: 50.00"
-                          disabled={watchEnvioGratis}
-                          {...field}
+                  <div className="col-12">
+                    <hr className="text-muted opacity-25 my-1" />
+                  </div>
+
+                  {/* Envío Gratis */}
+                  <div className="col-12">
+                    <label htmlFor="envio_gratis" className="form-label text-secondary fw-medium">Configuración de Envío</label>
+                    <div className="card border-0 bg-light rounded-3 p-3 mt-2">
+                      <div className="d-flex align-items-center">
+                        <Controller
+                          name="envio_gratis"
+                          control={control}
+                          render={({ field }) => (
+                            <div className="form-check form-switch">
+                              <input
+                                type="checkbox"
+                                id="envio_gratis"
+                                className="form-check-input"
+                                checked={field.value}
+                                onChange={(e) => {
+                                  field.onChange(e.target.checked);
+                                  if (e.target.checked) {
+                                    setValue('precio_base', 0);
+                                  }
+                                }}
+                              />
+                              <label className="form-check-label fw-medium" htmlFor="envio_gratis">
+                                {field.value ? 'Sí, el envío es gratuito' : 'No, el envío tiene costo'}
+                              </label>
+                            </div>
+                          )}
+                        />
+                      </div>
+                      <small className="text-muted d-block mt-2">
+                        {watchEnvioGratis ? 
+                          "El cliente no pagará por el envío en esta zona" : 
+                          "El cliente deberá pagar el costo de envío definido a continuación"}
+                      </small>
+                      
+                      {/* Precio Base - Solo visible cuando NO es envío gratis */}
+                      {!watchEnvioGratis && (
+                        <div className="mt-3" style={{ transition: 'all 0.3s ease' }}>
+                          <label htmlFor="precio_base" className="form-label text-secondary small">
+                            Costo de envío para el cliente
+                          </label>
+                          <div className="input-group">
+                            <span className="input-group-text bg-white">$</span>
+                            <Controller
+                              name="precio_base"
+                              control={control}
+                              rules={{
+                                required: 'El precio base es obligatorio',
+                                min: {
+                                  value: 0,
+                                  message: 'El precio debe ser mayor o igual a 0'
+                                }
+                              }}
+                              render={({ field }) => (
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  id="precio_base"
+                                  className={`form-control ${errors.precio_base ? 'is-invalid' : ''}`}
+                                  placeholder="Ej: 50.00"
+                                  {...field}
+                                />
+                              )}
+                            />
+                            <span className="input-group-text bg-white">MXN</span>
+                          </div>
+                          {errors.precio_base && (
+                            <div className="invalid-feedback d-block">{errors.precio_base.message}</div>
+                          )}
+                          <small className="text-muted d-block mt-1">
+                            Este es el costo que pagará el cliente por el envío
+                          </small>
+                        </div>
+                      )}
+                      
+                      {/* Campo oculto para precio_base cuando es envío gratis */}
+                      {watchEnvioGratis && (
+                        <Controller
+                          name="precio_base"
+                          control={control}
+                          render={({ field }) => (
+                            <input type="hidden" {...field} value="0" />
+                          )}
                         />
                       )}
-                    />
-                    {errors.precio_base && (
-                      <div className="invalid-feedback">{errors.precio_base.message}</div>
-                    )}
+                    </div>
+                  </div>
+
+                  <div className="col-12">
+                    <hr className="text-muted opacity-25 my-1" />
                   </div>
 
                   {/* Estado */}
-                  <div className="col-md-4">
-                    <label htmlFor="activo" className="form-label text-secondary small">Estado</label>
+                  <div className="col-12">
+                    <label htmlFor="activo" className="form-label text-secondary fw-medium">Estado</label>
                     <Controller
                       name="activo"
                       control={control}
@@ -330,36 +403,9 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
                         </select>
                       )}
                     />
-                  </div>
-
-                  {/* Envío Gratis */}
-                  <div className="col-md-4">
-                    <label htmlFor="envio_gratis" className="form-label text-secondary small">Envío Gratis</label>
-                    <div className="d-flex align-items-center mt-2">
-                      <Controller
-                        name="envio_gratis"
-                        control={control}
-                        render={({ field }) => (
-                          <div className="form-check form-switch">
-                            <input
-                              type="checkbox"
-                              id="envio_gratis"
-                              className="form-check-input"
-                              checked={field.value}
-                              onChange={(e) => {
-                                field.onChange(e.target.checked);
-                                if (e.target.checked) {
-                                  setValue('precio_base', 0);
-                                }
-                              }}
-                            />
-                            <label className="form-check-label" htmlFor="envio_gratis">
-                              {field.value ? 'Sí' : 'No'}
-                            </label>
-                          </div>
-                        )}
-                      />
-                    </div>
+                    <small className="text-muted d-block mt-1">
+                      Determina si esta regla de envío está disponible para los clientes
+                    </small>
                   </div>
                 </div>
               </div>
@@ -452,14 +498,11 @@ export const ShippingForm = ({ rule, isEdit = false, onSave, onCancel, onComplet
               >
                 {processing ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                     Guardando...
                   </>
                 ) : (
-                  <>
-                    <i className="bi bi-check-lg me-2"></i>
-                    {isEdit ? 'Actualizar Regla' : 'Crear Regla'}
-                  </>
+                  <>Guardar Regla</>
                 )}
               </button>
             </div>

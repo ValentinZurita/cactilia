@@ -58,7 +58,7 @@ export const VariableShippingFields = ({ control, errors, className = '' }) => {
               )}
               <div className="form-text small">
                 <i className="bi bi-lightbulb me-1"></i>
-                Establece 0 para desactivar el envío gratis por monto
+                Cuando el cliente compre por este monto o más, el envío será gratuito. Establece 0 para desactivar esta opción.
               </div>
             </div>
 
@@ -100,7 +100,7 @@ export const VariableShippingFields = ({ control, errors, className = '' }) => {
               )}
               <div className="form-text small">
                 <i className="bi bi-lightbulb me-1"></i>
-                Establece 0 para no cobrar por productos adicionales
+                Este costo se sumará al precio base por cada producto adicional en el carrito. Establece 0 si no deseas cobrar extra.
               </div>
             </div>
           </div>
