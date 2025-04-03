@@ -2,103 +2,70 @@ import React from 'react';
 import { Controller } from 'react-hook-form';
 
 /**
- * Componente para la configuración de precios de envío
+ * Componente para la configuración de condiciones especiales de precio
  */
 const PriceSection = ({ control, errors, watch }) => {
   // Obtener los valores actuales
   const freeShipping = watch('freeShipping');
   const freeShippingThreshold = watch('freeShippingThreshold');
+  const shippingTypes = watch('shippingTypes') || [];
   
   return (
     <div className="py-2">
-      <h6 className="text-secondary mb-3">Configuración de precio</h6>
+      <h6 className="text-secondary mb-3">Política de envío gratuito</h6>
       
       <div className="card border-0 bg-light mb-4">
         <div className="card-body">
+          <div className="alert alert-light small py-2">
+            <i className="bi bi-info-circle me-2"></i>
+            Estas configuraciones afectarán a todos los métodos de envío de esta regla.
+          </div>
+          
           <Controller
             name="freeShipping"
             control={control}
             defaultValue={false}
             render={({ field: { value, onChange } }) => (
-              <div className="form-check form-switch mb-3">
+              <div className="form-check mb-3">
                 <input
                   className="form-check-input"
                   type="checkbox"
-                  role="switch"
                   id="freeShipping"
                   checked={value}
                   onChange={(e) => {
                     onChange(e.target.checked);
+                    
+                    // Si se marca, también deshabilitar el umbral de envío gratis
                     if (e.target.checked) {
-                      control.setValue('basePrice', 0);
+                      control.setValue('freeShippingThreshold', false);
                     }
                   }}
                 />
-                <label className="form-check-label" htmlFor="freeShipping">
-                  <span className="fw-medium">{value ? 'Envío gratuito' : 'Envío con costo'}</span>
+                <label className="form-check-label fw-medium" htmlFor="freeShipping">
+                  Envío siempre gratuito
                 </label>
-                <div className="form-text small mt-0">
-                  {value
-                    ? "Los clientes en esta área no pagarán costo de envío"
-                    : "Los clientes en esta área pagarán el costo definido"}
+                <div className="form-text small">
+                  Los clientes en esta área no pagarán costo de envío, sin importar el monto de su compra.
+                  {shippingTypes.length > 0 && value && (
+                    <div className="text-danger mt-1">
+                      <i className="bi bi-exclamation-triangle-fill me-1"></i>
+                      Los precios configurados en los métodos de envío serán ignorados.
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           />
-
-          {/* Precio Base - Solo visible cuando NO es envío gratis */}
-          <Controller
-            name="basePrice"
-            control={control}
-            defaultValue={0}
-            rules={{
-              min: {
-                value: 0,
-                message: 'El precio debe ser mayor o igual a 0'
-              }
-            }}
-            render={({ field }) => (
-              <div className={!freeShipping ? '' : 'd-none'}>
-                <div className="input-group input-group-sm">
-                  <span className="input-group-text">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className={`form-control ${errors?.basePrice ? 'is-invalid' : ''}`}
-                    placeholder="Ej: 50.00"
-                    disabled={freeShipping}
-                    {...field}
-                  />
-                  <span className="input-group-text">MXN</span>
-                </div>
-                {errors?.basePrice && (
-                  <div className="invalid-feedback d-block small">
-                    {errors.basePrice.message}
-                  </div>
-                )}
-                <div className="form-text small text-end">
-                  Precio base por envío
-                </div>
-              </div>
-            )}
-          />
-        </div>
-      </div>
-      
-      <h6 className="text-secondary mb-3">Condiciones especiales</h6>
-      
-      <div className="card border-0 bg-light">
-        <div className="card-body">
+          
           <Controller
             name="freeShippingThreshold"
             control={control}
             defaultValue={false}
             render={({ field: { value, onChange } }) => (
-              <div className="form-check form-switch mb-3">
+              <div className={`form-check mb-3 ${freeShipping ? 'opacity-50' : ''}`}>
                 <input
                   className="form-check-input"
                   type="checkbox"
-                  role="switch"
                   id="freeShippingThreshold"
                   checked={value}
                   onChange={(e) => {
@@ -107,9 +74,10 @@ const PriceSection = ({ control, errors, watch }) => {
                       control.setValue('minOrderAmount', 0);
                     }
                   }}
+                  disabled={freeShipping}
                 />
-                <label className="form-check-label" htmlFor="freeShippingThreshold">
-                  <span className="fw-medium">Envío gratis a partir de cierto monto</span>
+                <label className="form-check-label fw-medium" htmlFor="freeShippingThreshold">
+                  Envío gratis a partir de cierto monto
                 </label>
               </div>
             )}
@@ -127,15 +95,15 @@ const PriceSection = ({ control, errors, watch }) => {
               }
             }}
             render={({ field }) => (
-              <div className={freeShippingThreshold ? '' : 'd-none'}>
-                <div className="input-group input-group-sm">
+              <div className={freeShippingThreshold && !freeShipping ? '' : 'd-none'}>
+                <div className="input-group input-group-sm mb-2 w-50">
                   <span className="input-group-text">$</span>
                   <input
                     type="number"
                     step="0.01"
                     className={`form-control ${errors?.minOrderAmount ? 'is-invalid' : ''}`}
                     placeholder="Ej: 1500.00"
-                    disabled={!freeShippingThreshold}
+                    disabled={!freeShippingThreshold || freeShipping}
                     {...field}
                   />
                   <span className="input-group-text">MXN</span>
@@ -145,8 +113,14 @@ const PriceSection = ({ control, errors, watch }) => {
                     {errors.minOrderAmount.message}
                   </div>
                 )}
-                <div className="form-text small text-end">
-                  Monto mínimo de compra para envío gratis
+                <div className="form-text small">
+                  El envío será gratuito si el monto del pedido supera esta cantidad.
+                  {shippingTypes.length > 0 && freeShippingThreshold && !freeShipping && (
+                    <div className="text-success mt-1">
+                      <i className="bi bi-info-circle-fill me-1"></i>
+                      Los precios configurados en los métodos de envío se aplicarán si no se alcanza este monto.
+                    </div>
+                  )}
                 </div>
               </div>
             )}

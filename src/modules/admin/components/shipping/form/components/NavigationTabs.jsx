@@ -7,9 +7,9 @@ import React from 'react';
 const NavigationTabs = ({ activeSection, onSectionChange }) => {
   // Definición de las secciones
   const sections = [
-    { id: 'info', label: 'Información', icon: 'info-circle' },
-    { id: 'price', label: 'Precio', icon: 'currency-dollar' },
-    { id: 'delivery', label: 'Entrega', icon: 'truck' },
+    { id: 'info', label: 'Cobertura', icon: 'geo-alt-fill' },
+    { id: 'price', label: 'Reglas', icon: 'tags' },
+    { id: 'delivery', label: 'Métodos', icon: 'truck' },
   ];
 
   return (

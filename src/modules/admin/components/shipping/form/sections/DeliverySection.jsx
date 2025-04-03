@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Controller } from 'react-hook-form';
 
 /**
- * Componente para la configuración de métodos de entrega y servicios de envío
+ * Componente para la configuración de métodos de envío disponibles
  */
 const DeliverySection = ({ control, errors, watch }) => {
   // Obtener los valores actuales
@@ -102,14 +102,14 @@ const DeliverySection = ({ control, errors, watch }) => {
       {/* Métodos de envío */}
       <div className="mb-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h6 className="text-secondary mb-0">Métodos de envío</h6>
+          <h6 className="text-secondary mb-0">Opciones de envío disponibles</h6>
           <button 
             type="button" 
             className="btn btn-sm btn-outline-dark"
             onClick={() => setShowAddForm(!showAddForm)}
           >
             <i className={`bi bi-${showAddForm ? 'x' : 'plus'}`}></i>
-            {showAddForm ? ' Cancelar' : ' Añadir método'}
+            {showAddForm ? ' Cancelar' : ' Añadir opción'}
           </button>
         </div>
         
@@ -206,7 +206,7 @@ const DeliverySection = ({ control, errors, watch }) => {
                   className="btn btn-sm btn-dark px-3"
                   onClick={handleAddShippingType}
                 >
-                  Añadir método
+                  Añadir
                 </button>
               </div>
             </div>
@@ -223,7 +223,7 @@ const DeliverySection = ({ control, errors, watch }) => {
               {shippingTypes.length === 0 ? (
                 <div className="text-center text-muted py-3 bg-light rounded">
                   <i className="bi bi-box me-2"></i>
-                  No hay métodos de envío configurados
+                  No hay opciones de envío configuradas
                 </div>
               ) : (
                 <div className="table-responsive">
@@ -268,7 +268,7 @@ const DeliverySection = ({ control, errors, watch }) => {
               {shippingTypes.length > 0 && (
                 <div className="small text-muted mt-2">
                   <i className="bi bi-info-circle me-1"></i>
-                  Los clientes podrán elegir entre estos métodos de envío durante el checkout.
+                  Los clientes podrán elegir entre estas opciones durante el checkout.
                 </div>
               )}
             </div>
