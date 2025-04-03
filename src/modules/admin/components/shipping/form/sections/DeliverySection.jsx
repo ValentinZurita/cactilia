@@ -9,7 +9,15 @@ const DeliverySection = ({ control, errors, watch }) => {
   const shippingTypes = watch('shippingTypes') || [];
   
   // Lista de servicios de mensajería disponibles
-  const availableCarriers = ['DHL', 'Estafeta', 'FedEx', 'Redpack', 'Correos de México'];
+  const availableCarriers = [
+    'DHL', 
+    'Estafeta', 
+    'FedEx', 
+    'Redpack', 
+    'Correos de México',
+    'Entrega local',
+    'Otros'
+  ];
   
   // Estado para el formulario de añadir tipo de envío
   const [newShippingType, setNewShippingType] = useState({
