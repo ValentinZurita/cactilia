@@ -49,7 +49,13 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       Object.entries(editingProduct).forEach(([key, value]) => {
         // Skip arrays for now - handle them separately
         if (!Array.isArray(value)) {
-          setValue(key, value);
+          // Convert boolean values to strings for select fields
+          if (key === 'active' || key === 'featured') {
+            console.log(`Setting ${key} to`, value ? "true" : "false");
+            setValue(key, value ? "true" : "false");
+          } else {
+            setValue(key, value);
+          }
         }
       });
       
@@ -113,6 +119,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       ...data,
       price: parseFloat(data.price),
       stock: parseInt(data.stock, 10),
+      weight: parseFloat(data.weight),
       images: uploadedUrls,
       mainImage: mainUrl,
       active: data.active === "true",
@@ -148,6 +155,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
           control={control}
           fetchFunction={getCategories}
           defaultValue=""
+          rules={{ required: false }}
         />
 
         {/* 🧩 Shipping rule selection dropdown */}
@@ -194,12 +202,20 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
           label="Description" 
           control={control} 
           type="textarea" 
-          required={true}
+          required={false}
           defaultValue="" 
         />
         <InputField 
           name="price" 
           label="Price" 
+          control={control} 
+          type="number" 
+          required={true}
+          defaultValue="0" 
+        />
+        <InputField 
+          name="weight" 
+          label="Weight (kg)" 
           control={control} 
           type="number" 
           required={true}
@@ -239,7 +255,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
           control={control} 
           options={[["true", "Yes"], ["false", "No"]]} 
           defaultValue="true"
-          required={true}
+          required={false}
         />
         <SelectField 
           name="featured" 
@@ -247,7 +263,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
           control={control} 
           options={[["false", "No"], ["true", "Yes"]]} 
           defaultValue="false"
-          required={true}
+          required={false}
         />
 
         {/* 🚀 Submit button */}

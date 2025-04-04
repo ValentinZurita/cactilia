@@ -44,6 +44,15 @@ export const SelectField = ({
     rules: validationRules,
     defaultValue: defaultValue 
   });
+  
+  // Log field value for debugging
+  console.log(`SelectField ${name} value:`, field.value);
+  
+  // Handle selection change with logging
+  const handleSelectionChange = (e) => {
+    console.log(`${name} selection changed to:`, e.target.value);
+    field.onChange(e);
+  };
 
   return (
     <div className="mb-3">
@@ -57,7 +66,10 @@ export const SelectField = ({
       <select 
         id={name} 
         className={`form-select ${error ? 'is-invalid' : ''}`} 
-        {...field}
+        value={field.value}
+        onChange={handleSelectionChange}
+        onBlur={field.onBlur}
+        ref={field.ref}
       >
         {options.map(([value, label], index) => (
           <option key={index} value={value}>{label}</option>

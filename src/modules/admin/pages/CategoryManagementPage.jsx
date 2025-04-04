@@ -126,9 +126,9 @@ export const CategoryManagementPage = () => {
     // 🆕 Definimos las columnas que mostrará la tabla
     const columns = [
       {
-        key: 'image',
+        accessor: 'image',
         header: 'Imagen',
-        renderCell: (cat) => (
+        cell: (cat) => (
           <img
             src={cat.mainImage || placeholder}
             alt={cat.name}
@@ -138,24 +138,24 @@ export const CategoryManagementPage = () => {
         )
       },
       {
-        key: 'name',
+        accessor: 'name',
         header: 'Nombre',
-        renderCell: (cat) => cat.name
+        cell: (cat) => cat.name
       },
       {
-        key: 'description',
+        accessor: 'description',
         header: 'Descripción',
-        renderCell: (cat) => cat.description
+        cell: (cat) => cat.description
       },
       {
-        key: 'active',
+        accessor: 'active',
         header: 'Activa',
-        renderCell: (cat) => (cat.active ? "Sí" : "No")
+        cell: (cat) => (cat.active ? "Sí" : "No")
       },
       {
-        key: 'actions',
+        accessor: 'actions',
         header: 'Acciones',
-        renderCell: (cat) => (
+        cell: (cat) => (
           <>
             {/* Edit mode -> /admin/categories/edit/:id */}
             <button

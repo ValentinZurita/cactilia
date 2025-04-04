@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getProducts, deleteProduct } from "../services/productService";
+import { toggleProductStatus } from "../services/productStatusService";
 import { ProductForm } from '../components/dashboard/index.js'
+import { StatusToggle } from '../components/dashboard/StatusToggle'
 import placeholder from '../../../shared/assets/images/placeholder.jpg'
 import { TableView } from '../components/dashboard/TableView.jsx'
 import { SearchBar } from '../components/shared/SearchBar.jsx'
@@ -31,6 +33,8 @@ export const ProductManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  // Estado para controlar actualizaciones puntuales
+  const [productUpdates, setProductUpdates] = useState({});
 
 
   // Load the products when the page loads
@@ -88,6 +92,64 @@ export const ProductManagementPage = () => {
     navigate(`/admin/products/edit/${productId}`);
   };
 
+  // Manejar cambio de estado activo/inactivo
+  const handleToggleStatus = async (productId, newStatus) => {
+    try {
+      // Aplicar la actualización optimista
+      setProductUpdates(prev => ({
+        ...prev,
+        [productId]: { active: newStatus, updating: true }
+      }));
+      
+      const { ok, error } = await toggleProductStatus(productId, newStatus);
+      
+      if (!ok) {
+        // Revertir en caso de error
+        setProductUpdates(prev => ({
+          ...prev,
+          [productId]: { ...prev[productId], active: !newStatus, error: true }
+        }));
+        alert(`Error al cambiar estado: ${error}`);
+        return;
+      }
+      
+      // Actualizar estado de la operación
+      setProductUpdates(prev => ({
+        ...prev,
+        [productId]: { active: newStatus, updating: false, success: true }
+      }));
+      
+      // Actualizar el estado real después de 1 segundo (para dar tiempo a la animación)
+      setTimeout(() => {
+        setProducts(prevProducts => 
+          prevProducts.map(product => 
+            product.id === productId 
+              ? { ...product, active: newStatus } 
+              : product
+          )
+        );
+        
+        // Limpiar la actualización después de actualizar el estado principal
+        setProductUpdates(prev => {
+          const newUpdates = { ...prev };
+          delete newUpdates[productId];
+          return newUpdates;
+        });
+      }, 1000);
+      
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      
+      // Marcar error en la actualización
+      setProductUpdates(prev => ({
+        ...prev,
+        [productId]: { ...prev[productId], updating: false, error: true }
+      }));
+      
+      alert("Error al cambiar estado del producto");
+    }
+  };
+
   // Manejar cambio en la búsqueda
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -98,6 +160,84 @@ export const ProductManagementPage = () => {
     setSearchTerm('');
   };
 
+  // Memorizar columnas para evitar recreación en cada render
+  const getColumns = useCallback(() => [
+    {
+      header: "Imagen",
+      accessor: "mainImage",
+      cell: (row) => (
+        <div className="product-image-cell">
+          <img
+            src={row.mainImage || placeholder}
+            alt={row.name}
+            className="img-thumbnail"
+            style={{ width: "60px", height: "60px", objectFit: "cover" }}
+          />
+        </div>
+      ),
+    },
+    {
+      header: "Nombre",
+      accessor: "name",
+    },
+    {
+      header: "Categoría",
+      accessor: "category",
+    },
+    {
+      header: "Precio",
+      accessor: "price",
+      cell: (row) => `$${parseFloat(row.price).toFixed(2)}`,
+    },
+    {
+      header: "Stock",
+      accessor: "stock",
+    },
+    {
+      header: "Estado",
+      accessor: "active",
+      cell: (row) => {
+        // Usar estado de actualización si existe, o el estado real del producto
+        const isUpdating = productUpdates[row.id]?.updating;
+        const hasError = productUpdates[row.id]?.error;
+        const activeState = productUpdates[row.id]?.active !== undefined 
+          ? productUpdates[row.id].active 
+          : row.active;
+        
+        return (
+          <StatusToggle 
+            isActive={activeState}
+            onToggle={(newStatus) => !isUpdating && handleToggleStatus(row.id, newStatus)}
+            size="md"
+            disabled={isUpdating}
+            error={hasError}
+          />
+        );
+      },
+    },
+    {
+      header: "Acciones",
+      accessor: "actions",
+      cell: (row) => (
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-sm btn-outline-primary"
+            onClick={() => handleEditProduct(row.id)}
+          >
+            <i className="bi bi-pencil"></i>
+          </button>
+          <button
+            className="btn btn-sm btn-outline-danger"
+            onClick={() => handleDeleteProduct(row.id)}
+          >
+            <i className="bi bi-trash"></i>
+          </button>
+        </div>
+      ),
+    },
+  ], [productUpdates]);
+
+  const columns = useMemo(() => getColumns(), [getColumns]);
 
   /*
     +---------------------------------------------+
@@ -114,93 +254,6 @@ export const ProductManagementPage = () => {
     const filteredProducts = products.filter((prod) =>
       prod.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    // Definir columnas para la tabla
-    const columns = [
-      {
-        header: "Imagen",
-        accessor: "mainImage",
-        cell: (row) => (
-          <div className="product-image-cell">
-            <img
-              src={row.mainImage || placeholder}
-              alt={row.name}
-              className="img-thumbnail"
-              style={{ width: "60px", height: "60px", objectFit: "cover" }}
-            />
-          </div>
-        ),
-      },
-      {
-        header: "Nombre",
-        accessor: "name",
-      },
-      {
-        header: "Categoría",
-        accessor: "category",
-      },
-      {
-        header: "Precio",
-        accessor: "price",
-        cell: (row) => `$${parseFloat(row.price).toFixed(2)}`,
-      },
-      {
-        header: "Stock",
-        accessor: "stock",
-      },
-      {
-        header: "Regla de envío",
-        accessor: "shippingRuleInfo",
-        cell: (row) => {
-          if (!row.shippingRuleId) return (
-            <span className="text-muted small">No asignada</span>
-          );
-          
-          if (row.shippingRuleInfo) {
-            const isActive = row.shippingRuleInfo.active;
-            return (
-              <span className={`badge ${isActive ? 'bg-success' : 'bg-secondary'} bg-opacity-15 
-                             ${isActive ? 'text-success' : 'text-secondary'} px-2 py-1 rounded-pill`}>
-                {row.shippingRuleInfo.name}
-              </span>
-            );
-          }
-          
-          return (
-            <span className="text-warning small">Regla no encontrada</span>
-          );
-        }
-      },
-      {
-        header: "Estado",
-        accessor: "active",
-        cell: (row) => (
-          <span className={`badge ${row.active ? 'bg-success' : 'bg-secondary'} py-2 px-3 rounded-pill`}>
-            {row.active ? 'Activo' : 'Inactivo'}
-          </span>
-        ),
-      },
-      {
-        header: "Acciones",
-        accessor: "actions",
-        cell: (row) => (
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-sm btn-outline-primary"
-              onClick={() => handleEditProduct(row.id)}
-            >
-              <i className="bi bi-pencil"></i>
-            </button>
-            <button
-              className="btn btn-sm btn-outline-danger"
-              onClick={() => handleDeleteProduct(row.id)}
-            >
-              <i className="bi bi-trash"></i>
-            </button>
-          </div>
-        ),
-      },
-    ];
 
     // Renderizar barra de búsqueda y tabla
     return (
