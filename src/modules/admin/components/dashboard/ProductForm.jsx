@@ -9,7 +9,7 @@ import { ImagePreview } from './ImagePreview';
 import { DynamicDropdown } from './DynamicDropdown';
 import { InputField } from './InputField';
 import { SelectField } from './SelectField';
-
+import { fetchShippingRules } from '../../services/shippingRuleService';
 
 /**
  * ProductForm component for adding and editing products.
@@ -47,8 +47,19 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
     if (editingProduct && images.length === 0) { // ✅ Prevent infinite re-renders
       // Set form values
       Object.entries(editingProduct).forEach(([key, value]) => {
-        setValue(key, Array.isArray(value) ? value.join(', ') : value);
+        // Skip arrays for now - handle them separately
+        if (!Array.isArray(value)) {
+          setValue(key, value);
+        }
       });
+      
+      // Handle arrays separately to avoid string conversion
+      if (editingProduct.images && Array.isArray(editingProduct.images)) {
+        setValue('images', editingProduct.images);
+      }
+      
+      // Log shipping rule ID for debugging
+      console.log('Loading product with shipping rule ID:', editingProduct.shippingRuleId);
 
       // Prepare initial images
       const existingImages = editingProduct.images?.map((url) => ({
@@ -106,6 +117,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       mainImage: mainUrl,
       active: data.active === "true",
       featured: data.featured === "true",
+      shippingRuleId: data.shippingRuleId || null
     };
 
     // 6️⃣ Save or update product
@@ -135,14 +147,79 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
           label="Category"
           control={control}
           fetchFunction={getCategories}
+          defaultValue=""
+        />
+
+        {/* 🧩 Shipping rule selection dropdown */}
+        <DynamicDropdown
+          name="shippingRuleId"
+          label="Regla de envío"
+          control={control}
+          fetchFunction={async () => {
+            try {
+              console.log('ProductForm: Fetching shipping rules');
+              const result = await fetchShippingRules();
+              console.log('ProductForm: Shipping rules result', result);
+              
+              if (result.ok && result.data && result.data.length > 0) {
+                const formattedData = result.data.map(rule => ({
+                  id: rule.id,
+                  name: rule.zona || 'Regla sin nombre'
+                }));
+                console.log('ProductForm: Formatted shipping rules', formattedData);
+                return { ok: true, data: formattedData };
+              } else {
+                console.error('ProductForm: No shipping rules found or error in response', result);
+                return { ok: false, data: [], error: result.error || 'No se encontraron reglas de envío' };
+              }
+            } catch (error) {
+              console.error('ProductForm: Error fetching shipping rules', error);
+              return { ok: false, data: [], error: error.message };
+            }
+          }}
+          rules={{ required: true }}
+          defaultValue=""
         />
 
         {/* 🖋️ Basic product info */}
-        <InputField name="name" label="Name" control={control} required />
-        <InputField name="description" label="Description" control={control} type="textarea" required />
-        <InputField name="price" label="Price" control={control} type="number" required />
-        <InputField name="stock" label="Stock" control={control} type="number" required />
-        <InputField name="sku" label="SKU" control={control} required />
+        <InputField 
+          name="name" 
+          label="Name" 
+          control={control} 
+          required={true}
+          defaultValue="" 
+        />
+        <InputField 
+          name="description" 
+          label="Description" 
+          control={control} 
+          type="textarea" 
+          required={true}
+          defaultValue="" 
+        />
+        <InputField 
+          name="price" 
+          label="Price" 
+          control={control} 
+          type="number" 
+          required={true}
+          defaultValue="0" 
+        />
+        <InputField 
+          name="stock" 
+          label="Stock" 
+          control={control} 
+          type="number" 
+          required={true}
+          defaultValue="0" 
+        />
+        <InputField 
+          name="sku" 
+          label="SKU" 
+          control={control} 
+          required={true}
+          defaultValue="" 
+        />
 
         {/* 🖼️ Image upload with local preview */}
         <ImageUploader onUpload={(files) => addLocalImages(files)} />
@@ -156,8 +233,22 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         />
 
         {/* ⚙️ Product settings */}
-        <SelectField name="active" label="Active?" control={control} options={[["true", "Yes"], ["false", "No"]]} />
-        <SelectField name="featured" label="Featured?" control={control} options={[["false", "No"], ["true", "Yes"]]} />
+        <SelectField 
+          name="active" 
+          label="Active?" 
+          control={control} 
+          options={[["true", "Yes"], ["false", "No"]]} 
+          defaultValue="true"
+          required={true}
+        />
+        <SelectField 
+          name="featured" 
+          label="Featured?" 
+          control={control} 
+          options={[["false", "No"], ["true", "Yes"]]} 
+          defaultValue="false"
+          required={true}
+        />
 
         {/* 🚀 Submit button */}
         <button

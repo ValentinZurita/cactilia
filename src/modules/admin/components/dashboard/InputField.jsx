@@ -10,6 +10,8 @@ import { useController } from 'react-hook-form';
  * @param { Object } control The control object from the useForm
  * @param { Object } rules The validation rules for the input field.
  * @param { string } [type='text'] The type of the input field. Default is 'text'.
+ * @param { boolean } [required=false] Whether the field is required.
+ * @param { any } [defaultValue=''] The default value for the field.
  *
  * @returns {JSX.Element}
  *
@@ -21,29 +23,57 @@ import { useController } from 'react-hook-form';
  */
 
 
-export const InputField = ({ name, label, control, rules, type = 'text' }) => {
+export const InputField = ({ 
+  name, 
+  label, 
+  control, 
+  rules, 
+  type = 'text', 
+  required = false,
+  defaultValue = ''
+}) => {
+  // Prepare validation rules
+  const validationRules = {
+    ...rules,
+    required: required ? `El campo ${label} es requerido` : false
+  };
+
   const {
     field, // Get the field props
     fieldState: { error } // Get the field state
-  } = useController({ name, control, rules }); // Use the controller
+  } = useController({ 
+    name, 
+    control, 
+    rules: validationRules,
+    defaultValue: defaultValue // Ensure we always have a default value
+  }); 
 
   return (
-
     <div className="mb-3">
-
       {/* Label */}
-      <label className="form-label" htmlFor={name}>{label}</label>
+      <label className="form-label" htmlFor={name}>
+        {label}
+        {required && <span className="text-danger ms-1">*</span>}
+      </label>
 
       {/* Input field */}
-      {type === 'textarea'
-        ? (<textarea id={name} className="form-control" {...field} />)
-        : (<input id={name} type={type} className="form-control" {...field} />)
-      }
+      {type === 'textarea' ? (
+        <textarea 
+          id={name} 
+          className={`form-control ${error ? 'is-invalid' : ''}`} 
+          {...field} 
+        />
+      ) : (
+        <input 
+          id={name} 
+          type={type} 
+          className={`form-control ${error ? 'is-invalid' : ''}`} 
+          {...field} 
+        />
+      )}
 
       {/* Error message */}
-      {error && <div className="text-danger">{error.message}</div>}
-
+      {error && <div className="invalid-feedback d-block">{error.message}</div>}
     </div>
-
   );
 };

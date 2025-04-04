@@ -24,15 +24,53 @@ export const getProducts = async () => {
     const productsRef = collection(FirebaseDB, 'products');
     const querySnapshot = await getDocs(productsRef);
 
-    const products = [];
+    // Obtener todos los productos
+    const productsData = [];
     querySnapshot.forEach((docSnapshot) => {
-      products.push({
+      productsData.push({
         id: docSnapshot.id,
         ...docSnapshot.data()
       });
     });
+    
+    // Obtener información de reglas de envío para productos que las tienen
+    const productsWithShippingRules = await Promise.all(
+      productsData.map(async (product) => {
+        // Si el producto tiene una regla de envío asociada, obtener sus datos
+        if (product.shippingRuleId) {
+          try {
+            // Try reglas_envio first
+            let shippingRuleRef = doc(FirebaseDB, 'reglas_envio', product.shippingRuleId);
+            let shippingRuleDoc = await getDoc(shippingRuleRef);
+            
+            // If not found, try zonas_envio
+            if (!shippingRuleDoc.exists()) {
+              console.log(`Shipping rule not found in reglas_envio, trying zonas_envio for ID: ${product.shippingRuleId}`);
+              shippingRuleRef = doc(FirebaseDB, 'zonas_envio', product.shippingRuleId);
+              shippingRuleDoc = await getDoc(shippingRuleRef);
+            }
+            
+            if (shippingRuleDoc.exists()) {
+              return {
+                ...product,
+                shippingRuleInfo: {
+                  id: shippingRuleDoc.id,
+                  name: shippingRuleDoc.data().zona || 'Sin nombre',
+                  active: shippingRuleDoc.data().activo !== false
+                }
+              };
+            }
+          } catch (err) {
+            console.warn(`Error al obtener información de regla de envío ${product.shippingRuleId}:`, err);
+          }
+        }
+        
+        // Si no tiene regla o hubo un error, devolver el producto sin info adicional
+        return product;
+      })
+    );
 
-    return { ok: true, data: products, error: null };
+    return { ok: true, data: productsWithShippingRules, error: null };
   } catch (error) {
     console.error('Error obteniendo productos:', error);
     return { ok: false, data: [], error: error.message };

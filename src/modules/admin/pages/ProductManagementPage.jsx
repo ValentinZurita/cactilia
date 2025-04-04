@@ -83,6 +83,11 @@ export const ProductManagementPage = () => {
     }
   };
 
+  // Handle product edit button click
+  const handleEditProduct = (productId) => {
+    navigate(`/admin/products/edit/${productId}`);
+  };
+
   // Manejar cambio en la búsqueda
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -113,64 +118,88 @@ export const ProductManagementPage = () => {
     // Definir columnas para la tabla
     const columns = [
       {
-        key: 'image',
-        header: 'Imagen',
-        renderCell: (prod) => (
-          <img
-            src={prod.mainImage || placeholder}
-            alt={prod.name}
-            className="img-thumbnail"
-            style={{
-              width: "60px",
-              height: "60px",
-              objectFit: "cover",
-            }}
-          />
-        )
+        header: "Imagen",
+        accessor: "mainImage",
+        cell: (row) => (
+          <div className="product-image-cell">
+            <img
+              src={row.mainImage || placeholder}
+              alt={row.name}
+              className="img-thumbnail"
+              style={{ width: "60px", height: "60px", objectFit: "cover" }}
+            />
+          </div>
+        ),
       },
       {
-        key: 'name',
-        header: 'Nombre',
-        renderCell: (prod) => prod.name
+        header: "Nombre",
+        accessor: "name",
       },
       {
-        key: 'price',
-        header: 'Precio',
-        renderCell: (prod) => `\$${prod.price.toFixed(2)}`
+        header: "Categoría",
+        accessor: "category",
       },
       {
-        key: 'stock',
-        header: 'Stock',
-        renderCell: (prod) => prod.stock
+        header: "Precio",
+        accessor: "price",
+        cell: (row) => `$${parseFloat(row.price).toFixed(2)}`,
       },
       {
-        key: 'active',
-        header: 'Activo',
-        renderCell: (prod) => prod.active ? "Sí" : "No"
+        header: "Stock",
+        accessor: "stock",
       },
       {
-        key: 'actions',
-        header: 'Acciones',
-        renderCell: (prod) => (
-          <>
+        header: "Regla de envío",
+        accessor: "shippingRuleInfo",
+        cell: (row) => {
+          if (!row.shippingRuleId) return (
+            <span className="text-muted small">No asignada</span>
+          );
+          
+          if (row.shippingRuleInfo) {
+            const isActive = row.shippingRuleInfo.active;
+            return (
+              <span className={`badge ${isActive ? 'bg-success' : 'bg-secondary'} bg-opacity-15 
+                             ${isActive ? 'text-success' : 'text-secondary'} px-2 py-1 rounded-pill`}>
+                {row.shippingRuleInfo.name}
+              </span>
+            );
+          }
+          
+          return (
+            <span className="text-warning small">Regla no encontrada</span>
+          );
+        }
+      },
+      {
+        header: "Estado",
+        accessor: "active",
+        cell: (row) => (
+          <span className={`badge ${row.active ? 'bg-success' : 'bg-secondary'} py-2 px-3 rounded-pill`}>
+            {row.active ? 'Activo' : 'Inactivo'}
+          </span>
+        ),
+      },
+      {
+        header: "Acciones",
+        accessor: "actions",
+        cell: (row) => (
+          <div className="d-flex gap-2">
             <button
-              className="btn btn-outline-primary btn-sm me-2"
-              onClick={() => navigate(`/admin/products/edit/${prod.id}`)}
-              title="Editar producto"
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => handleEditProduct(row.id)}
             >
               <i className="bi bi-pencil"></i>
             </button>
-
             <button
-              className="btn btn-outline-danger btn-sm"
-              onClick={() => handleDeleteProduct(prod.id)}
-              title="Eliminar producto"
+              className="btn btn-sm btn-outline-danger"
+              onClick={() => handleDeleteProduct(row.id)}
             >
               <i className="bi bi-trash"></i>
             </button>
-          </>
-        )
-      }
+          </div>
+        ),
+      },
     ];
 
     // Renderizar barra de búsqueda y tabla

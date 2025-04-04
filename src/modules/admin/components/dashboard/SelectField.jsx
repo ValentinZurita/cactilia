@@ -1,6 +1,5 @@
 import { useController } from 'react-hook-form';
 
-
 /**
  * Select field component.
  * It uses the react-hook-form useController hook to manage the select field.
@@ -8,43 +7,65 @@ import { useController } from 'react-hook-form';
  * @param { string } name The name of the select field.
  * @param { string } label The label of the select field.
  * @param { Object } control The control object from the useForm
- * @param { Object } rules The validation rules for the select field.
  * @param { Array } options The options for the select field.
+ * @param { Object } rules The validation rules for the select field.
+ * @param { string } defaultValue The default value for the select
+ * @param { boolean } required Whether the field is required
  *
  * @returns {JSX.Element}
  *
  * @constructor
  *
  * @example
- * <SelectField name="category" label="Categoría" control={control} rules={{ required: "La categoría es obligatoria" }} options={categories} />
- * <SelectField name="status" label="Estado" control={control} rules={{ required: "El estado es obligatorio" }} options={[["active", "Activo"], ["inactive", "Inactivo"]]} />
+ * <SelectField name="gender" label="Género" control={control} options={[['male', 'Masculino'], ['female', 'Femenino']]} />
  */
 
+export const SelectField = ({ 
+  name, 
+  label, 
+  control, 
+  options, 
+  rules, 
+  defaultValue = '', 
+  required = false 
+}) => {
+  // Prepare validation rules
+  const validationRules = {
+    ...rules,
+    required: required ? `El campo ${label} es requerido` : false
+  };
 
-export const SelectField = ({ name, label, control, rules, options = [] }) => {
   const {
-    field, // Get the field props
-    fieldState: { error } // Get the field state
-  } = useController({ name, control, rules }); // Use the controller
+    field,
+    fieldState: { error }
+  } = useController({ 
+    name, 
+    control, 
+    rules: validationRules,
+    defaultValue: defaultValue 
+  });
 
   return (
-
     <div className="mb-3">
-
       {/* Label */}
-      <label className="form-label" htmlFor={name}>{label}</label>
+      <label className="form-label" htmlFor={name}>
+        {label}
+        {required && <span className="text-danger ms-1">*</span>}
+      </label>
 
       {/* Select field */}
-      <select id={name} className="form-select" {...field}>
-        {options.map(([value, text]) => (
-          <option key={value} value={value}>{text}</option>
+      <select 
+        id={name} 
+        className={`form-select ${error ? 'is-invalid' : ''}`} 
+        {...field}
+      >
+        {options.map(([value, label], index) => (
+          <option key={index} value={value}>{label}</option>
         ))}
       </select>
 
       {/* Error message */}
-      {error && <div className="text-danger">{error.message}</div>}
-
+      {error && <div className="invalid-feedback d-block">{error.message}</div>}
     </div>
-
   );
 };

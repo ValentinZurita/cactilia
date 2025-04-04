@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useShippingForm } from './hooks/useShippingForm';
 import {
@@ -9,6 +9,7 @@ import {
   ZipCodeSelector
 } from './components/form';
 import { FORM_STEPS } from './constants';
+import ProductBatchService from '../../shop/services/productBatchService';
 
 /**
  * Componente principal para el formulario de reglas de envío
@@ -22,6 +23,10 @@ const ShippingForm = ({
   onSubmit = () => {},
   onCancel = () => {}
 }) => {
+  // Estado para productos asociados a esta regla (en modo edición)
+  const [linkedProducts, setLinkedProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  
   // Usar el hook para manejar el formulario
   const {
     currentStep,
@@ -41,6 +46,29 @@ const ShippingForm = ({
   
   // Determinar si es edición o creación
   const isEditing = Boolean(initialData?.id);
+  
+  // Cargar productos asociados cuando se edita una regla
+  useEffect(() => {
+    const fetchLinkedProducts = async () => {
+      if (isEditing && initialData?.id) {
+        setLoadingProducts(true);
+        try {
+          // Usar el servicio para obtener productos vinculados a esta regla
+          const products = await ProductBatchService.getProductsByShippingRule(
+            initialData.id,
+            { onlyActive: false }
+          );
+          setLinkedProducts(products);
+        } catch (error) {
+          console.error('Error al cargar productos asociados:', error);
+        } finally {
+          setLoadingProducts(false);
+        }
+      }
+    };
+    
+    fetchLinkedProducts();
+  }, [isEditing, initialData?.id]);
   
   // Manejar cambio de pestaña
   const handleTabClick = (tabIndex) => {
@@ -64,6 +92,69 @@ const ShippingForm = ({
               watch={watch}
               setValue={setValue}
             />
+            
+            {/* Mostrar productos vinculados solo en modo edición */}
+            {isEditing && (
+              <div className="mt-5 pt-3 border-top">
+                <h6 className="text-dark mb-3">Productos asociados</h6>
+                
+                {loadingProducts ? (
+                  <div className="text-muted small">
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Cargando productos asociados...
+                  </div>
+                ) : linkedProducts.length > 0 ? (
+                  <div>
+                    <div className="alert alert-info small mb-3">
+                      <i className="bi bi-info-circle-fill me-2"></i>
+                      Esta regla de envío está siendo utilizada en {linkedProducts.length} producto(s).
+                      Cualquier cambio afectará a estos productos.
+                    </div>
+                    
+                    <div className="table-responsive border rounded">
+                      <table className="table table-sm table-hover small mb-0">
+                        <thead className="table-light">
+                          <tr>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">SKU</th>
+                            <th scope="col">Precio</th>
+                            <th scope="col">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {linkedProducts.slice(0, 5).map(product => (
+                            <tr key={product.id}>
+                              <td>{product.name}</td>
+                              <td className="text-muted">{product.sku}</td>
+                              <td>${parseFloat(product.price).toFixed(2)}</td>
+                              <td>
+                                <span className={`badge ${product.active ? 'bg-success' : 'bg-secondary'} bg-opacity-10 
+                                              ${product.active ? 'text-success' : 'text-secondary'} small`}>
+                                  {product.active ? 'Activo' : 'Inactivo'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                          
+                          {linkedProducts.length > 5 && (
+                            <tr>
+                              <td colSpan="4" className="text-center text-muted">
+                                Y {linkedProducts.length - 5} producto(s) más...
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="alert alert-light border text-muted small">
+                    <i className="bi bi-info-circle me-2"></i>
+                    No hay productos asociados a esta regla de envío.
+                  </div>
+                )}
+              </div>
+            )}
           </>
         );
       

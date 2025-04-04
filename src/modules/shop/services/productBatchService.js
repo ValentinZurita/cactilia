@@ -1,6 +1,7 @@
 import { doc, writeBatch, getDoc, runTransaction } from 'firebase/firestore';
 import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js';
 import { logError } from '../utils/errorLogger.js';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 /**
  * Servicio especializado en operaciones por lotes con productos
@@ -240,6 +241,57 @@ const ProductBatchService = {
         error: error.message,
         outOfStockItems: []
       };
+    }
+  },
+
+  /**
+   * Obtiene todos los productos asociados a una regla de envío específica
+   *
+   * @param {string} shippingRuleId - ID de la regla de envío
+   * @param {Object} options - Opciones adicionales
+   * @param {boolean} options.onlyActive - Si solo se deben incluir productos activos
+   * @returns {Promise<Array<Object>>} - Lista de productos con la regla de envío especificada
+   */
+  async getProductsByShippingRule(shippingRuleId, options = {}) {
+    try {
+      if (!shippingRuleId) {
+        console.warn('Se intentó obtener productos sin especificar ID de regla de envío');
+        return [];
+      }
+      
+      const { onlyActive = true } = options;
+      
+      // Construir la consulta base
+      let constraints = [
+        where('shippingRuleId', '==', shippingRuleId)
+      ];
+      
+      // Añadir restricción de productos activos si es necesario
+      if (onlyActive) {
+        constraints.push(where('active', '==', true));
+      }
+      
+      // Ejecutar la consulta
+      const productsQuery = query(
+        collection(FirebaseDB, 'products'),
+        ...constraints
+      );
+      
+      const querySnapshot = await getDocs(productsQuery);
+      
+      // Procesar resultados
+      const products = [];
+      querySnapshot.forEach(doc => {
+        products.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      return products;
+    } catch (error) {
+      logError('Error obteniendo productos por regla de envío', error, { shippingRuleId });
+      return [];
     }
   }
 };

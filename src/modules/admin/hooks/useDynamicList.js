@@ -28,21 +28,29 @@ export const useDynamicList = (fetchFunction) => {
     const loadItems = async () => {
 
       try {
+        console.log('useDynamicList: Calling fetchFunction');
+        const result = await fetchFunction();
+        console.log('useDynamicList: Got result', result);
 
-        const { ok, data } = await fetchFunction();
-
-        if (ok) {
-          setItems(data);
+        // Handle different possible return formats
+        if (result) {
+          if (result.ok && Array.isArray(result.data)) {
+            // Standard format: { ok: true, data: [...] }
+            setItems(result.data);
+          } else if (Array.isArray(result)) {
+            // Direct array format
+            setItems(result);
+          } else {
+            console.error('useDynamicList: Unexpected data format', result);
+            setItems([]);
+          }
+        } else {
+          console.error('useDynamicList: No result returned');
+          setItems([]);
         }
-
-        else {
-          alert('Error al cargar los datos');
-        }
-
       } catch (error) {
-        console.error('Error cargando datos:', error);
-        alert('Error al cargar datos');
-
+        console.error('useDynamicList: Error loading data:', error);
+        setItems([]);
       } finally {
         setLoading(false);
       }

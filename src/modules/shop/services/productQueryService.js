@@ -69,6 +69,7 @@ const ProductQueryService = {
    * @param {Object} criteria - Criterios de búsqueda
    * @param {string} criteria.query - Texto a buscar en nombre/descripción
    * @param {string} criteria.category - Categoría a filtrar
+   * @param {string} criteria.shippingRuleId - ID de la regla de envío
    * @param {boolean} criteria.onlyActive - Solo productos activos
    * @param {boolean} criteria.onlyFeatured - Solo productos destacados
    * @param {number} criteria.maxResults - Número máximo de resultados
@@ -80,6 +81,7 @@ const ProductQueryService = {
       const {
         query = '',
         category = '',
+        shippingRuleId = '',
         onlyActive = true,
         onlyFeatured = false,
         maxResults = 50
@@ -100,6 +102,10 @@ const ProductQueryService = {
 
       if (category) {
         constraints.push(where('category', '==', category));
+      }
+
+      if (shippingRuleId) {
+        constraints.push(where('shippingRuleId', '==', shippingRuleId));
       }
 
       // Ejecutar consulta
@@ -159,6 +165,20 @@ const ProductQueryService = {
   async getProductsByCategory(categoryId, count = 20) {
     return this.searchProducts({
       category: categoryId,
+      maxResults: count
+    });
+  },
+
+  /**
+   * Obtiene productos asociados a una regla de envío específica
+   *
+   * @param {string} shippingRuleId - ID de la regla de envío
+   * @param {number} count - Número máximo de productos
+   * @returns {Promise<Array<Object>>} Lista de productos con la regla de envío especificada
+   */
+  async getProductsByShippingRule(shippingRuleId, count = 20) {
+    return this.searchProducts({
+      shippingRuleId: shippingRuleId,
       maxResults: count
     });
   }
