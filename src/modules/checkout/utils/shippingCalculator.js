@@ -1,5 +1,5 @@
 /**
- * Utilidades para el cálculo de envío
+ * Utilidades simplificadas para el cálculo de envío
  */
 
 /**
@@ -22,7 +22,8 @@ export const groupProductsIntoPackages = (cartItems, shippingRule) => {
   let packageIndex = 0;
   
   cartItems.forEach(item => {
-    const productWeight = item.product.weight || 1; // Peso por unidad en kg
+    const product = item.product || item;
+    const productWeight = product.weight || 1; // Peso por unidad en kg
     const itemWeight = productWeight * item.quantity;
     
     // Si agregar este producto excedería el límite de productos o peso, crear nuevo paquete
@@ -67,7 +68,7 @@ export const calculatePackageCost = (packageGroup, shippingRule) => {
     return { baseCost: 0, extraWeightCost: 0, totalCost: 0 };
   }
   
-  // Obtener valores de la regla de envío
+  // Obtener valores de la regla de envío (con valores por defecto por seguridad)
   const maxPackageWeight = parseFloat(shippingRule.maxPackageWeight) || 20;
   const extraWeightCost = parseFloat(shippingRule.extraWeightCost) || 10;
   const baseCost = parseFloat(shippingRule.price) || 0;
