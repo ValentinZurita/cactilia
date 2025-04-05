@@ -205,9 +205,9 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
           
           // Procesar cada método de envío de la regla
           if (group.rule.opciones_mensajeria && Array.isArray(group.rule.opciones_mensajeria)) {
-            for (const method of group.rule.opciones_mensajeria) {
+            for (const [methodIndex, method] of group.rule.opciones_mensajeria.entries()) {
               // Extraer datos del método
-              const methodId = `${group.rule.id}-${method.nombre?.replace(/\s+/g, '-')?.toLowerCase() || 'method'}`;
+              const methodId = `${group.rule.id}-${method.nombre?.replace(/\s+/g, '-')?.toLowerCase() || 'method'}-${methodIndex}`;
               const methodPrice = parseFloat(method.precio || 0);
               
               // Extraer configuración de paquetes

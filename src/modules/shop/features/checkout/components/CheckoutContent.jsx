@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useCart } from '../../cart/hooks/useCart';
 import { CheckoutForm } from './CheckoutForm';
 import { CheckoutSummaryPanel } from './CheckoutSummaryPanel';
@@ -84,27 +84,29 @@ export const CheckoutContent = () => {
 
   // Agregar Log de diagnóstico al cargar la vista
   useEffect(() => {
-    console.warn('🚨 CHECKOUT CONTENT LOADED 🚨');
-    console.warn('🛒 CART ITEMS:', cartItems);
-    console.warn('💲 CART TOTAL:', cartTotal);
-    console.warn('📍 ADDRESSES:', checkout.addresses);
-    console.warn('💳 PAYMENT METHODS:', checkout.paymentMethods);
-    console.warn('🚚 SHIPPING GROUPS:', calculatedShippingGroups);
-    console.warn('📏 SHIPPING RULES:', calculatedShippingRules);
-    console.warn('🚢 SHIPPING OPTIONS:', shippingOptions);
-    console.warn('✅ SELECTED SHIPPING OPTION:', selectedShippingOption);
-    console.warn('⚠️ EXCLUDED PRODUCTS:', excludedProducts);
+    // Limitar los logs a solo una vez por componente montado usando una referencia
+    const isFirstRender = checkoutInitialLoadRef.current;
+    if (isFirstRender) {
+      console.warn('🚨 CHECKOUT CONTENT LOADED 🚨');
+      
+      // Solo loggear información esencial en el primer renderizado
+      if (calculatedShippingGroups?.length > 0) {
+        console.warn('🚚 SHIPPING GROUPS:', calculatedShippingGroups.length);
+        console.warn('📏 SHIPPING RULES:', calculatedShippingRules.length);
+        console.warn('🚢 SHIPPING OPTIONS:', shippingOptions?.length || 0);
+      }
+      
+      // Marcar como ya renderizado
+      checkoutInitialLoadRef.current = false;
+    }
   }, [
-    cartItems, 
-    cartTotal, 
-    checkout.addresses, 
-    checkout.paymentMethods, 
     calculatedShippingGroups, 
     calculatedShippingRules,
-    shippingOptions,
-    selectedShippingOption,
-    excludedProducts
+    shippingOptions
   ]);
+
+  // Referencia para controlar el log inicial
+  const checkoutInitialLoadRef = useRef(true);
 
   /**
    * Determina si el botón de procesamiento debe estar deshabilitado

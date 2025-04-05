@@ -20,19 +20,22 @@ export const ShippingOptionSelector = ({
 }) => {
   // Agregar log para diagnóstico
   useEffect(() => {
-    console.log("🚚 RENDERIZANDO SHIPPING OPTION SELECTOR", {
-      opciones: shippingOptions.length,
-      seleccionada: selectedOptionId,
-      cargando: loading,
-      opcionesData: shippingOptions
-    });
+    // Usar un log más limitado para evitar múltiples renderizaciones
+    if (shippingOptions.length > 0) {
+      // Solo mostrar una vez cuando hay opciones disponibles o cuando cambia la opción seleccionada
+      const logInfo = {
+        opciones: shippingOptions.length,
+        seleccionada: selectedOptionId
+      };
+      console.log("🚚 RENDERIZANDO SHIPPING OPTION SELECTOR", logInfo);
+    }
     
     // Si hay opciones disponibles pero no hay opción seleccionada, seleccionar automáticamente la primera
     if (shippingOptions && shippingOptions.length > 0 && !selectedOptionId && onOptionSelect) {
-      console.log('⚠️ No hay opción seleccionada, seleccionando la primera automáticamente', shippingOptions[0]);
+      console.log('⚠️ No hay opción seleccionada, seleccionando la primera automáticamente');
       onOptionSelect(shippingOptions[0]);
     }
-  }, [shippingOptions, selectedOptionId, loading, onOptionSelect]);
+  }, [shippingOptions, selectedOptionId, onOptionSelect]);
 
   if (loading) {
     return (
