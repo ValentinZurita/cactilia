@@ -151,7 +151,7 @@ export const Sidebar = ({ onLinkClick }) => {
           toggle={() => toggleMenu("shipping")}
         >
           <SidebarItem to="/admin/shipping" label="Reglas de Envío" onClick={handleNavClick} />
-          <SidebarItem to="/admin/shipping/create" label="Nueva Regla" onClick={handleNavClick} />
+          <SidebarItem to="/admin/shipping-debug" label="Diagnóstico de Envío" onClick={handleNavClick} />
         </SidebarDropdown>
 
 

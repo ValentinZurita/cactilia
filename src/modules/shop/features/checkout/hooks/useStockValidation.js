@@ -88,7 +88,7 @@ export const useStockValidation = (cartItems) => {
 
       setIsValidatingStock(true);
       try {
-        console.log('Iniciando validación de stock en CheckoutForm', new Date().toISOString());
+        // console.log('Iniciando validación de stock en CheckoutForm', new Date().toISOString());
         const result = await validateCartStock(cartItems);
 
         // Guardar timestamp de última validación

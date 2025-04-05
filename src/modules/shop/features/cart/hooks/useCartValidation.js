@@ -89,8 +89,6 @@ export const useCartValidation = (items) => {
       setIsValidatingStock(true);
 
       // Registrar una única vez
-      console.log('Ejecutando validación de stock programada', new Date().toISOString());
-
       const result = await validateItemsStock(items);
       lastStockCheck.current = now;
 

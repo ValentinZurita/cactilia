@@ -15,6 +15,7 @@ import { ShopPageManagementPage } from "../components/content/shop/ShopPageManag
 import ContactPageManagementPage from "../components/content/contact/ContactPageManagementPage";
 import { OrderManagementPage } from '../components/orders/OrderManagementPage.jsx'
 import { ShippingManagementPage } from '../components/shipping/pages/ShippingManagementPage.jsx'
+import { ShippingDebugTool } from '../components/dashboard/ShippingDebugTool.jsx'
 
 export const AdminRoutes = () => {
   return (
@@ -53,6 +54,7 @@ export const AdminRoutes = () => {
           {/* Shipping */}
           <Route path="shipping" element={<ShippingManagementPage />} />
           <Route path="shipping/:mode/:id?" element={<ShippingManagementPage />} />
+          <Route path="shipping-debug" element={<ShippingDebugTool />} />
 
           {/* Users */}
           <Route path="users" element={<Navigate to="users/customers" />} />

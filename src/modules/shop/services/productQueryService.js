@@ -28,9 +28,38 @@ const ProductQueryService = {
         return null;
       }
 
+      // Obtener los datos del producto
+      const productData = productSnap.data();
+      
+      // Logs de diagnóstico para shippingRules
+      console.log(`[ProductQueryService] Producto ${productId} - ${productData.name}:`, {
+        tieneShippingRuleId: !!productData.shippingRuleId,
+        shippingRuleId: productData.shippingRuleId || 'No definido',
+        tieneShippingRuleIds: !!productData.shippingRuleIds && Array.isArray(productData.shippingRuleIds),
+        shippingRuleIds: productData.shippingRuleIds || [],
+      });
+      
+      // Asegurarnos de que las reglas de envío existan correctamente
+      // Priorizar el arreglo shippingRuleIds, pero mantener compatibilidad con shippingRuleId
+      let finalShippingRuleIds = [];
+      
+      if (productData.shippingRuleIds && Array.isArray(productData.shippingRuleIds) && productData.shippingRuleIds.length > 0) {
+        finalShippingRuleIds = [...productData.shippingRuleIds];
+        console.log(`[ProductQueryService] Usando ${finalShippingRuleIds.length} reglas de envío del arreglo shippingRuleIds`);
+      } else if (productData.shippingRuleId) {
+        finalShippingRuleIds = [productData.shippingRuleId];
+        console.log(`[ProductQueryService] Usando regla de envío individual: ${productData.shippingRuleId}`);
+      } else {
+        console.warn(`[ProductQueryService] Producto ${productId} - ${productData.name} no tiene reglas de envío asignadas`);
+      }
+      
+      // Crear objeto final del producto con reglas normalizadas
       return {
         id: productId,
-        ...productSnap.data()
+        ...productData,
+        // Asegurarnos de que siempre existan ambos campos y sean coherentes
+        shippingRuleIds: finalShippingRuleIds,
+        shippingRuleId: finalShippingRuleIds.length > 0 ? finalShippingRuleIds[0] : null
       };
     } catch (error) {
       logError('Error obteniendo producto por ID', error, { productId });

@@ -35,7 +35,6 @@ export const validateCartStock = async (cartItems) => {
   }
 
   try {
-    console.log('Realizando nueva validación de stock', new Date().toISOString());
     // Obtener IDs únicos de productos en el carrito
     const productIds = cartItems.map(item => item.id);
 

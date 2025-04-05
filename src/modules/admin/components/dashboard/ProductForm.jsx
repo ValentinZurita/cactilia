@@ -142,7 +142,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       await deleteFile(imageUrl);
     }
 
-    // 5️⃣ Create product object
+    // 5️⃣ Create product object with shipping rules
     const productData = {
       ...data,
       price: parseFloat(data.price),
@@ -152,9 +152,15 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       mainImage: mainUrl,
       active: data.active === "true",
       featured: data.featured === "true",
-      shippingRuleIds: data.shippingRuleIds || [], // Guardamos el array de IDs
-      shippingRuleId: data.shippingRuleIds && data.shippingRuleIds.length > 0 ? data.shippingRuleIds[0] : null // Para compatibilidad
+      shippingRuleIds: Array.isArray(data.shippingRuleIds) ? data.shippingRuleIds : [], // Asegurarse que sea array
+      shippingRuleId: Array.isArray(data.shippingRuleIds) && data.shippingRuleIds.length > 0 
+        ? data.shippingRuleIds[0] 
+        : null // Para compatibilidad
     };
+    
+    // Eliminar campos que podrían causar problemas
+    delete productData.shippingRulesInfo;
+    delete productData.shippingRuleInfo;
     
     console.log('Product data to save:', {
       shippingRuleId: productData.shippingRuleId,

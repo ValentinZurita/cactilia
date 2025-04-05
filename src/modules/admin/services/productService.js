@@ -120,8 +120,38 @@ export const addProduct = async (product) => {
  */
 export const updateProduct = async (id, product) => {
   try {
+    // Limpiar campos undefined antes de actualizar
+    const cleanProductData = {};
+    
+    // Solo incluir campos que tienen un valor definido
+    Object.entries(product).forEach(([key, value]) => {
+      if (value !== undefined) {
+        cleanProductData[key] = value;
+      }
+    });
+    
+    // Asegurarnos de que shippingRuleIds es un array
+    if (cleanProductData.shippingRuleIds && !Array.isArray(cleanProductData.shippingRuleIds)) {
+      if (cleanProductData.shippingRuleIds) {
+        cleanProductData.shippingRuleIds = [cleanProductData.shippingRuleIds];
+      } else {
+        cleanProductData.shippingRuleIds = [];
+      }
+    }
+    
+    // Si tenemos shippingRuleIds, asegurarnos de que shippingRuleId existe para compatibilidad
+    if (cleanProductData.shippingRuleIds && cleanProductData.shippingRuleIds.length > 0) {
+      cleanProductData.shippingRuleId = cleanProductData.shippingRuleIds[0];
+    }
+    
+    // Eliminar explícitamente el campo shippingRulesInfo si existe
+    delete cleanProductData.shippingRulesInfo;
+    delete cleanProductData.shippingRuleInfo;
+    
+    console.log(`Actualizando producto ${id} con datos limpios:`, cleanProductData);
+    
     const productRef = doc(FirebaseDB, 'products', id);
-    await updateDoc(productRef, product);
+    await updateDoc(productRef, cleanProductData);
     return { ok: true, error: null };
   } catch (error) {
     console.error(`Error actualizando producto ${id}:`, error);
