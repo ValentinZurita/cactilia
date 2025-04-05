@@ -38,10 +38,15 @@ export const CheckoutContent = () => {
     ? checkout.addresses.find(addr => addr.id === checkout.selectedAddressId) 
     : null;
   
-  // Mostrar información de depuración sobre la dirección
+  // Monitorear cambios en la dirección seleccionada
   useEffect(() => {
     if (selectedAddress) {
       console.log('🏠 Dirección seleccionada para opciones de envío:', selectedAddress);
+      
+      // Si ya había una opción seleccionada y cambia la dirección, mostrar mensaje
+      if (selectedShippingOption) {
+        console.log('⚠️ La dirección ha cambiado. Las opciones de envío se actualizarán en consecuencia.');
+      }
     } else if (checkout.addresses && checkout.addresses.length > 0) {
       console.log('⚠️ Hay direcciones disponibles pero ninguna seleccionada');
     } else {

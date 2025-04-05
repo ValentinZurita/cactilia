@@ -33,6 +33,10 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
 
       // Debuggear qué estamos recibiendo como dirección
       console.log('🏠 Dirección seleccionada:', selectedAddressId);
+      
+      // Al cambiar la dirección, reiniciamos la opción seleccionada
+      // para forzar una nueva evaluación basada en la nueva dirección
+      setSelectedOption(null);
     };
     
     getUserAddress();
@@ -178,10 +182,58 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
           return;
         }
         
-        // 2. Para cada grupo, calcular opciones de envío (solo si hay dirección)
+        // Obtener los datos necesarios de la dirección
+        const postalCode = userAddress.zipCode || userAddress.zip;
+        const state = userAddress.state || userAddress.estado;
+        const city = userAddress.city || userAddress.ciudad;
+        
+        console.log(`🏙️ Validando opciones para CP: ${postalCode}, Estado: ${state}, Ciudad: ${city}`);
+        
+        // Filtrar grupos según la dirección (validar reglas por código postal)
+        const validGroups = shippingGroups.filter(group => {
+          // Validar si la regla aplica para esta dirección
+          const rule = group.rule;
+          const zipcodes = rule.zipcodes || [];
+          
+          // 1. Verificar si hay coincidencia exacta con el CP
+          if (zipcodes.includes(postalCode)) {
+            console.log(`✅ Regla ${rule.zona} aplica por coincidencia exacta de CP: ${postalCode}`);
+            return true;
+          }
+          
+          // 2. Verificar si la regla incluye el estado
+          if (state && zipcodes.some(zip => zip.toLowerCase() === state.toLowerCase())) {
+            console.log(`✅ Regla ${rule.zona} aplica por coincidencia de estado: ${state}`);
+            return true;
+          }
+          
+          // 3. Verificar si la regla es nacional (incluye 'nacional', 'todos', 'all' o '*')
+          const nationalKeywords = ['nacional', 'todos', 'all', '*'];
+          if (zipcodes.some(zip => nationalKeywords.includes(zip.toLowerCase()))) {
+            console.log(`✅ Regla ${rule.zona} aplica porque es nacional`);
+            return true;
+          }
+          
+          // Si llegamos aquí, la regla no aplica para esta dirección
+          console.log(`❌ Regla ${rule.zona} NO aplica para CP: ${postalCode}, Estado: ${state}`);
+          return false;
+        });
+        
+        // Actualizar los grupos de envío con solo los grupos válidos
+        if (validGroups.length === 0) {
+          console.warn('No hay reglas de envío aplicables para esta dirección');
+          setError('No hay opciones de envío disponibles para tu dirección');
+          setOptions([]);
+          setLoading(false);
+          return;
+        }
+        
+        console.log(`✅ ${validGroups.length} de ${shippingGroups.length} grupos aplican para esta dirección`);
+        
+        // 2. Para cada grupo VÁLIDO, calcular opciones de envío
         const allOptions = [];
         
-        for (const group of shippingGroups) {
+        for (const group of validGroups) {
           // Calcular peso y cantidad total del grupo
           let totalWeight = 0;
           let totalQuantity = 0;
