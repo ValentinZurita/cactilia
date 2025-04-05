@@ -1,16 +1,20 @@
 /**
- * Servicio simplificado para manejar la agrupación de productos según reglas de envío
- * Implementa la lógica básica para agrupar productos, calcular costos y opciones de envío
+ * Servicio para agrupar productos según reglas de envío
+ * y calcular opciones disponibles para el checkout
+ * ADAPTADO para la estructura de Firestore de Cactilia
  */
 
-import { fetchShippingRuleById } from '../../admin/services/shippingRuleService';
-import { groupProductsIntoPackages, calculateTotalShippingCost } from '../utils/shippingCalculator';
+import {
+  groupProductsIntoPackages,
+  calculateTotalShippingCost,
+  shouldApplyFreeShipping
+} from '../utils/shippingCalculator';
+import { fetchShippingRuleById } from '../../admin/shipping/api/shippingApi.js'
 
 /**
- * Agrupa los productos del carrito según sus reglas de envío asociadas
- * 
+ * Agrupa los productos del carrito según sus reglas de envío
  * @param {Array} cartItems - Productos en el carrito
- * @returns {Promise<Array>} Grupos de productos según reglas de envío
+ * @returns {Promise<Array>} Grupos de productos con reglas comunes
  */
 export const groupProductsByShippingRules = async (cartItems) => {
   console.log('🚢 groupProductsByShippingRules: Iniciando agrupación con', cartItems?.length, 'items');
@@ -34,6 +38,7 @@ export const groupProductsByShippingRules = async (cartItems) => {
   // Paso 1: Mapear productos a sus reglas de envío
   const productRulesMap = new Map(); // Mapa producto -> reglas de envío
   const shippingRulesCache = new Map(); // Cache para evitar duplicar peticiones
+  const productsWithoutRules = []; // Lista de productos sin reglas válidas
   
   // Obtener todos los IDs de reglas de envío asociados a los productos
   for (const item of validItems) {
@@ -52,9 +57,10 @@ export const groupProductsByShippingRules = async (cartItems) => {
       shippingRuleIds = [product.shippingRuleId];
     }
     
-    // Si no tiene reglas de envío, saltamos
+    // Si no tiene reglas de envío, saltamos y marcamos el producto
     if (shippingRuleIds.length === 0) {
-      console.warn(`Producto ${product.name || productId} no tiene reglas de envío asignadas`);
+      console.warn(`⚠️ Producto ${product.name || productId} no tiene reglas de envío asignadas`);
+      productsWithoutRules.push(item);
       continue;
     }
     
@@ -67,17 +73,23 @@ export const groupProductsByShippingRules = async (cartItems) => {
       // Verificar si la regla ya está en caché
       if (!shippingRulesCache.has(ruleId)) {
         try {
-          const { ok, data } = await fetchShippingRuleById(ruleId);
-          if (ok && data) {
-            shippingRulesCache.set(ruleId, data);
-          } else {
-            // Si no se encuentra la regla, crear una regla básica de fallback
-            shippingRulesCache.set(ruleId, createDefaultRule(ruleId));
+          const ruleData = await fetchShippingRuleById(ruleId);
+          
+          if (!ruleData) {
+            console.warn(`⚠️ Regla de envío ${ruleId} no encontrada`);
+            continue;
           }
+          
+          // Verificar que la regla tenga opciones de mensajería
+          if (!ruleData.opciones_mensajeria || !Array.isArray(ruleData.opciones_mensajeria) || ruleData.opciones_mensajeria.length === 0) {
+            console.warn(`⚠️ Regla de envío ${ruleId} no tiene opciones de mensajería`);
+            continue;
+          }
+          
+          shippingRulesCache.set(ruleId, ruleData);
         } catch (error) {
           console.error(`Error obteniendo regla ${ruleId}:`, error);
-          // Si hay error, crear una regla básica de fallback
-          shippingRulesCache.set(ruleId, createDefaultRule(ruleId));
+          continue;
         }
       }
       
@@ -87,9 +99,19 @@ export const groupProductsByShippingRules = async (cartItems) => {
       }
     }
     
+    // IMPORTANTE: Solo mapear productos con al menos una regla válida
     if (productRules.length > 0) {
       productRulesMap.set(productId, productRules);
+    } else {
+      console.warn(`⚠️ Producto ${product.name || productId} no tiene reglas de envío válidas en Firestore`);
+      productsWithoutRules.push(item);
     }
+  }
+  
+  // Log productos sin reglas
+  if (productsWithoutRules.length > 0) {
+    console.warn(`⚠️ Hay ${productsWithoutRules.length} productos que no pueden ser enviados:`, 
+      productsWithoutRules.map(item => (item.product || item).name || (item.product || item).id));
   }
   
   // Paso 2: Agrupar productos por reglas de envío comunes
@@ -98,24 +120,8 @@ export const groupProductsByShippingRules = async (cartItems) => {
   
   // Si ningún producto tiene reglas, crear un grupo sin reglas para todos
   if (productRulesMap.size === 0) {
-    return createSingleShippingGroup(validItems);
-  }
-  
-  // Primero agrupar todos los productos sin reglas
-  const productsWithoutRules = validItems.filter(item => {
-    const product = item.product || item;
-    return !productRulesMap.has(product.id);
-  });
-  
-  if (productsWithoutRules.length > 0) {
-    shippingGroups.push(createShippingGroup('no-rules', 'Productos sin regla de envío', 
-                                         productsWithoutRules, [createDefaultRule()]));
-    
-    // Marcar estos productos como procesados
-    productsWithoutRules.forEach(item => {
-      const product = item.product || item;
-      processedProductIds.add(product.id);
-    });
+    console.warn('⚠️ Ningún producto tiene reglas de envío válidas');
+    return [];
   }
   
   // Paso 3: Procesar por ruleId (simplificado: solo usamos la primera regla por producto)
@@ -159,22 +165,24 @@ export const groupProductsByShippingRules = async (cartItems) => {
     ));
   });
   
+  console.log(`Se crearon ${shippingGroups.length} grupos de envío con ${processedProductIds.size} productos`);
   return shippingGroups;
 };
 
 /**
  * Prepara las opciones de envío para el checkout
- * Agrupa productos, calcula costos y formatea opciones
- * 
  * @param {Array} cartItems - Productos en el carrito
  * @param {Object} userAddress - Dirección del usuario
- * @returns {Promise<Object>} Datos de envío: grupos y opciones totales
+ * @returns {Promise<Object>} Grupos y opciones de envío
  */
 export const prepareShippingOptionsForCheckout = async (cartItems, userAddress) => {
+  console.log('🚚 INICIO: Preparando opciones con', cartItems?.length || 0, 'productos');
+  
   // Obtener grupos de productos
   const groups = await groupProductsByShippingRules(cartItems);
   
   if (!groups || groups.length === 0) {
+    console.warn('⚠️ No se pudieron crear grupos de envío válidos');
     return {
       groups: [],
       totalOptions: []
@@ -220,6 +228,16 @@ export const prepareShippingOptionsForCheckout = async (cartItems, userAddress) 
   // Calcular opciones totales combinadas
   const totalOptions = calculateTotalShippingOptions(groups);
   
+  console.log('🚚 FIN: Opciones generadas:', {
+    grupos: groups.length,
+    opcionesTotales: totalOptions.length,
+    opcionesPrimeras: totalOptions.slice(0, 2).map(o => ({
+      id: o.id,
+      label: o.label,
+      costo: o.totalCost
+    }))
+  });
+  
   return {
     groups,
     totalOptions
@@ -227,191 +245,78 @@ export const prepareShippingOptionsForCheckout = async (cartItems, userAddress) 
 };
 
 /**
- * Calcula el subtotal de un grupo de productos
- * @param {Array} items - Productos en el grupo
- * @returns {Number} - Subtotal del grupo
+ * Genera las opciones de envío combinadas para todos los grupos
+ * @param {Array} groups - Grupos de envío con sus opciones
+ * @returns {Array} Opciones de envío para mostrar al usuario
  */
-const calculateGroupSubtotal = (items) => {
-  return items.reduce((total, item) => {
-    const price = parseFloat(item.price || (item.product && item.product.price) || 0);
-    const quantity = parseInt(item.quantity || 1);
-    return total + (price * quantity);
-  }, 0);
-};
+const generateTotalShippingOptions = (groups) => {
+  if (!groups || groups.length === 0) {
+    return [];
+  }
 
-/**
- * Calcula opciones totales de envío combinando todos los grupos
- * @param {Array} groups - Grupos de envío
- * @returns {Array} - Opciones de envío totales
- */
-const calculateTotalShippingOptions = (groups) => {
-  if (!groups || groups.length === 0) return [];
-  
-  // Si solo hay un grupo, usamos sus opciones directamente
+  // Si solo hay un grupo, devolvemos sus opciones directamente
   if (groups.length === 1) {
-    return groups[0].shippingOptions || [];
+    return groups[0].shippingOptions.map(option => ({
+      id: option.id,
+      label: option.label,
+      carrier: option.carrier,
+      totalCost: option.totalCost,
+      deliveryTime: option.deliveryTime,
+      isFreeShipping: option.isFreeShipping,
+      groups: [{
+        groupId: groups[0].id,
+        option,
+        items: groups[0].items
+      }]
+    }));
   }
-  
+
   // Para múltiples grupos, generamos combinaciones de opciones
-  // Simplificado: usamos la opción más barata de cada grupo
   const combinedOptions = [];
-  const cheapestOptions = groups.map(group => {
-    const options = group.shippingOptions || [];
-    return options.length > 0 ? options[0] : null;
-  }).filter(option => option !== null);
-  
-  if (cheapestOptions.length > 0) {
-    const totalCost = cheapestOptions.reduce((sum, option) => sum + option.totalCost, 0);
-    
-    combinedOptions.push({
-      id: 'combined-option',
-      label: 'Envío combinado',
-      carrier: cheapestOptions.map(opt => opt.carrier).join(' + '),
-      totalCost,
-      cheapestOptions
+
+  // Por simplicidad, ofrecemos primero la opción más barata de cada grupo
+  const cheapestCombination = {
+    id: 'combined-cheapest',
+    label: 'Envío combinado - Opción económica',
+    carrier: 'Varios servicios',
+    totalCost: 0,
+    groups: []
+  };
+
+  // Suma de tiempos de entrega para estimación
+  let maxDeliveryDays = 0;
+
+  groups.forEach(group => {
+    if (!group.shippingOptions || group.shippingOptions.length === 0) {
+      return;
+    }
+
+    // Tomar la opción más barata del grupo
+    const cheapestOption = group.shippingOptions[0];
+
+    // Añadir al costo total
+    cheapestCombination.totalCost += cheapestOption.totalCost;
+
+    // Actualizar días máximos de entrega
+    const deliveryDaysMatch = cheapestOption.deliveryTime?.match(/\d+-(\d+)/);
+    const maxDays = deliveryDaysMatch ? parseInt(deliveryDaysMatch[1]) : 5;
+    maxDeliveryDays = Math.max(maxDeliveryDays, maxDays);
+
+    // Añadir grupo a la combinación
+    cheapestCombination.groups.push({
+      groupId: group.id,
+      option: cheapestOption,
+      items: group.items
     });
+  });
+
+  // Establecer tiempo de entrega estimado
+  cheapestCombination.deliveryTime = `${maxDeliveryDays} días`;
+
+  // Añadir la combinación a las opciones
+  if (cheapestCombination.groups.length > 0) {
+    combinedOptions.push(cheapestCombination);
   }
-  
+
   return combinedOptions;
 };
-
-/**
- * Crea un grupo de envío con formato estándar
- * @param {String} id - ID del grupo
- * @param {String} name - Nombre del grupo
- * @param {Array} items - Productos en el grupo
- * @param {Array} rules - Reglas de envío aplicables
- * @returns {Object} - Grupo de envío formateado
- */
-const createShippingGroup = (id, name, items, rules) => {
-  const totalWeight = items.reduce((sum, item) => {
-    const product = item.product || item;
-    const weight = parseFloat(product.weight || 1);
-    const quantity = parseInt(item.quantity || 1);
-    return sum + (weight * quantity);
-  }, 0);
-  
-  const totalQuantity = items.reduce((sum, item) => {
-    return sum + parseInt(item.quantity || 1);
-  }, 0);
-  
-  return {
-    id,
-    name,
-    rules,
-    items,
-    totalWeight,
-    totalQuantity,
-    shippingOptions: []
-  };
-};
-
-/**
- * Crea un grupo único de envío para todos los productos
- * @param {Array} items - Productos a incluir
- * @returns {Array} - Array con un único grupo de envío
- */
-const createSingleShippingGroup = (items) => {
-  const defaultRule = createDefaultRule();
-  
-  return [
-    createShippingGroup('default-group', 'Todos los productos', items, [defaultRule])
-  ];
-};
-
-/**
- * Crea una regla de envío por defecto
- * @param {String} id - ID opcional para la regla
- * @returns {Object} - Regla de envío por defecto
- */
-const createDefaultRule = (id = 'default-rule') => {
-  return {
-    id,
-    zona: 'Envío estándar',
-    activo: true,
-    opciones_mensajeria: [{
-      nombre: 'Envío Estándar',
-      label: 'Envío Estándar (3-5 días)',
-      precio: '50',
-      tiempo_entrega: '3-5 días',
-      minDays: 3,
-      maxDays: 5,
-      configuracion_paquetes: {
-        peso_maximo_paquete: 20,
-        costo_por_kg_extra: 10,
-        maximo_productos_por_paquete: 10
-      }
-    }]
-  };
-};
-
-/**
- * Formatea una opción de envío con estructura estándar
- * @param {Object} option - Opción de envío original
- * @param {Object} rule - Regla de envío asociada
- * @returns {Object} - Opción de envío formateada
- */
-const formatShippingOption = (option, rule) => {
-  const config = option.configuracion_paquetes || {};
-  
-  return {
-    id: `${rule.id}-${option.nombre}`.replace(/\s+/g, '-').toLowerCase(),
-    ruleId: rule.id,
-    carrier: option.nombre || 'Servicio estándar',
-    label: option.label || option.nombre || 'Envío estándar',
-    price: parseFloat(option.precio || 0),
-    deliveryTime: option.tiempo_entrega || '3-5 días',
-    minDays: parseInt(option.minDays || 3),
-    maxDays: parseInt(option.maxDays || 5),
-    maxPackageWeight: parseFloat(config.peso_maximo_paquete || 20),
-    extraWeightCost: parseFloat(config.costo_por_kg_extra || 10),
-    maxProductsPerPackage: parseInt(config.maximo_productos_por_paquete || 10)
-  };
-};
-
-/**
- * Calcula el costo de envío basado en peso y límites
- * @param {number} totalWeight - Peso total de productos
- * @param {number} totalQuantity - Cantidad total de productos
- * @param {Object} option - Opción de envío seleccionada
- * @returns {Object} Detalles del costo calculado
- */
-export const calculateShippingCost = (totalWeight, totalQuantity, option) => {
-  if (!option) return { totalCost: 0 };
-  
-  // Extraer parámetros
-  const basePrice = parseFloat(option.price) || 0;
-  const maxWeight = parseFloat(option.maxPackageWeight) || 20;
-  const extraWeightCost = parseFloat(option.extraWeightCost) || 10;
-  const maxProducts = parseInt(option.maxProductsPerPackage) || 10;
-  
-  // Calcular paquetes necesarios
-  const packagesByWeight = Math.ceil(totalWeight / maxWeight);
-  const packagesByQuantity = Math.ceil(totalQuantity / maxProducts);
-  const totalPackages = Math.max(packagesByWeight, packagesByQuantity, 1);
-  
-  // Calcular costo base
-  const totalBaseCost = basePrice * totalPackages;
-  
-  // Calcular sobrepeso
-  let extraCost = 0;
-  if (totalWeight > maxWeight * totalPackages) {
-    const overweight = totalWeight - (maxWeight * totalPackages);
-    extraCost = Math.ceil(overweight) * extraWeightCost;
-  }
-  
-  // Calcular costo total
-  const totalCost = totalBaseCost + extraCost;
-  
-  return {
-    baseCost: totalBaseCost,
-    extraCost: extraCost,
-    totalCost: totalCost,
-    packages: totalPackages,
-    details: {
-      maxPackageWeight: maxWeight,
-      extraWeightCost: extraWeightCost,
-      maxProductsPerPackage: maxProducts
-    }
-  };
-}; 

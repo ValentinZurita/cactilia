@@ -1,189 +1,175 @@
 /**
- * Shipping Utilities - Efficient and modular shipping calculation functions
+ * Utilidades adicionales para el manejo de envíos
  */
 
 /**
- * Calculate shipping cost based on package details and shipping option
- * @param {number} weight - Total weight of the package in kg
- * @param {number} quantity - Total quantity of items 
- * @param {Object} shippingOption - Selected shipping option with pricing rules
- * @returns {Object} Calculated shipping costs
+ * Verifica si una regla de envío aplica para una dirección específica
+ * @param {Object} rule - Regla de envío
+ * @param {Object} address - Dirección del usuario
+ * @returns {boolean} Si la regla aplica o no
  */
-export const calculateShippingCost = (weight, quantity, shippingOption) => {
-  if (!shippingOption) return { totalCost: 0 };
-  
-  // Extract shipping parameters with safe defaults
-  const basePrice = parseFloat(shippingOption.price) || 0;
-  const maxWeight = parseFloat(shippingOption.maxPackageWeight) || 20;
-  const extraWeightCost = parseFloat(shippingOption.extraWeightCost) || 10;
-  const maxProducts = parseInt(shippingOption.maxProductsPerPackage) || 10;
-  
-  // Calculate required packages based on both weight and quantity constraints
-  const packagesByWeight = Math.ceil(weight / maxWeight);
-  const packagesByQuantity = Math.ceil(quantity / maxProducts);
-  const totalPackages = Math.max(packagesByWeight, packagesByQuantity, 1);
-  
-  // Calculate base cost for all packages
-  const totalBaseCost = basePrice * totalPackages;
-  
-  // Calculate extra cost for overweight
-  let extraCost = 0;
-  if (weight > maxWeight * totalPackages) {
-    const overweight = weight - (maxWeight * totalPackages);
-    extraCost = Math.ceil(overweight) * extraWeightCost;
-  }
-  
-  // Calculate total cost
-  const totalCost = totalBaseCost + extraCost;
-  
-  return {
-    baseCost: totalBaseCost,
-    extraCost,
-    totalCost,
-    packages: totalPackages,
-    details: {
-      maxPackageWeight: maxWeight,
-      extraWeightCost,
-      maxProductsPerPackage: maxProducts
-    }
-  };
-};
+export const isRuleValidForAddress = (rule, address) => {
+  if (!rule || !address) return false;
 
-/**
- * Extract and normalize only the necessary shipping options
- * @param {Array} rules - Shipping rules with options
- * @returns {Array} Simplified shipping options
- */
-export const extractShippingOptions = (rules) => {
-  if (!rules || !Array.isArray(rules) || rules.length === 0) {
-    return [];
-  }
-  
-  const options = [];
-  
-  rules.forEach(rule => {
-    if (!rule.opciones_mensajeria || !Array.isArray(rule.opciones_mensajeria)) {
-      return;
-    }
-    
-    rule.opciones_mensajeria.forEach((option, index) => {
-      // Skip invalid options
-      if (!option.nombre || !option.precio) return;
-      
-      const price = parseFloat(option.precio);
-      if (isNaN(price) || price <= 0) return;
-      
-      // Extract only needed configuration values with defaults
-      options.push({
-        id: `${rule.id}-${index}`,
-        ruleId: rule.id,
-        carrier: option.nombre,
-        label: option.nombre,
-        price,
-        tiempo_entrega: option.tiempo_entrega || '3-5 días',
-        maxPackageWeight: parseFloat(option.configuracion_paquetes?.peso_maximo_paquete) || 20,
-        extraWeightCost: parseFloat(option.configuracion_paquetes?.costo_por_kg_extra) || 10,
-        maxProductsPerPackage: parseInt(option.configuracion_paquetes?.maximo_productos_por_paquete) || 10
-      });
-    });
-  });
-  
-  // Sort by price for better user experience
-  return options.sort((a, b) => a.price - b.price);
-};
+  // Obtener código postal de la dirección
+  const zipCode = address.zipCode || address.postalCode;
+  if (!zipCode) return false;
 
-/**
- * Validate an address for shipping
- * @param {Object} address - User address
- * @returns {Object} Validation result with any errors
- */
-export const validateShippingAddress = (address) => {
-  if (!address) {
-    return { valid: false, error: 'Missing address information' };
-  }
-  
-  const errors = {};
-  
-  // Basic required fields validation
-  if (!address.fullName || !address.fullName.trim()) {
-    errors.fullName = 'Full name is required';
-  }
-  
-  if (!address.street || !address.street.trim()) {
-    errors.street = 'Street address is required';
-  }
-  
-  if (!address.city || !address.city.trim()) {
-    errors.city = 'City is required';
-  }
-  
-  if (!address.state) {
-    errors.state = 'State is required';
-  }
-  
-  if (!address.zipCode) {
-    errors.zipCode = 'Zip/Postal code is required';
-  } else if (!/^\d{5}$/.test(address.zipCode)) {
-    errors.zipCode = 'Zip/Postal code must be 5 digits';
-  }
-  
-  return { 
-    valid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-
-/**
- * Check if a shipping rule applies to a given address
- * @param {Object} rule - Shipping rule
- * @param {Object} address - User address
- * @returns {boolean} True if rule applies
- */
-export const isShippingRuleValidForAddress = (rule, address) => {
-  if (!address || !address.zipCode) {
-    return false;
-  }
-  
+  // Si la regla no tiene códigos postales, se asume nacional
   if (!rule.zipcodes || rule.zipcodes.length === 0) {
-    return true; // Assume national shipping if no zip codes specified
-  }
-  
-  // First check exact zip code match
-  if (rule.zipcodes.includes(address.zipCode)) {
     return true;
   }
-  
-  // Then check zip code ranges
-  for (const zipPattern of rule.zipcodes) {
-    if (zipPattern.includes('-')) {
-      const [min, max] = zipPattern.split('-').map(Number);
-      const userZip = Number(address.zipCode);
-      
-      if (userZip >= min && userZip <= max) {
-        return true;
-      }
-    }
+
+  // Si la regla incluye cobertura nacional
+  if (rule.zipcodes.includes('nacional')) {
+    return true;
   }
-  
-  // Check state-level matches (format: "estado_STATECODE")
-  const statePattern = `estado_${address.state}`;
-  return rule.zipcodes.includes(statePattern);
+
+  // Si la regla incluye el código postal específico
+  if (rule.zipcodes.includes(zipCode)) {
+    return true;
+  }
+
+  // Verificar si la regla incluye el estado
+  const stateCode = address.state;
+  if (stateCode && rule.zipcodes.some(z => z.startsWith(`estado_${stateCode}`))) {
+    return true;
+  }
+
+  // Verificar rangos de códigos postales
+  if (rule.zipcodes.some(zipCodeRange => {
+    if (zipCodeRange.includes('-')) {
+      const [start, end] = zipCodeRange.split('-');
+      const zipNum = parseInt(zipCode);
+      const startNum = parseInt(start);
+      const endNum = parseInt(end);
+
+      return !isNaN(zipNum) && !isNaN(startNum) && !isNaN(endNum) &&
+        zipNum >= startNum && zipNum <= endNum;
+    }
+    return false;
+  })) {
+    return true;
+  }
+
+  return false;
 };
 
 /**
- * Handles any shipping calculation errors
- * @param {Error} error - The error that occurred
- * @param {Object} context - Additional context info
- * @returns {Object} Error information
+ * Calcula el subtotal de un grupo de productos
+ * @param {Array} items - Productos en el grupo
+ * @returns {number} Subtotal
  */
-export const handleShippingError = (error, context = {}) => {
-  // Only log errors that need attention
-  console.error('Shipping calculation error:', error.message, context);
-  
+export const calculateGroupSubtotal = (items) => {
+  return items.reduce((total, item) => {
+    const product = item.product || item;
+    const price = parseFloat(product.price || 0);
+    const quantity = parseInt(item.quantity || 1);
+    return total + (price * quantity);
+  }, 0);
+};
+
+/**
+ * Calcula el peso total de un grupo de productos
+ * @param {Array} items - Productos en el grupo
+ * @returns {number} Peso total en kg
+ */
+export const calculateGroupWeight = (items) => {
+  return items.reduce((total, item) => {
+    const product = item.product || item;
+    const weight = parseFloat(product.weight || 1); // Peso por defecto: 1kg
+    const quantity = parseInt(item.quantity || 1);
+    return total + (weight * quantity);
+  }, 0);
+};
+
+/**
+ * Formatea el costo de envío para visualización
+ * @param {number} cost - Costo de envío
+ * @param {boolean} isFree - Si el envío es gratuito
+ * @returns {string} Costo formateado
+ */
+export const formatShippingCost = (cost, isFree = false) => {
+  if (isFree || cost === 0) {
+    return 'Gratis';
+  }
+
+  return `$${cost.toFixed(2)}`;
+};
+
+/**
+ * Crea una regla de envío por defecto
+ * @param {string} id - ID opcional para la regla
+ * @returns {Object} Regla de envío por defecto
+ */
+export const createDefaultShippingRule = (id = 'default-rule') => {
   return {
-    error: true,
-    message: error.message,
-    context,
-    timestamp: new Date().toISOString()
+    id,
+    zona: 'Envío estándar',
+    activo: true,
+    zipcodes: ['nacional'],
+    opciones_mensajeria: [{
+      nombre: 'Estándar',
+      precio: 150,
+      tiempo_entrega: '3-5 días',
+      configuracion_paquetes: {
+        peso_maximo_paquete: 20,
+        costo_por_kg_extra: 10,
+        maximo_productos_por_paquete: 10
+      }
+    }]
   };
-}; 
+};
+
+/**
+ * Obtiene el código de estado desde un código postal
+ * Simplificación: para una implementación real, se requeriría una base de datos
+ * completa de códigos postales
+ *
+ * @param {string} zipCode - Código postal
+ * @returns {string} Código del estado (o null si no se pudo determinar)
+ */
+export const getStateFromZipCode = (zipCode) => {
+  if (!zipCode || typeof zipCode !== 'string') return null;
+
+  // Simplificación: primeros dígitos como indicación del estado
+  // En una implementación real se requeriría una tabla de búsqueda completa
+  const prefix = zipCode.substring(0, 2);
+
+  const stateMap = {
+    '01': 'AGU', // Aguascalientes
+    '02': 'BCN', // Baja California
+    '03': 'BCS', // Baja California Sur
+    '04': 'CAM', // Campeche
+    '05': 'CHP', // Chiapas
+    '06': 'CHH', // Chihuahua
+    '07': 'CMX', // Ciudad de México
+    '08': 'COA', // Coahuila
+    '09': 'COL', // Colima
+    '10': 'DUR', // Durango
+    '11': 'GUA', // Guanajuato
+    '12': 'GRO', // Guerrero
+    '13': 'HID', // Hidalgo
+    '14': 'JAL', // Jalisco
+    '15': 'MEX', // Estado de México
+    '16': 'MIC', // Michoacán
+    '17': 'MOR', // Morelos
+    '18': 'NAY', // Nayarit
+    '19': 'NLE', // Nuevo León
+    '20': 'OAX', // Oaxaca
+    '21': 'PUE', // Puebla
+    '22': 'QUE', // Querétaro
+    '23': 'ROO', // Quintana Roo
+    '24': 'SLP', // San Luis Potosí
+    '25': 'SIN', // Sinaloa
+    '26': 'SON', // Sonora
+    '27': 'TAB', // Tabasco
+    '28': 'TAM', // Tamaulipas
+    '29': 'TLA', // Tlaxcala
+    '30': 'VER', // Veracruz
+    '31': 'YUC', // Yucatán
+    '32': 'ZAC', // Zacatecas
+  };
+
+  return stateMap[prefix] || null;
+};
