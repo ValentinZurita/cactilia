@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { SectionTitle } from '../ui/SectionTitle';
 import ShippingOptionSelector from '../shipping/ShippingOptionSelector';
@@ -20,14 +20,28 @@ export const ShippingOptionsSection = ({
   loading = false,
   addressSelected = false
 }) => {
-  // Log para diagnóstico
+  // Referencia para controlar logs
+  const loggedStatesRef = useRef({});
+  
+  // Log para diagnóstico más controlado
   useEffect(() => {
-    console.log('📦 ShippingOptionsSection render:', {
-      opciones: shippingOptions.length,
-      seleccionada: selectedOptionId,
-      cargando: loading,
-      direccionSeleccionada: addressSelected
-    });
+    // Crear una clave única basada en el estado actual
+    const stateKey = `${shippingOptions.length}-${selectedOptionId}-${loading}-${addressSelected}`;
+    
+    // Solo loggear si es un estado nuevo que no hemos visto antes
+    if (!loggedStatesRef.current[stateKey]) {
+      // Solo casos importantes: inicio, cambio de opciones, selección
+      if (selectedOptionId || shippingOptions.length > 0 || !loggedStatesRef.current.initialized) {
+        console.log('📦 Opciones de envío:', {
+          disponibles: shippingOptions.length,
+          seleccionada: selectedOptionId ? 'Sí' : 'No'
+        });
+        
+        // Marcar este estado como ya registrado
+        loggedStatesRef.current[stateKey] = true;
+        loggedStatesRef.current.initialized = true;
+      }
+    }
   }, [shippingOptions, selectedOptionId, loading, addressSelected]);
 
   // Si no hay dirección seleccionada, mostrar mensaje

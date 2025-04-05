@@ -41,7 +41,7 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
   // Calcular opciones de envío cuando cambian los items o la dirección
   useEffect(() => {
     const calculateShippingOptions = async () => {
-      console.log('🚚 Calculando opciones de envío reales...');
+      console.log('🚚 Calculando opciones de envío...');
       setLoading(true);
       setError(null);
       
@@ -61,8 +61,6 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
         const processedRules = new Map(); // Map para evitar duplicados
         const allRules = []; // Para almacenar todas las reglas de envío
         const excluded = []; // Para almacenar productos sin reglas de envío
-        
-        console.log('🔍 Procesando reglas de envío para', cartItems.length, 'productos');
         
         // Recorrer cada item y procesarlo
         for (const item of cartItems) {
@@ -97,7 +95,6 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
             }
             
             // Obtener regla desde Firestore
-            console.log(`Obteniendo regla ${ruleId} desde Firestore`);
             let ruleData;
             
             try {
@@ -148,7 +145,7 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
         setExcludedProducts(excluded);
         
         // Actualizar el estado de los grupos y reglas (esto se hace siempre)
-        console.log('✅ Se han encontrado', shippingGroups.length, 'grupos y', allRules.length, 'reglas de envío');
+        console.log(`✅ Grupos de envío: ${shippingGroups.length}, Reglas: ${allRules.length}`);
         setShippingGroups(shippingGroups);
         setShippingRules(allRules);
         
@@ -166,7 +163,7 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
         const hasValidPostalCode = userAddress && (userAddress.zipCode || userAddress.zip);
         
         if (!userAddress) {
-          console.warn('⚠️ No hay dirección seleccionada para calcular opciones de envío concretas');
+          console.warn('⚠️ No hay dirección seleccionada para calcular opciones de envío');
           setError('Se requiere una dirección para calcular el envío');
           setOptions([]);
           setLoading(false);
@@ -174,14 +171,12 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
         }
         
         if (!hasValidPostalCode) {
-          console.warn('⚠️ La dirección seleccionada no tiene código postal (ni zipCode ni zip)');
+          console.warn('⚠️ Dirección sin código postal válido');
           setError('Se requiere un código postal válido para calcular el envío');
           setOptions([]);
           setLoading(false);
           return;
         }
-        
-        console.log('✅ Dirección válida encontrada con código postal:', userAddress.zipCode || userAddress.zip);
         
         // 2. Para cada grupo, calcular opciones de envío (solo si hay dirección)
         const allOptions = [];
@@ -286,7 +281,7 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
           return a.totalCost - b.totalCost;
         });
         
-        console.log('🚚 Opciones calculadas:', sortedOptions);
+        console.log(`🚚 Opciones calculadas: ${sortedOptions.length}`);
         setOptions(sortedOptions);
         
         // Si hay una opción seleccionada y ya no está disponible, deseleccionarla
@@ -306,8 +301,9 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
   
   // Función para seleccionar una opción
   const selectShippingOption = (option) => {
-    console.log('🚚 Seleccionando opción de envío:', option);
-    setSelectedOption(option);
+    if (option) {
+      setSelectedOption(option);
+    }
   };
   
   return {

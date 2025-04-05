@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import '../../styles/shippingSelector.css';
 
@@ -18,23 +18,24 @@ export const ShippingOptionSelector = ({
   onOptionSelect,
   loading = false
 }) => {
+  // Referencia para controlar logs y acciones únicas
+  const loggedRef = useRef({});
+
   // Agregar log para diagnóstico
   useEffect(() => {
     // Usar un log más limitado para evitar múltiples renderizaciones
-    if (shippingOptions.length > 0) {
-      // Solo mostrar una vez cuando hay opciones disponibles o cuando cambia la opción seleccionada
+    if (shippingOptions.length > 0 && !loggedRef.current[shippingOptions.length]) {
+      // Solo mostrar una vez por cantidad de opciones
       const logInfo = {
         opciones: shippingOptions.length,
         seleccionada: selectedOptionId
       };
       console.log("🚚 RENDERIZANDO SHIPPING OPTION SELECTOR", logInfo);
+      loggedRef.current[shippingOptions.length] = true;
     }
     
-    // Si hay opciones disponibles pero no hay opción seleccionada, seleccionar automáticamente la primera
-    if (shippingOptions && shippingOptions.length > 0 && !selectedOptionId && onOptionSelect) {
-      console.log('⚠️ No hay opción seleccionada, seleccionando la primera automáticamente');
-      onOptionSelect(shippingOptions[0]);
-    }
+    // No seleccionamos automáticamente la primera opción aquí para evitar conflicto con CheckoutContent
+    // La selección automática se hará centralmente desde CheckoutContent
   }, [shippingOptions, selectedOptionId, onOptionSelect]);
 
   if (loading) {

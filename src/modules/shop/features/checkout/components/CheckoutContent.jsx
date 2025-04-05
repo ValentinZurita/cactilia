@@ -68,8 +68,10 @@ export const CheckoutContent = () => {
         (a.totalCost || a.calculatedCost || 9999) - (b.totalCost || b.calculatedCost || 9999)
       )[0];
       
-      console.log('🏷️ Seleccionando automáticamente la opción más barata:', cheapestOption);
-      selectShippingOption(cheapestOption);
+      if (cheapestOption) {
+        console.log('🏷️ Seleccionando automáticamente la opción más económica:', cheapestOption.label);
+        selectShippingOption(cheapestOption);
+      }
     }
   }, [shippingOptions, selectedShippingOption, selectShippingOption]);
 
@@ -77,7 +79,7 @@ export const CheckoutContent = () => {
   useEffect(() => {
     if (selectedShippingOption && updateShipping) {
       const shippingCost = selectedShippingOption.totalCost || selectedShippingOption.calculatedCost || 0;
-      console.log(`💸 Actualizando costo de envío a $${shippingCost} desde opción:`, selectedShippingOption.label);
+      console.log(`💸 Costo de envío actualizado a $${shippingCost}`);
       updateShipping(shippingCost);
     }
   }, [selectedShippingOption, updateShipping]);
