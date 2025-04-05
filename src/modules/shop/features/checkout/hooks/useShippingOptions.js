@@ -12,6 +12,11 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [error, setError] = useState(null);
   const [userAddress, setUserAddress] = useState(null);
+  // Añadir estados para grupos y reglas de envío
+  const [shippingGroups, setShippingGroups] = useState([]);
+  const [shippingRules, setShippingRules] = useState([]);
+  // Estado para productos excluidos (sin reglas de envío)
+  const [excludedProducts, setExcludedProducts] = useState([]);
   
   // Obtener dirección del usuario cuando cambia el ID seleccionado
   useEffect(() => {
@@ -25,6 +30,9 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
       // Pero para simplificar, asumimos que ya tenemos la dirección en el componente padre
       // y que selectedAddressId es en realidad el objeto dirección completo
       setUserAddress(selectedAddressId);
+
+      // Debuggear qué estamos recibiendo como dirección
+      console.log('🏠 Dirección seleccionada:', selectedAddressId);
     };
     
     getUserAddress();
@@ -37,24 +45,24 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
       setLoading(true);
       setError(null);
       
-      // Validar que tengamos items y dirección
+      // Validar que tengamos items
       if (!cartItems || cartItems.length === 0) {
         setOptions([]);
-        setLoading(false);
-        return;
-      }
-      
-      if (!userAddress || !userAddress.zipCode) {
-        setError('Se requiere una dirección para calcular el envío');
-        setOptions([]);
+        setShippingGroups([]);
+        setShippingRules([]);
+        setExcludedProducts([]);
         setLoading(false);
         return;
       }
       
       try {
-        // 1. Agrupar productos por regla de envío
+        // 1. Agrupar productos por regla de envío (esto se hace siempre, incluso sin dirección)
         const shippingGroups = [];
         const processedRules = new Map(); // Map para evitar duplicados
+        const allRules = []; // Para almacenar todas las reglas de envío
+        const excluded = []; // Para almacenar productos sin reglas de envío
+        
+        console.log('🔍 Procesando reglas de envío para', cartItems.length, 'productos');
         
         // Recorrer cada item y procesarlo
         for (const item of cartItems) {
@@ -67,46 +75,82 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
           
           if (ruleIds.length === 0) {
             console.warn(`Producto ${product.name || product.id} no tiene reglas de envío`);
+            excluded.push({...product, quantity: item.quantity});
             continue;
           }
           
-          // Procesar solo la primera regla (simplificado)
-          const ruleId = ruleIds[0];
-          
-          // Si ya procesamos esta regla, añadir el producto al grupo existente
-          if (processedRules.has(ruleId)) {
-            const groupIndex = processedRules.get(ruleId);
-            shippingGroups[groupIndex].items.push(item);
-            continue;
-          }
-          
-          // Obtener regla desde Firestore
-          console.log(`Obteniendo regla ${ruleId} desde Firestore`);
-          let ruleData;
-          
-          try {
-            ruleData = await fetchShippingRuleById(ruleId);
-            
-            if (!ruleData) {
-              console.error(`Regla de envío ${ruleId} no encontrada`);
+          // Procesar todas las reglas disponibles
+          for (const ruleId of ruleIds) {
+            // Si ya procesamos esta regla, añadir el producto al grupo existente y continuar
+            if (processedRules.has(ruleId)) {
+              const groupIndex = processedRules.get(ruleId);
+              
+              // Verificar si este producto ya está en el grupo para evitar duplicaciones
+              const productAlreadyInGroup = shippingGroups[groupIndex].items.some(
+                groupItem => (groupItem.id === item.id || (groupItem.product && groupItem.product.id === product.id))
+              );
+              
+              if (!productAlreadyInGroup) {
+                shippingGroups[groupIndex].items.push(item);
+              }
               continue;
             }
-          } catch (err) {
-            console.error(`Error al obtener regla ${ruleId}:`, err);
-            continue;
+            
+            // Obtener regla desde Firestore
+            console.log(`Obteniendo regla ${ruleId} desde Firestore`);
+            let ruleData;
+            
+            try {
+              ruleData = await fetchShippingRuleById(ruleId);
+              
+              if (!ruleData) {
+                console.error(`Regla de envío ${ruleId} no encontrada`);
+                continue;
+              }
+              
+              // Almacenar la regla en el array de todas las reglas si no existe ya
+              if (!allRules.some(rule => rule.id === ruleId)) {
+                allRules.push({
+                  id: ruleId,
+                  ...ruleData
+                });
+              }
+            } catch (err) {
+              console.error(`Error al obtener regla ${ruleId}:`, err);
+              continue;
+            }
+            
+            // Crear nuevo grupo con esta regla
+            const groupIndex = shippingGroups.length;
+            shippingGroups.push({
+              id: `group-${ruleId}`,
+              name: ruleData.zona || 'Grupo de envío',
+              rule: ruleData,
+              rules: [ruleData],
+              items: [item]
+            });
+            
+            // Marcar esta regla como procesada
+            processedRules.set(ruleId, groupIndex);
           }
           
-          // Crear nuevo grupo con esta regla
-          const groupIndex = shippingGroups.length;
-          shippingGroups.push({
-            id: `group-${ruleId}`,
-            rule: ruleData,
-            items: [item]
-          });
-          
-          // Marcar esta regla como procesada
-          processedRules.set(ruleId, groupIndex);
+          // Si después de procesar todas las reglas, el producto no está en ningún grupo, considerarlo excluido
+          if (!shippingGroups.some(group => 
+            group.items.some(groupItem => 
+              groupItem.id === item.id || (groupItem.product && groupItem.product.id === product.id)
+            )
+          )) {
+            excluded.push({...product, quantity: item.quantity});
+          }
         }
+        
+        // Actualizar el estado de productos excluidos
+        setExcludedProducts(excluded);
+        
+        // Actualizar el estado de los grupos y reglas (esto se hace siempre)
+        console.log('✅ Se han encontrado', shippingGroups.length, 'grupos y', allRules.length, 'reglas de envío');
+        setShippingGroups(shippingGroups);
+        setShippingRules(allRules);
         
         // Si no hay grupos válidos, no hay opciones de envío
         if (shippingGroups.length === 0) {
@@ -117,7 +161,29 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
           return;
         }
         
-        // 2. Para cada grupo, calcular opciones de envío
+        // Verificar si hay dirección para calcular opciones de envío concretas
+        // Aceptar tanto zipCode como zip
+        const hasValidPostalCode = userAddress && (userAddress.zipCode || userAddress.zip);
+        
+        if (!userAddress) {
+          console.warn('⚠️ No hay dirección seleccionada para calcular opciones de envío concretas');
+          setError('Se requiere una dirección para calcular el envío');
+          setOptions([]);
+          setLoading(false);
+          return;
+        }
+        
+        if (!hasValidPostalCode) {
+          console.warn('⚠️ La dirección seleccionada no tiene código postal (ni zipCode ni zip)');
+          setError('Se requiere un código postal válido para calcular el envío');
+          setOptions([]);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('✅ Dirección válida encontrada con código postal:', userAddress.zipCode || userAddress.zip);
+        
+        // 2. Para cada grupo, calcular opciones de envío (solo si hay dirección)
         const allOptions = [];
         
         for (const group of shippingGroups) {
@@ -249,6 +315,10 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
     error,
     options,
     selectedOption,
-    selectShippingOption
+    selectShippingOption,
+    // Exponer grupos y reglas para el componente de diagnóstico
+    shippingGroups,
+    shippingRules,
+    excludedProducts
   };
 }; 

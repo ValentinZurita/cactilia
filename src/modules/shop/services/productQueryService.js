@@ -32,15 +32,7 @@ const ProductQueryService = {
 
       // Obtener los datos del producto
       const rawData = productSnap.data();
-      console.log(`✅ [ProductQueryService] Producto encontrado en Firestore. Datos crudos:`, 
-        JSON.stringify(rawData, (key, value) => {
-          // Manejar objetos Date y Timestamp para mejor visualización en log
-          if (value && typeof value === 'object' && value.seconds !== undefined && value.nanoseconds !== undefined) {
-            return `Timestamp(${new Date(value.seconds * 1000 + value.nanoseconds / 1000000).toISOString()})`;
-          }
-          return value;
-        }).substring(0, 500) + '...'
-      );
+      console.log(`✅ Producto encontrado: "${rawData.name || productId}"`);
       
       // Clonar datos para evitar problemas de referencia
       const productData = JSON.parse(JSON.stringify(rawData, (key, value) => {
@@ -51,36 +43,32 @@ const ProductQueryService = {
         return value;
       }));
       
-      console.log(`🔍 [ProductQueryService] Verificando propiedades de envío:`);
       // Revisar propiedades de envío
+      let hasShippingProps = false;
+      
       if (rawData.hasOwnProperty('shippingRuleId')) {
-        console.log(`  - shippingRuleId: ${rawData.shippingRuleId} (${typeof rawData.shippingRuleId})`);
         productData.shippingRuleId = rawData.shippingRuleId;
-      } else {
-        console.warn(`  - ⚠️ shippingRuleId no existe en los datos originales`);
+        hasShippingProps = true;
       }
       
       if (rawData.hasOwnProperty('shippingRuleIds')) {
         if (Array.isArray(rawData.shippingRuleIds)) {
-          console.log(`  - shippingRuleIds: [${rawData.shippingRuleIds.join(', ')}] (Array con ${rawData.shippingRuleIds.length} elementos)`);
           productData.shippingRuleIds = [...rawData.shippingRuleIds];
-        } else {
-          console.warn(`  - ⚠️ shippingRuleIds existe pero no es un array: ${rawData.shippingRuleIds} (${typeof rawData.shippingRuleIds})`);
+          hasShippingProps = true;
+        } else if (rawData.shippingRuleIds) {
           // Corregir el tipo
-          if (rawData.shippingRuleIds) {
-            productData.shippingRuleIds = [String(rawData.shippingRuleIds)];
-          } else {
-            productData.shippingRuleIds = [];
-          }
+          productData.shippingRuleIds = [String(rawData.shippingRuleIds)];
+          hasShippingProps = true;
+        } else {
+          productData.shippingRuleIds = [];
         }
-      } else {
-        console.warn(`  - ⚠️ shippingRuleIds no existe en los datos originales`);
       }
+      
+      // Log breve sobre las propiedades de envío encontradas
+      console.log(`📦 Propiedades de envío: ${hasShippingProps ? 'Encontradas' : '⚠️ No encontradas'}`);
       
       // PATCH TEMPORAL: Forzar reglas de envío para productos específicos
       if (productId === 'e9lK7PMv83TCwSwngDDi') {
-        console.log(`🔧 PATCH: Forzando reglas de envío para producto de prueba ${productId}`);
-        
         // Verificar si las propiedades ya existen correctamente
         const needsPatch = !productData.shippingRuleId || 
                            !productData.shippingRuleIds || 
@@ -88,46 +76,25 @@ const ProductQueryService = {
                            productData.shippingRuleIds.length === 0;
                            
         if (needsPatch) {
-          console.log(`🔧 Aplicando parche - Valores anteriores:`, {
-            shippingRuleId: productData.shippingRuleId,
-            shippingRuleIds: productData.shippingRuleIds
-          });
+          console.log(`🔧 Aplicando parche para producto de prueba`);
           
           productData.shippingRuleId = 'x8tRGxol2MOr8NMzeAPp';
           productData.shippingRuleIds = ['x8tRGxol2MOr8NMzeAPp', 'fyfkhfITejBjMASFCMZ2'];
-          
-          console.log(`🔧 Parche aplicado - Nuevos valores:`, {
-            shippingRuleId: productData.shippingRuleId,
-            shippingRuleIds: productData.shippingRuleIds
-          });
-        } else {
-          console.log(`✅ No es necesario aplicar parche, los valores ya son correctos:`, {
-            shippingRuleId: productData.shippingRuleId,
-            shippingRuleIds: productData.shippingRuleIds
-          });
         }
       }
       
       // Logs de diagnóstico para shippingRules
-      console.log(`[ProductQueryService] Producto ${productId} - ${productData.name}:`, {
-        tieneShippingRuleId: !!productData.shippingRuleId,
-        shippingRuleId: productData.shippingRuleId || 'No definido',
-        tieneShippingRuleIds: !!productData.shippingRuleIds && Array.isArray(productData.shippingRuleIds),
-        shippingRuleIds: productData.shippingRuleIds || [],
-      });
+      const hasShippingRuleId = !!productData.shippingRuleId;
+      const hasShippingRuleIds = !!productData.shippingRuleIds && Array.isArray(productData.shippingRuleIds) && productData.shippingRuleIds.length > 0;
       
       // Asegurarnos de que las reglas de envío existan correctamente
       // Priorizar el arreglo shippingRuleIds, pero mantener compatibilidad con shippingRuleId
       let finalShippingRuleIds = [];
       
-      if (productData.shippingRuleIds && Array.isArray(productData.shippingRuleIds) && productData.shippingRuleIds.length > 0) {
+      if (hasShippingRuleIds) {
         finalShippingRuleIds = [...productData.shippingRuleIds];
-        console.log(`[ProductQueryService] Usando ${finalShippingRuleIds.length} reglas de envío del arreglo shippingRuleIds`);
-      } else if (productData.shippingRuleId) {
+      } else if (hasShippingRuleId) {
         finalShippingRuleIds = [productData.shippingRuleId];
-        console.log(`[ProductQueryService] Usando regla de envío individual: ${productData.shippingRuleId}`);
-      } else {
-        console.warn(`[ProductQueryService] Producto ${productId} - ${productData.name} no tiene reglas de envío asignadas`);
       }
       
       // Crear objeto final del producto con reglas normalizadas y asegurar propiedades primitivas
@@ -139,9 +106,12 @@ const ProductQueryService = {
         shippingRuleId: finalShippingRuleIds.length > 0 ? finalShippingRuleIds[0] : null
       };
       
-      console.log(`🔍 [ProductQueryService] Producto preparado para retorno con propiedades:`, 
-        Object.keys(finalProduct).filter(key => key.toLowerCase().includes('shipping'))
-      );
+      // Log final condensado
+      if (finalShippingRuleIds.length > 0) {
+        console.log(`🚚 Producto preparado con ${finalShippingRuleIds.length} reglas de envío`);
+      } else {
+        console.warn(`⚠️ Producto sin reglas de envío`);
+      }
       
       return finalProduct;
     } catch (error) {

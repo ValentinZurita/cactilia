@@ -33,13 +33,32 @@ export const CheckoutContent = () => {
     updateShipping
   } = useCart();
 
+  // Buscar la dirección seleccionada en la lista de direcciones
+  const selectedAddress = checkout.addresses && checkout.selectedAddressId 
+    ? checkout.addresses.find(addr => addr.id === checkout.selectedAddressId) 
+    : null;
+  
+  // Mostrar información de depuración sobre la dirección
+  useEffect(() => {
+    if (selectedAddress) {
+      console.log('🏠 Dirección seleccionada para opciones de envío:', selectedAddress);
+    } else if (checkout.addresses && checkout.addresses.length > 0) {
+      console.log('⚠️ Hay direcciones disponibles pero ninguna seleccionada');
+    } else {
+      console.log('⚠️ No hay direcciones disponibles');
+    }
+  }, [selectedAddress, checkout.addresses]);
+
   // Obtener opciones de envío
   const {
     loading: loadingShippingOptions,
     options: shippingOptions,
     selectedOption: selectedShippingOption,
-    selectShippingOption
-  } = useShippingOptions(cartItems, checkout.selectedAddressId);
+    selectShippingOption,
+    shippingGroups: calculatedShippingGroups,
+    shippingRules: calculatedShippingRules,
+    excludedProducts
+  } = useShippingOptions(cartItems, selectedAddress);
 
   // Seleccionar automáticamente la opción más barata si hay opciones disponibles y ninguna seleccionada
   useEffect(() => {
@@ -70,19 +89,21 @@ export const CheckoutContent = () => {
     console.warn('💲 CART TOTAL:', cartTotal);
     console.warn('📍 ADDRESSES:', checkout.addresses);
     console.warn('💳 PAYMENT METHODS:', checkout.paymentMethods);
-    console.warn('🚚 SHIPPING GROUPS:', shippingGroups);
-    console.warn('📏 SHIPPING RULES:', shippingRules);
+    console.warn('🚚 SHIPPING GROUPS:', calculatedShippingGroups);
+    console.warn('📏 SHIPPING RULES:', calculatedShippingRules);
     console.warn('🚢 SHIPPING OPTIONS:', shippingOptions);
     console.warn('✅ SELECTED SHIPPING OPTION:', selectedShippingOption);
+    console.warn('⚠️ EXCLUDED PRODUCTS:', excludedProducts);
   }, [
     cartItems, 
     cartTotal, 
     checkout.addresses, 
     checkout.paymentMethods, 
-    shippingGroups, 
-    shippingRules,
+    calculatedShippingGroups, 
+    calculatedShippingRules,
     shippingOptions,
-    selectedShippingOption
+    selectedShippingOption,
+    excludedProducts
   ]);
 
   /**
@@ -186,9 +207,9 @@ export const CheckoutContent = () => {
                   taxes: cartTaxes,
                   shipping: cartShipping,
                   total: cartTotal,
-                  shippingGroups,
-                  shippingRules,
-                  shippingOptions,
+                  shippingGroups: calculatedShippingGroups,
+                  shippingRules: calculatedShippingRules,
+                  shippingOptions: shippingOptions,
                   selectedOption: selectedShippingOption
                 },
                 checkout: {
@@ -218,11 +239,12 @@ export const CheckoutContent = () => {
           isFreeShipping,
           hasStockIssues,
           shippingDetails: shippingDetails || {},
-          shippingGroups: shippingGroups || [],
-          shippingRules: shippingRules || [],
+          shippingGroups: calculatedShippingGroups || [],
+          shippingRules: calculatedShippingRules || [],
           isLoadingShipping,
           shippingOptions: shippingOptions || [],
-          selectedShippingOption: selectedShippingOption
+          selectedShippingOption: selectedShippingOption,
+          excludedProducts: excludedProducts || []
         }}
         checkoutInfo={{
           addresses: checkout.addresses,
@@ -249,10 +271,11 @@ export const CheckoutContent = () => {
             isFreeShipping
           }}
           shippingDetails={shippingDetails}
-          shippingGroups={shippingGroups}
-          shippingRules={shippingRules}
+          shippingGroups={calculatedShippingGroups}
+          shippingRules={calculatedShippingRules}
           shippingOptions={shippingOptions}
           selectedShippingOption={selectedShippingOption}
+          excludedProducts={excludedProducts}
         />
       )}
 

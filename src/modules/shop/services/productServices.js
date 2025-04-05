@@ -1,6 +1,7 @@
 import StockService from './stockService';
 import ProductQueryService from './productQueryService';
 import ProductBatchService from './productBatchService';
+import ProductValidator from './productValidator';
 
 /**
  * Re-exportación de todas las funciones de los servicios
@@ -33,6 +34,11 @@ export const getProductsByIds = ProductQueryService.getProductsByIds.bind(Produc
 export const searchProducts = ProductQueryService.searchProducts.bind(ProductQueryService);
 export const getFeaturedProducts = ProductQueryService.getFeaturedProducts.bind(ProductQueryService);
 
+// Exportar funciones de validación
+export const validateProduct = ProductValidator.validateProduct;
+export const normalizeProduct = ProductValidator.normalizeProduct;
+export const validateAndNormalizeProduct = ProductValidator.validateAndNormalizeProduct;
+
 /**
  * Utilidad de diagnóstico para asegurar que las propiedades de envío estén presentes
  * Cualquier componente puede usar esta función para verificar y corregir problemas
@@ -44,69 +50,32 @@ export const getFeaturedProducts = ProductQueryService.getFeaturedProducts.bind(
 export const ensureShippingProperties = (product, source = 'unknown') => {
   if (!product) return product;
   
-  const result = { ...product };
-  const productId = product.id;
+  // Usar el normalizador para hacer la mayor parte del trabajo
+  const normalized = normalizeProduct(product);
+  
+  // Validación específica para casos especiales
+  const productId = normalized.id;
   let modified = false;
-  
-  // Reporte inicial
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`🔍 [${source}] Verificando propiedades de envío para producto ${productId || 'sin ID'}`);
-  }
-  
-  // Verificar shippingRuleId
-  if (!result.shippingRuleId && product.shippingRuleIds && 
-      Array.isArray(product.shippingRuleIds) && product.shippingRuleIds.length > 0) {
-    result.shippingRuleId = product.shippingRuleIds[0];
-    modified = true;
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`✅ [${source}] Corregido: Añadido shippingRuleId=${result.shippingRuleId} desde shippingRuleIds`);
-    }
-  }
-  
-  // Verificar shippingRuleIds
-  if (!result.shippingRuleIds && result.shippingRuleId) {
-    result.shippingRuleIds = [result.shippingRuleId];
-    modified = true;
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`✅ [${source}] Corregido: Añadido shippingRuleIds=[${result.shippingRuleId}] desde shippingRuleId`);
-    }
-  }
-  
-  // Asegurar que shippingRuleIds sea un array
-  if (result.shippingRuleIds && !Array.isArray(result.shippingRuleIds)) {
-    if (result.shippingRuleIds) {
-      result.shippingRuleIds = [String(result.shippingRuleIds)];
-    } else {
-      result.shippingRuleIds = [];
-    }
-    modified = true;
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`✅ [${source}] Corregido: Convertido shippingRuleIds a array: [${result.shippingRuleIds}]`);
-    }
-  }
   
   // PATCH temporal para productos específicos con problemas conocidos
   if (productId === 'e9lK7PMv83TCwSwngDDi' && 
-     (!result.shippingRuleId || !result.shippingRuleIds || !Array.isArray(result.shippingRuleIds) || result.shippingRuleIds.length === 0)) {
+     (!normalized.shippingRuleId || !normalized.shippingRuleIds || !Array.isArray(normalized.shippingRuleIds) || normalized.shippingRuleIds.length === 0)) {
     // Aplicar valores conocidos
-    result.shippingRuleId = 'x8tRGxol2MOr8NMzeAPp';
-    result.shippingRuleIds = ['x8tRGxol2MOr8NMzeAPp', 'fyfkhfITejBjMASFCMZ2'];
+    normalized.shippingRuleId = 'x8tRGxol2MOr8NMzeAPp';
+    normalized.shippingRuleIds = ['x8tRGxol2MOr8NMzeAPp', 'fyfkhfITejBjMASFCMZ2'];
     modified = true;
     
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`🔧 [${source}] PATCH aplicado: Forzadas reglas de envío para producto de prueba ${productId}`);
+      console.log(`🔧 PATCH aplicado para producto de prueba ${productId}`);
     }
   }
   
-  // Reporte final
+  // Solo mostrar un log si se modificó algo y estamos en desarrollo
   if (modified && process.env.NODE_ENV !== 'production') {
-    console.log(`🔄 [${source}] Propiedades modificadas para producto ${productId || 'sin ID'}`);
+    console.log(`✅ [${source}] Propiedades de envío verificadas para "${normalized.name || productId}"`);
   }
   
-  return result;
+  return normalized;
 };
 
 // Exportación de servicios completos para usar en componentes nuevos
@@ -114,8 +83,10 @@ export const ProductServices = {
   Stock: StockService,
   Query: ProductQueryService,
   Batch: ProductBatchService,
+  Validator: ProductValidator,
   Utils: {
-    ensureShippingProperties
+    ensureShippingProperties,
+    validateAndNormalizeProduct
   }
 };
 

@@ -3,16 +3,26 @@ import '../../../../styles/pages/shop.css';
 import '../cart/styles/ProductCartd.css';
 import { CartButton } from '../cart/components/index.js';
 import { useAsync } from '../../hooks/useAsync';
-import { getProductCurrentStock } from '../../services/productServices.js';
+import { getProductCurrentStock, validateAndNormalizeProduct } from '../../services/productServices.js';
 import { ensureShippingProperties } from '../../services/productServices.js';
 
 export const ProductCard = ({ product, onProductClick }) => {
-  // Asegurar que el producto tiene propiedades de envío
+  // Asegurar que el producto tiene propiedades de envío y datos válidos
   const [processedProduct, setProcessedProduct] = useState(product);
   
-  // Procesar el producto cuando cambia para asegurar propiedades
+  // Procesar el producto cuando cambia para asegurar propiedades y validarlo
   useEffect(() => {
-    setProcessedProduct(ensureShippingProperties(product, 'ProductCard'));
+    const validateProduct = () => {
+      // Primero validar y normalizar (corregir problemas posibles)
+      const { product: validatedProduct, valid, warnings } = validateAndNormalizeProduct(product, true);
+      
+      // Aplicar ensureShippingProperties para garantía adicional
+      const finalProduct = ensureShippingProperties(validatedProduct, 'ProductCard');
+      
+      setProcessedProduct(finalProduct);
+    };
+    
+    validateProduct();
   }, [product]);
   
   // Destructure product data

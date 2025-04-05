@@ -37,12 +37,7 @@ export const cartSlice = createSlice({
         }
 
         // Log para depuración
-        console.log('📦 Datos de envío para producto a añadir:', {
-          id: product.id,
-          shippingRuleId,
-          shippingRuleIds,
-          tieneReglas: !!shippingRuleId || (Array.isArray(shippingRuleIds) && shippingRuleIds.length > 0)
-        });
+        console.log(`📦 Producto "${product.name}": ${shippingRuleIds ? shippingRuleIds.length + ' reglas de envío' : 'sin reglas'}`);
 
         // Si no, añadirlo con la cantidad especificada
         state.items.push({
