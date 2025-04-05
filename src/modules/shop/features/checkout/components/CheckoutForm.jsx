@@ -1,6 +1,12 @@
 import { useStockValidation } from '../hooks/useStockValidation';
 import { StockValidationBanner } from './StockValidationBanner';
-import { AddressSection, BillingSection, NotesSection, PaymentSection } from './sections/index.js'
+import { 
+  AddressSection, 
+  ShippingOptionsSection, 
+  BillingSection, 
+  NotesSection, 
+  PaymentSection 
+} from './sections/index.js'
 
 /**
  * Componente que muestra el formulario completo de checkout
@@ -20,6 +26,12 @@ export const CheckoutForm = ({
                                handleAddressChange,
                                handleNewAddressSelect,
                                handleNewAddressDataChange,
+
+                               // Opciones de envío
+                               shippingOptions = [],
+                               selectedShippingOptionId,
+                               loadingShippingOptions = false,
+                               handleShippingOptionSelect,
 
                                // Métodos de pago
                                paymentMethods,
@@ -60,6 +72,15 @@ export const CheckoutForm = ({
         onAddressSelect={handleAddressChange}
         onNewAddressSelect={handleNewAddressSelect}
         onNewAddressDataChange={handleNewAddressDataChange}
+      />
+
+      {/* Sección: Opciones de Envío */}
+      <ShippingOptionsSection
+        shippingOptions={shippingOptions}
+        selectedOptionId={selectedShippingOptionId}
+        onOptionSelect={handleShippingOptionSelect}
+        loading={loadingShippingOptions}
+        addressSelected={!!selectedAddressId}
       />
 
       {/* Sección: Metodo de Pago */}

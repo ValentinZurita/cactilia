@@ -1,0 +1,124 @@
+/* Estilos para ShippingOptionSelector */
+
+/* Contenedor principal */
+.shipping-method-selector {
+  margin-bottom: 20px;
+}
+
+.shipping-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Estilos para las opciones de envío */
+.shipping-method-option {
+  padding: 16px;
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.shipping-method-option:hover {
+  border-color: #d0d0d0;
+  background-color: #fafafa;
+}
+
+/* Opción activa con borde destacado */
+.shipping-method-option.active-shipping-option {
+  border-color: var(--green-3);
+  background-color: rgba(52, 199, 73, 0.05);
+  box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+}
+
+/* Estilos para el formulario */
+.shipping-method-option .form-check {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.shipping-method-option .form-check-input {
+  margin-right: 15px;
+  margin-top: 0.3rem;
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid #c8c8c8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Estilo cuando está seleccionado */
+.shipping-method-option .form-check-input:checked {
+  background-color: var(--green-3) !important;
+  border-color: var(--green-3) !important;
+  box-shadow: 0 0 0 2px rgba(52, 199, 73, 0.2) !important;
+}
+
+/* Cambio de color del nombre cuando está seleccionado */
+.shipping-method-option .form-check-input:checked + .form-check-label .shipping-method-name {
+  font-weight: 600;
+  color: var(--green-3);
+}
+
+/* Estilo del precio cuando está seleccionado */
+.shipping-method-option .form-check-input:checked + .form-check-label .shipping-method-price {
+  color: var(--green-3);
+}
+
+/* Estilos tipográficos */
+.shipping-method-name {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 5px;
+  font-size: 1.05rem;
+}
+
+.shipping-method-details {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.shipping-method-extra-details {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.shipping-method-price {
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* Estados hover */
+.shipping-method-option:hover .form-check-input {
+  border-color: #aaa;
+}
+
+/* Animación sutil */
+.shipping-method-option {
+  transform: translateY(0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.shipping-method-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 768px) {
+  .shipping-method-option {
+    padding: 12px;
+  }
+  
+  .shipping-method-name {
+    font-size: 1rem;
+  }
+  
+  .shipping-method-price {
+    font-size: 1rem;
+  }
+} 

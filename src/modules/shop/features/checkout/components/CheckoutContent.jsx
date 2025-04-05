@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useCart } from '../../cart/hooks/useCart';
 import { CheckoutForm } from './CheckoutForm';
 import { CheckoutSummaryPanel } from './CheckoutSummaryPanel';
-import { useCheckout } from '../hooks/index.js'
-import { CheckoutDebugInfo } from './CheckoutDebugInfo';
+import { useCheckout } from '../hooks/useCheckout';
+import { useShippingOptions } from '../hooks/useShippingOptions';
+import CheckoutDebugInfo from './CheckoutDebugInfo';
 
 /**
  * Componente principal del contenido de checkout
@@ -28,8 +29,25 @@ export const CheckoutContent = () => {
     shippingDetails,
     shippingGroups,
     shippingRules,
-    isLoadingShipping
+    isLoadingShipping,
+    updateShipping
   } = useCart();
+
+  // Obtener opciones de envío
+  const {
+    loading: loadingShippingOptions,
+    options: shippingOptions,
+    selectedOption: selectedShippingOption,
+    selectShippingOption
+  } = useShippingOptions(cartItems, checkout.selectedAddressId);
+
+  // Actualizar el costo de envío cuando cambia la opción seleccionada
+  useEffect(() => {
+    if (selectedShippingOption && updateShipping) {
+      const shippingCost = selectedShippingOption.totalCost || selectedShippingOption.calculatedCost || 0;
+      updateShipping(shippingCost);
+    }
+  }, [selectedShippingOption, updateShipping]);
 
   // Agregar Log de diagnóstico al cargar la vista
   useEffect(() => {
@@ -40,14 +58,24 @@ export const CheckoutContent = () => {
     console.warn('💳 PAYMENT METHODS:', checkout.paymentMethods);
     console.warn('🚚 SHIPPING GROUPS:', shippingGroups);
     console.warn('📏 SHIPPING RULES:', shippingRules);
-  }, [cartItems, cartTotal, checkout.addresses, checkout.paymentMethods, shippingGroups, shippingRules]);
+    console.warn('🚢 SHIPPING OPTIONS:', shippingOptions);
+    console.warn('✅ SELECTED SHIPPING OPTION:', selectedShippingOption);
+  }, [
+    cartItems, 
+    cartTotal, 
+    checkout.addresses, 
+    checkout.paymentMethods, 
+    shippingGroups, 
+    shippingRules,
+    shippingOptions,
+    selectedShippingOption
+  ]);
 
   /**
    * Determina si el botón de procesamiento debe estar deshabilitado
    * basado en el estado actual del checkout
    */
   const isButtonDisabled = useCallback(() => {
-
     // Si hay problemas de stock, deshabilitar
     if (hasStockIssues) return true;
 
@@ -65,6 +93,9 @@ export const CheckoutContent = () => {
     );
 
     if (!hasValidAddress) return true;
+
+    // Verificar si hay opción de envío seleccionada
+    if (!selectedShippingOption) return true;
 
     // Verificar según el tipo de pago
     switch (checkout.selectedPaymentType) {
@@ -86,8 +117,21 @@ export const CheckoutContent = () => {
     checkout.newAddressData,
     checkout.selectedPaymentType,
     checkout.selectedPaymentId,
-    checkout.newCardData
+    checkout.newCardData,
+    selectedShippingOption
   ]);
+
+  // Manejador para cuando se selecciona una opción de envío
+  const handleShippingOptionSelect = (option) => {
+    selectShippingOption(option);
+  };
+
+  // Estados locales
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // Verificar si estamos en desarrollo para mostrar herramientas de diagnóstico
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
     <div className="container checkout-page my-5">
@@ -103,6 +147,8 @@ export const CheckoutContent = () => {
               <li><strong>Direcciones disponibles:</strong> {checkout.addresses ? checkout.addresses.length : 0}</li>
               <li><strong>Dirección seleccionada:</strong> {checkout.selectedAddressId || 'Ninguna'}</li>
               <li><strong>Métodos de pago:</strong> {checkout.paymentMethods ? checkout.paymentMethods.length : 0}</li>
+              <li><strong>Opciones de envío:</strong> {shippingOptions ? shippingOptions.length : 0}</li>
+              <li><strong>Opción de envío seleccionada:</strong> {selectedShippingOption ? selectedShippingOption.label : 'Ninguna'}</li>
             </ul>
           </div>
           <div className="col-md-6 text-start">
@@ -127,7 +173,9 @@ export const CheckoutContent = () => {
                   shipping: cartShipping,
                   total: cartTotal,
                   shippingGroups,
-                  shippingRules
+                  shippingRules,
+                  shippingOptions,
+                  selectedOption: selectedShippingOption
                 },
                 checkout: {
                   addresses: checkout.addresses,
@@ -158,7 +206,9 @@ export const CheckoutContent = () => {
           shippingDetails: shippingDetails || {},
           shippingGroups: shippingGroups || [],
           shippingRules: shippingRules || [],
-          isLoadingShipping
+          isLoadingShipping,
+          shippingOptions: shippingOptions || [],
+          selectedShippingOption: selectedShippingOption
         }}
         checkoutInfo={{
           addresses: checkout.addresses,
@@ -171,6 +221,26 @@ export const CheckoutContent = () => {
           error: checkout.error
         }}
       />
+
+      {/* Panel de diagnóstico (solo en desarrollo) */}
+      {isDevelopment && (
+        <CheckoutDebugInfo 
+          cart={{
+            items: cartItems,
+            itemsCount: cartItems?.reduce((total, item) => total + item.quantity, 0) || 0,
+            subtotal: cartSubtotal,
+            taxes: cartTaxes,
+            shipping: cartShipping,
+            finalTotal: cartTotal,
+            isFreeShipping
+          }}
+          shippingDetails={shippingDetails}
+          shippingGroups={shippingGroups}
+          shippingRules={shippingRules}
+          shippingOptions={shippingOptions}
+          selectedShippingOption={selectedShippingOption}
+        />
+      )}
 
       <h1 className="checkout-title mb-4">Finalizar Compra</h1>
 
@@ -185,6 +255,11 @@ export const CheckoutContent = () => {
           handleAddressChange={checkout.handleAddressChange}
           handleNewAddressSelect={checkout.handleNewAddressSelect}
           handleNewAddressDataChange={checkout.handleNewAddressDataChange}
+
+          shippingOptions={shippingOptions}
+          selectedShippingOptionId={selectedShippingOption?.id}
+          loadingShippingOptions={loadingShippingOptions}
+          handleShippingOptionSelect={handleShippingOptionSelect}
 
           paymentMethods={checkout.paymentMethods}
           selectedPaymentId={checkout.selectedPaymentId}
@@ -216,6 +291,7 @@ export const CheckoutContent = () => {
           cartShipping={cartShipping}
           cartTotal={cartTotal}
           isFreeShipping={isFreeShipping}
+          selectedShippingOption={selectedShippingOption}
 
           isProcessing={checkout.isProcessing}
           isButtonDisabled={isButtonDisabled()}
