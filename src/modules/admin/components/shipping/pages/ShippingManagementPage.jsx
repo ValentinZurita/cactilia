@@ -62,9 +62,19 @@ export const ShippingManagementPage = () => {
             nombre: type.carrier,
             label: type.label,
             precio: type.price,
+            peso_maximo: type.weight || 0,
             tiempo_entrega: `${type.minDays}-${type.maxDays} días`,
             minDays: type.minDays,
-            maxDays: type.maxDays
+            maxDays: type.maxDays,
+            // Incluir campos de rangos de peso
+            usaRangosPeso: type.usaRangosPeso || false,
+            rangosPeso: type.rangosPeso || [],
+            // Configuración de paquetes específica para cada opción
+            configuracion_paquetes: {
+              peso_maximo_paquete: type.maxPackageWeight || 20,
+              costo_por_kg_extra: type.extraWeightCost || 10,
+              maximo_productos_por_paquete: type.maxProductsPerPackage || 10
+            }
           }))
         : [],
       
@@ -142,8 +152,16 @@ export const ShippingManagementPage = () => {
                 carrier: option.nombre || '',
                 label: option.label || option.nombre || '',
                 price: option.precio || 0,
+                weight: option.peso_maximo || 0,
                 minDays: option.minDays || 1,
-                maxDays: option.maxDays || 3
+                maxDays: option.maxDays || 3,
+                // Agregar nuevos campos de rangos de peso
+                usaRangosPeso: option.usaRangosPeso || false,
+                rangosPeso: option.rangosPeso || [],
+                // Configuración de paquetes específica para cada opción
+                maxPackageWeight: option.configuracion_paquetes?.peso_maximo_paquete || 20,
+                extraWeightCost: option.configuracion_paquetes?.costo_por_kg_extra || 10,
+                maxProductsPerPackage: option.configuracion_paquetes?.maximo_productos_por_paquete || 10
               }))
             : []
         } : {};

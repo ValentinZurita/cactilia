@@ -1,10 +1,101 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Controller } from 'react-hook-form';
+import { 
+  ServiceBasicInfo, 
+  DeliveryDetails, 
+  PackageConfiguration, 
+  ShippingTypesList 
+} from '../components';
+
+/**
+ * Componente para la entrada de datos con validación y mensajes de error
+ */
+const FormInput = ({ 
+  label, 
+  name, 
+  value, 
+  onChange, 
+  placeholder, 
+  type = 'text', 
+  prefix, 
+  suffix,
+  min,
+  max,
+  step,
+  error,
+  helpText,
+  required = false
+}) => {
+  return (
+    <div className="mb-3">
+      <label className="form-label fw-medium mb-2">
+        {label}
+        {required && <span className="text-danger ms-1">*</span>}
+      </label>
+      <div className={`input-group ${error ? 'has-validation' : ''}`}>
+        {prefix && <span className="input-group-text">{prefix}</span>}
+        <input
+          type={type}
+          className={`form-control ${error ? 'is-invalid' : ''}`}
+          placeholder={placeholder}
+          name={name}
+          value={value}
+          onChange={onChange}
+          min={min}
+          max={max}
+          step={step}
+        />
+        {suffix && <span className="input-group-text">{suffix}</span>}
+        {error && <div className="invalid-feedback">{error}</div>}
+      </div>
+      {helpText && <div className="form-text">{helpText}</div>}
+    </div>
+  );
+};
+
+/**
+ * Componente para la selección de valores con validación y mensajes de error
+ */
+const FormSelect = ({ 
+  label, 
+  name, 
+  value, 
+  onChange, 
+  options, 
+  error, 
+  helpText,
+  required = false
+}) => {
+  return (
+    <div className="mb-3">
+      <label className="form-label fw-medium mb-2">
+        {label}
+        {required && <span className="text-danger ms-1">*</span>}
+      </label>
+      <select
+        className={`form-select ${error ? 'is-invalid' : ''}`}
+        name={name}
+        value={value}
+        onChange={onChange}
+      >
+        <option value="">Seleccionar...</option>
+        {options.map(option => (
+          <option key={option.value || option} value={option.value || option}>
+            {option.label || option}
+          </option>
+        ))}
+      </select>
+      {error && <div className="invalid-feedback">{error}</div>}
+      {helpText && <div className="form-text">{helpText}</div>}
+    </div>
+  );
+};
 
 /**
  * Componente para la configuración de métodos de envío disponibles
  */
-const DeliverySection = ({ control, errors, watch, setValue }) => {
+const DeliverySection = ({ control, errors: formErrors, watch, setValue }) => {
   // Obtener los valores actuales
   const shippingTypes = watch('shippingTypes') || [];
   
@@ -19,19 +110,31 @@ const DeliverySection = ({ control, errors, watch, setValue }) => {
     'Otros'
   ];
   
+  // Estado de errores para el formulario de nueva opción
+  const [validationErrors, setValidationErrors] = useState({});
+  
   // Estado para el formulario de añadir tipo de envío
   const [newShippingType, setNewShippingType] = useState({
     carrier: '',
     label: '',
     price: '',
     minDays: '1',
-    maxDays: '3'
+    maxDays: '3',
+    maxPackageWeight: '20',
+    extraWeightCost: '10',
+    maxProductsPerPackage: '10'
   });
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Maneja el cambio en los campos del nuevo tipo de envío
   const handleNewTypeChange = (e) => {
     const { name, value } = e.target;
+    
+    // Limpiar mensaje de error para el campo cuando se modifica
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    
     setNewShippingType(prev => ({
       ...prev,
       [name]: value
@@ -56,47 +159,89 @@ const DeliverySection = ({ control, errors, watch, setValue }) => {
     return `${carrierPrefix}_${labelPrefix}_${timestamp}`;
   };
   
-  // Añade un nuevo tipo de envío
-  const handleAddShippingType = () => {
-    if (!newShippingType.carrier || !newShippingType.label || !newShippingType.price) {
-      return; // Validación básica
+  // Validar todos los campos
+  const validateShippingType = () => {
+    const errors = {};
+    
+    // Validaciones básicas para campos requeridos
+    if (!newShippingType.carrier) errors.carrier = 'El servicio es requerido';
+    if (!newShippingType.label) errors.label = 'El nombre es requerido';
+    if (!newShippingType.price) errors.price = 'El precio es requerido';
+    
+    // Validar números
+    if (newShippingType.price && (isNaN(parseFloat(newShippingType.price)) || parseFloat(newShippingType.price) < 0)) {
+      errors.price = 'El precio debe ser un número positivo';
     }
     
-    // Validar rango de días
+    // Validar rangos de días
     const minDays = parseInt(newShippingType.minDays) || 1;
     const maxDays = parseInt(newShippingType.maxDays) || minDays;
     
-    if (maxDays < minDays) {
-      alert('El máximo de días debe ser mayor o igual al mínimo');
+    if (minDays < 0) errors.minDays = 'Debe ser positivo';
+    if (maxDays < minDays) errors.maxDays = 'Debe ser mayor o igual al mínimo';
+    
+    // Validar configuración de paquetes
+    if (newShippingType.maxPackageWeight && parseFloat(newShippingType.maxPackageWeight) < 0) {
+      errors.maxPackageWeight = 'Debe ser positivo';
+    }
+    
+    if (newShippingType.extraWeightCost && parseFloat(newShippingType.extraWeightCost) < 0) {
+      errors.extraWeightCost = 'Debe ser positivo';
+    }
+    
+    if (newShippingType.maxProductsPerPackage && parseInt(newShippingType.maxProductsPerPackage) < 0) {
+      errors.maxProductsPerPackage = 'Debe ser positivo';
+    }
+    
+    return errors;
+  };
+  
+  // Añade un nuevo tipo de envío
+  const handleAddShippingType = () => {
+    // Validar todos los campos
+    const errors = validateShippingType();
+    
+    // Si hay errores, mostrarlos y no continuar
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
     
     // Generar código único
     const code = generateUniqueCode(newShippingType.carrier, newShippingType.label);
     
-    const updatedTypes = [
-      ...shippingTypes,
-      {
-        id: Date.now().toString(), // ID único
-        carrier: newShippingType.carrier,
-        name: code,
-        label: newShippingType.label,
-        price: parseFloat(newShippingType.price),
-        minDays,
-        maxDays
-      }
-    ];
+    // Convertir valores de texto a números
+    const newType = {
+      id: Date.now().toString(), // ID único
+      carrier: newShippingType.carrier,
+      name: code,
+      label: newShippingType.label,
+      price: parseFloat(newShippingType.price) || 0,
+      minDays: parseInt(newShippingType.minDays) || 1,
+      maxDays: parseInt(newShippingType.maxDays) || parseInt(newShippingType.minDays) || 1,
+      maxPackageWeight: parseFloat(newShippingType.maxPackageWeight) || 20,
+      extraWeightCost: parseFloat(newShippingType.extraWeightCost) || 10,
+      maxProductsPerPackage: parseInt(newShippingType.maxProductsPerPackage) || 10
+    };
     
+    // Actualizar la lista de opciones
+    const updatedTypes = [...shippingTypes, newType];
     setValue('shippingTypes', updatedTypes);
     
-    // Resetear el formulario manteniendo el carrier seleccionado
+    // Resetear el formulario manteniendo el carrier seleccionado y valores por defecto
     setNewShippingType({
       carrier: newShippingType.carrier,
       label: '',
       price: '',
       minDays: '1',
-      maxDays: '3'
+      maxDays: '3',
+      maxPackageWeight: '20',
+      extraWeightCost: '10',
+      maxProductsPerPackage: '10'
     });
+    
+    // Limpiar errores
+    setValidationErrors({});
   };
   
   // Elimina un tipo de envío
@@ -125,88 +270,25 @@ const DeliverySection = ({ control, errors, watch, setValue }) => {
         {showAddForm && (
           <div className="card bg-light mb-4">
             <div className="card-body">
-              <div className="mb-3">
-                <label className="form-label fw-medium mb-2">1. Servicio de mensajería</label>
-                <select
-                  className="form-select"
-                  name="carrier"
-                  value={newShippingType.carrier}
-                  onChange={handleNewTypeChange}
-                >
-                  <option value="">Seleccionar servicio...</option>
-                  {availableCarriers.map(carrier => (
-                    <option key={carrier} value={carrier}>{carrier}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Componentes modularizados para cada sección */}
+              <ServiceBasicInfo 
+                shippingType={newShippingType}
+                onShippingTypeChange={handleNewTypeChange}
+                availableCarriers={availableCarriers}
+                errors={validationErrors}
+              />
               
-              <div className="mb-3">
-                <label className="form-label fw-medium mb-2">2. Nombre para el cliente</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ej: Envío Express 24h"
-                  name="label"
-                  value={newShippingType.label}
-                  onChange={handleNewTypeChange}
-                />
-                <div className="form-text">
-                  Nombre mostrado al cliente en checkout
-                </div>
-              </div>
+              <DeliveryDetails 
+                shippingType={newShippingType}
+                onShippingTypeChange={handleNewTypeChange}
+                errors={validationErrors}
+              />
               
-              <div className="row g-4 mb-4">
-                <div className="col-md-5">
-                  <label className="form-label fw-medium mb-2">3. Precio</label>
-                  <div className="input-group">
-                    <span className="input-group-text">$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="form-control"
-                      placeholder="Ej: 99.90"
-                      name="price"
-                      value={newShippingType.price}
-                      onChange={handleNewTypeChange}
-                    />
-                    <span className="input-group-text">MXN</span>
-                  </div>
-                </div>
-                <div className="col-md-7">
-                  <label className="form-label fw-medium mb-2">4. Tiempo de entrega</label>
-                  <div className="row g-2">
-                    <div className="col-sm-5">
-                      <div className="input-group">
-                        <span className="input-group-text">De</span>
-                        <input
-                          type="number"
-                          min="0"
-                          className="form-control"
-                          placeholder="1"
-                          name="minDays"
-                          value={newShippingType.minDays}
-                          onChange={handleNewTypeChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="col-sm-7">
-                      <div className="input-group">
-                        <span className="input-group-text">a</span>
-                        <input
-                          type="number"
-                          min="0"
-                          className="form-control"
-                          placeholder="3"
-                          name="maxDays"
-                          value={newShippingType.maxDays}
-                          onChange={handleNewTypeChange}
-                        />
-                        <span className="input-group-text">días</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <PackageConfiguration 
+                shippingType={newShippingType}
+                onShippingTypeChange={handleNewTypeChange}
+                errors={validationErrors}
+              />
               
               <div className="d-flex justify-content-end">
                 <button 
@@ -227,64 +309,30 @@ const DeliverySection = ({ control, errors, watch, setValue }) => {
           control={control}
           defaultValue={[]}
           render={({ field }) => (
-            <div>
-              {shippingTypes.length === 0 ? (
-                <div className="text-center text-muted py-4 bg-light rounded">
-                  <i className="bi bi-box me-2"></i>
-                  No hay opciones de envío configuradas
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover bg-white">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Servicio</th>
-                        <th>Nombre</th>
-                        <th className="text-end">Precio</th>
-                        <th className="text-center">Entrega</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {shippingTypes.map(type => (
-                        <tr key={type.id}>
-                          <td>{type.carrier}</td>
-                          <td>{type.label}</td>
-                          <td className="text-end">${type.price.toFixed(2)}</td>
-                          <td className="text-center">
-                            {type.minDays === type.maxDays
-                              ? `${type.minDays} día${type.minDays !== 1 ? 's' : ''}`
-                              : `${type.minDays}-${type.maxDays} días`}
-                          </td>
-                          <td className="text-end">
-                            <button
-                              type="button"
-                              className="btn btn-outline-danger"
-                              onClick={() => handleRemoveShippingType(type.id)}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              
-              {/* Mensaje informativo */}
-              {shippingTypes.length > 0 && (
-                <div className="form-text mt-2">
-                  <i className="bi bi-info-circle me-1"></i>
-                  Los clientes podrán elegir entre estas opciones durante el checkout.
-                </div>
-              )}
-            </div>
+            <ShippingTypesList 
+              shippingTypes={shippingTypes}
+              onRemoveShippingType={handleRemoveShippingType}
+            />
           )}
         />
+        
+        {/* Mensajes de error */}
+        {formErrors?.shippingTypes && (
+          <div className="alert alert-danger mt-3 mb-0">
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            {formErrors.shippingTypes.message}
+          </div>
+        )}
       </div>
     </div>
   );
+};
+
+DeliverySection.propTypes = {
+  control: PropTypes.object.isRequired,
+  errors: PropTypes.object,
+  watch: PropTypes.func.isRequired,
+  setValue: PropTypes.func.isRequired
 };
 
 export default DeliverySection; 

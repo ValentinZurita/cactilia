@@ -3,6 +3,18 @@
  */
 
 /**
+ * Representa un rango de peso con su precio asociado
+ */
+export interface WeightRange {
+  /** Peso mínimo en kg (inclusive) */
+  min: number;
+  /** Peso máximo en kg (inclusive) */
+  max: number;
+  /** Precio del envío para este rango de peso */
+  precio: number;
+}
+
+/**
  * Representa una opción de mensajería o método de envío
  */
 export interface ShippingOption {
@@ -16,6 +28,10 @@ export interface ShippingOption {
   precio: number;
   /** Nombre de la mensajería (ej: "DHL", "Estafeta") */
   mensajeria: string;
+  /** Indica si el precio varía según el peso */
+  usaRangosPeso?: boolean;
+  /** Rangos de peso con precios asociados (solo si usaRangosPeso es true) */
+  rangosPeso?: WeightRange[];
 }
 
 /**

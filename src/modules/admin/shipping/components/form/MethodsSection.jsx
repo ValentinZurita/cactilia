@@ -21,11 +21,20 @@ const MethodsSection = ({ control, errors, watch, setValue }) => {
     nombre: '',
     tiempo: '',
     precio: '',
-    mensajeria: ''
+    mensajeria: '',
+    usaRangosPeso: false,
+    rangosPeso: []
   });
   
   // Estado para mostrar/ocultar formulario de nueva opción
   const [showForm, setShowForm] = useState(false);
+  
+  // Estado para edición de un rango de peso
+  const [editingWeightRange, setEditingWeightRange] = useState({
+    min: '',
+    max: '',
+    precio: ''
+  });
   
   // Manejar cambios en el formulario de nueva opción
   const handleNewOptionChange = (field, value) => {
@@ -34,7 +43,7 @@ const MethodsSection = ({ control, errors, watch, setValue }) => {
   
   // Validar nueva opción
   const validateNewOption = () => {
-    const { nombre, tiempo, precio, mensajeria } = newOption;
+    const { nombre, tiempo, precio, mensajeria, usaRangosPeso, rangosPeso } = newOption;
     
     if (!nombre || nombre.length < 2) {
       return 'El nombre es obligatorio y debe tener al menos 2 caracteres';
@@ -49,12 +58,45 @@ const MethodsSection = ({ control, errors, watch, setValue }) => {
     }
     
     if (!freeShipping) {
-      if (!precio || isNaN(precio) || parseFloat(precio) < 0) {
-        return 'El precio debe ser un número válido mayor o igual a 0';
+      if (usaRangosPeso) {
+        // Validar que haya al menos un rango de peso configurado
+        if (rangosPeso.length === 0) {
+          return 'Debe configurar al menos un rango de peso';
+        }
+        
+        // Validar que los rangos no se superpongan y cubran todo el espectro
+        if (!validateWeightRanges(rangosPeso)) {
+          return 'Los rangos de peso no son válidos. Verifica que no haya superposiciones ni huecos entre rangos.';
+        }
+      } else {
+        // Validar precio base si no se usan rangos de peso
+        if (!precio || isNaN(precio) || parseFloat(precio) < 0) {
+          return 'El precio debe ser un número válido mayor o igual a 0';
+        }
       }
     }
     
     return null; // Sin errores
+  };
+  
+  // Validar que los rangos de peso sean válidos (sin superposiciones ni huecos)
+  const validateWeightRanges = (ranges) => {
+    if (ranges.length === 0) return false;
+    
+    // Ordenar los rangos por peso mínimo
+    const sortedRanges = [...ranges].sort((a, b) => a.min - b.min);
+    
+    // Verificar que el primer rango empiece en 0
+    if (sortedRanges[0].min !== 0) return false;
+    
+    // Verificar que no haya superposiciones ni huecos
+    for (let i = 0; i < sortedRanges.length - 1; i++) {
+      if (sortedRanges[i].max !== sortedRanges[i + 1].min) {
+        return false;
+      }
+    }
+    
+    return true;
   };
   
   // Agregar nueva opción
@@ -69,7 +111,9 @@ const MethodsSection = ({ control, errors, watch, setValue }) => {
     // Crear nueva opción con precio como número
     const newShippingOption = {
       ...newOption,
-      precio: parseFloat(newOption.precio) || 0
+      precio: parseFloat(newOption.precio) || 0,
+      // Si no usa rangos de peso, asegurarse de que rangosPeso sea un array vacío
+      rangosPeso: newOption.usaRangosPeso ? newOption.rangosPeso : []
     };
     
     // Actualizar opciones de envío
@@ -80,7 +124,16 @@ const MethodsSection = ({ control, errors, watch, setValue }) => {
       nombre: '',
       tiempo: '',
       precio: '',
-      mensajeria: ''
+      mensajeria: '',
+      usaRangosPeso: false,
+      rangosPeso: []
+    });
+    
+    // Reiniciar formulario de rango de peso
+    setEditingWeightRange({
+      min: '',
+      max: '',
+      precio: ''
     });
     
     // Ocultar formulario
@@ -92,6 +145,80 @@ const MethodsSection = ({ control, errors, watch, setValue }) => {
     const updatedOptions = [...shippingOptions];
     updatedOptions.splice(index, 1);
     setValue('opciones_mensajeria', updatedOptions);
+  };
+  
+  // Agregar un rango de peso
+  const addWeightRange = () => {
+    const { min, max, precio } = editingWeightRange;
+    
+    // Validar el rango
+    if (!min || !max || !precio || isNaN(min) || isNaN(max) || isNaN(precio)) {
+      alert('Todos los campos son obligatorios y deben ser números válidos');
+      return;
+    }
+    
+    const minVal = parseFloat(min);
+    const maxVal = parseFloat(max);
+    const priceVal = parseFloat(precio);
+    
+    if (minVal < 0 || maxVal <= 0 || priceVal < 0) {
+      alert('Los valores deben ser mayores a 0');
+      return;
+    }
+    
+    if (minVal >= maxVal) {
+      alert('El peso mínimo debe ser menor que el peso máximo');
+      return;
+    }
+    
+    // Verificar que el nuevo rango no se superponga con los existentes
+    const existingRanges = [...newOption.rangosPeso];
+    for (const range of existingRanges) {
+      if ((minVal >= range.min && minVal < range.max) || 
+          (maxVal > range.min && maxVal <= range.max) ||
+          (minVal <= range.min && maxVal >= range.max)) {
+        alert('El rango se superpone con uno existente');
+        return;
+      }
+    }
+    
+    // Agregar el nuevo rango
+    const updatedRanges = [
+      ...existingRanges,
+      { min: minVal, max: maxVal, precio: priceVal }
+    ];
+    
+    // Actualizar el estado
+    setNewOption(prev => ({
+      ...prev,
+      rangosPeso: updatedRanges
+    }));
+    
+    // Reiniciar formulario de rango
+    setEditingWeightRange({
+      min: '',
+      max: '',
+      precio: ''
+    });
+  };
+  
+  // Eliminar un rango de peso
+  const removeWeightRange = (index) => {
+    const updatedRanges = [...newOption.rangosPeso];
+    updatedRanges.splice(index, 1);
+    
+    setNewOption(prev => ({
+      ...prev,
+      rangosPeso: updatedRanges
+    }));
+  };
+  
+  // Manejar cambios en el formulario de rango de peso
+  const handleWeightRangeChange = (field, value) => {
+    setEditingWeightRange(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
   
   return (
@@ -129,10 +256,17 @@ const MethodsSection = ({ control, errors, watch, setValue }) => {
                       <i className="bi bi-clock me-1"></i>
                       {option.tiempo}
                     </span>
-                    <span>
-                      <i className="bi bi-tag me-1"></i>
-                      {formatPrice(option.precio)}
-                    </span>
+                    {option.usaRangosPeso ? (
+                      <span>
+                        <i className="bi bi-tag me-1"></i>
+                        Precios por rango de peso ({option.rangosPeso?.length || 0} rangos)
+                      </span>
+                    ) : (
+                      <span>
+                        <i className="bi bi-tag me-1"></i>
+                        {formatPrice(option.precio)}
+                      </span>
+                    )}
                   </p>
                 </div>
                 <button
@@ -217,65 +351,225 @@ const MethodsSection = ({ control, errors, watch, setValue }) => {
                 </select>
               </div>
               
-              {/* Precio */}
+              {/* Precio base o por rangos de peso */}
               <div className="col-md-6">
-                <label htmlFor="precio" className="form-label">
-                  Precio {!freeShipping && <span className="text-danger">*</span>}
+                <label htmlFor="usaRangosPeso" className="form-label d-block">
+                  Configuración de precio
                 </label>
-                <div className="input-group">
-                  <span className="input-group-text">$</span>
+                <div className="form-check form-check-inline">
                   <input
-                    type="number"
-                    className="form-control"
-                    id="precio"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    value={newOption.precio}
-                    onChange={(e) => handleNewOptionChange('precio', e.target.value)}
+                    className="form-check-input"
+                    type="radio"
+                    name="precioConfig"
+                    id="precioPorServicio"
+                    checked={!newOption.usaRangosPeso}
+                    onChange={() => handleNewOptionChange('usaRangosPeso', false)}
                     disabled={freeShipping}
                   />
-                  <span className="input-group-text">MXN</span>
+                  <label className="form-check-label" htmlFor="precioPorServicio">
+                    Precio fijo
+                  </label>
                 </div>
-                {freeShipping && (
-                  <div className="form-text text-muted">
-                    El envío es gratuito, el precio no se aplicará.
-                  </div>
-                )}
+                <div className="form-check form-check-inline">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="precioConfig"
+                    id="precioPorPeso"
+                    checked={newOption.usaRangosPeso}
+                    onChange={() => handleNewOptionChange('usaRangosPeso', true)}
+                    disabled={freeShipping}
+                  />
+                  <label className="form-check-label" htmlFor="precioPorPeso">
+                    Precio por rangos de peso
+                  </label>
+                </div>
               </div>
+              
+              {/* Precio fijo (si no usa rangos de peso) */}
+              {!newOption.usaRangosPeso && (
+                <div className="col-md-6">
+                  <label htmlFor="precio" className="form-label">
+                    Precio {!freeShipping && <span className="text-danger">*</span>}
+                  </label>
+                  <div className="input-group">
+                    <span className="input-group-text">$</span>
+                    <input
+                      type="number"
+                      className="form-control"
+                      id="precio"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      value={newOption.precio}
+                      onChange={(e) => handleNewOptionChange('precio', e.target.value)}
+                      disabled={freeShipping}
+                    />
+                    <span className="input-group-text">MXN</span>
+                  </div>
+                  {freeShipping && (
+                    <div className="form-text text-muted">
+                      El envío es gratuito, el precio no se aplicará.
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Configuración de rangos de peso (si usa rangos de peso) */}
+              {newOption.usaRangosPeso && !freeShipping && (
+                <div className="col-12">
+                  <div className="card border bg-light mt-3">
+                    <div className="card-header py-2">
+                      <h6 className="mb-0">Rangos de peso</h6>
+                    </div>
+                    <div className="card-body">
+                      {/* Lista de rangos configurados */}
+                      {newOption.rangosPeso.length > 0 ? (
+                        <div className="mb-3">
+                          <div className="table-responsive">
+                            <table className="table table-sm table-striped">
+                              <thead>
+                                <tr>
+                                  <th>Peso mínimo (kg)</th>
+                                  <th>Peso máximo (kg)</th>
+                                  <th>Precio (MXN)</th>
+                                  <th></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {newOption.rangosPeso
+                                  .sort((a, b) => a.min - b.min)
+                                  .map((range, idx) => (
+                                    <tr key={idx}>
+                                      <td>{range.min.toFixed(2)}</td>
+                                      <td>{range.max.toFixed(2)}</td>
+                                      <td>${range.precio.toFixed(2)}</td>
+                                      <td>
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-outline-danger"
+                                          onClick={() => removeWeightRange(idx)}
+                                          aria-label="Eliminar rango"
+                                        >
+                                          <i className="bi bi-trash"></i>
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="alert alert-warning mb-3">
+                          No se han configurado rangos de peso. Agrega al menos uno.
+                        </div>
+                      )}
+                      
+                      {/* Formulario para agregar nuevo rango */}
+                      <div className="row g-2">
+                        <div className="col-md-3">
+                          <label htmlFor="minWeight" className="form-label">Peso mínimo (kg)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            id="minWeight"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={editingWeightRange.min}
+                            onChange={(e) => handleWeightRangeChange('min', e.target.value)}
+                          />
+                        </div>
+                        <div className="col-md-3">
+                          <label htmlFor="maxWeight" className="form-label">Peso máximo (kg)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            id="maxWeight"
+                            step="0.01"
+                            min="0.01"
+                            placeholder="5.00"
+                            value={editingWeightRange.max}
+                            onChange={(e) => handleWeightRangeChange('max', e.target.value)}
+                          />
+                        </div>
+                        <div className="col-md-3">
+                          <label htmlFor="rangePrice" className="form-label">Precio (MXN)</label>
+                          <div className="input-group">
+                            <span className="input-group-text">$</span>
+                            <input
+                              type="number"
+                              className="form-control"
+                              id="rangePrice"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              value={editingWeightRange.precio}
+                              onChange={(e) => handleWeightRangeChange('precio', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-md-3 d-flex align-items-end">
+                          <button
+                            type="button"
+                            className="btn btn-outline-primary w-100"
+                            onClick={addWeightRange}
+                          >
+                            <i className="bi bi-plus-circle me-1"></i>
+                            Agregar rango
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="form-text mt-2">
+                        <i className="bi bi-info-circle me-1"></i>
+                        Configura rangos de peso consecutivos. Ejemplo: 0-1kg ($100), 1-5kg ($150), 5-10kg ($200).
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Botones de acción */}
             <div className="d-flex gap-2 mt-4">
               <button
                 type="button"
-                className="btn btn-dark"
-                onClick={addShippingOption}
+                className="btn btn-outline-secondary"
+                onClick={() => {
+                  setShowForm(false);
+                  setNewOption({
+                    nombre: '',
+                    tiempo: '',
+                    precio: '',
+                    mensajeria: '',
+                    usaRangosPeso: false,
+                    rangosPeso: []
+                  });
+                }}
               >
-                <i className="bi bi-plus-circle me-2"></i>
-                Agregar
+                Cancelar
               </button>
               <button
                 type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => setShowForm(false)}
+                className="btn btn-primary"
+                onClick={addShippingOption}
               >
-                Cancelar
+                Agregar opción
               </button>
             </div>
           </div>
         </div>
       ) : (
-        <div className="mb-4">
-          <button
-            type="button"
-            className="btn btn-outline-dark rounded-3"
-            onClick={() => setShowForm(true)}
-          >
-            <i className="bi bi-plus-circle me-2"></i>
-            Añadir opción
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn btn-outline-primary"
+          onClick={() => setShowForm(true)}
+        >
+          <i className="bi bi-plus-circle me-1"></i>
+          Agregar opción de envío
+        </button>
       )}
       
       {/* Input oculto para integración con react-hook-form */}
