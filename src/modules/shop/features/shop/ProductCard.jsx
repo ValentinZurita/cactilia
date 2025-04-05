@@ -1,13 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../../../../styles/pages/shop.css';
 import '../cart/styles/ProductCartd.css';
 import { CartButton } from '../cart/components/index.js';
 import { useAsync } from '../../hooks/useAsync';
-import { getProductCurrentStock } from '../../services/productServices.js'
+import { getProductCurrentStock } from '../../services/productServices.js';
+import { ensureShippingProperties } from '../../services/productServices.js';
 
 export const ProductCard = ({ product, onProductClick }) => {
+  // Asegurar que el producto tiene propiedades de envío
+  const [processedProduct, setProcessedProduct] = useState(product);
+  
+  // Procesar el producto cuando cambia para asegurar propiedades
+  useEffect(() => {
+    setProcessedProduct(ensureShippingProperties(product, 'ProductCard'));
+  }, [product]);
+  
   // Destructure product data
-  const { id, name, mainImage, price, category } = product;
+  const { id, name, mainImage, price, category } = processedProduct;
 
   // Hook para obtener stock actual en tiempo real
   const {
@@ -32,7 +41,7 @@ export const ProductCard = ({ product, onProductClick }) => {
     console.log('ProductCard: handleCardClick ejecutado para producto:', name);
 
     if (onProductClick) {
-      onProductClick(product);
+      onProductClick(processedProduct);
     }
   };
 
@@ -90,7 +99,7 @@ export const ProductCard = ({ product, onProductClick }) => {
             onClick={handleCartButtonWrapperClick}
           >
             <CartButton
-              product={{...product, stock: currentStock}}
+              product={{...processedProduct, stock: currentStock}}
               variant="icon"
               disabled={isOutOfStock}
             />

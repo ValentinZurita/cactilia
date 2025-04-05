@@ -19,6 +19,31 @@ export const cartSlice = createSlice({
         // Si el producto ya está en el carrito, incrementar cantidad
         existingItem.quantity += quantity;
       } else {
+        // Extraer las propiedades de envío con valores por defecto para evitar undefined
+        const shippingRuleId = product.shippingRuleId || null;
+        
+        // Manejar shippingRuleIds correctamente (podría ser undefined, null, o un array)
+        let shippingRuleIds = null;
+        if (product.shippingRuleIds) {
+          if (Array.isArray(product.shippingRuleIds)) {
+            shippingRuleIds = [...product.shippingRuleIds];
+          } else {
+            // Si existe pero no es un array, convertirlo a string
+            shippingRuleIds = [String(product.shippingRuleIds)];
+          }
+        } else if (shippingRuleId) {
+          // Si no hay shippingRuleIds pero sí shippingRuleId, usar ese
+          shippingRuleIds = [shippingRuleId];
+        }
+
+        // Log para depuración
+        console.log('📦 Datos de envío para producto a añadir:', {
+          id: product.id,
+          shippingRuleId,
+          shippingRuleIds,
+          tieneReglas: !!shippingRuleId || (Array.isArray(shippingRuleIds) && shippingRuleIds.length > 0)
+        });
+
         // Si no, añadirlo con la cantidad especificada
         state.items.push({
           id: product.id,
@@ -27,7 +52,13 @@ export const cartSlice = createSlice({
           image: product.image || product.mainImage,
           category: product.category,
           quantity,
-          stock: product.stock || 0
+          stock: product.stock || 0,
+          // Incluir propiedades de envío con valores seguros
+          shippingRuleId,
+          shippingRuleIds,
+          weight: product.weight || 0,
+          // Añadir un indicador para propiedades de envío
+          hasShippingRules: !!shippingRuleId || (Array.isArray(shippingRuleIds) && shippingRuleIds.length > 0)
         });
       }
     },
