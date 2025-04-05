@@ -55,17 +55,38 @@ export const ProductManagementPage = () => {
 
 
   // Load the products
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     setLoading(true);
-    const { ok, data, error } = await getProducts();
-    if (!ok) {
-      alert("Error al obtener productos: " + error);
+    
+    try {
+      const response = await getProducts();
+      console.log('Productos cargados desde la base de datos:', response.data);
+      
+      if (response.ok) {
+        // Log shipping rules info
+        console.log('Reglas de envío en los productos:');
+        response.data.forEach(product => {
+          console.log(`Producto ${product.name}:`, {
+            id: product.id,
+            shippingRuleId: product.shippingRuleId,
+            shippingRuleIds: product.shippingRuleIds,
+            shippingRuleInfo: product.shippingRuleInfo,
+            shippingRulesInfo: product.shippingRulesInfo
+          });
+        });
+        
+        setProducts(response.data);
+      } else {
+        console.error('Error obteniendo productos:', response.error);
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error('Error obteniendo productos:', error);
+      setProducts([]);
+    } finally {
       setLoading(false);
-      return;
     }
-    setProducts(data);
-    setLoading(false);
-  };
+  }, []);
 
   // Handle the product saved event
   const handleProductSaved = () => {
@@ -192,6 +213,44 @@ export const ProductManagementPage = () => {
     {
       header: "Stock",
       accessor: "stock",
+    },
+    {
+      header: "Reglas de envío",
+      accessor: "shippingRules",
+      cell: (row) => {
+        // Obtener información de reglas de envío
+        const rulesInfo = row.shippingRulesInfo || [];
+        
+        if (rulesInfo.length === 0) {
+          return (
+            <span className="badge bg-warning text-dark">
+              <i className="bi bi-exclamation-triangle-fill me-1"></i>
+              Sin regla de envío
+            </span>
+          );
+        }
+        
+        // Mostrar las primeras 2 reglas y un contador si hay más
+        return (
+          <div className="d-flex flex-column gap-1">
+            {rulesInfo.slice(0, 2).map(rule => (
+              <span 
+                key={rule.id} 
+                className="badge bg-info text-dark d-flex align-items-center"
+                style={{ fontSize: '0.8rem' }}
+              >
+                <i className="bi bi-truck me-1"></i>
+                {rule.name}
+              </span>
+            ))}
+            {rulesInfo.length > 2 && (
+              <span className="badge bg-secondary text-white">
+                +{rulesInfo.length - 2} más
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: "Estado",

@@ -36,37 +36,56 @@ export const getProducts = async () => {
     // Obtener información de reglas de envío para productos que las tienen
     const productsWithShippingRules = await Promise.all(
       productsData.map(async (product) => {
-        // Si el producto tiene una regla de envío asociada, obtener sus datos
-        if (product.shippingRuleId) {
+        // Inicializar el array de información de reglas de envío
+        let shippingRulesInfo = [];
+        
+        // Procesar reglas de envío, ya sea del array de IDs o del ID único (compatibilidad)
+        const shippingRuleIds = product.shippingRuleIds && Array.isArray(product.shippingRuleIds) 
+          ? product.shippingRuleIds 
+          : (product.shippingRuleId ? [product.shippingRuleId] : []);
+        
+        if (shippingRuleIds.length > 0) {
           try {
-            // Try reglas_envio first
-            let shippingRuleRef = doc(FirebaseDB, 'reglas_envio', product.shippingRuleId);
-            let shippingRuleDoc = await getDoc(shippingRuleRef);
-            
-            // If not found, try zonas_envio
-            if (!shippingRuleDoc.exists()) {
-              console.log(`Shipping rule not found in reglas_envio, trying zonas_envio for ID: ${product.shippingRuleId}`);
-              shippingRuleRef = doc(FirebaseDB, 'zonas_envio', product.shippingRuleId);
-              shippingRuleDoc = await getDoc(shippingRuleRef);
-            }
-            
-            if (shippingRuleDoc.exists()) {
-              return {
-                ...product,
-                shippingRuleInfo: {
-                  id: shippingRuleDoc.id,
-                  name: shippingRuleDoc.data().zona || 'Sin nombre',
-                  active: shippingRuleDoc.data().activo !== false
+            // Obtener información para cada regla de envío
+            shippingRulesInfo = await Promise.all(
+              shippingRuleIds.map(async (ruleId) => {
+                // Try reglas_envio first
+                let shippingRuleRef = doc(FirebaseDB, 'reglas_envio', ruleId);
+                let shippingRuleDoc = await getDoc(shippingRuleRef);
+                
+                // If not found, try zonas_envio
+                if (!shippingRuleDoc.exists()) {
+                  console.log(`Shipping rule not found in reglas_envio, trying zonas_envio for ID: ${ruleId}`);
+                  shippingRuleRef = doc(FirebaseDB, 'zonas_envio', ruleId);
+                  shippingRuleDoc = await getDoc(shippingRuleRef);
                 }
-              };
-            }
+                
+                if (shippingRuleDoc.exists()) {
+                  return {
+                    id: shippingRuleDoc.id,
+                    name: shippingRuleDoc.data().zona || 'Sin nombre',
+                    active: shippingRuleDoc.data().activo !== false
+                  };
+                }
+                
+                return null;
+              })
+            );
+            
+            // Filtrar las reglas que no se pudieron encontrar
+            shippingRulesInfo = shippingRulesInfo.filter(rule => rule !== null);
           } catch (err) {
-            console.warn(`Error al obtener información de regla de envío ${product.shippingRuleId}:`, err);
+            console.warn(`Error al obtener información de reglas de envío:`, err);
           }
         }
         
-        // Si no tiene regla o hubo un error, devolver el producto sin info adicional
-        return product;
+        // Añadir la información de reglas al producto
+        return {
+          ...product,
+          shippingRulesInfo: shippingRulesInfo.length > 0 ? shippingRulesInfo : undefined,
+          // Mantener compatibilidad con el campo shippingRuleInfo
+          shippingRuleInfo: shippingRulesInfo.length > 0 ? shippingRulesInfo[0] : undefined
+        };
       })
     );
 

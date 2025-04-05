@@ -10,6 +10,7 @@ import { DynamicDropdown } from './DynamicDropdown';
 import { InputField } from './InputField';
 import { SelectField } from './SelectField';
 import { fetchShippingRules } from '../../services/shippingRuleService';
+import { MultiSelectDropdown } from './MultiSelectDropdown';
 
 /**
  * ProductForm component for adding and editing products.
@@ -48,7 +49,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       // Set form values
       Object.entries(editingProduct).forEach(([key, value]) => {
         // Skip arrays for now - handle them separately
-        if (!Array.isArray(value)) {
+        if (!Array.isArray(value) || key === 'shippingRuleIds') {
           // Convert boolean values to strings for select fields
           if (key === 'active' || key === 'featured') {
             console.log(`Setting ${key} to`, value ? "true" : "false");
@@ -64,8 +65,26 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         setValue('images', editingProduct.images);
       }
       
-      // Log shipping rule ID for debugging
-      console.log('Loading product with shipping rule ID:', editingProduct.shippingRuleId);
+      // Log shipping rule IDs for debugging
+      console.log('Loading product shipping info:', {
+        shippingRuleId: editingProduct.shippingRuleId,
+        shippingRuleIds: editingProduct.shippingRuleIds
+      });
+      
+      // Establecer valores para las reglas de envío
+      if (editingProduct.shippingRuleIds && Array.isArray(editingProduct.shippingRuleIds)) {
+        // Si ya tiene un array de shippingRuleIds, usamos ese
+        console.log('Setting multiple shipping rules:', editingProduct.shippingRuleIds);
+        setValue('shippingRuleIds', editingProduct.shippingRuleIds);
+      } else if (editingProduct.shippingRuleId) {
+        // Para compatibilidad con versiones anteriores
+        console.log('Converting single shipping rule to array:', [editingProduct.shippingRuleId]);
+        setValue('shippingRuleIds', [editingProduct.shippingRuleId]);
+      } else {
+        // Sin reglas de envío
+        console.log('No shipping rules found for this product');
+        setValue('shippingRuleIds', []);
+      }
 
       // Prepare initial images
       const existingImages = editingProduct.images?.map((url) => ({
@@ -88,6 +107,15 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
    * @param {Object} data - Form data submitted
    */
   const handleSubmitForm = async (data) => {
+    // Verificar las reglas de envío antes de guardar
+    console.log('Form data before saving:', data);
+    console.log('Shipping rules to save:', data.shippingRuleIds);
+    
+    if (!data.shippingRuleIds || data.shippingRuleIds.length === 0) {
+      alert('Debe seleccionar al menos una regla de envío');
+      return;
+    }
+    
     // 1️⃣ Create folder path using product name
     const productName = data.name?.trim() || 'unknown';
     const folderPath = `product-images/${productName.replace(/\s+/g, '-')}`;
@@ -124,8 +152,14 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       mainImage: mainUrl,
       active: data.active === "true",
       featured: data.featured === "true",
-      shippingRuleId: data.shippingRuleId || null
+      shippingRuleIds: data.shippingRuleIds || [], // Guardamos el array de IDs
+      shippingRuleId: data.shippingRuleIds && data.shippingRuleIds.length > 0 ? data.shippingRuleIds[0] : null // Para compatibilidad
     };
+    
+    console.log('Product data to save:', {
+      shippingRuleId: productData.shippingRuleId,
+      shippingRuleIds: productData.shippingRuleIds
+    });
 
     // 6️⃣ Save or update product
     const response = editingProduct
@@ -158,10 +192,10 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
           rules={{ required: false }}
         />
 
-        {/* 🧩 Shipping rule selection dropdown */}
-        <DynamicDropdown
-          name="shippingRuleId"
-          label="Regla de envío"
+        {/* 🧩 Shipping rules multi-selection dropdown */}
+        <MultiSelectDropdown
+          name="shippingRuleIds"
+          label="Reglas de envío"
           control={control}
           fetchFunction={async () => {
             try {
@@ -186,7 +220,8 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
             }
           }}
           rules={{ required: true }}
-          defaultValue=""
+          defaultValue={[]}
+          helperText="Seleccione una o más reglas de envío. Un producto puede tener múltiples opciones de envío."
         />
 
         {/* 🖋️ Basic product info */}
