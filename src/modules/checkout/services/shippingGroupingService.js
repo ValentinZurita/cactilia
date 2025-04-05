@@ -401,19 +401,7 @@ export const getShippingOptionsForGroup = (group, userAddress) => {
   
   if (!group || !group.rules || group.rules.length === 0) {
     console.warn('⚠️ getShippingOptionsForGroup: Grupo sin reglas válidas');
-    return [{
-      id: `default-option-${group.id || 'unknown'}`,
-      ruleId: 'default-rule',
-      ruleName: 'Envío Estándar',
-      carrier: 'Estándar',
-      label: 'Envío Estándar',
-      price: 50,
-      minDays: 3,
-      maxDays: 5,
-      maxPackageWeight: 20,
-      extraWeightCost: 10,
-      maxProductsPerPackage: 10
-    }];
+    return []; // Retornar array vacío en vez de crear una opción por defecto
   }
   
   const options = [];
@@ -426,24 +414,9 @@ export const getShippingOptionsForGroup = (group, userAddress) => {
     console.log(`🚢 Procesando regla "${rule.zona || 'Sin nombre'}", tiene ${rule.opciones_mensajeria?.length || 0} opciones`);
     console.log("DETALLE DE REGLA:", JSON.stringify(rule, null, 2));
     
-    // Si no hay opciones, crear una por defecto
+    // Si no hay opciones de mensajería, saltamos esta regla en lugar de crear una por defecto
     if (!rule.opciones_mensajeria || rule.opciones_mensajeria.length === 0) {
-      console.log(`⚠️ La regla "${rule.zona || 'Sin nombre'}" no tiene opciones de mensajería, creando una por defecto`);
-      
-      options.push({
-        id: `${rule.id}-default`,
-        ruleId: rule.id,
-        ruleName: rule.zona || 'Sin nombre',
-        carrier: 'Estándar',
-        label: `Envío ${rule.zona || 'Estándar'}`,
-        price: 50,
-        minDays: 3,
-        maxDays: 5,
-        maxPackageWeight: 20,
-        extraWeightCost: 10,
-        maxProductsPerPackage: 10
-      });
-      
+      console.log(`⚠️ La regla "${rule.zona || 'Sin nombre'}" no tiene opciones de mensajería, saltando`);
       continue;
     }
     
@@ -457,16 +430,45 @@ export const getShippingOptionsForGroup = (group, userAddress) => {
       console.log(`🏷️ Opción ${index + 1}:`, {
         nombre: opcion.nombre || 'Sin nombre',
         precio: opcion.precio || 'No definido',
-        tiempoEntrega: opcion.tiempo_entrega || 'No definido'
+        tiempoEntrega: opcion.tiempo_entrega || 'No definido',
+        configuracion_paquetes: opcion.configuracion_paquetes || 'No definida'
       });
     });
     
     // Agregar las opciones de esta regla
     rule.opciones_mensajeria.forEach(option => {
+      // Validar que tenga nombre y precio
+      if (!option.nombre || !option.precio) {
+        console.warn(`⚠️ Opción sin nombre o precio, saltando`);
+        return;
+      }
+      
       const optionId = `${rule.id}-${option.nombre || 'default'}`;
       const price = parseFloat(option.precio) || 0;
       
-      console.log(`➕ Añadiendo opción: ${option.nombre} (${optionId}), precio: $${price}`);
+      if (price <= 0) {
+        console.warn(`⚠️ Precio inválido (${price}), saltando opción`);
+        return;
+      }
+      
+      // Extraer configuración de paquetes o usar valores por defecto
+      const configPaquetes = option.configuracion_paquetes || {};
+      const maxPackageWeight = parseFloat(configPaquetes.peso_maximo_paquete);
+      const extraWeightCost = parseFloat(configPaquetes.costo_por_kg_extra);
+      const maxProductsPerPackage = parseInt(configPaquetes.maximo_productos_por_paquete);
+      
+      // Validar que tenga configuración de paquetes válida
+      if (!maxPackageWeight || !extraWeightCost || !maxProductsPerPackage) {
+        console.warn(`⚠️ Opción sin configuración de paquetes válida, saltando`, configPaquetes);
+        return;
+      }
+      
+      console.log(`➕ Añadiendo opción: ${option.nombre} (${optionId}), precio: $${price}, configuración:`, {
+        maxPackageWeight,
+        extraWeightCost,
+        maxProductsPerPackage,
+        raw: configPaquetes
+      });
       
       options.push({
         id: optionId,
@@ -477,30 +479,22 @@ export const getShippingOptionsForGroup = (group, userAddress) => {
         price: price,
         minDays: parseInt(option.minDays || option.tiempo_entrega?.split('-')[0] || 1, 10),
         maxDays: parseInt(option.maxDays || option.tiempo_entrega?.split('-')[1]?.replace(' días', '') || 3, 10),
-        maxPackageWeight: parseFloat(option.configuracion_paquetes?.peso_maximo_paquete) || 20,
-        extraWeightCost: parseFloat(option.configuracion_paquetes?.costo_por_kg_extra) || 10,
-        maxProductsPerPackage: parseInt(option.configuracion_paquetes?.maximo_productos_por_paquete) || 10
+        maxPackageWeight: maxPackageWeight,
+        extraWeightCost: extraWeightCost,
+        maxProductsPerPackage: maxProductsPerPackage,
+        configuracion_paquetes: {
+          peso_maximo_paquete: maxPackageWeight,
+          costo_por_kg_extra: extraWeightCost,
+          maximo_productos_por_paquete: maxProductsPerPackage
+        }
       });
     });
   }
   
-  // Si no hay opciones después de todo, crear una por defecto
+  // Si no hay opciones después de todo el procesamiento, retornar array vacío
   if (options.length === 0) {
-    console.warn(`❌ No se encontraron opciones para el grupo "${group.name}", creando una opción por defecto`);
-    
-    options.push({
-      id: `default-option-${group.id}`,
-      ruleId: 'default-rule',
-      ruleName: 'Envío Estándar',
-      carrier: 'Estándar',
-      label: 'Envío Estándar',
-      price: 50,
-      minDays: 3,
-      maxDays: 5,
-      maxPackageWeight: 20,
-      extraWeightCost: 10,
-      maxProductsPerPackage: 10
-    });
+    console.warn(`❌ No se encontraron opciones válidas para el grupo "${group.name}"`);
+    return [];
   }
   
   // Ordenar opciones por precio (de menor a mayor)
@@ -652,419 +646,225 @@ const isRuleValidForAddress = (rule, address) => {
 };
 
 /**
- * Agrupa las opciones de envío para presentarlas al usuario
- * 
- * @param {Array} cartItems - Productos en el carrito
- * @param {Object} userAddress - Dirección del usuario
- * @returns {Object} Opciones de envío agrupadas para el usuario
+ * Extrae opciones de envío directamente de reglas
+ * @param {Array} rules - Reglas de envío
+ * @returns {Array} Opciones de envío extraídas
  */
-export const prepareShippingOptionsForCheckout = async (cartItems, userAddress) => {
-  console.log('prepareShippingOptionsForCheckout: Iniciando preparación con', cartItems?.length, 'items');
+export const extractShippingOptionsFromRules = (rules) => {
+  console.log('Extrayendo opciones de envío de', rules?.length || 0, 'reglas');
+  const options = [];
   
-  // CONSOLE LOG ESPECÍFICO PARA DIAGNÓSTICO
-  console.log('=== DATOS UTILIZADOS PARA CÁLCULO DE ENVÍO ===', {
-    direccion: {
-      codigoPostal: userAddress?.zipCode || userAddress?.postalCode || 'No definido',
-      estado: userAddress?.state || 'No definido',
-      ciudad: userAddress?.city || 'No definida'
-    },
-    productos: (cartItems || []).map(item => {
-      const product = item.product || item;
-      return {
-        id: product.id,
-        nombre: product.name,
-        shippingRuleId: product.shippingRuleId,
-        shippingRuleIds: product.shippingRuleIds
-      };
-    })
+  if (!rules || !Array.isArray(rules) || rules.length === 0) {
+    console.warn('No hay reglas para extraer opciones');
+    return [];
+  }
+  
+  // Procesar cada regla
+  rules.forEach(rule => {
+    if (!rule.opciones_mensajeria || !Array.isArray(rule.opciones_mensajeria)) {
+      console.warn('Regla sin opciones de mensajería válidas:', rule.id || 'unknown');
+      return;
+    }
+    
+    // Extraer opciones válidas
+    rule.opciones_mensajeria.forEach((opcion, index) => {
+      // Verificar datos requeridos
+      if (!opcion.nombre || !opcion.precio) return;
+      
+      const price = parseFloat(opcion.precio);
+      if (isNaN(price) || price <= 0) return;
+      
+      // Datos de configuración (con valores por defecto si no existen)
+      const configPaquetes = opcion.configuracion_paquetes || {};
+      const pesoMaximo = parseFloat(configPaquetes.peso_maximo_paquete) || 20;
+      const costoPorKgExtra = parseFloat(configPaquetes.costo_por_kg_extra) || 10;
+      const maxProductosPorPaquete = parseInt(configPaquetes.maximo_productos_por_paquete) || 10;
+      
+      options.push({
+        id: `${rule.id}-${index}`,
+        ruleId: rule.id,
+        ruleName: rule.zona || 'Envío',
+        carrier: opcion.nombre,
+        label: opcion.nombre,
+        price: price,
+        tiempo_entrega: opcion.tiempo_entrega || '3-5 días',
+        maxPackageWeight: pesoMaximo,
+        extraWeightCost: costoPorKgExtra,
+        maxProductsPerPackage: maxProductosPorPaquete,
+        configuracion_paquetes: configPaquetes
+      });
+    });
   });
   
-  try {
-    // Paso 1: Agrupar productos por reglas de envío
-    const shippingGroups = await groupProductsByShippingRules(cartItems);
-    console.log(`prepareShippingOptionsForCheckout: ${shippingGroups.length} grupos creados`);
-    
-    // DIAGNÓSTICO: Inspeccionar las estructuras de datos
-    console.log("DIAGNÓSTICO - Inspección de datos:");
-    console.log("1. Productos en carrito:", cartItems);
-    
-    const rulesInfo = {};
-    for (const item of cartItems || []) {
-      const product = item.product || item;
-      rulesInfo[product.id] = {
-        name: product.name,
-        shippingRuleId: product.shippingRuleId,
-        shippingRuleIds: product.shippingRuleIds,
-        weight: product.weight
-      };
-    }
-    console.log("2. Información de reglas por producto:", rulesInfo);
-    
-    console.log("3. Grupos creados:", shippingGroups.map(g => ({
-      id: g.id,
-      name: g.name,
-      itemCount: g.items.length,
-      rules: g.rules.map(r => r.id),
-      totalWeight: g.totalWeight
-    })));
-    
-    // Si no hay grupos, devolver opción por defecto
-    if (shippingGroups.length === 0) {
-      console.warn('prepareShippingOptionsForCheckout: No se crearon grupos, creando opción por defecto');
-      return createDefaultShippingOption(cartItems);
-    }
-    
-    // Paso 2: Para cada grupo, obtener opciones de envío disponibles
-    for (const group of shippingGroups) {
-      group.shippingOptions = getShippingOptionsForGroup(group, userAddress);
-      console.log(`Grupo "${group.name}": ${group.shippingOptions.length} opciones disponibles`);
-      
-      // Para cada opción, calcular el costo
-      group.shippingOptions = group.shippingOptions.map(option => {
-        const costDetails = calculateShippingCostForGroup(group, option);
-        
-        return {
-          ...option,
-          calculatedCost: costDetails.totalCost,
-          costDetails
-        };
-      });
-    }
-    
-    // Paso 3: Preparar los datos para el checkout
-    const result = {
-      groups: shippingGroups,
-      totalOptions: []
-    };
-    
-    // REVISAR TODAS LAS OPCIONES DE ENVÍO DE TODOS LOS GRUPOS
-    const allShippingOptions = [];
-    let optionsCount = 0;
-    
-    for (const group of shippingGroups) {
-      if (group.shippingOptions && group.shippingOptions.length > 0) {
-        optionsCount += group.shippingOptions.length;
-        console.log(`📊 Grupo ${group.name} tiene ${group.shippingOptions.length} opciones`);
-        
-        allShippingOptions.push(...group.shippingOptions.map(option => ({
-          ...option,
-          groupId: group.id
-        })));
-      } else {
-        console.warn(`⚠️ Grupo ${group.name} no tiene opciones de envío`);
-      }
-    }
-    
-    console.log(`📋 Total opciones encontradas en grupos: ${optionsCount}`);
-    console.log(`📋 Opciones consolidadas: ${allShippingOptions.length}`, allShippingOptions);
-    
-    // Crear un array de opciones consolidadas (para mostrar al usuario)
-    const allOptions = new Map(); // Mapa para agrupar opciones similares
-    
-    for (const group of shippingGroups) {
-      console.log(`🔎 Procesando grupo ${group.id} para crear opciones consolidadas`);
-      console.log(`  Tiene ${group.shippingOptions?.length || 0} opciones de envío`);
-      
-      // CONTINUAR SI NO HAY OPCIONES
-      if (!group.shippingOptions || group.shippingOptions.length === 0) {
-        console.warn(`⚠️ Grupo ${group.id} no tiene opciones de envío, saltando`);
-        continue;
-      }
-      
-      for (const option of group.shippingOptions) {
-        const optionKey = `${option.carrier}-${option.label}`; // Clave única para cada tipo de opción
-        console.log(`  Procesando opción: ${optionKey} (Costo: ${option.calculatedCost})`);
-        
-        if (!allOptions.has(optionKey)) {
-          console.log(`  📝 Creando nueva opción consolidada: ${option.carrier} - ${option.label}`);
-          allOptions.set(optionKey, {
-            id: option.id,
-            carrier: option.carrier,
-            label: option.label,
-            groups: [{ 
-              groupId: group.id, 
-              option,
-              items: group.items
-            }],
-            totalCost: option.calculatedCost
-          });
-        } else {
-          console.log(`  ➕ Añadiendo grupo a opción existente: ${option.carrier} - ${option.label}`);
-          const existingOption = allOptions.get(optionKey);
-          existingOption.groups.push({ 
-            groupId: group.id, 
-            option,
-            items: group.items
-          });
-          existingOption.totalCost += option.calculatedCost;
-        }
-      }
-    }
-    
-    // DIAGNÓSTICO DEL ESTADO DE LAS OPCIONES
-    console.log(`⭐️ allOptions tiene ${allOptions.size} opciones consolidadas`);
-    
-    // Verificar si hay opciones
-    if (allOptions.size === 0) {
-      console.warn('⚠️ prepareShippingOptionsForCheckout: No se encontraron opciones de envío consolidadas');
-      
-      // ➡️ FORZAR LA CREACIÓN DE OPCIONES A PARTIR DE LOS GRUPOS
-      console.log('🚨 FORZANDO CREACIÓN DE OPCIONES POR CADA GRUPO');
-      
-      // Si hay grupos, crear opciones directamente
-      if (shippingGroups.length > 0) {
-        console.log('🏭 Creando opciones de envío directamente a partir de cada grupo');
-        
-        for (const group of shippingGroups) {
-          if (group.rules && group.rules.length > 0) {
-            for (const rule of group.rules) {
-              if (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0) {
-                rule.opciones_mensajeria.forEach((opcion, index) => {
-                  const optionId = `direct-${rule.id}-option-${index}`;
-                  const price = parseFloat(opcion.precio) || 200;
-                  
-                  console.log(`🔧 Creando opción directa: ${opcion.nombre} con precio ${price}`);
-                  
-                  result.totalOptions.push({
-                    id: optionId,
-                    carrier: 'Nacional',
-                    label: opcion.nombre || 'Envío Estándar',
-                    totalCost: price,
-                    tiempo_entrega: opcion.tiempo_entrega || '3-5 días',
-                    groups: [{
-                      groupId: group.id,
-                      option: {
-                        id: optionId,
-                        carrier: 'Nacional',
-                        label: opcion.nombre || 'Envío Estándar',
-                        calculatedCost: price,
-                        costDetails: {
-                          baseCost: price,
-                          extraCost: 0,
-                          totalCost: price
-                        }
-                      },
-                      items: group.items
-                    }]
-                  });
-                });
-              } else {
-                // Crear opción por defecto si no hay opciones de mensajería
-                console.log(`⚙️ Creando opción por defecto para regla ${rule.zona} sin opciones`);
-                
-                result.totalOptions.push({
-                  id: `default-${rule.id}`,
-                  carrier: 'Nacional',
-                  label: `Envío ${rule.zona || 'Estándar'}`,
-                  totalCost: 200,
-                  tiempo_entrega: '3-5 días',
-                  groups: [{
-                    groupId: group.id,
-                    option: {
-                      id: `default-option-${rule.id}`,
-                      carrier: 'Nacional', 
-                      label: `Envío ${rule.zona || 'Estándar'}`,
-                      calculatedCost: 200,
-                      costDetails: {
-                        baseCost: 200,
-                        extraCost: 0,
-                        totalCost: 200
-                      }
-                    },
-                    items: group.items
-                  }]
-                });
-              }
-            }
-          } else {
-            // Si el grupo no tiene reglas, crear una opción por defecto
-            console.log(`⚙️ Creando opción por defecto para grupo ${group.name} sin reglas`);
-            
-            result.totalOptions.push({
-              id: `default-${group.id}`,
-              carrier: 'Estándar',
-              label: 'Envío Estándar',
-              totalCost: 200,
-              tiempo_entrega: '3-5 días',
-              groups: [{
-                groupId: group.id,
-                option: {
-                  id: `default-option-${group.id}`,
-                  carrier: 'Estándar',
-                  label: 'Envío Estándar',
-                  calculatedCost: 200,
-                  costDetails: {
-                    baseCost: 200,
-                    extraCost: 0,
-                    totalCost: 200
-                  }
-                },
-                items: group.items
-              }]
-            });
-          }
-        }
-        
-        console.log(`⭐️ Total opciones creadas directamente: ${result.totalOptions.length}`);
-        
-        if (result.totalOptions.length > 0) {
-          // Ordenar opciones por precio
-          result.totalOptions.sort((a, b) => a.totalCost - b.totalCost);
-          return result;
-        }
-      }
-      
-      // Si no hay grupos o no se pudo crear opciones, usar opción por defecto
-      console.log('Recurriendo a opción por defecto como último recurso');
-      return createDefaultShippingOption(cartItems);
-    }
-    
-    // Convertir el mapa a array y ordenar por precio
-    result.totalOptions = Array.from(allOptions.values())
-      .sort((a, b) => a.totalCost - b.totalCost);
-    
-    console.log(`prepareShippingOptionsForCheckout: ${result.totalOptions.length} opciones totales disponibles`);
-    return result;
-  } catch (error) {
-    // Si ocurre cualquier error, devolver una opción por defecto
-    console.error('prepareShippingOptionsForCheckout: Error inesperado', error);
-    return createDefaultShippingOption(cartItems);
-  }
+  return options;
 };
 
 /**
- * Crea una opción de envío por defecto cuando no hay opciones disponibles
- * 
- * @param {Array} cartItems - Items del carrito 
- * @returns {Object} Opción de envío por defecto
+ * Calcula el costo de envío basado en peso y límites
+ * @param {number} totalWeight - Peso total de productos
+ * @param {number} totalQuantity - Cantidad total de productos
+ * @param {Object} option - Opción de envío seleccionada
+ * @returns {Object} Detalles del costo calculado
  */
-function createDefaultShippingOption(cartItems) {
-  console.log('createDefaultShippingOption: Creando opción basada en reglas existentes');
+export const calculateShippingCost = (totalWeight, totalQuantity, option) => {
+  if (!option) return { totalCost: 0 };
   
-  // Obtener reglas nacionales disponibles
-  const nationalRuleId = 'bmtunCl4oav9BbzlMihE'; // ID de la regla nacional
+  // Extraer parámetros
+  const basePrice = parseFloat(option.price) || 0;
+  const maxWeight = parseFloat(option.maxPackageWeight) || 20;
+  const extraWeightCost = parseFloat(option.extraWeightCost) || 10;
+  const maxProducts = parseInt(option.maxProductsPerPackage) || 10;
   
-  // Intentar buscar en la caché de shippingRulesCache
-  let nationalRule = null;
+  // Calcular paquetes necesarios
+  const packagesByWeight = Math.ceil(totalWeight / maxWeight);
+  const packagesByQuantity = Math.ceil(totalQuantity / maxProducts);
+  const totalPackages = Math.max(packagesByWeight, packagesByQuantity, 1);
   
-  // Verificar si tenemos acceso a la caché de reglas
-  if (typeof shippingRulesCache !== 'undefined' && shippingRulesCache instanceof Map) {
-    nationalRule = shippingRulesCache.get(nationalRuleId);
-    console.log('Regla nacional encontrada en caché:', nationalRule ? 'Sí' : 'No');
+  // Calcular costo base
+  const totalBaseCost = basePrice * totalPackages;
+  
+  // Calcular sobrepeso
+  let extraCost = 0;
+  if (totalWeight > maxWeight * totalPackages) {
+    const overweight = totalWeight - (maxWeight * totalPackages);
+    extraCost = Math.ceil(overweight) * extraWeightCost;
   }
   
-  // Si no encontramos en caché, usamos una regla predeterminada
-  const defaultRule = nationalRule || {
-    id: 'default-rule',
-    zona: 'Nacional',
-    opciones_mensajeria: [
-      {
-        nombre: 'Express',
-        precio: '300',
-        tiempo_entrega: '1-10 días',
-        configuracion_paquetes: {
-          peso_maximo_paquete: 20,
-          costo_por_kg_extra: 10,
-          maximo_productos_por_paquete: 10
-        }
-      },
-      {
-        nombre: 'Básico',
-        precio: '200',
-        tiempo_entrega: '3-5 días',
-        configuracion_paquetes: {
-          peso_maximo_paquete: 20,
-          costo_por_kg_extra: 10,
-          maximo_productos_por_paquete: 10
-        }
-      }
-    ]
-  };
+  // Calcular costo total
+  const totalCost = totalBaseCost + extraCost;
   
-  // Elegir la opción más económica de mensajería
-  const sortedOptions = [...defaultRule.opciones_mensajeria].sort((a, b) => {
-    const precioA = parseFloat(a.precio) || 0;
-    const precioB = parseFloat(b.precio) || 0;
-    return precioA - precioB;
-  });
-  
-  const cheapestOption = sortedOptions[0] || {
-    nombre: 'Envío Estándar',
-    precio: '200',
-    tiempo_entrega: '3-5 días'
-  };
-  
-  const shippingCost = parseFloat(cheapestOption.precio) || 200;
-  
-  // Crear un grupo con todos los productos
-  const defaultGroup = {
-    id: 'default-group',
-    type: 'default',
-    name: 'Todos los productos',
-    rules: [defaultRule],
-    items: cartItems || [],
-    totalWeight: calculateTotalWeight(cartItems),
-    totalQuantity: calculateTotalQuantity(cartItems)
-  };
-  
-  // Crear la estructura de respuesta con opciones basadas en la regla nacional
   return {
-    groups: [defaultGroup],
-    totalOptions: defaultRule.opciones_mensajeria.map((opcion, index) => {
-      const price = parseFloat(opcion.precio) || 200;
-      return {
-        id: `national-shipping-${index}`,
-        carrier: 'Nacional',
-        label: opcion.nombre || 'Envío Estándar',
-        totalCost: price,
-        tiempo_entrega: opcion.tiempo_entrega || '3-5 días',
-        groups: [{
-          groupId: defaultGroup.id,
-          option: {
-            id: `national-option-${index}`,
-            carrier: 'Nacional',
-            label: opcion.nombre || 'Envío Estándar',
-            calculatedCost: price,
-            costDetails: {
-              baseCost: price,
-              extraCost: 0,
-              totalCost: price
+    baseCost: totalBaseCost,
+    extraCost: extraCost,
+    totalCost: totalCost,
+    packages: totalPackages,
+    details: {
+      maxPackageWeight: maxWeight,
+      extraWeightCost: extraWeightCost,
+      maxProductsPerPackage: maxProducts
+    }
+  };
+};
+
+/**
+ * Obtiene opciones de envío para mostrar en checkout
+ * @param {Array} cartItems - Productos en el carrito
+ * @param {Object} userAddress - Dirección del usuario
+ * @returns {Promise<Object>} Opciones de envío disponibles
+ */
+export const prepareShippingOptionsForCheckout = async (cartItems, userAddress) => {
+  console.log('Preparando opciones de envío para', cartItems?.length || 0, 'productos');
+  
+  if (!cartItems || cartItems.length === 0) {
+    console.warn('No hay productos para calcular envío');
+    return { options: [] };
+  }
+  
+  try {
+    // TRUCO: Forzar uso de regla nacional para diagnóstico
+    console.log('💡 FORZANDO USO DE REGLA NACIONAL PARA DIAGNÓSTICO');
+    
+    // Obtener la regla nacional directamente
+    let nacionalRule = null;
+    try {
+      const { ok, data } = await fetchShippingRuleById('bmtunCl4oav9BbzlMihE');
+      if (ok && data) {
+        nacionalRule = data;
+        console.log('✅ Regla nacional obtenida exitosamente:', {
+          id: data.id,
+          zona: data.zona,
+          opciones: data.opciones_mensajeria?.length || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error al obtener regla nacional:', error);
+    }
+    
+    if (!nacionalRule) {
+      console.warn('⚠️ No se pudo obtener la regla nacional, creando una por defecto');
+      nacionalRule = {
+        id: 'bmtunCl4oav9BbzlMihE',
+        zona: 'Nacional',
+        opciones_mensajeria: [
+          {
+            nombre: "Correos de México",
+            precio: "300",
+            tiempo_entrega: "1-10 días",
+            configuracion_paquetes: {
+              peso_maximo_paquete: "20",
+              costo_por_kg_extra: "10",
+              maximo_productos_por_paquete: "10"
             }
           },
-          items: defaultGroup.items
-        }]
+          {
+            nombre: "Correos de México",
+            precio: "200",
+            tiempo_entrega: "5-15 días",
+            configuracion_paquetes: {
+              peso_maximo_paquete: "20",
+              costo_por_kg_extra: "10",
+              maximo_productos_por_paquete: "10"
+            }
+          }
+        ]
       };
-    }).sort((a, b) => a.totalCost - b.totalCost)
-  };
-}
-
-/**
- * Calcula el peso total de los items del carrito
- * 
- * @param {Array} cartItems - Items del carrito
- * @returns {number} Peso total en kg
- */
-function calculateTotalWeight(cartItems) {
-  if (!cartItems || !cartItems.length) return 0;
-  
-  return cartItems.reduce((sum, item) => {
-    const product = item.product || item;
-    const weight = product.weight || 1; // Por defecto 1kg si no hay peso
-    const quantity = item.quantity || 1;
-    return sum + (weight * quantity);
-  }, 0);
-}
-
-/**
- * Calcula la cantidad total de items en el carrito
- * 
- * @param {Array} cartItems - Items del carrito
- * @returns {number} Cantidad total de items
- */
-function calculateTotalQuantity(cartItems) {
-  if (!cartItems || !cartItems.length) return 0;
-  
-  return cartItems.reduce((sum, item) => {
-    return sum + (item.quantity || 1);
-  }, 0);
+    }
+    
+    // Usar sólo la regla nacional
+    const rules = [nacionalRule];
+    console.log('👉 Usando regla nacional para generar opciones de envío');
+    
+    // 3. Extraer opciones de las reglas
+    const shippingOptions = extractShippingOptionsFromRules(rules);
+    console.log(`📦 Se extrajeron ${shippingOptions.length} opciones de envío`);
+    
+    // 4. Calcular peso y cantidad total
+    const totalWeight = cartItems.reduce((sum, item) => {
+      const product = item.product || item;
+      const weight = parseFloat(product.weight) || 1;
+      const quantity = parseInt(item.quantity) || 1;
+      return sum + (weight * quantity);
+    }, 0);
+    
+    const totalQuantity = cartItems.reduce((sum, item) => {
+      return sum + (parseInt(item.quantity) || 1);
+    }, 0);
+    
+    console.log('Totales calculados:', { peso: totalWeight, cantidad: totalQuantity });
+    
+    // 5. Calcular costo para cada opción
+    const optionsWithCost = shippingOptions.map(option => {
+      const costDetails = calculateShippingCost(totalWeight, totalQuantity, option);
+      
+      return {
+        ...option,
+        calculatedCost: costDetails.totalCost,
+        totalCost: costDetails.totalCost,
+        packages: costDetails.packages,
+        costDetails: {
+          baseCost: costDetails.baseCost,
+          extraCost: costDetails.extraCost,
+          totalCost: costDetails.totalCost
+        },
+        minDays: parseInt(option.tiempo_entrega?.split('-')[0] || 1, 10),
+        maxDays: parseInt(option.tiempo_entrega?.split('-')[1]?.replace(' días', '') || 5, 10),
+        details: `${costDetails.packages > 1 ? `${costDetails.packages} paquetes, ` : ''}${option.tiempo_entrega}`
+      };
+    });
+    
+    console.log(`📦 Se calcularon costos para ${optionsWithCost.length} opciones`);
+    console.log('Opciones con costos calculados:', optionsWithCost);
+    
+    // 6. Ordenar por precio
+    optionsWithCost.sort((a, b) => a.totalCost - b.totalCost);
+    
+    return { 
+      options: optionsWithCost,
+      totalWeight,
+      totalQuantity
+    };
+  } catch (error) {
+    console.error('Error al preparar opciones de envío:', error);
+    return { options: [] };
+  }
 } 

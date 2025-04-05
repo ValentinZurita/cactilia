@@ -41,10 +41,24 @@ export const CheckoutContent = () => {
     selectShippingOption
   } = useShippingOptions(cartItems, checkout.selectedAddressId);
 
+  // Seleccionar automáticamente la opción más barata si hay opciones disponibles y ninguna seleccionada
+  useEffect(() => {
+    if (shippingOptions?.length > 0 && !selectedShippingOption && selectShippingOption) {
+      // Ordenar por precio y seleccionar la más barata
+      const cheapestOption = [...shippingOptions].sort((a, b) => 
+        (a.totalCost || a.calculatedCost || 9999) - (b.totalCost || b.calculatedCost || 9999)
+      )[0];
+      
+      console.log('🏷️ Seleccionando automáticamente la opción más barata:', cheapestOption);
+      selectShippingOption(cheapestOption);
+    }
+  }, [shippingOptions, selectedShippingOption, selectShippingOption]);
+
   // Actualizar el costo de envío cuando cambia la opción seleccionada
   useEffect(() => {
     if (selectedShippingOption && updateShipping) {
       const shippingCost = selectedShippingOption.totalCost || selectedShippingOption.calculatedCost || 0;
+      console.log(`💸 Actualizando costo de envío a $${shippingCost} desde opción:`, selectedShippingOption.label);
       updateShipping(shippingCost);
     }
   }, [selectedShippingOption, updateShipping]);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { SectionTitle } from '../ui/SectionTitle';
 import ShippingOptionSelector from '../shipping/ShippingOptionSelector';
@@ -20,6 +20,16 @@ export const ShippingOptionsSection = ({
   loading = false,
   addressSelected = false
 }) => {
+  // Log para diagnóstico
+  useEffect(() => {
+    console.log('📦 ShippingOptionsSection render:', {
+      opciones: shippingOptions.length,
+      seleccionada: selectedOptionId,
+      cargando: loading,
+      direccionSeleccionada: addressSelected
+    });
+  }, [shippingOptions, selectedOptionId, loading, addressSelected]);
+
   // Si no hay dirección seleccionada, mostrar mensaje
   if (!addressSelected) {
     return (
@@ -40,17 +50,25 @@ export const ShippingOptionsSection = ({
     );
   }
 
+  // Obtener número de opciones
+  const optionsCount = shippingOptions?.length || 0;
+  const subtitleText = loading 
+    ? "Calculando opciones disponibles..." 
+    : optionsCount > 0 
+      ? `${optionsCount} ${optionsCount === 1 ? 'opción disponible' : 'opciones disponibles'}`
+      : "No hay opciones de envío disponibles";
+
   return (
     <div className="checkout-section mb-4">
       <SectionTitle
         number="2"
         title="Opciones de envío"
-        subtitle="Selecciona una opción de envío para tu pedido"
+        subtitle={subtitleText}
         icon="bi-truck"
       />
       <div className="checkout-section-content p-4 bg-light rounded">
         {/* Verificamos si hay opciones disponibles */}
-        {!loading && shippingOptions.length === 0 ? (
+        {!loading && optionsCount === 0 ? (
           <div className="alert alert-warning mb-0">
             <i className="bi bi-exclamation-triangle me-2"></i>
             No hay opciones de envío disponibles para la dirección seleccionada.

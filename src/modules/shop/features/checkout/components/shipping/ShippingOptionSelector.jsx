@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import '../../styles/shippingSelector.css';
 
@@ -18,6 +18,22 @@ export const ShippingOptionSelector = ({
   onOptionSelect,
   loading = false
 }) => {
+  // Agregar log para diagnóstico
+  useEffect(() => {
+    console.log("🚚 RENDERIZANDO SHIPPING OPTION SELECTOR", {
+      opciones: shippingOptions.length,
+      seleccionada: selectedOptionId,
+      cargando: loading,
+      opcionesData: shippingOptions
+    });
+    
+    // Si hay opciones disponibles pero no hay opción seleccionada, seleccionar automáticamente la primera
+    if (shippingOptions && shippingOptions.length > 0 && !selectedOptionId && onOptionSelect) {
+      console.log('⚠️ No hay opción seleccionada, seleccionando la primera automáticamente', shippingOptions[0]);
+      onOptionSelect(shippingOptions[0]);
+    }
+  }, [shippingOptions, selectedOptionId, loading, onOptionSelect]);
+
   if (loading) {
     return (
       <div className="shipping-method-selector p-3 border rounded mb-3">
@@ -51,11 +67,8 @@ export const ShippingOptionSelector = ({
             key={option.id}
             isSelected={selectedOptionId === option.id}
             onSelect={() => onOptionSelect(option)}
-            name={option.label || 'Envío estándar'}
-            description={`${option.carrier || 'Servicio'}${option.minDays && option.maxDays ? ` · ${option.minDays}-${option.maxDays} días` : ''}`}
-            price={option.calculatedCost || option.totalCost}
+            option={option}
             id={`shipping-option-${option.id}`}
-            details={option.details}
           />
         ))}
       </div>
@@ -69,14 +82,16 @@ export const ShippingOptionSelector = ({
 const ShippingOption = ({
   isSelected,
   onSelect,
-  name,
-  description,
-  price,
-  id,
-  details
+  option,
+  id
 }) => {
+  const name = option.label || 'Envío estándar';
+  const price = option.calculatedCost || option.totalCost || 0;
+  const description = `${option.carrier || 'Servicio'}${option.tiempo_entrega ? ` · ${option.tiempo_entrega}` : option.minDays && option.maxDays ? ` · ${option.minDays}-${option.maxDays} días` : ''}`;
+  const details = option.details;
+  
   return (
-    <div className={`shipping-method-option ${isSelected ? 'active-shipping-option' : ''}`}>
+    <div className={`shipping-method-option ${isSelected ? 'active-shipping-option' : ''}`} onClick={onSelect}>
       <div className="form-check">
         <input
           className="form-check-input"
@@ -91,7 +106,6 @@ const ShippingOption = ({
           className="form-check-label d-flex align-items-center justify-content-between w-100"
           htmlFor={id}
           style={{ cursor: 'pointer' }}
-          onClick={onSelect}
         >
           <div>
             <div className="shipping-method-name">
@@ -107,7 +121,7 @@ const ShippingOption = ({
             )}
           </div>
           <div className="shipping-method-price fw-bold">
-            {price === 0 ? 'Gratis' : `$${price.toFixed(2)}`}
+            ${price.toFixed(2)}
           </div>
         </label>
       </div>
@@ -118,11 +132,8 @@ const ShippingOption = ({
 ShippingOption.propTypes = {
   isSelected: PropTypes.bool.isRequired,
   onSelect: PropTypes.func.isRequired,
-  name: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
-  price: PropTypes.number.isRequired,
-  id: PropTypes.string.isRequired,
-  details: PropTypes.string
+  option: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired
 };
 
 ShippingOptionSelector.propTypes = {
