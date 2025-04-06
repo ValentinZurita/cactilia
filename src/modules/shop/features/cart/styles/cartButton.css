@@ -55,13 +55,14 @@
 
 /* Estado cuando está en el carrito */
 .add-to-cart.in-cart {
-    background-color: #f5f5f5;
-    color: #757575;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: var(--green-3); /* Mantener color verde */
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 199, 73, 0.15);
+    border: 2px solid white; /* Borde blanco sutil para diferenciar */
 }
 
 .add-to-cart.in-cart:hover {
-    background-color: #e0e0e0;
+    background-color: #2cb841; /* Un verde ligeramente más oscuro */
     transform: translateY(-1px);
 }
 

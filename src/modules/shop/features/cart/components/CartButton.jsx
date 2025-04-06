@@ -40,9 +40,9 @@ export const CartButton = ({ product, disabled = false, quantity = 1 }) => {
       className={`add-to-cart ${isInCart(product.id) ? 'in-cart' : ''}`}
       onClick={handleClick}
       disabled={disabled}
-      aria-label="Agregar al carrito"
+      aria-label={isInCart(product.id) ? "Producto ya en carrito" : "Agregar al carrito"}
     >
-      <i className="bi bi-cart-plus"></i>
+      <i className={`bi ${isInCart(product.id) ? 'bi-cart-check' : 'bi-cart-plus'}`}></i>
     </button>
   );
 };
