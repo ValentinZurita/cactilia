@@ -5,8 +5,12 @@ import { groupProductsIntoPackages, calculateTotalShippingCost } from '../../../
 /**
  * Hook para gestionar las opciones de envío en el checkout
  * Obtiene las reglas de envío desde Firestore y calcula las opciones disponibles
+ * @param {Array} cartItems - Ítems del carrito
+ * @param {Object} selectedAddressId - Objeto de dirección seleccionada (guardada)
+ * @param {Object} newAddressData - Datos de una nueva dirección (en proceso)
+ * @param {string} selectedAddressType - Tipo de dirección seleccionada ('saved' o 'new')
  */
-export const useShippingOptions = (cartItems, selectedAddressId) => {
+export const useShippingOptions = (cartItems, selectedAddressId, newAddressData, selectedAddressType) => {
   const [loading, setLoading] = useState(true);
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -18,21 +22,55 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
   // Estado para productos excluidos (sin reglas de envío)
   const [excludedProducts, setExcludedProducts] = useState([]);
   
-  // Obtener dirección del usuario cuando cambia el ID seleccionado
+  // Obtener dirección del usuario cuando cambia la dirección seleccionada
   useEffect(() => {
     const getUserAddress = async () => {
-      if (!selectedAddressId) {
-        setUserAddress(null);
-        return;
+      // Verificar qué tipo de dirección está seleccionada
+      if (selectedAddressType === 'saved') {
+        // Dirección guardada
+        if (!selectedAddressId) {
+          setUserAddress(null);
+          return;
+        }
+        
+        // Aquí normalmente obtendríamos la dirección de Firestore
+        // Pero para simplificar, asumimos que ya tenemos la dirección en el componente padre
+        // y que selectedAddressId es en realidad el objeto dirección completo
+        setUserAddress(selectedAddressId);
+        console.log('🏠 Dirección guardada seleccionada:', selectedAddressId);
+      } 
+      else if (selectedAddressType === 'new') {
+        // Nueva dirección - verificar si está completa
+        if (!newAddressData) {
+          setUserAddress(null);
+          return;
+        }
+        
+        // Validar que los campos obligatorios estén completos
+        const requiredFields = ['street', 'city', 'state', 'zip'];
+        const isComplete = requiredFields.every(field => 
+          newAddressData[field] && newAddressData[field].trim() !== ''
+        );
+        
+        if (isComplete) {
+          // La dirección nueva está completa
+          console.log('🏠 Nueva dirección completa:', newAddressData);
+          setUserAddress(newAddressData);
+        } else {
+          // La dirección nueva no está completa
+          console.log('⚠️ Nueva dirección incompleta - datos actuales:', newAddressData);
+          setUserAddress(null);
+          
+          // Limpiar opciones y establecer mensaje
+          setOptions([]);
+          setSelectedOption(null);
+          setError('Complete su dirección para ver opciones de envío');
+        }
       }
-      
-      // Aquí normalmente obtendríamos la dirección de Firestore
-      // Pero para simplificar, asumimos que ya tenemos la dirección en el componente padre
-      // y que selectedAddressId es en realidad el objeto dirección completo
-      setUserAddress(selectedAddressId);
-
-      // Debuggear qué estamos recibiendo como dirección
-      console.log('🏠 Dirección seleccionada:', selectedAddressId);
+      else {
+        // No hay tipo de dirección seleccionado
+        setUserAddress(null);
+      }
       
       // Al cambiar la dirección, reiniciamos la opción seleccionada
       // para forzar una nueva evaluación basada en la nueva dirección
@@ -40,7 +78,7 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
     };
     
     getUserAddress();
-  }, [selectedAddressId]);
+  }, [selectedAddressId, newAddressData, selectedAddressType]);
   
   // Calcular opciones de envío cuando cambian los items o la dirección
   useEffect(() => {
@@ -344,7 +382,7 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
         console.error('Error al calcular opciones de envío:', err);
         setError('Error al calcular opciones de envío');
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     };
     
@@ -354,7 +392,7 @@ export const useShippingOptions = (cartItems, selectedAddressId) => {
   // Función para seleccionar una opción
   const selectShippingOption = (option) => {
     if (option) {
-      setSelectedOption(option);
+    setSelectedOption(option);
     }
   };
   

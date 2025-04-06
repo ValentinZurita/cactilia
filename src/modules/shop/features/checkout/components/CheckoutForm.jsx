@@ -32,6 +32,8 @@ export const CheckoutForm = ({
                                selectedShippingOptionId,
                                loadingShippingOptions = false,
                                handleShippingOptionSelect,
+                               newAddressData,
+                               shippingError,
 
                                // Métodos de pago
                                paymentMethods,
@@ -81,6 +83,9 @@ export const CheckoutForm = ({
         onOptionSelect={handleShippingOptionSelect}
         loading={loadingShippingOptions}
         addressSelected={!!selectedAddressId}
+        selectedAddressType={selectedAddressType}
+        newAddressData={newAddressData}
+        error={shippingError}
       />
 
       {/* Sección: Metodo de Pago */}

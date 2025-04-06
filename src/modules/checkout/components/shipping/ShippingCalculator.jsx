@@ -7,13 +7,13 @@ import './ShippingCalculator.css';
  * Componente para calcular y mostrar opciones de envío en el checkout
  * ADAPTADO para la estructura específica de Cactilia
  */
-const ShippingCalculator = ({
-                              cart,
-                              userAddress,
-                              selectedShippingOption,
-                              onShippingChange,
-                              onAvailableOptionsChange
-                            }) => {
+const ShippingCalculator = ({ 
+  cart,
+  userAddress,
+  selectedShippingOption, 
+  onShippingChange,
+  onAvailableOptionsChange 
+}) => {
   const [loading, setLoading] = useState(true);
   const [shippingData, setShippingData] = useState({ groups: [], totalOptions: [] });
   const [error, setError] = useState(null);
@@ -24,14 +24,14 @@ const ShippingCalculator = ({
       if (!cart || !cart.items || cart.items.length === 0) {
         setShippingData({ groups: [], totalOptions: [] });
         setLoading(false);
-        return;
+      return;
       }
 
       if (!userAddress || !userAddress.zipCode) {
         setError('Se requiere la dirección para calcular opciones de envío');
         setLoading(false);
-        return;
-      }
+      return;
+    }
 
       try {
         setLoading(true);
@@ -83,16 +83,16 @@ const ShippingCalculator = ({
   }, [cart, userAddress, selectedShippingOption, onShippingChange, onAvailableOptionsChange]);
 
   // Renderizar mensajes de carga o error
-  if (loading) {
-    return (
-      <div className="text-center p-3">
+    if (loading) {
+      return (
+        <div className="text-center p-3">
         <div className="spinner-border spinner-border-sm text-secondary me-2" role="status">
-          <span className="visually-hidden">Cargando...</span>
+            <span className="visually-hidden">Cargando...</span>
+          </div>
+          <span>Calculando opciones de envío...</span>
         </div>
-        <span>Calculando opciones de envío...</span>
-      </div>
-    );
-  }
+      );
+    }
 
   if (error) {
     return (
@@ -103,26 +103,26 @@ const ShippingCalculator = ({
     );
   }
 
-  if (!userAddress) {
-    return (
+    if (!userAddress) {
+      return (
       <div className="alert alert-info">
         <i className="bi bi-info-circle-fill me-2"></i>
-        Por favor completa tu dirección para ver las opciones de envío disponibles.
-      </div>
-    );
-  }
+          Por favor completa tu dirección para ver las opciones de envío disponibles.
+        </div>
+      );
+    }
 
   if (shippingData.totalOptions.length === 0) {
-    return (
-      <div className="alert alert-warning">
+      return (
+        <div className="alert alert-warning">
         <i className="bi bi-exclamation-triangle-fill me-2"></i>
-        No hay opciones de envío disponibles para tu ubicación.
-      </div>
-    );
-  }
+          No hay opciones de envío disponibles para tu ubicación.
+        </div>
+      );
+    }
 
   // Renderizar opciones de envío adaptadas a la estructura de Cactilia
-  return (
+    return (
     <div className="shipping-calculator">
       <h6 className="text-dark mb-3">Opciones de envío</h6>
 
@@ -132,9 +132,9 @@ const ShippingCalculator = ({
           const formattedPrice = option.totalCost === 0
             ? 'Gratis'
             : `$${option.totalCost.toFixed(2)}`;
-
+          
           return (
-            <div
+            <div 
               key={option.id}
               className={`shipping-option ${isSelected ? 'selected' : ''}`}
               onClick={() => onShippingChange({
@@ -189,8 +189,8 @@ const ShippingCalculator = ({
       {selectedShippingOption && shippingData.groups && shippingData.groups.length > 0 && (
         <div className="mt-3 small text-muted">
           Tiempo estimado de entrega: {selectedShippingOption.deliveryTime || "3-5 días"}
-        </div>
-      )}
+                    </div>
+                  )}
     </div>
   );
 };
@@ -203,4 +203,4 @@ ShippingCalculator.propTypes = {
   onAvailableOptionsChange: PropTypes.func
 };
 
-export default ShippingCalculator;
+export default ShippingCalculator; 

@@ -62,8 +62,14 @@ export const CheckoutContent = () => {
     selectShippingOption,
     shippingGroups: calculatedShippingGroups,
     shippingRules: calculatedShippingRules,
-    excludedProducts
-  } = useShippingOptions(cartItems, selectedAddress);
+    excludedProducts,
+    error: shippingError
+  } = useShippingOptions(
+    cartItems, 
+    selectedAddress, 
+    checkout.newAddressData, 
+    checkout.selectedAddressType
+  );
 
   // Seleccionar automáticamente la opción más barata si hay opciones disponibles y ninguna seleccionada
   useEffect(() => {
@@ -306,6 +312,8 @@ export const CheckoutContent = () => {
           selectedShippingOptionId={selectedShippingOption?.id}
           loadingShippingOptions={loadingShippingOptions}
           handleShippingOptionSelect={handleShippingOptionSelect}
+          newAddressData={checkout.newAddressData}
+          shippingError={shippingError}
 
           paymentMethods={checkout.paymentMethods}
           selectedPaymentId={checkout.selectedPaymentId}

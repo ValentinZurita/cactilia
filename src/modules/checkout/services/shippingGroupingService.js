@@ -216,8 +216,8 @@ export const prepareShippingOptionsForCheckout = async (cartItems, userAddress) 
             packages,
             totalCost: isFreeShipping ? 0 : totalCost,
             isFreeShipping
-          });
-        });
+      });
+    });
       }
     });
     
@@ -290,7 +290,7 @@ const generateTotalShippingOptions = (groups) => {
     if (!group.shippingOptions || group.shippingOptions.length === 0) {
       return;
     }
-
+    
     // Tomar la opción más barata del grupo
     const cheapestOption = group.shippingOptions[0];
 
@@ -309,7 +309,7 @@ const generateTotalShippingOptions = (groups) => {
       items: group.items
     });
   });
-
+  
   // Establecer tiempo de entrega estimado
   cheapestCombination.deliveryTime = `${maxDeliveryDays} días`;
 

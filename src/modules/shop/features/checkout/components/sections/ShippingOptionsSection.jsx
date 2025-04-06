@@ -12,13 +12,19 @@ import ShippingOptionSelector from '../shipping/ShippingOptionSelector';
  * @param {Function} props.onOptionSelect - Función para seleccionar una opción
  * @param {boolean} props.loading - Indica si están cargando las opciones
  * @param {boolean} props.addressSelected - Indica si ya se seleccionó una dirección
+ * @param {string} props.selectedAddressType - Tipo de dirección seleccionada ('saved' o 'new')
+ * @param {Object} props.newAddressData - Datos de la dirección nueva (si aplica)
+ * @param {string} props.error - Mensaje de error (si aplica)
  */
 export const ShippingOptionsSection = ({
   shippingOptions = [],
   selectedOptionId,
   onOptionSelect,
   loading = false,
-  addressSelected = false
+  addressSelected = false,
+  selectedAddressType = 'saved',
+  newAddressData = null,
+  error = null
 }) => {
   // Referencia para controlar logs
   const loggedStatesRef = useRef({});
@@ -26,7 +32,7 @@ export const ShippingOptionsSection = ({
   // Log para diagnóstico más controlado
   useEffect(() => {
     // Crear una clave única basada en el estado actual
-    const stateKey = `${shippingOptions.length}-${selectedOptionId}-${loading}-${addressSelected}`;
+    const stateKey = `${shippingOptions.length}-${selectedOptionId}-${loading}-${addressSelected}-${selectedAddressType}`;
     
     // Solo loggear si es un estado nuevo que no hemos visto antes
     if (!loggedStatesRef.current[stateKey]) {
@@ -34,7 +40,8 @@ export const ShippingOptionsSection = ({
       if (selectedOptionId || shippingOptions.length > 0 || !loggedStatesRef.current.initialized) {
         console.log('📦 Opciones de envío:', {
           disponibles: shippingOptions.length,
-          seleccionada: selectedOptionId ? 'Sí' : 'No'
+          seleccionada: selectedOptionId ? 'Sí' : 'No',
+          tipoDir: selectedAddressType
         });
         
         // Marcar este estado como ya registrado
@@ -42,10 +49,39 @@ export const ShippingOptionsSection = ({
         loggedStatesRef.current.initialized = true;
       }
     }
-  }, [shippingOptions, selectedOptionId, loading, addressSelected]);
+  }, [shippingOptions, selectedOptionId, loading, addressSelected, selectedAddressType]);
 
-  // Si no hay dirección seleccionada, mostrar mensaje
-  if (!addressSelected) {
+  // Verificar si estamos en modo de dirección nueva y si está incompleta
+  const isNewAddressIncomplete = selectedAddressType === 'new' && (
+    !newAddressData || 
+    !newAddressData.street || 
+    !newAddressData.city || 
+    !newAddressData.state || 
+    !newAddressData.zip
+  );
+
+  // Si estamos en modo de dirección nueva incompleta, mostrar mensaje especial
+  if (isNewAddressIncomplete) {
+    return (
+      <div className="checkout-section mb-4">
+        <SectionTitle
+          number="2"
+          title="Opciones de envío"
+          subtitle="Complete su dirección para ver opciones de envío"
+          icon="bi-truck"
+        />
+        <div className="checkout-section-content p-4 bg-light rounded">
+          <div className="alert alert-info mb-0">
+            <i className="bi bi-info-circle me-2"></i>
+            Por favor, complete todos los campos obligatorios de la dirección para ver las opciones de envío disponibles.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no hay dirección seleccionada (modo guardado), mostrar mensaje
+  if (selectedAddressType === 'saved' && !addressSelected) {
     return (
       <div className="checkout-section mb-4">
         <SectionTitle
@@ -58,6 +94,26 @@ export const ShippingOptionsSection = ({
           <div className="alert alert-info mb-0">
             <i className="bi bi-info-circle me-2"></i>
             Por favor, selecciona primero una dirección de envío para ver las opciones disponibles.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si hay un error específico, mostrarlo
+  if (error) {
+    return (
+      <div className="checkout-section mb-4">
+        <SectionTitle
+          number="2"
+          title="Opciones de envío"
+          subtitle="Error al calcular opciones"
+          icon="bi-truck"
+        />
+        <div className="checkout-section-content p-4 bg-light rounded">
+          <div className="alert alert-warning mb-0">
+            <i className="bi bi-exclamation-triangle me-2"></i>
+            {error}
           </div>
         </div>
       </div>
@@ -116,7 +172,10 @@ ShippingOptionsSection.propTypes = {
   selectedOptionId: PropTypes.string,
   onOptionSelect: PropTypes.func.isRequired,
   loading: PropTypes.bool,
-  addressSelected: PropTypes.bool
+  addressSelected: PropTypes.bool,
+  selectedAddressType: PropTypes.string,
+  newAddressData: PropTypes.object,
+  error: PropTypes.string
 };
 
 export default ShippingOptionsSection; 
