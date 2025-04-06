@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Regla por defecto: requiere autenticación
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Permitir acceso público a contenido publicado
+    match /content_published/{document} {
+      allow read: if true;  // Permitir lectura pública
+      allow write: if request.auth != null;  // Solo usuarios autenticados pueden escribir
+    }
+    
+    // Acceso público a productos (shop)
+    match /products/{productId} {
+      allow read: if true;  // Permitir lectura pública a productos
+      allow write: if request.auth != null;  // Solo usuarios autenticados pueden escribir
+    }
+    
+    // Acceso público a categorías
+    match /categories/{categoryId} {
+      allow read: if true;  // Permitir lectura pública
+      allow write: if request.auth != null;  // Solo usuarios autenticados pueden escribir
+    }
+    
+    // Acceso público a colecciones de medios
+    match /mediaCollections/{collectionId} {
+      allow read: if true;  // Permitir lectura pública
+      allow write: if request.auth != null;  // Solo usuarios autenticados pueden escribir
+    }
+    
+    // Acceso público a elementos de media
+    match /media/{mediaId} {
+      allow read: if true;  // Permitir lectura pública
+      allow write: if request.auth != null;  // Solo usuarios autenticados pueden escribir
+    }
+    
+    // Acceso público a zonas de envío
+    match /zonas_envio/{zonaId} {
+      allow read: if true;  // Permitir lectura pública
+      allow write: if request.auth != null;  // Solo usuarios autenticados pueden escribir
+    }
+    
+    // Los carritos son privados
+    match /carts/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

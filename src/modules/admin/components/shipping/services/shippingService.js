@@ -22,20 +22,72 @@ const SHIPPING_SERVICES_COLLECTION = 'servicios_envio';
  */
 export const getShippingRules = async () => {
   try {
-    const querySnapshot = await getDocs(collection(FirebaseDB, SHIPPING_ZONES_COLLECTION));
+    try {
+      const querySnapshot = await getDocs(collection(FirebaseDB, SHIPPING_ZONES_COLLECTION));
 
-    const rules = [];
-    querySnapshot.forEach((doc) => {
-      rules.push({
-        id: doc.id,
-        ...doc.data()
+      const rules = [];
+      querySnapshot.forEach((doc) => {
+        rules.push({
+          id: doc.id,
+          ...doc.data()
+        });
       });
-    });
 
-    return {
-      ok: true,
-      data: rules
-    };
+      return {
+        ok: true,
+        data: rules
+      };
+    } catch (permissionError) {
+      console.warn('Error de permisos al obtener reglas de envío:', permissionError);
+      
+      // Datos de muestra para usuarios no autenticados
+      const sampleRules = [
+        {
+          id: 'sample-zone-1',
+          zona: 'Nacional',
+          activo: true,
+          envio_gratis: false,
+          opciones_mensajeria: [
+            {
+              nombre: "Envío Estándar",
+              label: "Envío Nacional",
+              precio: 150,
+              tiempo_entrega: "3-5 días",
+              configuracion_paquetes: {
+                peso_maximo_paquete: 5,
+                costo_por_kg_extra: 50,
+                maximo_productos_por_paquete: 3
+              }
+            }
+          ]
+        },
+        {
+          id: 'sample-zone-2',
+          zona: 'Express',
+          activo: true,
+          envio_gratis: false,
+          opciones_mensajeria: [
+            {
+              nombre: "Envío Express",
+              label: "Envío Express",
+              precio: 250,
+              tiempo_entrega: "1-2 días",
+              configuracion_paquetes: {
+                peso_maximo_paquete: 3,
+                costo_por_kg_extra: 80,
+                maximo_productos_por_paquete: 2
+              }
+            }
+          ]
+        }
+      ];
+      
+      return {
+        ok: true,
+        data: sampleRules,
+        isPublicFallback: true
+      };
+    }
   } catch (error) {
     console.error('Error obteniendo reglas de envío:', error);
     return {

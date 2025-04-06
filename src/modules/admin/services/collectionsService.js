@@ -147,20 +147,34 @@ export const getCollectionImages = async (collectionId) => {
       where('collectionId', '==', collectionId)
     );
 
-    const querySnapshot = await getDocs(q);
+    try {
+      const querySnapshot = await getDocs(q);
 
-    const mediaItems = [];
-    querySnapshot.forEach((doc) => {
-      mediaItems.push({
-        id: doc.id,
-        ...doc.data()
+      const mediaItems = [];
+      querySnapshot.forEach((doc) => {
+        mediaItems.push({
+          id: doc.id,
+          ...doc.data()
+        });
       });
-    });
 
-    return {
-      ok: true,
-      data: mediaItems
-    };
+      return {
+        ok: true,
+        data: mediaItems
+      };
+    } catch (permissionError) {
+      console.warn(`Error de permisos al obtener imágenes de colección ${collectionId}:`, permissionError);
+      
+      // Proporcionar imágenes alternativas según el ID de colección
+      // Esto permite que usuarios no autenticados vean algunas imágenes
+      const defaultImages = getDefaultImagesForCollection(collectionId);
+      
+      return {
+        ok: true,
+        data: defaultImages,
+        isPublicFallback: true
+      };
+    }
   } catch (error) {
     console.error(`Error obteniendo imágenes de colección ${collectionId}:`, error);
     return {
@@ -168,4 +182,32 @@ export const getCollectionImages = async (collectionId) => {
       error: error.message
     };
   }
+};
+
+/**
+ * Proporciona imágenes alternativas según el ID de colección
+ * @param {string} collectionId - ID de la colección
+ * @returns {Array} - Array de objetos de imagen
+ */
+const getDefaultImagesForCollection = (collectionId) => {
+  // Imágenes de muestra por defecto (desde CDN público o recursos estáticos)
+  const defaultImages = [
+    {
+      id: 'default-1',
+      url: '/public/images/placeholder.jpg',
+      alt: 'Imagen de muestra 1'
+    },
+    {
+      id: 'default-2',
+      url: '/public/images/placeholder.jpg',
+      alt: 'Imagen de muestra 2'
+    },
+    {
+      id: 'default-3',
+      url: '/public/images/placeholder.jpg',
+      alt: 'Imagen de muestra 3'
+    }
+  ];
+  
+  return defaultImages;
 };

@@ -67,11 +67,7 @@ export const HomePage = () => {
 
   // ---------------------- EFFECTS ----------------------
   /**
-   * Efecto principal que:
-   * 1. Carga productos destacados.
-   * 2. Carga categorías destacadas.
-   * 3. Obtiene el contenido personalizado de Firestore para la página 'home'.
-   * 4. Si el hero o el farmCarousel usan una colección, carga sus imágenes.
+   * Función para cargar los datos de la página
    */
   useEffect(() => {
     const loadPageData = async () => {
@@ -85,36 +81,41 @@ export const HomePage = () => {
         await loadFeaturedCategories();
 
         // 3. Cargar contenido de la página
-        if (typeof ContentService?.getPageContent !== 'function') {
-          console.warn(
-            'ContentService no está disponible o no tiene el método getPageContent'
-          );
-          setPageData(null);
-          return;
-        }
+        let contentLoaded = false;
+        
+        if (typeof ContentService?.getPageContent === 'function') {
+          try {
+            // Intentar cargar la versión publicada
+            const result = await ContentService.getPageContent('home', 'published');
+            
+            if (result?.ok && result?.data) {
+              setPageData(result.data);
+              contentLoaded = true;
+              
+              // 4. Cargar imágenes de colecciones si están configuradas
+              const heroSection = result.data.sections?.hero;
+              const farmCarouselSection = result.data.sections?.farmCarousel;
 
-        const result = await ContentService.getPageContent('home', 'published');
+              // Cargar colección del hero si está configurada
+              if (heroSection?.useCollection && heroSection?.collectionId) {
+                loadCollectionImages(heroSection.collectionId);
+              }
 
-        if (result?.ok && result?.data) {
-          setPageData(result.data);
-
-          // 4. Cargar imágenes de colecciones si están configuradas
-          const heroSection = result.data.sections?.hero;
-          const farmCarouselSection = result.data.sections?.farmCarousel;
-
-          // Cargar colección del hero si está configurada
-          if (heroSection?.useCollection && heroSection?.collectionId) {
-            loadCollectionImages(heroSection.collectionId);
-          }
-
-          // Cargar colección del farmCarousel si está configurada
-          if (farmCarouselSection?.useCollection && farmCarouselSection?.collectionId) {
-            loadCollectionImages(farmCarouselSection.collectionId);
+              // Cargar colección del farmCarousel si está configurada
+              if (farmCarouselSection?.useCollection && farmCarouselSection?.collectionId) {
+                loadCollectionImages(farmCarouselSection.collectionId);
+              }
+            }
+          } catch (contentError) {
+            console.error('Error cargando contenido de la página:', contentError);
           }
         } else {
-          console.log(
-            'No se encontraron datos publicados, usando valores predeterminados'
-          );
+          console.warn('ContentService no está disponible o no tiene el método getPageContent');
+        }
+        
+        // Si no se pudo cargar contenido, usar valores predeterminados
+        if (!contentLoaded) {
+          console.log('No se pudo cargar el contenido, usando valores predeterminados');
           setPageData(null);
         }
       } catch (error) {
@@ -305,65 +306,46 @@ export const HomePage = () => {
   };
 
   /**
-   * Renderiza la página por defecto (sin datos personalizados).
-   * Incluye sección Hero, productos destacados, carrusel de granja y categorías,
-   * todo con datos de muestra o datos locales cargados.
+   * Renderiza la página por defecto cuando no hay datos personalizados
+   * o para usuarios no autenticados que no pueden acceder a los datos
    */
   const renderDefaultPage = () => (
-    <div className="home-section">
-      {/* HeroSection */}
+    <>
+      {/* Hero section como fallback cuando no hay datos de la API */}
       <HeroSection
-        images={heroImages}
         title="Bienvenido a Cactilia"
-        subtitle="Productos frescos y naturales para una vida mejor"
-        showButton={true}
-        height="100vh"
-        autoRotate={true}
-        interval={5000}
+        subtitle="Descubre nuestros productos naturales"
+        ctaText="Ver productos"
+        ctaLink="/shop"
+        images={heroImages}
       />
 
-      {/* Productos Destacados */}
-      <HomeSection
-        title="Productos Destacados"
-        subtitle="Explora nuestra selección especial."
-        icon="bi-star-fill"
-        showBg={false}
-        spacing="py-6"
-        height="min-vh-75"
+      {/* Products section como fallback */}
+      <HomeSection 
+        title="Productos destacados" 
+        subtitle="Descubre nuestra selección de productos destacados"
+        bgColor="var(--bg-light)"
       >
         <ProductCarousel
           products={featuredProducts.length > 0 ? featuredProducts : sampleProducts}
-          isCategory={false}
+          link="/shop"
+          linkText="Ver todos los productos"
         />
       </HomeSection>
 
-      {/* OurFarmSection */}
+      {/* Categories section como fallback */}
       <HomeSection
-        title="Nuestro Huerto"
-        subtitle="Descubre la belleza y frescura de nuestra granja."
-        icon="bi-tree-fill"
-        showBg={true}
-        spacing="py-6"
-        height="min-vh-75"
-      >
-        <HomeCarousel images={sampleImages} />
-      </HomeSection>
-
-      {/* Categorías de Productos */}
-      <HomeSection
-        title="Descubre Nuestros Productos"
-        subtitle="Explora por categorías."
-        icon="bi-box-seam"
-        showBg={false}
-        spacing="py-6"
-        height="min-vh-75"
+        title="Explora nuestras categorías"
+        subtitle="Encuentra lo que buscas en nuestras categorías principales"
       >
         <ProductCarousel
           products={featuredCategories.length > 0 ? featuredCategories : sampleCategories}
-          isCategory={true}
+          link="/shop"
+          linkText="Ver todas las categorías"
+          isCategories={true}
         />
       </HomeSection>
-    </div>
+    </>
   );
 
   // ---------------------- RENDER ----------------------
