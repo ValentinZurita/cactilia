@@ -1,47 +1,55 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { SectionTitle } from '../ui/SectionTitle';
-import ShippingOptionSelector from '../shipping/ShippingOptionSelector';
+import ShippingGroupSelector from '../shipping/ShippingGroupSelector';
+import { useCart } from '../../../cart/hooks/useCart';
+
 
 /**
  * Sección del checkout que muestra las opciones de envío disponibles
  * 
  * @param {Object} props - Propiedades del componente
- * @param {Array} props.shippingOptions - Lista de opciones de envío disponibles
  * @param {string} props.selectedOptionId - ID de la opción seleccionada
  * @param {Function} props.onOptionSelect - Función para seleccionar una opción
  * @param {boolean} props.loading - Indica si están cargando las opciones
  * @param {boolean} props.addressSelected - Indica si ya se seleccionó una dirección
  * @param {string} props.selectedAddressType - Tipo de dirección seleccionada ('saved' o 'new')
  * @param {Object} props.newAddressData - Datos de la dirección nueva (si aplica)
+ * @param {Object} props.savedAddressData - Datos de la dirección guardada (si aplica)
  * @param {string} props.error - Mensaje de error (si aplica)
  */
 export const ShippingOptionsSection = ({
-  shippingOptions = [],
   selectedOptionId,
   onOptionSelect,
   loading = false,
   addressSelected = false,
   selectedAddressType = 'saved',
   newAddressData = null,
+  savedAddressData = null,
   error = null
 }) => {
   // Referencia para controlar logs
   const loggedStatesRef = useRef({});
   
+  // Obtener los items del carrito
+  const { items: cartItems } = useCart();
+  
+  // Determinar qué dirección usar
+  const userAddress = selectedAddressType === 'new' ? newAddressData : savedAddressData;
+  
   // Log para diagnóstico más controlado
   useEffect(() => {
     // Crear una clave única basada en el estado actual
-    const stateKey = `${shippingOptions.length}-${selectedOptionId}-${loading}-${addressSelected}-${selectedAddressType}`;
+    const stateKey = `${selectedOptionId}-${loading}-${addressSelected}-${selectedAddressType}`;
     
     // Solo loggear si es un estado nuevo que no hemos visto antes
     if (!loggedStatesRef.current[stateKey]) {
       // Solo casos importantes: inicio, cambio de opciones, selección
-      if (selectedOptionId || shippingOptions.length > 0 || !loggedStatesRef.current.initialized) {
-        console.log('📦 Opciones de envío:', {
-          disponibles: shippingOptions.length,
+      if (selectedOptionId || !loggedStatesRef.current.initialized) {
+        console.log('📦 Estado de opciones de envío:', {
           seleccionada: selectedOptionId ? 'Sí' : 'No',
-          tipoDir: selectedAddressType
+          tipoDir: selectedAddressType,
+          direccionCompleta: addressSelected
         });
         
         // Marcar este estado como ya registrado
@@ -49,7 +57,7 @@ export const ShippingOptionsSection = ({
         loggedStatesRef.current.initialized = true;
       }
     }
-  }, [shippingOptions, selectedOptionId, loading, addressSelected, selectedAddressType]);
+  }, [selectedOptionId, loading, addressSelected, selectedAddressType]);
 
   // Verificar si estamos en modo de dirección nueva y si está incompleta
   const isNewAddressIncomplete = selectedAddressType === 'new' && (
@@ -120,35 +128,27 @@ export const ShippingOptionsSection = ({
     );
   }
 
-  // Obtener número de opciones
-  const optionsCount = shippingOptions?.length || 0;
-  const subtitleText = loading 
-    ? "Calculando opciones disponibles..." 
-    : optionsCount > 0 
-      ? `${optionsCount} ${optionsCount === 1 ? 'opción disponible' : 'opciones disponibles'}`
-      : "No hay opciones de envío disponibles";
-
   return (
     <div className="checkout-section mb-4">
       <SectionTitle
         number="2"
         title="Opciones de envío"
-        subtitle={subtitleText}
+        subtitle={loading ? "Calculando opciones disponibles..." : "Seleccione la opción de envío que prefiera"}
         icon="bi-truck"
       />
       <div className="checkout-section-content p-4 bg-light rounded">
-        {/* Verificamos si hay opciones disponibles */}
-        {!loading && optionsCount === 0 ? (
-          <div className="alert alert-warning mb-0">
-            <i className="bi bi-exclamation-triangle me-2"></i>
-            No hay opciones de envío disponibles para la dirección seleccionada.
+        {loading ? (
+          <div className="d-flex justify-content-center my-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Cargando opciones de envío...</span>
+            </div>
           </div>
         ) : (
-          <ShippingOptionSelector
-            shippingOptions={shippingOptions}
+          <ShippingGroupSelector
+            cartItems={cartItems}
             selectedOptionId={selectedOptionId}
             onOptionSelect={onOptionSelect}
-            loading={loading}
+            userAddress={userAddress}
           />
         )}
       </div>
@@ -157,24 +157,13 @@ export const ShippingOptionsSection = ({
 };
 
 ShippingOptionsSection.propTypes = {
-  shippingOptions: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      label: PropTypes.string,
-      carrier: PropTypes.string,
-      calculatedCost: PropTypes.number,
-      totalCost: PropTypes.number,
-      minDays: PropTypes.number,
-      maxDays: PropTypes.number,
-      details: PropTypes.string
-    })
-  ),
   selectedOptionId: PropTypes.string,
   onOptionSelect: PropTypes.func.isRequired,
   loading: PropTypes.bool,
   addressSelected: PropTypes.bool,
   selectedAddressType: PropTypes.string,
   newAddressData: PropTypes.object,
+  savedAddressData: PropTypes.object,
   error: PropTypes.string
 };
 

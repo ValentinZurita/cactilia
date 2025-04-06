@@ -1,4 +1,5 @@
 import { CartTotal } from './CartTotal.jsx';
+import CartShippingGroupInfo from './CartShippingGroupInfo.jsx';
 
 /**
  * CartSummaryPanel - Panel de resumen y botón de checkout
@@ -14,9 +15,11 @@ export const CartSummaryPanel = ({
                                  }) => {
   return (
     <>
-
       {/* Resumen del carrito */}
       <CartTotal items={items} />
+      
+      {/* Información de grupos de envío */}
+      <CartShippingGroupInfo cartItems={items} />
 
       {/* Botón de checkout */}
       <div className="d-grid mb-4">
