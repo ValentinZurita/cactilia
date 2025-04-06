@@ -559,28 +559,86 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
     if (!isInCurrentOptions && !isInCombinations) {
       // Buscar coincidencia aproximada por descripción si tenemos el objeto completo
       if (option.description || option.name) {
-        console.log('🔎 Buscando coincidencia por descripción:', option.description || option.name);
+        const searchText = (option.description || option.name || '').toLowerCase();
+        console.log('🔎 Buscando coincidencia por descripción:', searchText);
+        
+        // Extraer palabras clave de la descripción
+        const keywords = searchText
+          .replace(/\([^)]*\)/g, '') // Eliminar contenido entre paréntesis
+          .split(/[^a-zA-ZáéíóúÁÉÍÓÚ]+/) // Dividir por no-letras
+          .filter(word => word.length > 3) // Filtrar palabras significativas
+          .map(word => word.toLowerCase());
+        
+        console.log('🔑 Palabras clave:', keywords);
+        
+        // Primera búsqueda: coincidencia exacta
         matchingCombination = shippingCombinations.find(combo => 
-          (combo.description && option.description && 
-           combo.description.includes(option.description)) ||
-          (combo.name && option.name && 
-           combo.name.includes(option.name))
+          combo.description && searchText && 
+          combo.description.toLowerCase() === searchText
         );
+        
+        // Segunda búsqueda: coincidencia parcial
+        if (!matchingCombination) {
+          matchingCombination = shippingCombinations.find(combo => {
+            if (!combo.description) return false;
+            const comboText = combo.description.toLowerCase();
+            // Buscar si el texto de búsqueda contiene la descripción o viceversa
+            return comboText.includes(searchText) || searchText.includes(comboText);
+          });
+        }
+        
+        // Tercera búsqueda: coincidencia por palabras clave
+        if (!matchingCombination && keywords.length > 0) {
+          matchingCombination = shippingCombinations.find(combo => {
+            if (!combo.description) return false;
+            const comboText = combo.description.toLowerCase();
+            // Verificar si al menos 2 palabras clave coinciden
+            return keywords.filter(keyword => comboText.includes(keyword)).length >= 1;
+          });
+        }
         
         if (matchingCombination) {
           console.log('✅ Encontrada combinación similar:', matchingCombination.id);
         }
       }
       
-      // Si no encontramos coincidencia, intentar seleccionar la primera opción disponible
+      // Si no encontramos coincidencia, mantener la selección del usuario en lugar de reemplazarla
       if (!matchingCombination) {
+        // Solo registrar un mensaje, pero no cambiar la selección
         if (shippingCombinations.length > 0) {
-          console.log('⚠️ No se encontró coincidencia exacta. Usando la primera combinación disponible');
-          matchingCombination = shippingCombinations[0];
+          console.log('⚠️ No se encontró coincidencia exacta, pero mantenemos la selección del usuario');
+          // Crear un objeto de opción basado en la selección del usuario
+          const userSelection = {
+            id: optionId,
+            label: option.description || option.name || 'Opción de envío seleccionada',
+            totalCost: option.totalPrice || option.totalCost || option.calculatedCost || 0,
+            calculatedCost: option.totalPrice || option.totalCost || option.calculatedCost || 0,
+            isFreeShipping: option.isAllFree || option.isFreeShipping || false,
+            selections: option.selections || [],
+            carrier: option.carrier || 'Servicio de envío',
+            details: option.details || `Opción seleccionada por el usuario`
+          };
+          
+          setSelectedOption(userSelection);
+          return;
         } else if (options.length > 0) {
-          console.log('⚠️ No se encontró coincidencia exacta. Usando la primera opción estándar disponible');
-          const firstOption = options[0];
-          setSelectedOption(firstOption);
+          console.log('⚠️ No hay combinaciones disponibles, pero mantenemos la selección si es posible');
+          // Si tenemos opciones estándar pero no combinaciones, podemos usar esas
+          if (option && (option.id || option.description)) {
+            const userSelection = {
+              id: optionId,
+              label: option.description || option.name || 'Opción de envío',
+              totalCost: option.totalPrice || option.totalCost || 0,
+              calculatedCost: option.calculatedCost || option.totalCost || 0,
+              isFreeShipping: option.isAllFree || option.isFreeShipping || false,
+              carrier: option.carrier || 'Servicio de envío'
+            };
+            setSelectedOption(userSelection);
+          } else {
+            // Solo como último recurso usar la primera opción
+            const firstOption = options[0];
+            setSelectedOption(firstOption);
+          }
           return;
         } else {
           console.error('❌ Error: No hay opciones disponibles para esta dirección');

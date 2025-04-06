@@ -10,15 +10,17 @@ import './ShippingGroupSelector.css';
  * @param {Array} props.cartItems - Productos en el carrito
  * @param {Function} props.onOptionSelect - Función llamada al seleccionar una opción
  * @param {string} props.selectedOptionId - ID de la opción seleccionada
+ * @param {string} props.selectedOptionDesc - Descripción de la opción seleccionada
  * @param {Object} props.userAddress - Dirección del usuario (opcional)
  * @param {Function} props.onCombinationsCalculated - Función llamada cuando se calculan las combinaciones
  */
 const ShippingGroupSelector = ({ 
-  cartItems, 
-  onOptionSelect, 
-  selectedOptionId,
+  cartItems = [], 
+  onOptionSelect = () => {}, 
+  selectedOptionId = '',
+  selectedOptionDesc = '',
   userAddress = null,
-  onCombinationsCalculated
+  onCombinationsCalculated = () => {}
 }) => {
   const [shippingGroups, setShippingGroups] = useState([]);
   const [shippingCombinations, setShippingCombinations] = useState([]);
@@ -31,6 +33,11 @@ const ShippingGroupSelector = ({
   
   // Referencia para controlar si ya se ha seleccionado la primera opción automáticamente
   const initialSelectionMade = useRef(false);
+  
+  // Extraer la descripción del ID si no se proporciona explícitamente
+  const effectiveSelectedOptionDesc = selectedOptionDesc || selectedOptionId?.includes('-') 
+    ? selectedOptionId.split('-').slice(1).join('-').replace(/-/g, ' ') 
+    : '';
   
   useEffect(() => {
     // Resetear la bandera si cambian los items del carrito o la dirección
@@ -165,6 +172,25 @@ const ShippingGroupSelector = ({
     processCart();
   }, [cartItems, userAddress]);
   
+  // Mostrar el selectedOptionId cuando cambie (para debug)
+  useEffect(() => {
+    console.log('🔍 ShippingGroupSelector: selectedOptionId =', selectedOptionId);
+    console.log('🔍 ShippingGroupSelector: selectedOptionDesc =', effectiveSelectedOptionDesc);
+    console.log('📦 ShippingCombinations disponibles:', shippingCombinations.length);
+    
+    if (selectedOptionId) {
+      const selectedOption = shippingCombinations.find(c => c.id === selectedOptionId);
+      console.log('🔍 Opción seleccionada por ID:', selectedOption ? selectedOption.description || 'Opción' : 'No encontrada');
+      
+      if (!selectedOption && effectiveSelectedOptionDesc) {
+        const selectedByDesc = shippingCombinations.find(
+          c => c.description && c.description.toLowerCase().includes(effectiveSelectedOptionDesc.toLowerCase())
+        );
+        console.log('🔍 Opción seleccionada por descripción:', selectedByDesc ? selectedByDesc.description : 'No encontrada');
+      }
+    }
+  }, [selectedOptionId, effectiveSelectedOptionDesc, shippingCombinations]);
+  
   // Manejar selección de opción
   const handleOptionSelect = (option) => {
     // Validar que la opción existe y sigue siendo válida
@@ -176,18 +202,24 @@ const ShippingGroupSelector = ({
     }
     
     console.log(`✅ Seleccionada opción de envío: ${option.id} (${option.description || option.name || 'Opción'}) - $${option.totalPrice}`);
+    console.log(`🔄 Estado anterior selectedOptionId: ${selectedOptionId}`);
     
     // Pasar el objeto completo con toda la información disponible para facilitar la búsqueda
     // cuando cambiamos entre direcciones
-    onOptionSelect({
-      ...option,
-      // Asegurar que tenemos todos los campos críticos
-      id: option.id,
-      name: option.name || option.description || 'Opción de envío',
-      description: option.description || option.name || 'Opción de envío',
-      totalPrice: option.totalPrice || 0,
-      isAllFree: option.isAllFree || false
-    });
+    if (onOptionSelect) {
+      const description = option.description || option.name || 'Opción de envío';
+      onOptionSelect({
+        ...option,
+        // Asegurar que tenemos todos los campos críticos
+        id: option.id,
+        name: option.name || description,
+        description: description,
+        totalPrice: option.totalPrice || 0,
+        isAllFree: option.isAllFree || false
+      });
+    } else {
+      console.error('❌ Error: onOptionSelect no está definido');
+    }
   };
   
   // Generar texto detallado para una combinación
@@ -351,8 +383,17 @@ const ShippingGroupSelector = ({
           </thead>
           <tbody>
             {shippingCombinations.map((combination, index) => {
-              // Determinar si esta combinación es la seleccionada
-              const isSelected = combination.id === selectedOptionId;
+              // Permitir coincidencia por ID o por descripción para manejar diferencias entre sistemas
+              const isMatchById = combination.id === selectedOptionId;
+              const isMatchByDescription = effectiveSelectedOptionDesc && 
+                                          combination.description && 
+                                          combination.description.toLowerCase().includes(effectiveSelectedOptionDesc.toLowerCase());
+              
+              // Una opción está seleccionada si coincide por ID o por descripción
+              const isSelected = isMatchById || isMatchByDescription;
+              
+              // Log para debuggear
+              console.log(`Opción ${combination.id}: isSelected=${isSelected}, byId=${isMatchById}, byDesc=${isMatchByDescription}`);
               
               // Verificar si es gratuita
               const isFreeShipping = combination.isAllFree;
@@ -362,26 +403,38 @@ const ShippingGroupSelector = ({
                   key={combination.id}
                   className={`${isSelected ? 'shipping-option-selected' : ''}`}
                   onClick={() => handleOptionSelect(combination)}
+                  style={isSelected ? {
+                    backgroundColor: 'rgba(52, 199, 73, 0.2)',
+                    border: '2px solid #34C749',
+                    borderRadius: '8px',
+                    boxShadow: '0 3px 10px rgba(52, 199, 73, 0.3)'
+                  } : {}}
                 >
-                  <td className="text-center">
-                    <input 
-                      type="radio"
-                      className="shipping-option-radio" 
-                      name="shipping-option"
-                      checked={isSelected}
-                      onChange={(e) => handleOptionSelect(combination)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                  <td className="text-center selection-indicator">
+                    <div className={`select-marker ${isSelected ? 'selected' : ''}`} style={isSelected ? {
+                      backgroundColor: '#34C749',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    } : {}}>
+                      {isSelected && <i className="bi bi-check"></i>}
+                    </div>
+                    {isSelected && (
+                      <div className="mt-1">
+                        <span className="badge bg-success" style={{fontSize: '0.6rem'}}>SELECCIONADO</span>
+                      </div>
+                    )}
                   </td>
                   <td>
                     {/* Nombre de la combinación */}
                     <div className="d-flex align-items-center">
                       <div className={`me-2 ${isSelected ? 'fw-semibold' : ''}`}>
+                        {isSelected && <span className="text-success me-1">➤</span>}
                         {combination.description || 
                          (combination.selections && Array.isArray(combination.selections) ? 
                             combination.selections.map(s => s.option?.name || 'Opción').join(' + ') : 
                             'Opción de envío'
                          )}
+                        {isSelected && <span className="ms-2 badge bg-success-subtle text-success">Seleccionado</span>}
                       </div>
                       {isFreeShipping && (
                         <span className="badge bg-success shipping-option-badge">Gratis</span>
