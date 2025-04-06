@@ -147,15 +147,16 @@ export const ShippingOptionsSection = ({
       <SectionTitle
         number="2"
         title="Opciones de envío"
-        subtitle={loading ? "Calculando opciones disponibles..." : "Seleccione la opción de envío que prefiera"}
+        subtitle={loading ? "Calculando opciones disponibles..." : "Seleccione una opción para el envío de sus productos"}
         icon="bi-truck"
       />
-      <div className="checkout-section-content p-4 bg-light rounded">
+      <div className="checkout-section-content p-3 p-md-4 bg-white rounded border">
         {loading ? (
-          <div className="d-flex justify-content-center my-4">
-            <div className="spinner-border text-primary" role="status">
+          <div className="d-flex flex-column align-items-center justify-content-center py-4">
+            <div className="spinner-border text-success mb-3" role="status" style={{ width: '2rem', height: '2rem', borderWidth: '0.2em' }}>
               <span className="visually-hidden">Cargando opciones de envío...</span>
             </div>
+            <div className="text-muted">Calculando opciones de envío...</div>
           </div>
         ) : (
           <ShippingGroupSelector

@@ -28,13 +28,13 @@ const radioStyles = {
   }
 };
 
-// Estilos CSS personalizados para los radio buttons
+// Estilos CSS personalizados para los radio buttons y el componente
 const styleElement = document.createElement('style');
 styleElement.textContent = `
   .shipping-option-radio:checked {
     background-color: #ffffff !important;
     border-color: #198754 !important;
-    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25) !important;
+    box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.25) !important;
   }
   
   .shipping-option-radio:checked::after {
@@ -43,20 +43,137 @@ styleElement.textContent = `
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background-color: #198754;
     display: block;
   }
   
-  .shipping-option-radio-container {
-    padding: 0.5rem;
-    cursor: pointer;
+  .shipping-option-radio {
+    width: 18px !important;
+    height: 18px !important;
+    cursor: pointer !important;
+    border: 1px solid #dee2e6 !important;
+    appearance: none !important;
+    border-radius: 50% !important;
+    margin-top: 0 !important;
+    position: relative !important;
+  }
+  
+  .shipping-groups-container {
+    font-size: 0.95rem;
   }
   
   .shipping-option-selected {
-    background-color: rgba(25, 135, 84, 0.1) !important;
+    background-color: rgba(25, 135, 84, 0.05) !important;
+    border: 1px solid rgba(25, 135, 84, 0.2) !important;
+    border-radius: 0.375rem !important;
+  }
+  
+  .shipping-options-table {
+    background-color: #ffffff;
+  }
+  
+  .shipping-options-table table {
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+  }
+  
+  .shipping-options-table thead th {
+    font-weight: 500;
+    color: #6c757d;
+    border-bottom: none;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .shipping-options-table tbody tr {
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+    background-color: #fcfcfc;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+  
+  .shipping-options-table tbody tr:hover {
+    background-color: rgba(25, 135, 84, 0.02);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+  }
+  
+  .shipping-options-table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+    border: none;
+  }
+  
+  .shipping-options-table tbody td:first-child {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+  }
+  
+  .shipping-options-table tbody td:last-child {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+  }
+  
+  .shipping-option-details {
+    margin-top: 0.5rem;
+  }
+  
+  .shipping-option-details-item {
+    background-color: rgba(25, 135, 84, 0.03);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-left: 2px solid #198754;
+    font-size: 0.85rem;
+  }
+  
+  .shipping-option-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    margin-left: 0.5rem;
+    font-weight: 500;
+  }
+  
+  .shipping-options-alert {
+    border: none;
+    background-color: rgba(25, 135, 84, 0.05);
+    color: #198754;
+    font-size: 0.9rem;
+    padding: 0.75rem;
+    border-left: 3px solid #198754;
+  }
+  
+  .shipping-option-price {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  
+  .shipping-option-free {
+    color: #198754;
+    font-weight: 600;
+  }
+  
+  .shipping-section-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #212529;
+    margin-bottom: 1rem;
+  }
+  
+  .shipping-options-count {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #198754;
+    border-radius: 1rem;
+    font-weight: 500;
   }
 `;
 document.head.appendChild(styleElement);
@@ -267,10 +384,10 @@ const ShippingGroupSelector = ({
   if (status.loading) {
     return (
       <div className="text-center py-4">
-        <div className="spinner-border text-primary" role="status">
+        <div className="spinner-border text-success" role="status" style={{ width: '2rem', height: '2rem', borderWidth: '0.2em' }}>
           <span className="visually-hidden">Calculando opciones de envío...</span>
         </div>
-        <div className="mt-2">Calculando opciones de envío...</div>
+        <div className="mt-2 text-muted">Calculando opciones de envío...</div>
       </div>
     );
   }
@@ -278,19 +395,33 @@ const ShippingGroupSelector = ({
   // Si hay error
   if (status.error) {
     return (
-      <div className="alert alert-danger" role="alert">
-        <div className="d-flex align-items-center">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          <div>
-            <strong>Error:</strong> {status.error}
-            {status.debug && (
-              <div className="mt-2">
-                <small className="d-block">Información técnica:</small>
-                <code className="d-block mt-1 small">
-                  {JSON.stringify(status.debug, null, 2)}
-                </code>
-              </div>
-            )}
+      <div className="py-2">
+        <div className="alert alert-danger border-0 rounded-3" style={{ borderLeft: '3px solid #dc3545' }} role="alert">
+          <div className="d-flex">
+            <i className="bi bi-exclamation-circle me-3"></i>
+            <div>
+              <h6 className="alert-heading fw-semibold mb-1">No se pudieron calcular las opciones</h6>
+              <p className="mb-0 small">{status.error}</p>
+              {status.debug && (
+                <div className="mt-2">
+                  <button 
+                    className="btn btn-sm btn-outline-danger py-0 px-2" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#errorDebugInfo" 
+                    aria-expanded="false" 
+                    aria-controls="errorDebugInfo"
+                  >
+                    <i className="bi bi-code-slash small me-1"></i> Detalles técnicos
+                  </button>
+                  <div className="collapse mt-2" id="errorDebugInfo">
+                    <div className="bg-light rounded p-2">
+                      <pre className="mb-0 small text-danger" style={{ fontSize: '0.75rem' }}>{JSON.stringify(status.debug, null, 2)}</pre>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -300,39 +431,41 @@ const ShippingGroupSelector = ({
   // Si no hay combinaciones disponibles
   if (shippingCombinations.length === 0 || status.noOptions) {
     return (
-      <div className="alert alert-warning" role="alert">
-        <div className="d-flex align-items-center">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          <div>
-            <strong>No hay opciones de envío disponibles</strong>
-            <p className="mb-1 mt-1">Lo sentimos, no pudimos encontrar opciones de envío para tus productos.</p>
-            
-            {status.debug && (
-              <div className="mt-2">
-                <button 
-                  className="btn btn-sm btn-outline-secondary" 
-                  type="button" 
-                  data-bs-toggle="collapse" 
-                  data-bs-target="#debugInfo" 
-                  aria-expanded="false" 
-                  aria-controls="debugInfo"
-                >
-                  Ver información técnica
-                </button>
-                <div className="collapse mt-2" id="debugInfo">
-                  <div className="card card-body bg-light">
-                    <pre className="mb-0 small">{JSON.stringify(status.debug, null, 2)}</pre>
+      <div className="py-2">
+        <div className="alert alert-warning border-0 rounded-3" style={{ borderLeft: '3px solid #ffc107' }} role="alert">
+          <div className="d-flex">
+            <i className="bi bi-exclamation-triangle me-3"></i>
+            <div>
+              <h6 className="alert-heading fw-semibold mb-1">No hay opciones disponibles</h6>
+              <p className="mb-0 small">No pudimos encontrar opciones de envío para tus productos.</p>
+              
+              {status.debug && (
+                <div className="mt-2">
+                  <button 
+                    className="btn btn-sm btn-outline-warning py-0 px-2" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#debugInfo" 
+                    aria-expanded="false" 
+                    aria-controls="debugInfo"
+                  >
+                    <i className="bi bi-code-slash small me-1"></i> Información técnica
+                  </button>
+                  <div className="collapse mt-2" id="debugInfo">
+                    <div className="bg-light rounded p-2">
+                      <pre className="mb-0 small" style={{ fontSize: '0.75rem' }}>{JSON.stringify(status.debug, null, 2)}</pre>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            <button 
-              className="btn btn-sm btn-primary mt-2" 
-              onClick={() => window.location.reload()}
-            >
-              Intentar de nuevo
-            </button>
+              )}
+              
+              <button 
+                className="btn btn-sm btn-success mt-2" 
+                onClick={() => window.location.reload()}
+              >
+                <i className="bi bi-arrow-repeat me-1"></i> Intentar de nuevo
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -341,25 +474,36 @@ const ShippingGroupSelector = ({
   
   return (
     <div className="shipping-groups-container">
-      <h4 className="mb-3">Opciones de envío disponibles</h4>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5 className="shipping-section-title mb-0">Opciones de envío</h5>
+        <span className="shipping-options-count">{shippingCombinations.length} opciones</span>
+      </div>
       
       {shippingCombinations.length > 1 && (
-        <div className="alert alert-info mb-3">
-          <i className="bi bi-info-circle me-2"></i>
-          Tenemos <strong>{shippingCombinations.length}</strong> opciones de envío disponibles para tus productos.
-          {shippingGroups.length > 1 && (
-            <span> Los envíos se realizarán en <strong>{shippingGroups.length}</strong> grupos para optimizar costos.</span>
-          )}
+        <div className="alert alert-light shipping-options-alert mb-3">
+          <div className="d-flex align-items-center">
+            <i className="bi bi-info-circle me-2"></i>
+            <div>
+              <p className="mb-0">
+                <small>
+                  Tenemos <strong>{shippingCombinations.length}</strong> opciones disponibles para tus productos
+                  {shippingGroups.length > 1 && (
+                    <span> en <strong>{shippingGroups.length}</strong> grupos para optimizar costos</span>
+                  )}.
+                </small>
+              </p>
+            </div>
+          </div>
         </div>
       )}
       
       <div className="shipping-options-table">
-        <table className="table table-hover">
+        <table className="table">
           <thead>
             <tr>
-              <th style={{ width: '50px' }}></th>
-              <th>Opción de envío</th>
-              <th>Tiempo de entrega</th>
+              <th style={{ width: '40px' }}></th>
+              <th>Opción</th>
+              <th>Entrega</th>
               <th className="text-end">Precio</th>
             </tr>
           </thead>
@@ -374,38 +518,34 @@ const ShippingGroupSelector = ({
               return (
                 <tr 
                   key={combination.id}
-                  className={`cursor-pointer ${isSelected ? 'table-primary' : ''}`}
-                  style={isSelected ? radioStyles.selectedRow : {}}
+                  className={`${isSelected ? 'shipping-option-selected' : ''}`}
                   onClick={(e) => handleOptionSelect(combination.id, e)}
                 >
                   <td className="text-center">
-                    <div className="form-check d-flex justify-content-center" style={radioStyles.radioContainer}>
-                      <input 
-                        type="radio"
-                        className="form-check-input shipping-option-radio" 
-                        name="shipping-option"
-                        checked={isSelected}
-                        onChange={(e) => handleOptionSelect(combination.id, e)}
-                        onClick={(e) => e.stopPropagation()}
-                        style={radioStyles.radioInput}
-                      />
-                    </div>
+                    <input 
+                      type="radio"
+                      className="shipping-option-radio" 
+                      name="shipping-option"
+                      checked={isSelected}
+                      onChange={(e) => handleOptionSelect(combination.id, e)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </td>
                   <td>
                     {/* Nombre de la combinación */}
                     <div className="d-flex align-items-center">
-                      <span className="me-2">
+                      <div className={`me-2 ${isSelected ? 'fw-semibold' : ''}`}>
                         {combination.description || 
                          (combination.selections && Array.isArray(combination.selections) ? 
                             combination.selections.map(s => s.option?.name || 'Opción').join(' + ') : 
                             'Opción de envío'
                          )}
-                      </span>
+                      </div>
                       {isFreeShipping && (
-                        <span className="badge bg-success me-1">Gratis</span>
+                        <span className="badge bg-success shipping-option-badge">Gratis</span>
                       )}
                       {combination.selections && combination.selections.length > 1 && (
-                        <span className="badge bg-secondary">
+                        <span className="badge bg-light text-secondary shipping-option-badge">
                           {combination.selections.length} grupos
                         </span>
                       )}
@@ -413,30 +553,41 @@ const ShippingGroupSelector = ({
                     
                     {/* Detalles de la combinación */}
                     {isSelected && combination.selections && Array.isArray(combination.selections) && (
-                      <div className="mt-2 small">
+                      <div className="shipping-option-details mt-2">
                         {combination.selections.map((selection, selIndex) => (
-                          <div key={selection.groupId || `grupo-${selIndex}`} className="mb-1 ms-3">
-                            <strong>Grupo {selIndex + 1}:</strong> {selection.option?.name || 'Opción'} 
-                            <span className="text-muted ms-1">
-                              ({selection.products?.length || 0} productos)
-                            </span>
+                          <div key={selection.groupId || `grupo-${selIndex}`} className="shipping-option-details-item">
+                            <div className="d-flex justify-content-between">
+                              <div>
+                                <i className="bi bi-box-seam me-1"></i>
+                                <span className="fw-medium">Grupo {selIndex + 1}:</span> {selection.option?.name || 'Opción'}
+                              </div>
+                              <div className="text-muted">
+                                {selection.products?.length || 0} productos
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
                     )}
                   </td>
                   <td>
-                    {/* Mostrar el tiempo de entrega (el más largo de todas las selecciones) */}
-                    {combination.selections && Array.isArray(combination.selections) 
-                      ? (combination.selections.map(s => s.option?.estimatedDelivery || '').filter(Boolean).sort().pop() || '3-5 días')
-                      : '3-5 días'
-                    }
+                    <div className="text-muted">
+                      <i className="bi bi-clock-history me-1 small"></i>
+                      {combination.selections && Array.isArray(combination.selections) 
+                        ? (combination.selections.map(s => s.option?.estimatedDelivery || '').filter(Boolean).sort().pop() || '3-5 días')
+                        : '3-5 días'
+                      }
+                    </div>
                   </td>
-                  <td className="text-end fw-bold">
+                  <td className="text-end">
                     {isFreeShipping ? (
-                      <span className="text-success">Gratis</span>
+                      <span className="shipping-option-price shipping-option-free">
+                        <i className="bi bi-gift me-1 small"></i>Gratis
+                      </span>
                     ) : (
-                      <span>${(combination.totalPrice || 0).toFixed(2)}</span>
+                      <span className="shipping-option-price">
+                        ${(combination.totalPrice || 0).toFixed(2)}
+                      </span>
                     )}
                   </td>
                 </tr>
