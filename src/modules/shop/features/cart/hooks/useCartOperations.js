@@ -37,15 +37,20 @@ const logShippingInfo = async (product) => {
     const needsPatch = validatedProduct.id === 'e9lK7PMv83TCwSwngDDi' && ruleIds.length === 0;
     const finalRuleIds = needsPatch ? ['x8tRGxol2MOr8NMzeAPp', 'fyfkhfITejBjMASFCMZ2'] : ruleIds;
     
-    // Log condensado para el producto
-    console.log(`📦 Envío para "${validatedProduct.name || validatedProduct.id}": ${finalRuleIds.length > 0 ? `${finalRuleIds.length} reglas` : '⚠️ Sin reglas'}`);
+    // Log detallado para el producto
+    console.log(`\n📦 INFORMACIÓN DETALLADA DE ENVÍO - "${validatedProduct.name || validatedProduct.id}" (${validatedProduct.id})`);
+    console.log(`--------------------------------------------------`);
+    console.log(`Peso del producto: ${validatedProduct.weight || 0}kg`);
+    console.log(`Reglas de envío: ${finalRuleIds.length > 0 ? `${finalRuleIds.length} reglas` : '⚠️ Sin reglas'}`);
     
     if (finalRuleIds.length === 0) {
+      console.log(`⚠️ Este producto no tiene reglas de envío configuradas.`);
+      console.log(`--------------------------------------------------\n`);
       return;
     }
     
-    // Obtener y mostrar info condensada de cada regla de envío
-    const rulesInfo = [];
+    // Obtener y mostrar info completa de cada regla de envío
+    console.log(`\n🚚 DETALLES DE ZONAS DE ENVÍO DISPONIBLES:`);
     
     for (const ruleId of finalRuleIds) {
       if (!ruleId) continue;
@@ -54,33 +59,61 @@ const logShippingInfo = async (product) => {
         const rule = await fetchShippingRuleById(ruleId);
         
         if (!rule) {
-          rulesInfo.push(`⚠️ Regla no encontrada: ${ruleId}`);
+          console.log(`❌ Regla ID ${ruleId}: No encontrada`);
           continue;
         }
         
-        // Información condensada de la regla
-        const freeShipping = rule.envio_gratis ? 'Envío gratis' : '';
-        const minOrderFree = rule.envio_gratis_monto_minimo ? `Gratis desde $${rule.envio_gratis_monto_minimo}` : '';
-        const freeInfo = freeShipping || minOrderFree ? ` (${freeShipping || minOrderFree})` : '';
+        console.log(`\n✅ ZONA: ${rule.zona || 'Sin nombre'} (ID: ${rule.id})`);
+        console.log(`--------------------------------------------------`);
+        console.log(`Activo: ${rule.activo ? 'Sí' : 'No'}`);
+        console.log(`Envío gratis: ${rule.envio_gratis ? 'Sí' : 'No'}`);
         
-        // Opciones de mensajería condensadas
-        const options = [];
-        if (rule.opciones_mensajeria && Array.isArray(rule.opciones_mensajeria)) {
-          rule.opciones_mensajeria.forEach(option => {
-            const price = option.precio || 0;
-            const time = option.tiempo_entrega || `${option.minDays || '?'}-${option.maxDays || '?'} días`;
-            options.push(`${option.nombre}: $${price} (${time})`);
-          });
+        if (rule.envio_gratis_monto_minimo) {
+          console.log(`Envío gratis a partir de: $${rule.envio_gratis_monto_minimo}`);
         }
         
-        rulesInfo.push(`✅ ${rule.zona || 'Sin nombre'}${freeInfo}: ${options.length > 0 ? options.join(' | ') : '⚠️ Sin opciones'}`);
+        console.log(`Cobertura: ${rule.zipcode || rule.zipcodes?.join(', ') || 'No especificada'}`);
+        
+        // Opciones de mensajería detalladas
+        if (rule.envio_variable && rule.envio_variable.aplica && 
+            rule.envio_variable.opciones_mensajeria && 
+            Array.isArray(rule.envio_variable.opciones_mensajeria)) {
+          
+          console.log(`\n📋 OPCIONES DE MENSAJERÍA DISPONIBLES:`);
+          
+          rule.envio_variable.opciones_mensajeria.forEach((option, index) => {
+            console.log(`\n  ${index + 1}. ${option.label || 'Sin etiqueta'} (${option.nombre || 'Sin nombre'})`);
+            console.log(`  ----------------------------------------`);
+            console.log(`  Precio: $${option.precio || 0}`);
+            console.log(`  Tiempo de entrega: ${option.tiempo_entrega || `${option.minDays || '?'}-${option.maxDays || '?'} días`}`);
+            
+            // Configuración de paquetes
+            if (option.configuracion_paquetes) {
+              const config = option.configuracion_paquetes;
+              console.log(`  Peso máximo por paquete: ${config.peso_maximo_paquete || 0}kg`);
+              console.log(`  Costo por kg extra: $${config.costo_por_kg_extra || 0}`);
+              console.log(`  Máximo productos por paquete: ${config.maximo_productos_por_paquete || 1}`);
+            }
+            
+            // Rangos de peso si aplican
+            if (option.usaRangosPeso && option.rangosPeso && option.rangosPeso.length > 0) {
+              console.log(`  Rangos de peso:`);
+              option.rangosPeso.forEach(rango => {
+                console.log(`    - De ${rango.desde || 0}kg a ${rango.hasta || '∞'}kg: $${rango.precio || 0}`);
+              });
+            }
+          });
+        } else {
+          console.log(`❌ Sin opciones de mensajería configuradas`);
+        }
+        
+        console.log(`--------------------------------------------------`);
       } catch (error) {
-        rulesInfo.push(`❌ Error con regla ${ruleId}: ${error.message}`);
+        console.log(`❌ Error con regla ${ruleId}: ${error.message}`);
       }
     }
     
-    // Mostrar resumen de reglas
-    console.log(`🚚 Opciones de envío disponibles:\n  ${rulesInfo.join('\n  ')}`);
+    console.log(`\n🛒 FIN INFORMACIÓN DE ENVÍO\n`);
     
   } catch (error) {
     console.error('❌ Error al procesar información de envío:', error);
@@ -147,15 +180,37 @@ export const useCartOperations = (items, uid) => {
     }
 
     try {
-      // Mostrar información de envío del producto (en paralelo)
-      logShippingInfo(product).catch(err => console.error('Error al mostrar información de envío:', err));
+      // Asegurarse que el producto tenga reglas de envío
+      // Importar dinámicamente para evitar dependencias circulares
+      const { ensureProductHasShippingRules } = await import('../../../utils/shippingRuleAssigner.js');
+      const productWithRules = await ensureProductHasShippingRules(product);
+      
+      if (product.id !== productWithRules.id) {
+        console.error('Error al asignar reglas de envío: IDs no coinciden');
+        return {
+          success: false,
+          message: 'Error al procesar producto'
+        };
+      }
+      
+      // Verificar si se asignaron reglas de envío
+      const rulesAdded = 
+        (!product.shippingRuleIds || !product.shippingRuleIds.length) && 
+        (productWithRules.shippingRuleIds && productWithRules.shippingRuleIds.length);
+        
+      if (rulesAdded) {
+        console.log(`🔧 PATCH aplicado para producto ${product.id}`);
+      }
+      
+      // Mostrar información de envío del producto con reglas asignadas
+      logShippingInfo(productWithRules).catch(err => console.error('Error al mostrar información de envío:', err));
       
       // Verificar stock REAL desde el servidor
-      const currentStock = await getUpdatedProductStock(product.id);
+      const currentStock = await getUpdatedProductStock(productWithRules.id);
 
       // Si no hay stock, no permitir agregar
       if (currentStock <= 0) {
-        console.warn('Producto sin stock disponible:', product.id);
+        console.warn('Producto sin stock disponible:', productWithRules.id);
         return {
           success: false,
           message: 'Producto sin stock disponible'
@@ -163,23 +218,23 @@ export const useCartOperations = (items, uid) => {
       }
 
       // Encontrar si ya existe en el carrito para validar cantidad total
-      const existingItem = isInCart(product.id) ? getItem(product.id) : null;
+      const existingItem = isInCart(productWithRules.id) ? getItem(productWithRules.id) : null;
       const currentQuantity = existingItem ? existingItem.quantity : 0;
 
       // Validar que no exceda el stock disponible
       const totalQuantity = currentQuantity + quantity;
       if (totalQuantity > currentStock) {
-        console.warn(`Cantidad excede stock disponible (${currentStock})`, product.id);
+        console.warn(`Cantidad excede stock disponible (${currentStock})`, productWithRules.id);
         return {
           success: false,
           message: `Solo hay ${currentStock} unidades disponibles. Ya tienes ${currentQuantity} en tu carrito.`
         };
       }
 
-      // Agregar al carrito con el stock actualizado
+      // Agregar al carrito con el stock actualizado y reglas de envío asignadas
       dispatch(addToCart({
         product: {
-          ...product,
+          ...productWithRules,
           stock: currentStock // Asegurar que usamos el stock real
         },
         quantity
