@@ -128,6 +128,24 @@
     margin-bottom: 20px;
 }
 
+/* Cuando el formulario está dentro del selector vacío, aplicamos el mismo estilo que cuando está activo */
+.address-selector-empty .new-address-form {
+    padding: 20px;
+    background-color: rgba(52, 199, 73, 0.05);
+    border: 1px solid var(--green-3);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+}
+
+/* Contenedor para formulario de dirección activo cuando no hay direcciones */
+.active-address-form-container .new-address-form {
+    padding: 20px;
+    background-color: rgba(52, 199, 73, 0.05);
+    border: 1px solid var(--green-3);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+}
+
 /* Animaciones */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }

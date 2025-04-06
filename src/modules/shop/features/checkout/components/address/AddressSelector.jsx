@@ -101,11 +101,13 @@ export const AddressSelector = ({
           <i className="bi bi-info-circle me-2"></i>
           No tienes direcciones guardadas. Por favor, ingresa una dirección de envío.
         </div>
-        <NewAddressForm
-          onAddressChange={onNewAddressDataChange}
-          saveAddress={saveAddress}
-          onSaveAddressChange={handleSaveAddressChange}
-        />
+        <div className="active-address-form-container mt-3">
+          <NewAddressForm
+            onAddressChange={onNewAddressDataChange}
+            saveAddress={saveAddress}
+            onSaveAddressChange={handleSaveAddressChange}
+          />
+        </div>
         
         {/* Agregamos las acciones de dirección también para usuarios sin direcciones */}
         <div className="address-actions mt-3">
