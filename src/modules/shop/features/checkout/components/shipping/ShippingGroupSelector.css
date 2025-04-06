@@ -12,27 +12,26 @@
 }
 
 .select-marker {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   margin: 0 auto;
-  border-radius: 4px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f9fa;
+  background-color: white;
   border: 1px solid #dee2e6;
   transition: all 0.2s ease;
 }
 
 .select-marker.selected {
-  background-color: #34C749;
-  border-color: #34C749;
+  background-color: var(--green-3);
+  border-color: var(--green-3);
   color: white;
-  box-shadow: 0 0 0 2px rgba(52, 199, 73, 0.2);
 }
 
 .select-marker i {
-  font-size: 16px;
+  font-size: 12px;
   font-weight: bold;
 }
 
@@ -43,37 +42,101 @@
 
 /* Estilo para opción seleccionada */
 .shipping-option-selected {
-  background-color: rgba(52, 199, 73, 0.08) !important;
-  border: 2px solid #34C749 !important;
+  background-color: rgba(52, 199, 73, 0.04) !important;
   border-radius: 8px !important;
   position: relative !important;
-  box-shadow: 0 3px 10px rgba(52, 199, 73, 0.15) !important;
-  transform: translateY(-2px) !important;
-  z-index: 2 !important;
+  box-shadow: 0 1px 3px rgba(52, 199, 73, 0.1) !important;
+  overflow: hidden !important;
 }
 
-/* Indicador lateral para la opción seleccionada */
-.shipping-option-selected::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 5px;
-  background-color: #34C749;
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
-}
-
-/* Texto más destacado en opción seleccionada */
 .shipping-option-selected td {
-  font-weight: 500 !important;
+  background-color: rgba(52, 199, 73, 0.04) !important;
+}
+
+.shipping-option-selected .first-cell {
+  border-top: 1px solid var(--green-3) !important;
+  border-bottom: 1px solid var(--green-3) !important;
+  border-left: 1px solid var(--green-3) !important;
+}
+
+.shipping-option-selected .last-cell {
+  border-top: 1px solid var(--green-3) !important;
+  border-bottom: 1px solid var(--green-3) !important;
+  border-right: 1px solid var(--green-3) !important;
+}
+
+/* Estilo para opciones normales (no seleccionadas) */
+.shipping-option-normal {
+  background-color: #f9f9f9 !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease;
+  overflow: hidden !important;
+}
+
+.shipping-option-normal td {
+  background-color: #f9f9f9 !important;
+}
+
+.shipping-option-normal .first-cell {
+  border-top: 1px solid #eeeeee !important;
+  border-bottom: 1px solid #eeeeee !important;
+  border-left: 1px solid #eeeeee !important;
+}
+
+.shipping-option-normal .last-cell {
+  border-top: 1px solid #eeeeee !important;
+  border-bottom: 1px solid #eeeeee !important;
+  border-right: 1px solid #eeeeee !important;
+}
+
+.shipping-option-normal:hover {
+  background-color: #f1f3f5 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.shipping-option-normal:hover td {
+  background-color: #f1f3f5 !important;
+}
+
+/* Hacer que las celdas de las esquinas tengan bordes redondeados */
+.shipping-option-selected td:first-child {
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+}
+
+.shipping-option-selected td:last-child {
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+}
+
+.shipping-option-normal td:first-child {
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+}
+
+.shipping-option-normal td:last-child {
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+}
+
+/* Asegurarse de que el fondo de las opciones se aplique */
+.shipping-options-table tbody tr.shipping-option-normal td,
+.shipping-options-table tbody tr.shipping-option-selected td {
+  background-color: transparent !important; /* Permite que el color de fondo del tr se vea */
+}
+
+/* Simplificar el indicador lateral */
+.shipping-option-selected::before {
+  content: none; /* Eliminar la barra lateral */
+}
+
+/* Sutilizar el texto en opción seleccionada */
+.shipping-option-selected td {
   color: #333 !important;
 }
 
 .shipping-option-selected .fw-semibold {
-  color: #34C749 !important;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
 }
 
 /* Precio en opción seleccionada */
@@ -81,15 +144,27 @@
   color: #34C749 !important;
 }
 
-/* Tabla de opciones */
+/* Asegurarse de que la tabla no tenga estilos que interfieran */
 .shipping-options-table {
-  background-color: #ffffff;
+  background-color: transparent !important;
+}
+
+/* Ajuste para que la tabla y sus elementos no interfieran con los bordes redondeados */
+.shipping-options-table,
+.shipping-options-table table,
+.shipping-options-table tbody,
+.shipping-options-table tr,
+.shipping-options-table td {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  
 }
 
 .shipping-options-table table {
   margin-bottom: 0;
   border-collapse: separate;
-  border-spacing: 0 0.5rem;
+  border-spacing: 0 0.7rem;
+  background-color: transparent !important;
 }
 
 .shipping-options-table thead th {
@@ -103,54 +178,58 @@
 }
 
 .shipping-options-table tbody tr {
-  transition: all 0.15s ease-in-out;
   cursor: pointer;
-  background-color: #fcfcfc;
-  border-radius: 0.375rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
-.shipping-options-table tbody tr:hover {
-  background-color: rgba(25, 135, 84, 0.02);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
-}
-
-.shipping-options-table tbody td {
+.shipping-options-table td {
   padding: 1rem;
   vertical-align: middle;
   border: none;
 }
 
-.shipping-options-table tbody td:first-child {
-  border-top-left-radius: 0.375rem;
-  border-bottom-left-radius: 0.375rem;
+.shipping-option-info {
+  width: 100%;
 }
 
-.shipping-options-table tbody td:last-child {
-  border-top-right-radius: 0.375rem;
-  border-bottom-right-radius: 0.375rem;
+/* Estilo del nombre de la opción */
+.shipping-name {
+  font-size: 0.95rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-/* Detalles de opciones */
-.shipping-option-details {
-  margin-top: 0.5rem;
-}
-
-.shipping-option-details-item {
-  background-color: rgba(25, 135, 84, 0.03);
-  border-radius: 0.25rem;
-  padding: 0.5rem;
-  margin-bottom: 0.25rem;
-  border-left: 2px solid #198754;
-  font-size: 0.85rem;
-}
-
-.shipping-option-badge {
+/* Etiqueta de grupos */
+.shipping-group-count {
   font-size: 0.7rem;
-  padding: 0.2rem 0.4rem;
-  margin-left: 0.5rem;
-  font-weight: 500;
+  color: #6c757d;
+  background-color: #f1f3f5;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: normal;
+}
+
+/* Detalles de envío */
+.shipping-details {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.shipping-delivery {
+  display: flex;
+  align-items: center;
+}
+
+/* Precio de envío */
+.shipping-price {
+  font-weight: 600;
+  color: #444;
+}
+
+.shipping-free {
+  color: var(--green-3);
 }
 
 /* Alertas */
@@ -201,4 +280,18 @@
   color: #198754;
   border-radius: 1rem;
   font-weight: 500;
+}
+
+/* Detalles de opciones */
+.shipping-option-details {
+  margin-top: 0.75rem;
+}
+
+.shipping-option-details-item {
+  background-color: rgba(52, 199, 73, 0.03);
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.25rem;
+  border-left: 2px solid var(--green-3);
+  font-size: 0.85rem;
 } 

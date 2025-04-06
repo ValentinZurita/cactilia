@@ -373,14 +373,6 @@ const ShippingGroupSelector = ({
       
       <div className="shipping-options-table">
         <table className="table">
-          <thead>
-            <tr>
-              <th style={{ width: '40px' }}></th>
-              <th>Opción</th>
-              <th>Entrega</th>
-              <th className="text-end">Precio</th>
-            </tr>
-          </thead>
           <tbody>
             {shippingCombinations.map((combination, index) => {
               // Permitir coincidencia por ID o por descripción para manejar diferencias entre sistemas
@@ -398,56 +390,57 @@ const ShippingGroupSelector = ({
               // Verificar si es gratuita
               const isFreeShipping = combination.isAllFree;
               
+              // Simplificar descripción eliminando montos redundantes
+              let description = combination.description || '';
+              if (description.includes('($')) {
+                description = description.replace(/\s*\(\$[^)]*\)/g, '');
+              }
+              
               return (
                 <tr 
                   key={combination.id}
-                  className={`${isSelected ? 'shipping-option-selected' : ''}`}
+                  className={`${isSelected ? 'shipping-option-selected' : 'shipping-option-normal'}`}
                   onClick={() => handleOptionSelect(combination)}
-                  style={isSelected ? {
-                    backgroundColor: 'rgba(52, 199, 73, 0.2)',
-                    border: '2px solid #34C749',
-                    borderRadius: '8px',
-                    boxShadow: '0 3px 10px rgba(52, 199, 73, 0.3)'
-                  } : {}}
                 >
-                  <td className="text-center selection-indicator">
-                    <div className={`select-marker ${isSelected ? 'selected' : ''}`} style={isSelected ? {
-                      backgroundColor: '#34C749',
-                      color: 'white',
-                      fontWeight: 'bold'
-                    } : {}}>
+                  <td className="text-center selection-indicator first-cell">
+                    <div className={`select-marker ${isSelected ? 'selected' : ''}`}>
                       {isSelected && <i className="bi bi-check"></i>}
                     </div>
-                    {isSelected && (
-                      <div className="mt-1">
-                        <span className="badge bg-success" style={{fontSize: '0.6rem'}}>SELECCIONADO</span>
-                      </div>
-                    )}
                   </td>
-                  <td>
+                  <td className="shipping-option-info last-cell">
                     {/* Nombre de la combinación */}
-                    <div className="d-flex align-items-center">
-                      <div className={`me-2 ${isSelected ? 'fw-semibold' : ''}`}>
-                        {isSelected && <span className="text-success me-1">➤</span>}
-                        {combination.description || 
-                         (combination.selections && Array.isArray(combination.selections) ? 
-                            combination.selections.map(s => s.option?.name || 'Opción').join(' + ') : 
-                            'Opción de envío'
-                         )}
-                        {isSelected && <span className="ms-2 badge bg-success-subtle text-success">Seleccionado</span>}
+                    <div className="d-flex align-items-center justify-content-between">
+                      <div className={`shipping-name ${isSelected ? 'fw-semibold' : ''}`}>
+                        {description}
+                        
+                        {combination.selections && combination.selections.length > 1 && (
+                          <span className="shipping-group-count">
+                            {combination.selections.length} grupos
+                          </span>
+                        )}
                       </div>
-                      {isFreeShipping && (
-                        <span className="badge bg-success shipping-option-badge">Gratis</span>
-                      )}
-                      {combination.selections && combination.selections.length > 1 && (
-                        <span className="badge bg-light text-secondary shipping-option-badge">
-                          {combination.selections.length} grupos
-                        </span>
-                      )}
+                      
+                      <div className="shipping-details d-flex align-items-center">
+                        <div className="shipping-delivery me-3">
+                          <i className="bi bi-clock-history me-1 small"></i>
+                          {combination.selections && Array.isArray(combination.selections) 
+                            ? (combination.selections.map(s => s.option?.estimatedDelivery || '').filter(Boolean).sort().pop() || '3-5 días')
+                            : '3-5 días'
+                          }
+                        </div>
+                        
+                        <div className="shipping-price">
+                          {isFreeShipping ? (
+                            <span className="shipping-free">Gratis</span>
+                          ) : (
+                            <span>${(combination.totalPrice || 0).toFixed(2)}</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Detalles de la combinación */}
-                    {isSelected && combination.selections && Array.isArray(combination.selections) && (
+                    {isSelected && combination.selections && Array.isArray(combination.selections) && combination.selections.length > 1 && (
                       <div className="shipping-option-details mt-2">
                         {combination.selections.map((selection, selIndex) => (
                           <div key={selection.groupId || `grupo-${selIndex}`} className="shipping-option-details-item">
@@ -463,26 +456,6 @@ const ShippingGroupSelector = ({
                           </div>
                         ))}
                       </div>
-                    )}
-                  </td>
-                  <td>
-                    <div className="text-muted">
-                      <i className="bi bi-clock-history me-1 small"></i>
-                      {combination.selections && Array.isArray(combination.selections) 
-                        ? (combination.selections.map(s => s.option?.estimatedDelivery || '').filter(Boolean).sort().pop() || '3-5 días')
-                        : '3-5 días'
-                      }
-                    </div>
-                  </td>
-                  <td className="text-end">
-                    {isFreeShipping ? (
-                      <span className="shipping-option-price shipping-option-free">
-                        <i className="bi bi-gift me-1 small"></i>Gratis
-                      </span>
-                    ) : (
-                      <span className="shipping-option-price">
-                        ${(combination.totalPrice || 0).toFixed(2)}
-                      </span>
                     )}
                   </td>
                 </tr>
