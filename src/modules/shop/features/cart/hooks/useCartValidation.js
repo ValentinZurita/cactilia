@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { validateItemsStock } from '../../../services/productServices.js';
 import { updateCartItemStock } from '../store/index.js'
 
@@ -17,12 +18,43 @@ import { updateCartItemStock } from '../store/index.js'
 export const useCartValidation = (items) => {
   const dispatch = useDispatch();
   const [isValidatingStock, setIsValidatingStock] = useState(false);
-
-  // Referencias para control de validación
+  const location = useLocation();
+  
+  // Referencias para control de validación y navegación
   const lastStockCheck = useRef(null);
   const validationLock = useRef(false);
   const stockValidationTimer = useRef(null);
   const isInitialMount = useRef(true);
+  const lastLocationPathname = useRef(location.pathname);
+  const recentNavigationRef = useRef(false);
+  const navigationTimerRef = useRef(null);
+
+  // Detectar cambios de ruta para suspender temporalmente las validaciones
+  useEffect(() => {
+    // Si la ruta ha cambiado, marcar como navegación reciente
+    if (location.pathname !== lastLocationPathname.current) {
+      console.log('🔄 Navegación detectada. Suspendiendo validaciones por 5 segundos');
+      lastLocationPathname.current = location.pathname;
+      recentNavigationRef.current = true;
+      
+      // Limpiar cualquier timer anterior
+      if (navigationTimerRef.current) {
+        clearTimeout(navigationTimerRef.current);
+      }
+      
+      // Restablecer después de 5 segundos
+      navigationTimerRef.current = setTimeout(() => {
+        recentNavigationRef.current = false;
+        console.log('✅ Navegación completada. Reanudando validaciones normales');
+      }, 5000);
+    }
+    
+    return () => {
+      if (navigationTimerRef.current) {
+        clearTimeout(navigationTimerRef.current);
+      }
+    };
+  }, [location.pathname]);
 
   /**
    * Identifica productos sin stock
@@ -65,6 +97,12 @@ export const useCartValidation = (items) => {
    * @private
    */
   const updateStockInfo = useCallback(async () => {
+    // No ejecutar validaciones durante la navegación entre páginas
+    if (recentNavigationRef.current) {
+      console.log('Omitiendo validación durante navegación entre páginas');
+      return;
+    }
+    
     // Prevenir múltiples ejecuciones
     if (validationLock.current) {
       console.log('Validación de stock bloqueada por otra en progreso');
@@ -78,8 +116,8 @@ export const useCartValidation = (items) => {
 
     // Verificar el tiempo desde la última validación
     const now = Date.now();
-    if (lastStockCheck.current && (now - lastStockCheck.current) < 30000) {
-      console.log('Validación de stock omitida - última realizada hace menos de 30 segundos');
+    if (lastStockCheck.current && (now - lastStockCheck.current) < 60000) {
+      console.log('Validación de stock omitida - última realizada hace menos de 1 minuto');
       return;
     }
 
@@ -92,13 +130,17 @@ export const useCartValidation = (items) => {
       const result = await validateItemsStock(items);
       lastStockCheck.current = now;
 
-      // Si hay productos con stock desactualizado, actualizarlos en el carrito
+      // Si hay productos con stock desactualizado, solo actualizar información de stock
+      // NUNCA incrementar cantidades automáticamente
       if (!result.valid && result.outOfStockItems && result.outOfStockItems.length > 0) {
-        // Actualizar el stock en el carrito
+        // Solo actualizar información de stock, sin ajustar cantidades
         result.outOfStockItems.forEach(item => {
+          // Solo actualizar el stock disponible, sin modificar cantidades
+          console.log(`Actualizando info de stock para ${item.id}: ${item.currentStock} unidades`);
           dispatch(updateCartItemStock({
             id: item.id,
-            stock: item.currentStock
+            stock: item.currentStock,
+            adjustQuantity: false // Indicador para evitar ajuste automático de cantidad
           }));
         });
       }
@@ -115,18 +157,9 @@ export const useCartValidation = (items) => {
    * Iniciar validación programada en montaje y limpieza al desmontar
    */
   useEffect(() => {
-    // Validación inicial después del primer renderizado
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-
-      // Ejecutar primera validación con retraso
-      if (items.length > 0) {
-        stockValidationTimer.current = setTimeout(() => {
-          updateStockInfo();
-        }, 2000);
-      }
-    }
-
+    // DESACTIVADO: No realizar validaciones automáticas de stock para evitar cambios inesperados en el carrito
+    // La validación solo se realizará cuando sea explícitamente solicitada por el usuario
+    
     // Limpieza al desmontar
     return () => {
       if (stockValidationTimer.current) {
@@ -141,6 +174,13 @@ export const useCartValidation = (items) => {
    * @returns {Promise<Object>} Resultado de la validación
    */
   const forceStockValidation = useCallback(async () => {
+    // No ejecutar validaciones forzadas durante la navegación entre páginas
+    // a menos que sea explícitamente para checkout
+    if (recentNavigationRef.current) {
+      console.log('Evitando validación forzada durante navegación');
+      return { valid: true, skipped: true };
+    }
+    
     // Si ya hay una validación en curso, esperar
     if (validationLock.current) {
       console.log('Validación forzada en espera...');
@@ -166,12 +206,14 @@ export const useCartValidation = (items) => {
       const result = await validateItemsStock(items);
       lastStockCheck.current = Date.now();
 
-      // Actualizar stocks en el carrito
+      // Actualizar stocks en el carrito sin ajustar cantidades automáticamente
       if (result.outOfStockItems && result.outOfStockItems.length > 0) {
         result.outOfStockItems.forEach(item => {
+          console.log(`Actualización forzada de stock para ${item.id}: ${item.currentStock} unidades`);
           dispatch(updateCartItemStock({
             id: item.id,
-            stock: item.currentStock
+            stock: item.currentStock,
+            adjustQuantity: false // Evitar ajustar cantidad automáticamente
           }));
         });
       }

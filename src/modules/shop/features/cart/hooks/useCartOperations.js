@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import {
   addToCart,
@@ -130,6 +130,13 @@ const logShippingInfo = async (product) => {
  */
 export const useCartOperations = (items, uid) => {
   const dispatch = useDispatch();
+  
+  // Referencia para prevenir múltiples incrementos automáticos
+  const incrementLocks = useRef({});
+  const incrementDelay = 2000; // 2 segundos de bloqueo entre incrementos
+  
+  // Control para evitar múltiples llamadas a addToCart
+  const addToCartLock = useRef(false);
 
   /**
    * Verifica si un producto está en el carrito
@@ -167,9 +174,10 @@ export const useCartOperations = (items, uid) => {
    * Añade un producto al carrito con validación de stock
    * @param {Object} product - Producto a añadir
    * @param {number} quantity - Cantidad a añadir
+   * @param {boolean} incrementExistente - Si es true, incrementa la cantidad si ya existe, si es false, mantiene la cantidad actual
    * @returns {Promise<Object>} Resultado de la operación
    */
-  const handleAddToCart = useCallback(async (product, quantity = 1) => {
+  const handleAddToCart = useCallback(async (product, quantity = 1, incrementExistente = false) => {
     // Validación básica
     if (!product || !product.id) {
       console.error('Producto inválido', product);
@@ -178,6 +186,18 @@ export const useCartOperations = (items, uid) => {
         message: 'Producto inválido'
       };
     }
+
+    // Prevenir múltiples llamadas simultáneas a addToCart
+    if (addToCartLock.current) {
+      console.warn('Se bloqueó una llamada duplicada a addToCart', product.id);
+      return {
+        success: false,
+        message: 'Procesando solicitud anterior, por favor espere'
+      };
+    }
+
+    // Activar bloqueo
+    addToCartLock.current = true;
 
     try {
       // Asegurarse que el producto tenga reglas de envío
@@ -237,7 +257,8 @@ export const useCartOperations = (items, uid) => {
           ...productWithRules,
           stock: currentStock // Asegurar que usamos el stock real
         },
-        quantity
+        quantity,
+        shouldIncrement: incrementExistente // Pasar el valor recibido como parámetro
       }));
 
       // Sincronizar con el servidor si hay usuario
@@ -253,6 +274,11 @@ export const useCartOperations = (items, uid) => {
         success: false,
         message: 'Error al agregar al carrito. Intente nuevamente.'
       };
+    } finally {
+      // Liberar el bloqueo después de un retraso para permitir que Redux se actualice
+      setTimeout(() => {
+        addToCartLock.current = false;
+      }, 1000);
     }
   }, [dispatch, uid, isInCart, getItem, getUpdatedProductStock]);
 
@@ -279,6 +305,15 @@ export const useCartOperations = (items, uid) => {
     if (!productId) return { success: false, message: 'ID de producto no válido' };
 
     try {
+      // Verificar si existe un bloqueo para este producto
+      if (incrementLocks.current[productId]) {
+        console.warn('Se detectó un incremento automático. Bloqueando operación para', productId);
+        return { 
+          success: false, 
+          message: 'Operación muy frecuente. Espere un momento.' 
+        };
+      }
+
       const item = items.find(item => item.id === productId);
       if (!item) {
         console.warn('Producto no encontrado en el carrito:', productId);
@@ -297,8 +332,17 @@ export const useCartOperations = (items, uid) => {
         };
       }
 
+      // Activar bloqueo temporal para este producto
+      incrementLocks.current[productId] = true;
+      
+      // Actualizar cantidad en el carrito
       dispatch(updateQuantity({ id: productId, quantity: item.quantity + 1 }));
       if (uid) dispatch(syncCartWithServer());
+
+      // Liberar el bloqueo después de un tiempo
+      setTimeout(() => {
+        incrementLocks.current[productId] = false;
+      }, incrementDelay);
 
       return { success: true };
     } catch (error) {
@@ -318,15 +362,33 @@ export const useCartOperations = (items, uid) => {
   const decreaseQuantity = useCallback((productId) => {
     if (!productId) return { success: false };
 
+    // Verificar si existe un bloqueo para este producto
+    if (incrementLocks.current[productId]) {
+      console.warn('Se detectó un decremento automático. Bloqueando operación para', productId);
+      return { 
+        success: false, 
+        message: 'Operación muy frecuente. Espere un momento.' 
+      };
+    }
+
     const item = items.find(item => item.id === productId);
     if (item && item.quantity > 1) {
+      // Activar bloqueo temporal para este producto
+      incrementLocks.current[productId] = true;
+      
       dispatch(updateQuantity({ id: productId, quantity: item.quantity - 1 }));
       if (uid) dispatch(syncCartWithServer());
+      
+      // Liberar el bloqueo después de un tiempo
+      setTimeout(() => {
+        incrementLocks.current[productId] = false;
+      }, incrementDelay);
+      
       return { success: true };
     }
 
     return { success: false };
-  }, [dispatch, items, uid]);
+  }, [dispatch, items, uid, incrementDelay]);
 
   return {
     isInCart,

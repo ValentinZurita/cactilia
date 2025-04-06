@@ -173,7 +173,7 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
     }
 
     try {
-      const res = await addToCart(product, quantity);
+      const res = await addToCart(product, quantity, true);
       if (res?.success) {
         setAdded(true);
         setTimeout(onClose, 2000);

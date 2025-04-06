@@ -21,19 +21,19 @@ export const loadCartFromFirestore = createAsyncThunk(
       const cartSnap = await getDoc(cartRef);
 
       if (cartSnap.exists()) {
+        // Si existe un carrito en Firestore, usarlo
         const cartData = cartSnap.data();
+        console.log('Cargando carrito desde Firestore:', cartData.items || []);
         dispatch(setCartItems(cartData.items || []));
         dispatch(setLastSync(new Date().toISOString()));
         return cartData;
       } else {
-        // Si no existe un carrito, inicializar con el carrito actual
-        const { cart } = getState();
-        await setDoc(cartRef, {
-          items: cart.items,
-          updatedAt: new Date()
-        });
+        // Si no existe un carrito en Firestore, simplemente notificarlo
+        // NO inicializar con el carrito actual para evitar duplicación
+        console.log('No se encontró carrito en Firestore para el usuario');
         dispatch(setLastSync(new Date().toISOString()));
-        return { items: cart.items };
+        // Mantener el carrito actual sin modificar
+        return null;
       }
     } catch (error) {
       console.error('Error cargando carrito:', error);
@@ -63,36 +63,30 @@ export const mergeCartsOnLogin = createAsyncThunk(
       const cartSnap = await getDoc(cartRef);
 
       // Crear una nueva copia profunda de los items para evitar modificar el estado directamente
-      let mergedItems = cart.items.map(item => ({...item}));
-
-      // Si ya existe un carrito, fusionar los items
+      let mergedItems = [];
+      
+      // Si ya existe un carrito en Firestore, usarlo como base
       if (cartSnap.exists()) {
         const storedCart = cartSnap.data();
-        const storedItems = storedCart.items || [];
-
-        // Para cada item en el carrito almacenado
-        storedItems.forEach(storedItem => {
-          // Verificar si ya existe en el carrito local
-          const localItemIndex = mergedItems.findIndex(i => i.id === storedItem.id);
-
-          if (localItemIndex >= 0) {
-            // Si existe, crear un nuevo objeto con la cantidad sumada
-            mergedItems[localItemIndex] = {
-              ...mergedItems[localItemIndex],
-              quantity: mergedItems[localItemIndex].quantity + storedItem.quantity
-            };
-          } else {
-            // Si no existe, añadir una copia
-            mergedItems.push({...storedItem});
-          }
+        mergedItems = storedCart.items || [];
+        
+        console.log('Carrito encontrado en Firestore:', mergedItems);
+        
+        // Simplemente reemplazar el carrito local con el de Firestore
+        // No hacer fusión que podría causar duplicaciones
+        
+      } else {
+        // Si no existe carrito en Firestore, usar el carrito local como base
+        mergedItems = cart.items.map(item => ({...item}));
+        
+        console.log('No se encontró carrito en Firestore, usando carrito local:', mergedItems);
+        
+        // Actualizar en Firestore
+        await setDoc(cartRef, {
+          items: mergedItems,
+          updatedAt: new Date()
         });
       }
-
-      // Actualizar en Firestore
-      await setDoc(cartRef, {
-        items: mergedItems,
-        updatedAt: new Date()
-      });
 
       // Actualizar en Redux
       dispatch(setCartItems(mergedItems));
@@ -120,8 +114,25 @@ export const syncCartWithServer = createAsyncThunk(
 
       dispatch(setSyncStatus('loading'));
 
-      // Guardar el carrito en Firestore
+      // Verificar si ya existe un carrito en Firestore
       const cartRef = doc(FirebaseDB, 'carts', auth.uid);
+      const cartSnap = await getDoc(cartRef);
+      
+      // Si ya existe un carrito, comparar items antes de actualizar
+      if (cartSnap.exists()) {
+        const storedCart = cartSnap.data();
+        const storedItems = storedCart.items || [];
+        
+        // Si los carritos son idénticos, no hacer nada
+        if (JSON.stringify(storedItems) === JSON.stringify(cart.items)) {
+          console.log('Carrito sin cambios, omitiendo sincronización');
+          dispatch(setLastSync(new Date().toISOString()));
+          return cart.items;
+        }
+      }
+
+      // Guardar el carrito en Firestore
+      console.log('Sincronizando carrito con Firestore:', cart.items);
       await setDoc(cartRef, {
         items: cart.items,
         updatedAt: new Date()

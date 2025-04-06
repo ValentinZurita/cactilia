@@ -20,11 +20,11 @@ export const App = () => {
 
   // Effect to load cart when user logs in
   useEffect(() => {
-    // If user is authenticated, load their cart from Firestore and merge with guest cart
+    // Si el usuario está autenticado, cargar su carrito desde Firestore
     if (status === 'authenticated' && auth.uid) {
-      // First merge any existing guest cart items with the user's cart
-      dispatch(mergeCartsOnLogin());
-      // Then load the user's cart from Firestore
+      console.log('Usuario autenticado, cargando carrito desde Firestore');
+      // Cargar directamente el carrito del usuario desde Firestore
+      // Sin fusionar para evitar duplicaciones
       dispatch(loadCartFromFirestore());
     }
   }, [status, auth.uid, dispatch]);

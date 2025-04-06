@@ -10,14 +10,21 @@ export const cartSlice = createSlice({
   },
   reducers: {
     addToCart: (state, action) => {
-      const { product, quantity = 1 } = action.payload;
+      const { product, quantity = 1, shouldIncrement = false } = action.payload;
 
       // Buscar si el producto ya está en el carrito
       const existingItem = state.items.find(item => item.id === product.id);
 
       if (existingItem) {
-        // Si el producto ya está en el carrito, incrementar cantidad
-        existingItem.quantity += quantity;
+        // Si el producto ya está en el carrito y debemos incrementar (explícitamente indicado)
+        if (shouldIncrement) {
+          console.log(`Incrementando cantidad de "${existingItem.name}" en ${quantity} unidades (solicitado explícitamente)`);
+          existingItem.quantity += quantity;
+        } else {
+          // Si no se solicitó incremento, mantener la cantidad actual
+          // Esto previene incrementos automáticos no deseados
+          console.log(`Producto "${existingItem.name}" ya en carrito, manteniendo cantidad (${existingItem.quantity})`);
+        }
       } else {
         // Extraer las propiedades de envío con valores por defecto para evitar undefined
         const shippingRuleId = product.shippingRuleId || null;
@@ -66,12 +73,18 @@ export const cartSlice = createSlice({
 
       const item = state.items.find(item => item.id === id);
       if (item) {
+        // Solo actualizar la información de stock disponible
+        // NUNCA ajustar automáticamente la cantidad del producto
         item.stock = stock;
-
-        // Ajustar cantidad si excede el stock
-        if (item.quantity > stock) {
+        
+        // El siguiente código está comentado para evitar modificaciones automáticas de cantidad
+        // que estaban causando que los productos se incrementaran solos
+        /*
+        if (adjustQuantity && item.quantity > stock) {
+          console.log(`⚠️ Ajustando cantidad de "${item.name}" de ${item.quantity} a ${stock} por stock insuficiente`);
           item.quantity = Math.max(0, stock);
         }
+        */
       }
     },
 
@@ -82,12 +95,15 @@ export const cartSlice = createSlice({
       state.items.forEach(item => {
         if (stockMap[item.id] !== undefined) {
           const newStock = stockMap[item.id];
+          // Solo actualizar la información de stock disponible
           item.stock = newStock;
 
-          // Ajustar cantidad si excede el stock
+          // El siguiente código está comentado para evitar modificaciones automáticas de cantidad
+          /*
           if (item.quantity > newStock) {
             item.quantity = Math.max(0, newStock);
           }
+          */
         }
       });
     },

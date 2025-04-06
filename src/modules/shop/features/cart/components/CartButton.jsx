@@ -25,7 +25,8 @@ export const CartButton = ({ product, disabled = false, quantity = 1 }) => {
       // Log simplificado con información esencial
       console.log(`🛒 Añadiendo al carrito: "${productToAdd.name}" (${productToAdd.id})`);
       
-      addToCart(productToAdd, quantity);
+      // Cuando se hace clic en el botón de carrito, siempre queremos incrementar la cantidad
+      addToCart(productToAdd, quantity, true);
 
       // Efecto visual sutil
       const button = e.currentTarget;

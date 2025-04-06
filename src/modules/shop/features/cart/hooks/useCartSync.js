@@ -19,10 +19,9 @@ export const useCartSync = () => {
 
   // Cargar carrito al iniciar sesión
   useEffect(() => {
-    // Si el usuario está autenticado y no hay registro de última sincronización
-    if (authStatus === 'authenticated' && uid && !lastSync) {
-      dispatch(loadCartFromServer(uid));
-    }
+    // Desactivado para evitar duplicaciones
+    // El carrito se carga desde App.jsx
+    // Esto previene carga duplicada y mezcla de carritos
   }, [authStatus, uid, lastSync, dispatch]);
 
   // Función para sincronizar manualmente
