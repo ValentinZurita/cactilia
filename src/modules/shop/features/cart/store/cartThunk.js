@@ -4,6 +4,10 @@ import { setCartItems, setSyncStatus, setSyncError, setLastSync, clearCart } fro
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig.js'
 
+// Variable para controlar throttling de sincronización
+let lastSyncTime = 0;
+const MIN_SYNC_INTERVAL = 2000; // 2 segundos mínimo entre sincronizaciones
+
 /**
  * Carga el carrito desde Firestore para el usuario autenticado
  */
@@ -111,6 +115,25 @@ export const syncCartWithServer = createAsyncThunk(
     try {
       const { auth, cart } = getState();
       if (!auth.uid) return;
+
+      // Implementar throttling para evitar sincronizaciones demasiado frecuentes
+      const now = Date.now();
+      if (now - lastSyncTime < MIN_SYNC_INTERVAL) {
+        console.log('Sincronización omitida por throttling, sincronizando en segundo plano...');
+        
+        // Programar una sincronización diferida y salir
+        setTimeout(() => {
+          dispatch(syncCartWithServer());
+        }, MIN_SYNC_INTERVAL);
+        
+        // Actualizar timestap para evitar solapamiento de sincronizaciones
+        lastSyncTime = now;
+        
+        return cart.items;
+      }
+      
+      // Actualizar timestamp de última sincronización
+      lastSyncTime = now;
 
       dispatch(setSyncStatus('loading'));
 

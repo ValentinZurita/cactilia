@@ -1,5 +1,5 @@
 import '../../../../../styles/pages/cart.css';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 /**
  * Componente que representa un item individual en el carrito
@@ -13,6 +13,13 @@ import { useState } from 'react';
  */
 export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
   const [errorMessage, setErrorMessage] = useState(null);
+  const [localQuantity, setLocalQuantity] = useState(product.quantity);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Actualizar localQuantity cuando el props cambia
+  if (localQuantity !== product.quantity) {
+    setLocalQuantity(product.quantity);
+  }
 
   // Verificar disponibilidad de stock
   const hasStock = product.stock > 0;
@@ -20,47 +27,92 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
   const canIncrement = hasStock && product.quantity < product.stock;
 
   // Calcular el total del producto
-  const totalPrice = (product.price * product.quantity).toFixed(2);
+  const totalPrice = (product.price * localQuantity).toFixed(2);
 
-  // Handler seguro para incremento
-  const handleIncrement = () => {
-    if (canIncrement) {
-      const result = onIncrement();
+  // Handler optimizado para incremento
+  const handleIncrement = useCallback(() => {
+    if (!canIncrement) {
+      setErrorMessage(`Máximo stock disponible: ${product.stock}`);
+      setTimeout(() => setErrorMessage(null), 2000);
+      return;
+    }
 
-      // Mostrar mensaje de error si la operación falla
+    // Actualización optimista para feedback inmediato
+    setLocalQuantity(prev => prev + 1);
+    setIsUpdating(true);
+    
+    // Aplicar efecto visual de presionado
+    const button = document.activeElement;
+    if (button) button.classList.add('active');
+    
+    // Llamar a la función real
+    const result = onIncrement();
+    
+    // Quitar efecto visual después de un breve tiempo
+    setTimeout(() => {
+      if (button) button.classList.remove('active');
+      setIsUpdating(false);
+      
+      // Mostrar error si hay problemas
       if (result && !result.success && result.message) {
         setErrorMessage(result.message);
-        setTimeout(() => setErrorMessage(null), 3000);
+        setTimeout(() => setErrorMessage(null), 2000);
+        // Restaurar cantidad si falla
+        setLocalQuantity(product.quantity);
       }
-    } else {
-      setErrorMessage(`Máximo stock disponible: ${product.stock}`);
-      setTimeout(() => setErrorMessage(null), 3000);
-    }
-  };
+    }, 300);
+  }, [canIncrement, product.quantity, product.stock, onIncrement]);
 
-  // Handler seguro para decremento
-  const handleDecrement = () => {
-    if (product.quantity > 1) {
-      onDecrement();
-    }
-  };
+  // Handler optimizado para decremento
+  const handleDecrement = useCallback(() => {
+    if (product.quantity <= 1) return;
 
-  // Calcular mensaje de stock
-  const getStockMessage = () => {
+    // Actualización optimista para feedback inmediato
+    setLocalQuantity(prev => prev - 1);
+    setIsUpdating(true);
+    
+    // Aplicar efecto visual de presionado
+    const button = document.activeElement;
+    if (button) button.classList.add('active');
+    
+    // Llamar a la función real
+    onDecrement();
+    
+    // Quitar efecto visual después de un breve tiempo
+    setTimeout(() => {
+      if (button) button.classList.remove('active');
+      setIsUpdating(false);
+    }, 300);
+  }, [product.quantity, onDecrement]);
+
+  // Handler optimizado para eliminar
+  const handleRemove = useCallback(() => {
+    // Aplicar efecto visual
+    const button = document.activeElement;
+    if (button) button.classList.add('active');
+    
+    // Mostrar feedback visual
+    setIsUpdating(true);
+    
+    // Pequeño retraso para el efecto visual
+    setTimeout(() => onRemove(), 150);
+  }, [onRemove]);
+
+  // Funciones auxiliares
+  const getStockMessage = useCallback(() => {
     if (!hasStock) return "Sin stock";
     if (!stockSufficient) return `Stock disponible: ${product.stock}`;
     return "En stock";
-  };
+  }, [hasStock, stockSufficient, product.stock]);
 
-  // Calcular clase CSS para mensaje de stock
-  const getStockClass = () => {
+  const getStockClass = useCallback(() => {
     if (!hasStock) return "text-danger";
     if (!stockSufficient) return "text-warning";
     return "text-success";
-  };
+  }, [hasStock, stockSufficient]);
 
   return (
-    <div className="cart-item-container d-flex align-items-start py-3">
+    <div className={`cart-item-container d-flex align-items-start py-3 ${isUpdating ? 'opacity-75' : ''}`}>
       {/* Contenedor de detalles y controles */}
       <div className="cart-item-details flex-grow-1">
         <h5 className="cart-item-title">{product.name}</h5>
@@ -94,14 +146,14 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
                 className="btn btn-sm btn-light"
                 onClick={handleDecrement}
                 aria-label="Disminuir cantidad"
-                disabled={!hasStock || product.quantity <= 1}
+                disabled={!hasStock || localQuantity <= 1}
               >
                 –
               </button>
 
-              {/* Indicador de cantidad */}
+              {/* Indicador de cantidad - usar localQuantity para actualización inmediata */}
               <span className="btn btn-sm btn-light disabled mb-0">
-                {product.quantity}
+                {localQuantity}
               </span>
 
               {/* Botón de aumentar cantidad */}
@@ -120,7 +172,7 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
             <button
               type="button"
               className="btn btn-sm btn-light ms-2"
-              onClick={onRemove}
+              onClick={handleRemove}
               aria-label="Eliminar del carrito"
             >
               <i className="bi bi-trash"></i>

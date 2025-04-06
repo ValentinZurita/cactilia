@@ -304,54 +304,46 @@ export const useCartOperations = (items, uid) => {
   const increaseQuantity = useCallback(async (productId) => {
     if (!productId) return { success: false, message: 'ID de producto no válido' };
 
-    try {
-      // Verificar si existe un bloqueo para este producto
-      if (incrementLocks.current[productId]) {
-        console.warn('Se detectó un incremento automático. Bloqueando operación para', productId);
-        return { 
-          success: false, 
-          message: 'Operación muy frecuente. Espere un momento.' 
-        };
-      }
-
-      const item = items.find(item => item.id === productId);
-      if (!item) {
-        console.warn('Producto no encontrado en el carrito:', productId);
-        return { success: false, message: 'Producto no encontrado en el carrito' };
-      }
-
-      // Verificar stock REAL desde el servidor
-      const currentStock = await getUpdatedProductStock(productId);
-
-      // Validar stock disponible
-      if (currentStock <= 0 || item.quantity >= currentStock) {
-        console.warn('No hay suficiente stock para incrementar:', productId);
-        return {
-          success: false,
-          message: `Has alcanzado el máximo de unidades disponibles (${currentStock})`
-        };
-      }
-
-      // Activar bloqueo temporal para este producto
-      incrementLocks.current[productId] = true;
-      
-      // Actualizar cantidad en el carrito
-      dispatch(updateQuantity({ id: productId, quantity: item.quantity + 1 }));
-      if (uid) dispatch(syncCartWithServer());
-
-      // Liberar el bloqueo después de un tiempo
-      setTimeout(() => {
-        incrementLocks.current[productId] = false;
-      }, incrementDelay);
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error al incrementar cantidad:', error);
-      return {
-        success: false,
-        message: 'Error al actualizar cantidad. Intente nuevamente.'
-      };
+    // Simplificamos el bloqueo para que no sea tan restrictivo
+    if (incrementLocks.current[productId]) {
+      // Si hay bloqueo, permitimos continuar pero lo registramos
+      console.log('Operación rápida detectada:', productId);
     }
+
+    const item = items.find(item => item.id === productId);
+    if (!item) {
+      return { success: false, message: 'Producto no encontrado en el carrito' };
+    }
+
+    // Actualización optimista - actualizamos UI inmediatamente
+    dispatch(updateQuantity({ id: productId, quantity: item.quantity + 1 }));
+    
+    // Marcar como bloqueado brevemente
+    incrementLocks.current[productId] = true;
+    
+    // Validación en segundo plano sin bloquear UI
+    setTimeout(async () => {
+      try {
+        // Verificar stock en segundo plano
+        const currentStock = await getUpdatedProductStock(productId);
+        
+        // Si excede el stock, revertir al stock máximo
+        if (item.quantity + 1 > currentStock) {
+          dispatch(updateQuantity({ id: productId, quantity: currentStock }));
+          console.warn(`Cantidad ajustada a stock disponible (${currentStock})`);
+        }
+        
+        // Sincronizar con el servidor si necesario
+        if (uid) dispatch(syncCartWithServer());
+      } catch (error) {
+        console.error('Error en validación de stock:', error);
+      } finally {
+        // Liberar bloqueo rápidamente
+        incrementLocks.current[productId] = false;
+      }
+    }, 300); // Retraso mínimo para mejor UX
+
+    return { success: true };
   }, [dispatch, items, uid, getUpdatedProductStock]);
 
   /**
@@ -362,33 +354,31 @@ export const useCartOperations = (items, uid) => {
   const decreaseQuantity = useCallback((productId) => {
     if (!productId) return { success: false };
 
-    // Verificar si existe un bloqueo para este producto
+    // Simplificamos el bloqueo para permitir operaciones rápidas
     if (incrementLocks.current[productId]) {
-      console.warn('Se detectó un decremento automático. Bloqueando operación para', productId);
-      return { 
-        success: false, 
-        message: 'Operación muy frecuente. Espere un momento.' 
-      };
+      console.log('Operación rápida detectada (decremento):', productId);
     }
 
     const item = items.find(item => item.id === productId);
-    if (item && item.quantity > 1) {
-      // Activar bloqueo temporal para este producto
-      incrementLocks.current[productId] = true;
-      
-      dispatch(updateQuantity({ id: productId, quantity: item.quantity - 1 }));
-      if (uid) dispatch(syncCartWithServer());
-      
-      // Liberar el bloqueo después de un tiempo
-      setTimeout(() => {
-        incrementLocks.current[productId] = false;
-      }, incrementDelay);
-      
-      return { success: true };
+    if (!item || item.quantity <= 1) {
+      return { success: false };
     }
 
-    return { success: false };
-  }, [dispatch, items, uid, incrementDelay]);
+    // Actualización optimista - actualizamos UI inmediatamente
+    dispatch(updateQuantity({ id: productId, quantity: item.quantity - 1 }));
+    
+    // Marcar como bloqueado brevemente
+    incrementLocks.current[productId] = true;
+    
+    // Sincronizar con el servidor en segundo plano
+    setTimeout(() => {
+      if (uid) dispatch(syncCartWithServer());
+      // Liberar bloqueo rápidamente
+      incrementLocks.current[productId] = false;
+    }, 300);
+    
+    return { success: true };
+  }, [dispatch, items, uid]);
 
   return {
     isInCart,
