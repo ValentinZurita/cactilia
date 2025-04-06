@@ -32,6 +32,13 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
   // Obtener dirección del usuario cuando cambia la dirección seleccionada
   useEffect(() => {
     const getUserAddress = async () => {
+      // Resetear selección, opciones y combinaciones cuando cambia la dirección
+      setSelectedOption(null);
+      shippingUpdateRef.current = null;
+      optionsLoadedRef.current = false;
+      setShippingCombinations([]);
+      setOptions([]);
+      
       // Verificar qué tipo de dirección está seleccionada
       if (selectedAddressType === 'saved') {
         // Dirección guardada
@@ -425,20 +432,113 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
     }
   }, [options, selectedOption, loading]);
   
-  // Función para actualizar las combinaciones generadas externamente
-  const updateShippingCombinations = (combinations) => {
-    if (combinations && Array.isArray(combinations) && combinations.length > 0) {
-      console.log(`🔄 useShippingOptions: Actualizando ${combinations.length} combinaciones externas`);
-      setShippingCombinations(combinations);
-      
-      // Resetear el estado de selección cuando se actualizan las combinaciones
+  // Cuando cambie la dirección, reiniciar completamente las opciones
+  useEffect(() => {
+    if (userAddress) {
+      console.log('📮 Dirección cambiada:', userAddress);
+      // Al cambiar de dirección, limpiar opciones seleccionadas
       setSelectedOption(null);
-      shippingUpdateRef.current = null;
+      setShippingCombinations([]);
+      setLoading(true);
+      
+      // Reiniciar referencias para manejar la selección inicial
+      optionsLoadedRef.current = false;
     }
+  }, [userAddress]);
+  
+  /**
+   * Procesa las combinaciones de envío para estandarizarlas
+   * @param {Array} combinations - Combinaciones de envío
+   * @returns {Array} Opciones de envío procesadas
+   */
+  const processShippingOptions = (combinations) => {
+    console.log('🔄 Procesando', combinations.length, 'combinaciones de envío');
+    
+    if (!combinations || !Array.isArray(combinations) || combinations.length === 0) {
+      console.warn('⚠️ No hay combinaciones para procesar');
+      return [];
+    }
+    
+    return combinations.map(combination => {
+      // Crear formato estándar para cada combinación
+      return {
+        id: combination.id,
+        label: combination.description || 'Opción de envío',
+        totalCost: combination.totalPrice || 0,
+        calculatedCost: combination.totalPrice || 0,
+        isFreeShipping: combination.isAllFree || false,
+        selections: combination.selections || [],
+        carrier: (combination.selections && combination.selections.length > 1) 
+          ? 'Combinado' 
+          : (combination.selections?.[0]?.option?.carrier || 'Servicio de envío'),
+        details: `${combination.selections?.length || 1} grupo(s) de envío`
+      };
+    });
+  };
+
+  // Cuando calculamos nuevas combinaciones, reemplazar completamente las anteriores
+  const updateShippingCombinations = (combinations) => {
+    console.log('🔄 Actualizando combinaciones de envío:', combinations.length);
+    
+    // Para diagnóstico: guardar IDs actuales
+    const currentIds = shippingCombinations.map(c => c.id);
+    console.log('🔑 IDs de combinaciones actuales:', currentIds);
+    
+    // Asegurar que las combinaciones tengan IDs consistentes basados en su contenido
+    const processedCombinations = combinations.map(combination => {
+      // Crear un ID consistente basado en el contenido de la combinación
+      // Esto ayuda a que el mismo grupo y opción mantengan el mismo ID
+      if (!combination.stableId) {
+        const groupsSignature = combination.selections?.map(s => 
+          `${s.groupId}-${s.option?.carrier || 'carrier'}`
+        ).join('_') || 'single';
+        
+        // Usar parte del ID original pero añadir una firma estable
+        const stableId = `${combination.id.split('-')[0]}-${groupsSignature}`;
+        combination.stableId = stableId;
+        
+        console.log(`🔑 ID estable generado: ${stableId} para combinación ${combination.id}`);
+      }
+      
+      return {
+        ...combination,
+        // Sobrescribir el ID con uno estable
+        id: combination.stableId
+      };
+    });
+    
+    // Mostrar nuevos IDs
+    console.log('🔑 IDs de combinaciones nuevas:', processedCombinations.map(c => c.id));
+    
+    // Limpiar opciones anteriores completamente - esto evita que persistan opciones
+    // que ya no son válidas para la dirección actual
+    setShippingCombinations(processedCombinations);
+    setOptions([]);
+    
+    if (processedCombinations.length === 0) {
+      console.warn('⚠️ No se encontraron opciones de envío disponibles');
+      setError('No hay opciones de envío disponibles para esta dirección');
+      setLoading(false);
+      return;
+    }
+
+    // Procesar las nuevas combinaciones
+    const processedOptions = processShippingOptions(processedCombinations);
+    setOptions(processedOptions);
+    
+    // Limpiar la selección anterior, ya que las opciones han cambiado
+    setSelectedOption(null);
+    
+    setLoading(false);
+    
+    console.log('✅ Opciones de envío actualizadas:', processedOptions.length);
   };
   
   // Función para seleccionar una opción
-  const selectShippingOption = (optionId) => {
+  const selectShippingOption = (option) => {
+    // Si recibimos un objeto en lugar de ID, extraer el ID
+    const optionId = option?.id || option;
+    
     if (!optionId) {
       console.warn('⚠️ Intento de seleccionar una opción de envío sin ID');
       return;
@@ -446,6 +546,70 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
     
     console.log('🔄 Opción de envío seleccionada:', optionId);
     
+    // Imprimir opciones disponibles para diagnóstico
+    console.log('📋 Opciones estándar disponibles:', options.map(o => ({ id: o.id, price: o.totalCost })));
+    console.log('📋 Combinaciones disponibles:', shippingCombinations.map(c => ({ id: c.id, price: c.totalPrice })));
+    
+    // Primero verificar si la opción sigue siendo válida con la dirección actual
+    const isInCurrentOptions = options.some(opt => opt.id === optionId);
+    const isInCombinations = shippingCombinations.some(combo => combo.id === optionId);
+    
+    // Verificación más flexible para opciones entre direcciones - buscar por nombre/descripción
+    let matchingCombination = null;
+    if (!isInCurrentOptions && !isInCombinations) {
+      // Buscar coincidencia aproximada por descripción si tenemos el objeto completo
+      if (option.description || option.name) {
+        console.log('🔎 Buscando coincidencia por descripción:', option.description || option.name);
+        matchingCombination = shippingCombinations.find(combo => 
+          (combo.description && option.description && 
+           combo.description.includes(option.description)) ||
+          (combo.name && option.name && 
+           combo.name.includes(option.name))
+        );
+        
+        if (matchingCombination) {
+          console.log('✅ Encontrada combinación similar:', matchingCombination.id);
+        }
+      }
+      
+      // Si no encontramos coincidencia, intentar seleccionar la primera opción disponible
+      if (!matchingCombination) {
+        if (shippingCombinations.length > 0) {
+          console.log('⚠️ No se encontró coincidencia exacta. Usando la primera combinación disponible');
+          matchingCombination = shippingCombinations[0];
+        } else if (options.length > 0) {
+          console.log('⚠️ No se encontró coincidencia exacta. Usando la primera opción estándar disponible');
+          const firstOption = options[0];
+          setSelectedOption(firstOption);
+          return;
+        } else {
+          console.error('❌ Error: No hay opciones disponibles para esta dirección');
+          return;
+        }
+      }
+    }
+    
+    // Si encontramos una combinación por coincidencia aproximada, usarla
+    if (matchingCombination) {
+      console.log(`💰 Usando combinación similar: $${matchingCombination.totalPrice || 0}`);
+      
+      // Adaptar la combinación al formato esperado
+      const adaptedOption = {
+        id: matchingCombination.id,
+        label: matchingCombination.description || 'Opción de envío',
+        totalCost: matchingCombination.totalPrice || 0,
+        calculatedCost: matchingCombination.totalPrice || 0,
+        isFreeShipping: matchingCombination.isAllFree,
+        selections: matchingCombination.selections || [],
+        carrier: 'Combinado',
+        details: `Opción de envío (${matchingCombination.selections?.length || 1} grupos)`
+      };
+      
+      setSelectedOption(adaptedOption);
+      return;
+    }
+    
+    // Seguir con el flujo normal si la opción existe
     // Primero intentar encontrar la opción en las combinaciones externas
     if (shippingCombinations.length > 0) {
       const selectedCombination = shippingCombinations.find(combo => combo.id === optionId);

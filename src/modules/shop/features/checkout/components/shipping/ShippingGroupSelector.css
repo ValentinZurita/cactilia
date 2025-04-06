@@ -1,0 +1,164 @@
+/* Estilos para los radio buttons */
+.shipping-option-radio:checked {
+  background-color: #ffffff !important;
+  border-color: #198754 !important;
+  box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.25) !important;
+}
+
+.shipping-option-radio:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #198754;
+  display: block;
+}
+
+.shipping-option-radio {
+  width: 18px !important;
+  height: 18px !important;
+  cursor: pointer !important;
+  border: 1px solid #dee2e6 !important;
+  appearance: none !important;
+  border-radius: 50% !important;
+  margin-top: 0 !important;
+  position: relative !important;
+}
+
+/* Contenedor principal */
+.shipping-groups-container {
+  font-size: 0.95rem;
+}
+
+/* Estilo para opción seleccionada */
+.shipping-option-selected {
+  background-color: rgba(25, 135, 84, 0.05) !important;
+  border: 1px solid rgba(25, 135, 84, 0.2) !important;
+  border-radius: 0.375rem !important;
+}
+
+/* Tabla de opciones */
+.shipping-options-table {
+  background-color: #ffffff;
+}
+
+.shipping-options-table table {
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+
+.shipping-options-table thead th {
+  font-weight: 500;
+  color: #6c757d;
+  border-bottom: none;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.shipping-options-table tbody tr {
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+  background-color: #fcfcfc;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.shipping-options-table tbody tr:hover {
+  background-color: rgba(25, 135, 84, 0.02);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+}
+
+.shipping-options-table tbody td {
+  padding: 1rem;
+  vertical-align: middle;
+  border: none;
+}
+
+.shipping-options-table tbody td:first-child {
+  border-top-left-radius: 0.375rem;
+  border-bottom-left-radius: 0.375rem;
+}
+
+.shipping-options-table tbody td:last-child {
+  border-top-right-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+/* Detalles de opciones */
+.shipping-option-details {
+  margin-top: 0.5rem;
+}
+
+.shipping-option-details-item {
+  background-color: rgba(25, 135, 84, 0.03);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin-bottom: 0.25rem;
+  border-left: 2px solid #198754;
+  font-size: 0.85rem;
+}
+
+.shipping-option-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+/* Alertas */
+.shipping-options-alert {
+  border: none;
+  background-color: rgba(25, 135, 84, 0.05);
+  color: #198754;
+  font-size: 0.9rem;
+  padding: 0.75rem;
+  border-left: 3px solid #198754;
+}
+
+.shipping-error-alert {
+  border-left: 3px solid #dc3545;
+}
+
+.shipping-warning-alert {
+  border-left: 3px solid #ffc107;
+}
+
+.debug-info {
+  font-size: 0.75rem;
+}
+
+/* Precios */
+.shipping-option-price {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.shipping-option-free {
+  color: #198754;
+  font-weight: 600;
+}
+
+/* Títulos y contador */
+.shipping-section-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #212529;
+  margin-bottom: 1rem;
+}
+
+.shipping-options-count {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  background-color: rgba(25, 135, 84, 0.1);
+  color: #198754;
+  border-radius: 1rem;
+  font-weight: 500;
+} 

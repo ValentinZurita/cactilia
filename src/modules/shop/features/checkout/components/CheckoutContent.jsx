@@ -117,28 +117,44 @@ export const CheckoutContent = () => {
     }
   }, [selectedShippingOption, updateShipping]);
 
-  // Agregar Log de diagnóstico al cargar la vista
+  // Manejo de efectos secundarios cuando cambia alguna dependencia
   useEffect(() => {
-    // Limitar los logs a solo una vez por componente montado usando una referencia
-    const isFirstRender = checkoutInitialLoadRef.current;
-    if (isFirstRender) {
-      console.warn('🚨 CHECKOUT CONTENT LOADED 🚨');
+    // Log para diagnosticar cambios en el checkout
+    console.log('🚨 CHECKOUT CONTENT LOADED 🚨');
+    
+    // Log avanzado para diagnóstico
+    console.log('🚚 SHIPPING GROUPS:', calculatedShippingGroups?.length || 0);
+    console.log('📏 SHIPPING RULES:', calculatedShippingRules?.length || 0);
+    console.log('🚢 SHIPPING OPTIONS:', shippingOptions?.length || 0);
+    
+    // Al cambiar la dirección seleccionada, registrar el cambio para diagnóstico
+    if (previousAddress && selectedAddress && previousAddress.id !== selectedAddress.id) {
+      console.log('⚠️ La dirección ha cambiado:', {
+        anterior: { id: previousAddress.id, cp: previousAddress.zip || previousAddress.zipcode },
+        nueva: { id: selectedAddress.id, cp: selectedAddress.zip || selectedAddress.zipcode }
+      });
       
-      // Solo loggear información esencial en el primer renderizado
-      if (calculatedShippingGroups?.length > 0) {
-        console.warn('🚚 SHIPPING GROUPS:', calculatedShippingGroups.length);
-        console.warn('📏 SHIPPING RULES:', calculatedShippingRules.length);
-        console.warn('🚢 SHIPPING OPTIONS:', shippingOptions?.length || 0);
+      // Guardar info de la última opción seleccionada para esta dirección para facilitar reconexión
+      if (selectedShippingOption) {
+        const addressKey = previousAddress.id;
+        const optionInfo = {
+          id: selectedShippingOption.id,
+          description: selectedShippingOption.description || selectedShippingOption.label,
+          isFree: selectedShippingOption.isFreeShipping
+        };
+        
+        // Guardar en el historial de opciones por dirección
+        setShippingOptionsHistory(prev => ({
+          ...prev,
+          [addressKey]: optionInfo
+        }));
+        
+        console.log('📝 Guardando preferencia de envío para dirección', addressKey, optionInfo);
       }
-      
-      // Marcar como ya renderizado
-      checkoutInitialLoadRef.current = false;
     }
-  }, [
-    calculatedShippingGroups, 
-    calculatedShippingRules,
-    shippingOptions
-  ]);
+    
+    setPreviousAddress(selectedAddress);
+  }, [selectedAddress, calculatedShippingGroups, calculatedShippingRules, shippingOptions, selectedShippingOption]);
 
   /**
    * Determina si el botón de procesamiento debe estar deshabilitado
@@ -191,14 +207,40 @@ export const CheckoutContent = () => {
   ]);
 
   // Manejador para cuando se selecciona una opción de envío
-  const handleShippingOptionSelect = (optionId) => {
-    if (!optionId) {
-      console.warn('⚠️ CheckoutContent: Intento de seleccionar opción sin ID');
+  const handleShippingOptionSelect = (option) => {
+    if (!option) {
+      console.warn('⚠️ CheckoutContent: Intento de seleccionar una opción nula');
       return;
     }
     
-    console.log(`🚚 CheckoutContent: Seleccionando opción ${optionId}`);
-    selectShippingOption(optionId);
+    console.log('🚚 CheckoutContent: Seleccionando opción', option);
+    
+    // Guardar la opción seleccionada previamente para diagnóstico
+    const prevOption = selectedShippingOption;
+    
+    // Registrar detalles para diagnóstico
+    if (prevOption) {
+      console.log('📝 Cambiando de opción:', {
+        previa: {
+          id: prevOption.id,
+          precio: prevOption.totalCost || prevOption.calculatedCost || 0,
+          esGratis: prevOption.isFreeShipping
+        },
+        nueva: {
+          id: option.id,
+          precio: option.totalCost || option.calculatedCost || option.totalPrice || 0,
+          esGratis: option.isFreeShipping || option.isAllFree
+        }
+      });
+    }
+    
+    // Verificar que la función selectShippingOption esté disponible
+    if (typeof selectShippingOption === 'function') {
+      // Actualizar el costo de envío
+      selectShippingOption(option);
+    } else {
+      console.error('❌ Error: La función selectShippingOption no está disponible');
+    }
   };
 
   // Manejador para actualizar las combinaciones de envío calculadas
@@ -215,6 +257,12 @@ export const CheckoutContent = () => {
   
   // Verificar si estamos en desarrollo para mostrar herramientas de diagnóstico
   const isDevelopment = process.env.NODE_ENV === 'development';
+
+  // Estado para almacenar la dirección anterior
+  const [previousAddress, setPreviousAddress] = useState(null);
+
+  // Historial de opciones seleccionadas por dirección
+  const [shippingOptionsHistory, setShippingOptionsHistory] = useState({});
 
   return (
     <div className="container checkout-page my-5">

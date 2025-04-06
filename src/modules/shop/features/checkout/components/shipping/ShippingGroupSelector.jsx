@@ -1,182 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { processCartForShipping } from '../../../cart/services/shippingGroupService';
-
-// Estilos personalizados para los radio buttons
-const radioStyles = {
-  radioContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    height: '100%'
-  },
-  radioInput: {
-    cursor: 'pointer',
-    width: '20px',
-    height: '20px',
-    accentColor: '#198754', // Color verde Bootstrap
-    appearance: 'none',
-    border: '2px solid #ced4da',
-    borderRadius: '50%',
-    outline: 'none',
-    backgroundColor: '#fff',
-    boxShadow: 'none',
-    position: 'relative'
-  },
-  selectedRow: {
-    backgroundColor: 'rgba(25, 135, 84, 0.1)' // Verde claro para filas seleccionadas
-  }
-};
-
-// Estilos CSS personalizados para los radio buttons y el componente
-const styleElement = document.createElement('style');
-styleElement.textContent = `
-  .shipping-option-radio:checked {
-    background-color: #ffffff !important;
-    border-color: #198754 !important;
-    box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.25) !important;
-  }
-  
-  .shipping-option-radio:checked::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #198754;
-    display: block;
-  }
-  
-  .shipping-option-radio {
-    width: 18px !important;
-    height: 18px !important;
-    cursor: pointer !important;
-    border: 1px solid #dee2e6 !important;
-    appearance: none !important;
-    border-radius: 50% !important;
-    margin-top: 0 !important;
-    position: relative !important;
-  }
-  
-  .shipping-groups-container {
-    font-size: 0.95rem;
-  }
-  
-  .shipping-option-selected {
-    background-color: rgba(25, 135, 84, 0.05) !important;
-    border: 1px solid rgba(25, 135, 84, 0.2) !important;
-    border-radius: 0.375rem !important;
-  }
-  
-  .shipping-options-table {
-    background-color: #ffffff;
-  }
-  
-  .shipping-options-table table {
-    margin-bottom: 0;
-    border-collapse: separate;
-    border-spacing: 0 0.5rem;
-  }
-  
-  .shipping-options-table thead th {
-    font-weight: 500;
-    color: #6c757d;
-    border-bottom: none;
-    padding: 0.6rem 1rem;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .shipping-options-table tbody tr {
-    transition: all 0.15s ease-in-out;
-    cursor: pointer;
-    background-color: #fcfcfc;
-    border-radius: 0.375rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  }
-  
-  .shipping-options-table tbody tr:hover {
-    background-color: rgba(25, 135, 84, 0.02);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
-  }
-  
-  .shipping-options-table tbody td {
-    padding: 1rem;
-    vertical-align: middle;
-    border: none;
-  }
-  
-  .shipping-options-table tbody td:first-child {
-    border-top-left-radius: 0.375rem;
-    border-bottom-left-radius: 0.375rem;
-  }
-  
-  .shipping-options-table tbody td:last-child {
-    border-top-right-radius: 0.375rem;
-    border-bottom-right-radius: 0.375rem;
-  }
-  
-  .shipping-option-details {
-    margin-top: 0.5rem;
-  }
-  
-  .shipping-option-details-item {
-    background-color: rgba(25, 135, 84, 0.03);
-    border-radius: 0.25rem;
-    padding: 0.5rem;
-    margin-bottom: 0.25rem;
-    border-left: 2px solid #198754;
-    font-size: 0.85rem;
-  }
-  
-  .shipping-option-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.4rem;
-    margin-left: 0.5rem;
-    font-weight: 500;
-  }
-  
-  .shipping-options-alert {
-    border: none;
-    background-color: rgba(25, 135, 84, 0.05);
-    color: #198754;
-    font-size: 0.9rem;
-    padding: 0.75rem;
-    border-left: 3px solid #198754;
-  }
-  
-  .shipping-option-price {
-    font-size: 1rem;
-    font-weight: 500;
-  }
-  
-  .shipping-option-free {
-    color: #198754;
-    font-weight: 600;
-  }
-  
-  .shipping-section-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #212529;
-    margin-bottom: 1rem;
-  }
-  
-  .shipping-options-count {
-    font-size: 0.75rem;
-    padding: 0.2rem 0.5rem;
-    background-color: rgba(25, 135, 84, 0.1);
-    color: #198754;
-    border-radius: 1rem;
-    font-weight: 500;
-  }
-`;
-document.head.appendChild(styleElement);
+import './ShippingGroupSelector.css';
 
 /**
  * Componente para seleccionar opciones de envío agrupadas por reglas
@@ -307,16 +131,23 @@ const ShippingGroupSelector = ({
           // Solo seleccionar la primera opción automáticamente si no hay opción seleccionada
           // y no se ha realizado la selección inicial
           if (!selectedOptionId && combinations.length > 0 && onOptionSelect && !initialSelectionMade.current) {
-            const firstOptionId = combinations[0].id;
-            console.log('🔄 Seleccionando primera opción automáticamente:', firstOptionId);
-            
-            // Asegurarnos de que el ID es válido antes de seleccionarlo
-            if (firstOptionId) {
-              initialSelectionMade.current = true;
-              onOptionSelect(firstOptionId);
-            } else {
-              console.warn('⚠️ No se pudo seleccionar la primera opción: ID no válido');
-            }
+            // Usar timeout para evitar problema de referencias inconsistentes durante el renderizado
+            setTimeout(() => {
+              try {
+                const firstOption = combinations[0];
+                console.log('🔄 Seleccionando primera opción automáticamente:', firstOption.id);
+                
+                // Asegurarnos de que el ID es válido antes de seleccionarlo
+                if (firstOption && firstOption.id) {
+                  initialSelectionMade.current = true;
+                  onOptionSelect(firstOption);
+                } else {
+                  console.warn('⚠️ No se pudo seleccionar la primera opción: ID no válido');
+                }
+              } catch (err) {
+                console.error('Error al seleccionar primera opción:', err);
+              }
+            }, 100);
           }
         }
       } catch (error) {
@@ -335,17 +166,28 @@ const ShippingGroupSelector = ({
   }, [cartItems, userAddress]);
   
   // Manejar selección de opción
-  const handleOptionSelect = (optionId, event) => {
-    // Prevenir la propagación del evento para evitar doble disparo
-    if (event) {
-      event.stopPropagation();
+  const handleOptionSelect = (option) => {
+    // Validar que la opción existe y sigue siendo válida
+    const isValidOption = shippingCombinations.some(opt => opt.id === option.id);
+    
+    if (!isValidOption) {
+      console.error('❌ Error: Se intentó seleccionar una opción de envío que ya no es válida:', option.id);
+      return;
     }
     
-    console.log('📦 Seleccionando opción manualmente:', optionId);
+    console.log(`✅ Seleccionada opción de envío: ${option.id} (${option.description || option.name || 'Opción'}) - $${option.totalPrice}`);
     
-    if (onOptionSelect && optionId) {
-      onOptionSelect(optionId);
-    }
+    // Pasar el objeto completo con toda la información disponible para facilitar la búsqueda
+    // cuando cambiamos entre direcciones
+    onOptionSelect({
+      ...option,
+      // Asegurar que tenemos todos los campos críticos
+      id: option.id,
+      name: option.name || option.description || 'Opción de envío',
+      description: option.description || option.name || 'Opción de envío',
+      totalPrice: option.totalPrice || 0,
+      isAllFree: option.isAllFree || false
+    });
   };
   
   // Generar texto detallado para una combinación
@@ -396,7 +238,7 @@ const ShippingGroupSelector = ({
   if (status.error) {
     return (
       <div className="py-2">
-        <div className="alert alert-danger border-0 rounded-3" style={{ borderLeft: '3px solid #dc3545' }} role="alert">
+        <div className="alert alert-danger border-0 rounded-3 shipping-error-alert" role="alert">
           <div className="d-flex">
             <i className="bi bi-exclamation-circle me-3"></i>
             <div>
@@ -416,7 +258,7 @@ const ShippingGroupSelector = ({
                   </button>
                   <div className="collapse mt-2" id="errorDebugInfo">
                     <div className="bg-light rounded p-2">
-                      <pre className="mb-0 small text-danger" style={{ fontSize: '0.75rem' }}>{JSON.stringify(status.debug, null, 2)}</pre>
+                      <pre className="mb-0 small text-danger debug-info">{JSON.stringify(status.debug, null, 2)}</pre>
                     </div>
                   </div>
                 </div>
@@ -432,7 +274,7 @@ const ShippingGroupSelector = ({
   if (shippingCombinations.length === 0 || status.noOptions) {
     return (
       <div className="py-2">
-        <div className="alert alert-warning border-0 rounded-3" style={{ borderLeft: '3px solid #ffc107' }} role="alert">
+        <div className="alert alert-warning border-0 rounded-3 shipping-warning-alert" role="alert">
           <div className="d-flex">
             <i className="bi bi-exclamation-triangle me-3"></i>
             <div>
@@ -453,7 +295,7 @@ const ShippingGroupSelector = ({
                   </button>
                   <div className="collapse mt-2" id="debugInfo">
                     <div className="bg-light rounded p-2">
-                      <pre className="mb-0 small" style={{ fontSize: '0.75rem' }}>{JSON.stringify(status.debug, null, 2)}</pre>
+                      <pre className="mb-0 small debug-info">{JSON.stringify(status.debug, null, 2)}</pre>
                     </div>
                   </div>
                 </div>
@@ -519,7 +361,7 @@ const ShippingGroupSelector = ({
                 <tr 
                   key={combination.id}
                   className={`${isSelected ? 'shipping-option-selected' : ''}`}
-                  onClick={(e) => handleOptionSelect(combination.id, e)}
+                  onClick={() => handleOptionSelect(combination)}
                 >
                   <td className="text-center">
                     <input 
@@ -527,7 +369,7 @@ const ShippingGroupSelector = ({
                       className="shipping-option-radio" 
                       name="shipping-option"
                       checked={isSelected}
-                      onChange={(e) => handleOptionSelect(combination.id, e)}
+                      onChange={(e) => handleOptionSelect(combination)}
                       onClick={(e) => e.stopPropagation()}
                     />
                   </td>

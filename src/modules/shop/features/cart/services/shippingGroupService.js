@@ -692,7 +692,8 @@ const processCartForShipping = async (cartItems, userAddress = null) => {
   console.log('🚚 Procesando carrito para opciones de envío:', { 
     productos: cartItems?.length || 0, 
     tieneUserAddress: !!userAddress,
-    direccion: userAddress ? `${userAddress.street}, ${userAddress.city}, ${userAddress.zipcode || userAddress.zip}` : 'No disponible'
+    direccion: userAddress ? `${userAddress.street}, ${userAddress.city}, ${userAddress.zipcode || userAddress.zip}` : 'No disponible',
+    codigoPostal: userAddress?.zipcode || userAddress?.zip || 'No disponible'
   });
   
   // Validar entrada
@@ -704,6 +705,10 @@ const processCartForShipping = async (cartItems, userAddress = null) => {
       error: 'El carrito está vacío o tiene un formato inválido'
     };
   }
+  
+  // Guardar el código postal para validaciones posteriores
+  const userZipCode = userAddress?.zipcode || userAddress?.zip;
+  console.log(`📮 Código postal para validación: ${userZipCode || 'No disponible'}`);
   
   try {
     // Paso 1: Analizar los productos y sus reglas de envío
@@ -803,16 +808,46 @@ const processCartForShipping = async (cartItems, userAddress = null) => {
       };
     }
     
-    // Paso 3: Calcular opciones de envío para cada grupo
+    // Paso 3: Calcular opciones de envío para cada grupo, validando el código postal
     let groupsWithOptions = [];
     try {
       groupsWithOptions = shippingGroups.map(group => {
-        const options = calculateShippingOptionsForGroup(group, productDetails, ruleDetails);
+        // Filtrar las reglas que aplican al código postal actual
+        const validRulesForZipCode = group.rules.filter(ruleId => {
+          const rule = ruleDetails[ruleId];
+          
+          // Si la regla no existe, no es válida
+          if (!rule) return false;
+          
+          // Si no hay código postal del usuario, aceptar todas las reglas (condición de fallback)
+          if (!userZipCode) return true;
+          
+          // Si es una regla nacional sin restricción de CP, es válida
+          if (rule.es_nacional && !rule.codigos_postales_incluidos) return true;
+          
+          // Si tiene códigos postales específicos, verificar si el CP del usuario está incluido
+          if (rule.codigos_postales_incluidos && Array.isArray(rule.codigos_postales_incluidos)) {
+            return rule.codigos_postales_incluidos.includes(userZipCode);
+          }
+          
+          // Por defecto, aceptar la regla
+          return true;
+        });
+        
+        console.log(`📦 Grupo: ${validRulesForZipCode.length} de ${group.rules.length} reglas válidas para CP ${userZipCode || 'N/A'}`);
+        
+        // Calcular opciones solo con las reglas que aplican para este código postal
+        const filteredGroup = {
+          ...group,
+          rules: validRulesForZipCode
+        };
+        
+        const options = calculateShippingOptionsForGroup(filteredGroup, productDetails, ruleDetails);
         
         return {
           id: uuidv4(),
           products: group.products.map(productId => productDetails[productId] || { id: productId }),
-          rules: group.rules.map(ruleId => ruleDetails[ruleId] || { id: ruleId }),
+          rules: validRulesForZipCode.map(ruleId => ruleDetails[ruleId] || { id: ruleId }),
           shippingOptions: options
         };
       });
