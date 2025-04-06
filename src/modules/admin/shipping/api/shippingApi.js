@@ -88,36 +88,101 @@ export const fetchShippingRuleById = async (ruleId) => {
         ...docSnap.data()
       };
       
-      // Validar que tenga la estructura correcta
-      if (!data.opciones_mensajeria || !Array.isArray(data.opciones_mensajeria) || data.opciones_mensajeria.length === 0) {
-        console.warn(`⚠️ Regla ${ruleId} no tiene opciones de mensajería válidas`);
-        data.opciones_mensajeria = [{
-          nombre: "Envío Estándar",
-          label: "Envío Estándar",
-          precio: "200",
-          tiempo_entrega: "3-5 días",
-          configuracion_paquetes: {
-            peso_maximo_paquete: 20,
-            costo_por_kg_extra: 10,
-            maximo_productos_por_paquete: 10
-          }
-        }];
-      } else {
-        // Asegurar que cada opción tenga configuración de paquetes
-        data.opciones_mensajeria = data.opciones_mensajeria.map(option => {
-          if (!option.configuracion_paquetes) {
-            return {
-              ...option,
+      // Validar y normalizar datos para compatibilidad
+      
+      // 1. Asegurar que tenemos opciones de mensajería accesibles
+      let hasValidOptions = false;
+      
+      // Estructura 1: opciones_mensajeria directo en la raíz
+      if (data.opciones_mensajeria && Array.isArray(data.opciones_mensajeria) && data.opciones_mensajeria.length > 0) {
+        hasValidOptions = true;
+        console.log(`Regla ${ruleId} tiene ${data.opciones_mensajeria.length} opciones directas`);
+      }
+      // Estructura 2: dentro de envio_variable
+      else if (data.envio_variable && data.envio_variable.opciones_mensajeria && 
+               Array.isArray(data.envio_variable.opciones_mensajeria) && 
+               data.envio_variable.opciones_mensajeria.length > 0) {
+        hasValidOptions = true;
+        
+        // Para asegurar que las opciones son accesibles, las duplicamos en la raíz
+        data.opciones_mensajeria = [...data.envio_variable.opciones_mensajeria];
+        console.log(`Regla ${ruleId} tiene ${data.opciones_mensajeria.length} opciones en envio_variable`);
+      }
+      
+      // Si no hay opciones válidas, crear predeterminadas
+      if (!hasValidOptions) {
+        console.warn(`⚠️ Regla ${ruleId} no tiene opciones de mensajería, creando predeterminadas`);
+        
+        // Crear opciones predeterminadas
+        if (data.zona?.toLowerCase().includes('nacional')) {
+          // Opciones nacionales
+          data.opciones_mensajeria = [
+            {
+              nombre: "Correos de México",
+              label: "Básico",
+              precio: "200",
+              tiempo_entrega: "3-10 días",
               configuracion_paquetes: {
                 peso_maximo_paquete: 20,
                 costo_por_kg_extra: 10,
                 maximo_productos_por_paquete: 10
               }
-            };
-          }
-          return option;
-        });
+            },
+            {
+              nombre: "Correos de México",
+              label: "Express",
+              precio: "350",
+              tiempo_entrega: "1-3 días",
+              configuracion_paquetes: {
+                peso_maximo_paquete: 20,
+                costo_por_kg_extra: 15,
+                maximo_productos_por_paquete: 10
+              }
+            }
+          ];
+        } else {
+          // Opciones locales
+          data.opciones_mensajeria = [{
+            nombre: "Entrega local",
+            label: "Estándar",
+            precio: data.envio_gratis ? "0" : "50",
+            tiempo_entrega: "1-2 días",
+            configuracion_paquetes: {
+              peso_maximo_paquete: 20,
+              costo_por_kg_extra: 10,
+              maximo_productos_por_paquete: 10
+            }
+          }];
+        }
+        
+        // Si no existía envio_variable, crearlo
+        if (!data.envio_variable) {
+          data.envio_variable = {
+            aplica: true,
+            opciones_mensajeria: [...data.opciones_mensajeria]
+          };
+        }
+        // Si existe pero no tiene opciones_mensajeria
+        else if (!data.envio_variable.opciones_mensajeria || !Array.isArray(data.envio_variable.opciones_mensajeria)) {
+          data.envio_variable.aplica = true;
+          data.envio_variable.opciones_mensajeria = [...data.opciones_mensajeria];
+        }
       }
+      
+      // 2. Asegurar que cada opción tenga configuración de paquetes
+      data.opciones_mensajeria = data.opciones_mensajeria.map(option => {
+        if (!option.configuracion_paquetes) {
+          return {
+            ...option,
+            configuracion_paquetes: {
+              peso_maximo_paquete: 20,
+              costo_por_kg_extra: 10,
+              maximo_productos_por_paquete: 10
+            }
+          };
+        }
+        return option;
+      });
       
       console.log(`✅ Regla encontrada: ${data.zona || ruleId}`);
       return data;

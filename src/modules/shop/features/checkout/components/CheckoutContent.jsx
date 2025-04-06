@@ -56,13 +56,14 @@ export const CheckoutContent = () => {
 
   // Obtener opciones de envío
   const {
-    loading: loadingShippingOptions,
+    loading: loadingShipping,
     options: shippingOptions,
     selectedOption: selectedShippingOption,
     selectShippingOption,
     shippingGroups: calculatedShippingGroups,
     shippingRules: calculatedShippingRules,
     excludedProducts,
+    updateShippingCombinations,
     error: shippingError
   } = useShippingOptions(
     cartItems, 
@@ -71,27 +72,48 @@ export const CheckoutContent = () => {
     checkout.selectedAddressType
   );
 
-  // Seleccionar automáticamente la opción más barata si hay opciones disponibles y ninguna seleccionada
+  // Cuando se cargan las opciones, seleccionar automáticamente la más económica
   useEffect(() => {
-    if (shippingOptions?.length > 0 && !selectedShippingOption && selectShippingOption) {
-      // Ordenar por precio y seleccionar la más barata
-      const cheapestOption = [...shippingOptions].sort((a, b) => 
-        (a.totalCost || a.calculatedCost || 9999) - (b.totalCost || b.calculatedCost || 9999)
-      )[0];
-      
-      if (cheapestOption) {
-        console.log('🏷️ Seleccionando automáticamente la opción más económica:', cheapestOption.label);
-        selectShippingOption(cheapestOption);
+    // Solo ejecutar si hay opciones disponibles, no está cargando y no hay opción seleccionada
+    if (shippingOptions.length > 0 && !loadingShipping && !selectedShippingOption && selectShippingOption) {
+      // Usar una referencia para evitar múltiples selecciones
+      if (!checkoutInitialLoadRef.current) {
+        console.log('🔄 CheckoutContent: Seleccionando automáticamente la opción más económica');
+        checkoutInitialLoadRef.current = true;
+        
+        // Encontrar la opción más económica
+        const cheapestOption = [...shippingOptions].sort((a, b) => 
+          (a.totalCost || 0) - (b.totalCost || 0)
+        )[0];
+        
+        if (cheapestOption) {
+          console.log(`🔄 CheckoutContent: Seleccionando opción ${cheapestOption.id}`);
+          selectShippingOption(cheapestOption);
+        }
       }
+    } else if (shippingOptions.length === 0) {
+      // Resetear la referencia si no hay opciones
+      checkoutInitialLoadRef.current = false;
     }
-  }, [shippingOptions, selectedShippingOption, selectShippingOption]);
+  }, [shippingOptions, loadingShipping, selectedShippingOption, selectShippingOption]);
+
+  // Referencia para controlar el log inicial
+  const checkoutInitialLoadRef = useRef(true);
+  // Referencia para controlar las actualizaciones del costo de envío
+  const shippingUpdateRef = useRef(null);
 
   // Actualizar el costo de envío cuando cambia la opción seleccionada
   useEffect(() => {
     if (selectedShippingOption && updateShipping) {
+      // Verificar si el costo de envío ya fue actualizado con este valor
       const shippingCost = selectedShippingOption.totalCost || selectedShippingOption.calculatedCost || 0;
-      console.log(`💸 Costo de envío actualizado a $${shippingCost}`);
-      updateShipping(shippingCost);
+      
+      // Solo actualizar si el costo cambió realmente
+      if (shippingUpdateRef.current !== shippingCost) {
+        console.log(`💸 Costo de envío actualizado a $${shippingCost}`);
+        shippingUpdateRef.current = shippingCost;
+        updateShipping(shippingCost);
+      }
     }
   }, [selectedShippingOption, updateShipping]);
 
@@ -117,9 +139,6 @@ export const CheckoutContent = () => {
     calculatedShippingRules,
     shippingOptions
   ]);
-
-  // Referencia para controlar el log inicial
-  const checkoutInitialLoadRef = useRef(true);
 
   /**
    * Determina si el botón de procesamiento debe estar deshabilitado
@@ -172,8 +191,22 @@ export const CheckoutContent = () => {
   ]);
 
   // Manejador para cuando se selecciona una opción de envío
-  const handleShippingOptionSelect = (option) => {
-    selectShippingOption(option);
+  const handleShippingOptionSelect = (optionId) => {
+    if (!optionId) {
+      console.warn('⚠️ CheckoutContent: Intento de seleccionar opción sin ID');
+      return;
+    }
+    
+    console.log(`🚚 CheckoutContent: Seleccionando opción ${optionId}`);
+    selectShippingOption(optionId);
+  };
+
+  // Manejador para actualizar las combinaciones de envío calculadas
+  const handleCombinationsCalculated = (combinations) => {
+    console.log('🔄 CheckoutContent: Recibidas combinaciones:', combinations.length);
+    if (updateShippingCombinations) {
+      updateShippingCombinations(combinations);
+    }
   };
 
   // Estados locales
@@ -310,10 +343,11 @@ export const CheckoutContent = () => {
 
           shippingOptions={shippingOptions}
           selectedShippingOptionId={selectedShippingOption?.id}
-          loadingShippingOptions={loadingShippingOptions}
+          loadingShippingOptions={loadingShipping}
           handleShippingOptionSelect={handleShippingOptionSelect}
           newAddressData={checkout.newAddressData}
           shippingError={shippingError}
+          onCombinationsCalculated={handleCombinationsCalculated}
 
           paymentMethods={checkout.paymentMethods}
           selectedPaymentId={checkout.selectedPaymentId}

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { SectionTitle } from '../ui/SectionTitle';
 import ShippingGroupSelector from '../shipping/ShippingGroupSelector';
 import { useCart } from '../../../cart/hooks/useCart';
+import { processCartForShipping } from '../../../cart/services/shippingGroupService';
 
 
 /**
@@ -17,6 +18,7 @@ import { useCart } from '../../../cart/hooks/useCart';
  * @param {Object} props.newAddressData - Datos de la dirección nueva (si aplica)
  * @param {Object} props.savedAddressData - Datos de la dirección guardada (si aplica)
  * @param {string} props.error - Mensaje de error (si aplica)
+ * @param {Function} props.onCombinationsCalculated - Función llamada cuando se calculan las combinaciones
  */
 export const ShippingOptionsSection = ({
   selectedOptionId,
@@ -26,7 +28,8 @@ export const ShippingOptionsSection = ({
   selectedAddressType = 'saved',
   newAddressData = null,
   savedAddressData = null,
-  error = null
+  error = null,
+  onCombinationsCalculated
 }) => {
   // Referencia para controlar logs
   const loggedStatesRef = useRef({});
@@ -36,6 +39,17 @@ export const ShippingOptionsSection = ({
   
   // Determinar qué dirección usar
   const userAddress = selectedAddressType === 'new' ? newAddressData : savedAddressData;
+  
+  // Log detallado para diagnóstico de dirección
+  useEffect(() => {
+    console.log('🏠 Dirección para opciones de envío:', {
+      tipo: selectedAddressType,
+      direccion: userAddress ? JSON.stringify(userAddress).substring(0, 200) : 'No disponible',
+      completa: !!userAddress,
+      tieneCP: userAddress?.zipcode || userAddress?.zip || 'No',
+      tieneCartItems: cartItems?.length || 0
+    });
+  }, [userAddress, selectedAddressType, cartItems]);
   
   // Log para diagnóstico más controlado
   useEffect(() => {
@@ -149,6 +163,7 @@ export const ShippingOptionsSection = ({
             selectedOptionId={selectedOptionId}
             onOptionSelect={onOptionSelect}
             userAddress={userAddress}
+            onCombinationsCalculated={onCombinationsCalculated}
           />
         )}
       </div>
@@ -164,7 +179,8 @@ ShippingOptionsSection.propTypes = {
   selectedAddressType: PropTypes.string,
   newAddressData: PropTypes.object,
   savedAddressData: PropTypes.object,
-  error: PropTypes.string
+  error: PropTypes.string,
+  onCombinationsCalculated: PropTypes.func
 };
 
 export default ShippingOptionsSection; 

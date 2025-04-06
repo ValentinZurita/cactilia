@@ -54,7 +54,8 @@ export const CheckoutForm = ({
                                // Notas
                                orderNotes,
                                handleNotesChange,
-                               cartItems = []
+                               cartItems = [],
+                               onCombinationsCalculated
                              }) => {
 
   // Hook para validación de stock
@@ -82,10 +83,12 @@ export const CheckoutForm = ({
         selectedOptionId={selectedShippingOptionId}
         onOptionSelect={handleShippingOptionSelect}
         loading={loadingShippingOptions}
-        addressSelected={!!selectedAddressId}
+        addressSelected={!!(selectedAddressId || (newAddressData?.street && newAddressData?.city))}
         selectedAddressType={selectedAddressType}
         newAddressData={newAddressData}
+        savedAddressData={addresses?.find(addr => addr.id === selectedAddressId)}
         error={shippingError}
+        onCombinationsCalculated={onCombinationsCalculated}
       />
 
       {/* Sección: Metodo de Pago */}

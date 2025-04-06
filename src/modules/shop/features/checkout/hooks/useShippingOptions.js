@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { fetchShippingRuleById } from '../../../../admin/shipping/api/shippingApi';
 import { groupProductsIntoPackages, calculateTotalShippingCost } from '../../../../checkout/utils/shippingCalculator';
 
@@ -21,6 +21,13 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
   const [shippingRules, setShippingRules] = useState([]);
   // Estado para productos excluidos (sin reglas de envío)
   const [excludedProducts, setExcludedProducts] = useState([]);
+  
+  // Usar useRef para controlar la inicialización y evitar loops
+  const optionsLoadedRef = useRef(false);
+  const shippingUpdateRef = useRef(null);
+  
+  // Estados para manejar combinaciones de shippingGroupService
+  const [shippingCombinations, setShippingCombinations] = useState([]);
   
   // Obtener dirección del usuario cuando cambia la dirección seleccionada
   useEffect(() => {
@@ -374,6 +381,9 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
         console.log(`🚚 Opciones calculadas: ${sortedOptions.length}`);
         setOptions(sortedOptions);
         
+        // Marcar que las opciones han sido cargadas
+        optionsLoadedRef.current = true;
+        
         // Si hay una opción seleccionada y ya no está disponible, deseleccionarla
         if (selectedOption && !sortedOptions.some(opt => opt.id === selectedOption.id)) {
           setSelectedOption(null);
@@ -382,17 +392,95 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
         console.error('Error al calcular opciones de envío:', err);
         setError('Error al calcular opciones de envío');
       } finally {
-      setLoading(false);
+        setLoading(false);
       }
     };
     
     calculateShippingOptions();
   }, [cartItems, userAddress]);
   
+  // Manejar la selección automática de la primera opción una sola vez cuando las opciones estén disponibles
+  useEffect(() => {
+    // Solo ejecutar esto una vez cuando las opciones estén disponibles y no haya ninguna seleccionada
+    if (options.length > 0 && !selectedOption && !loading && optionsLoadedRef.current) {
+      // Usar una referencia para evitar llamar esto múltiples veces
+      if (!shippingUpdateRef.current) {
+        console.log('🔄 Seleccionando automáticamente la opción más económica (ejecución única)');
+        
+        // Marcar que ya hemos hecho una selección automática para este conjunto de opciones
+        shippingUpdateRef.current = 'autoselected';
+        
+        // Seleccionar la opción más económica
+        const cheapestOption = [...options].sort((a, b) => 
+          (a.totalCost || a.calculatedCost || 9999) - (b.totalCost || b.calculatedCost || 9999)
+        )[0];
+        
+        if (cheapestOption) {
+          setSelectedOption(cheapestOption);
+        }
+      }
+    } else if (options.length === 0 || loading) {
+      // Reset the ref when options change or are loading
+      shippingUpdateRef.current = null;
+    }
+  }, [options, selectedOption, loading]);
+  
+  // Función para actualizar las combinaciones generadas externamente
+  const updateShippingCombinations = (combinations) => {
+    if (combinations && Array.isArray(combinations) && combinations.length > 0) {
+      console.log(`🔄 useShippingOptions: Actualizando ${combinations.length} combinaciones externas`);
+      setShippingCombinations(combinations);
+      
+      // Resetear el estado de selección cuando se actualizan las combinaciones
+      setSelectedOption(null);
+      shippingUpdateRef.current = null;
+    }
+  };
+  
   // Función para seleccionar una opción
-  const selectShippingOption = (option) => {
-    if (option) {
-    setSelectedOption(option);
+  const selectShippingOption = (optionId) => {
+    if (!optionId) {
+      console.warn('⚠️ Intento de seleccionar una opción de envío sin ID');
+      return;
+    }
+    
+    console.log('🔄 Opción de envío seleccionada:', optionId);
+    
+    // Primero intentar encontrar la opción en las combinaciones externas
+    if (shippingCombinations.length > 0) {
+      const selectedCombination = shippingCombinations.find(combo => combo.id === optionId);
+      
+      if (selectedCombination) {
+        console.log(`💰 Costo de envío (combinación): $${selectedCombination.totalPrice || 0}`);
+        
+        // Adaptar la combinación al formato esperado por el resto del sistema
+        const adaptedOption = {
+          id: selectedCombination.id,
+          label: selectedCombination.description || 'Opción de envío',
+          totalCost: selectedCombination.totalPrice || 0,
+          calculatedCost: selectedCombination.totalPrice || 0,
+          isFreeShipping: selectedCombination.isAllFree,
+          selections: selectedCombination.selections || [],
+          // Añadir campos necesarios para el resto del sistema
+          carrier: 'Combinado',
+          details: `Opción de envío (${selectedCombination.selections?.length || 1} grupos)`
+        };
+        
+        setSelectedOption(adaptedOption);
+        return;
+      }
+    }
+    
+    // Si no está en las combinaciones, buscar en las opciones tradicionales
+    const selectedOpt = options.find(opt => opt.id === optionId);
+    
+    if (selectedOpt) {
+      console.log(`💰 Costo de envío: $${selectedOpt.totalCost || selectedOpt.calculatedCost || 0}`);
+      setSelectedOption(selectedOpt);
+    } else {
+      console.warn(`⚠️ No se encontró la opción con ID: ${optionId}`);
+      console.log('Opciones disponibles:', options.map(o => ({ id: o.id, price: o.totalCost })));
+      console.log('Combinaciones disponibles:', shippingCombinations.map(c => ({ id: c.id, price: c.totalPrice })));
     }
   };
   
@@ -402,6 +490,8 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
     options,
     selectedOption,
     selectShippingOption,
+    updateShippingCombinations,
+    shippingCombinations,
     // Exponer grupos y reglas para el componente de diagnóstico
     shippingGroups,
     shippingRules,
