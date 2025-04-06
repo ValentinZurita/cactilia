@@ -16,7 +16,7 @@ export const usePaymentManager = (userId) => {
   // Estados para método de pago
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
-  const [selectedPaymentType, setSelectedPaymentType] = useState('');
+  const [selectedPaymentType, setSelectedPaymentType] = useState('new_card');
   const [loadingPayments, setLoadingPayments] = useState(true);
   const [newCardData, setNewCardData] = useState({
     cardholderName: '',
@@ -30,48 +30,56 @@ export const usePaymentManager = (userId) => {
 
   // Cargar métodos de pago cuando tenemos un userId
   useEffect(() => {
-    const loadPaymentMethods = async () => {
-      // Si no hay userId o ya cargamos, no hacer nada
-      if (!userId || initialLoadComplete.current) return;
+    loadUserPaymentMethods();
+  }, [userId]);
 
-      setLoadingPayments(true);
-      try {
-        const result = await getUserPaymentMethods(userId);
+  // Función para cargar métodos de pago del usuario
+  const loadUserPaymentMethods = useCallback(async () => {
+    // Si no hay userId, no hacer nada
+    if (!userId) {
+      setLoadingPayments(false);
+      return;
+    }
 
-        if (result.ok) {
-          const paymentData = result.data || [];
-          setPaymentMethods(paymentData);
+    setLoadingPayments(true);
+    try {
+      const result = await getUserPaymentMethods(userId);
 
-          // Seleccionar método por defecto
-          if (paymentData.length > 0 && !selectedPaymentId) {
-            const defaultMethod = paymentData.find(method => method.isDefault);
-            if (defaultMethod) {
-              setSelectedPaymentId(defaultMethod.id);
-              setSelectedPaymentType('card');
-            } else {
-              setSelectedPaymentId(paymentData[0].id);
-              setSelectedPaymentType('card');
-            }
+      if (result.ok) {
+        const methods = result.data || [];
+        setPaymentMethods(methods);
+
+        // Si hay métodos, seleccionar el predeterminado o primero
+        if (methods.length > 0 && !selectedPaymentId) {
+          const defaultMethod = methods.find(m => m.isDefault);
+          if (defaultMethod) {
+            setSelectedPaymentId(defaultMethod.id);
+            setSelectedPaymentType('card');
+          } else {
+            setSelectedPaymentId(methods[0].id);
+            setSelectedPaymentType('card');
           }
-
-          initialLoadComplete.current = true;
-        } else {
-          console.error('Error cargando métodos de pago:', result.error);
-          setPaymentMethods([]);
+        } else if (methods.length === 0) {
+          // Si no hay métodos guardados, seleccionar nueva tarjeta
+          setSelectedPaymentType('new_card');
+          setSelectedPaymentId(null);
         }
-      } catch (error) {
-        console.error('Error en loadPaymentMethods:', error);
-        setPaymentMethods([]);
-      } finally {
-        setLoadingPayments(false);
-      }
-    };
 
-    loadPaymentMethods();
+        initialLoadComplete.current = true;
+      } else {
+        console.error('Error cargando métodos de pago:', result.error);
+        setPaymentMethods([]);
+      }
+    } catch (error) {
+      console.error('Error en loadUserPaymentMethods:', error);
+      setPaymentMethods([]);
+    } finally {
+      setLoadingPayments(false);
+    }
   }, [userId, selectedPaymentId]);
 
-  // Manejador para cambio de método de pago
-  const handlePaymentChange = useCallback((paymentId, paymentType = 'card') => {
+  // Manejador para seleccionar un método de pago existente
+  const handlePaymentSelect = useCallback((paymentId, paymentType = 'card') => {
     setSelectedPaymentId(paymentId);
     setSelectedPaymentType(paymentType);
   }, []);
@@ -93,6 +101,12 @@ export const usePaymentManager = (userId) => {
     setNewCardData(prev => ({ ...prev, ...data }));
   }, []);
 
+  // Función para manejar cuando se ha agregado un nuevo método de pago
+  const handlePaymentMethodAdded = useCallback(() => {
+    // Recargar la lista de métodos de pago
+    loadUserPaymentMethods();
+  }, [loadUserPaymentMethods]);
+
   // Obtener el método de pago seleccionado del array de métodos
   const selectedPayment = selectedPaymentType === 'card'
     ? paymentMethods.find(method => method.id === selectedPaymentId)
@@ -108,9 +122,10 @@ export const usePaymentManager = (userId) => {
     newCardData,
 
     // Métodos
-    handlePaymentChange,
+    handlePaymentSelect,
     handleNewCardSelect,
     handleOxxoSelect,
-    handleNewCardDataChange
+    handleNewCardDataChange,
+    handlePaymentMethodAdded
   };
 };

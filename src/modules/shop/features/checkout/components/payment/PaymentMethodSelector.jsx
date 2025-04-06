@@ -4,6 +4,7 @@ import { useStripe } from '@stripe/react-stripe-js';
 import { PaymentOption } from './PaymentOption.jsx';
 import { OxxoPaymentOption } from './OxxoPaymentOption.jsx';
 import { NewCardForm } from './NewCardForm.jsx';
+import { PaymentFormModal } from '../../../../../user/components/payments/PaymentFormModal.jsx';
 import '../../styles/paymentSelector.css';
 
 /**
@@ -19,6 +20,7 @@ import '../../styles/paymentSelector.css';
  * @param {Function} props.onOxxoSelect - Función para seleccionar pago OXXO
  * @param {Function} props.onNewCardDataChange - Función cuando cambian datos de tarjeta nueva
  * @param {boolean} props.loading - Indica si están cargando los métodos de pago
+ * @param {Function} props.onPaymentMethodAdded - Función para cuando se agrega un nuevo método de pago
  */
 export const PaymentMethodSelector = ({
                                         paymentMethods = [],
@@ -28,7 +30,8 @@ export const PaymentMethodSelector = ({
                                         onNewCardSelect,
                                         onOxxoSelect,
                                         onNewCardDataChange,
-                                        loading = false
+                                        loading = false,
+                                        onPaymentMethodAdded
                                       }) => {
   // Estado local para mostrar formulario de nuevo método
   const [showForm, setShowForm] = useState(false);
@@ -73,6 +76,17 @@ export const PaymentMethodSelector = ({
   // Manejador para guardar la opción de guardar tarjeta
   const handleSaveCardChange = (save) => {
     setSaveCard(save);
+  };
+
+  // Manejador para cuando se agrega exitosamente un método de pago
+  const handlePaymentMethodSuccess = () => {
+    // Cerrar el modal
+    setShowForm(false);
+    
+    // Notificar al componente padre para recargar métodos de pago
+    if (onPaymentMethodAdded) {
+      onPaymentMethodAdded();
+    }
   };
 
   // Si está cargando, mostrar indicador
@@ -179,13 +193,12 @@ export const PaymentMethodSelector = ({
         </Link>
       </div>
 
-      {/* Modal para guardar método de pago - Se implementaría por separado */}
-      {showForm && stripeReady && (
-        <div className="modal-placeholder">
-          {/* Aquí irá el modal de formulario de método de pago */}
-          {/* Se mantiene por compatibilidad pero debe implementarse por separado */}
-        </div>
-      )}
+      {/* Modal para guardar método de pago - Usamos el componente existente */}
+      <PaymentFormModal
+        isOpen={showForm && stripeReady}
+        onClose={() => setShowForm(false)}
+        onSuccess={handlePaymentMethodSuccess}
+      />
     </div>
   );
 };

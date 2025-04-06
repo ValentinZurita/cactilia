@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import '../../styles/addressSelector.css';
 import { AddressOption } from './AddressOption.jsx';
 import { NewAddressForm } from './NewAddressForm.jsx';
-import { formatAddress } from '../../../../utils/index.js'
+import { formatAddress } from '../../../../utils/index.js';
+import { SimpleAddressForm } from '../../../../../user/components/addresses/index.js';
+import { addAddress } from '../../../../../user/services/addressService';
 
 /**
  * Selector de direcciones para el checkout
@@ -30,6 +33,8 @@ export const AddressSelector = ({
                                 }) => {
   // Estado para mostrar el formulario de nueva dirección permanente
   const [showManageForm, setShowManageForm] = useState(false);
+  const { uid } = useSelector(state => state.auth);
+  const [savingAddress, setSavingAddress] = useState(false);
 
   // Estado para guardar dirección temporal
   const [saveAddress, setSaveAddress] = useState(false);
@@ -44,6 +49,35 @@ export const AddressSelector = ({
       onNewAddressDataChange({
         saveAddress: save
       });
+    }
+  };
+
+  // Manejador para guardar una nueva dirección permanente
+  const handleSaveNewAddress = async (addressData) => {
+    setSavingAddress(true);
+    try {
+      // Usar el servicio existente para guardar la dirección
+      const result = await addAddress(uid, addressData);
+      
+      if (result.ok) {
+        // Si guardamos exitosamente, cerrar el modal
+        setShowManageForm(false);
+        
+        // Opcional: Podemos forzar una recarga de direcciones
+        if (onAddAddress) {
+          onAddAddress();
+        }
+        
+        // Mensaje de éxito (se podría mejorar con mensajes globales)
+        alert('Dirección guardada correctamente');
+      } else {
+        throw new Error(result.error || 'Error al guardar dirección');
+      }
+    } catch (error) {
+      console.error('Error al guardar dirección:', error);
+      alert('No se pudo guardar la dirección: ' + error.message);
+    } finally {
+      setSavingAddress(false);
     }
   };
 
@@ -71,6 +105,34 @@ export const AddressSelector = ({
           onAddressChange={onNewAddressDataChange}
           saveAddress={saveAddress}
           onSaveAddressChange={handleSaveAddressChange}
+        />
+        
+        {/* Agregamos las acciones de dirección también para usuarios sin direcciones */}
+        <div className="address-actions mt-3">
+          <button
+            className="btn btn-outline-secondary btn-sm me-2"
+            onClick={() => setShowManageForm(true)}
+          >
+            <i className="bi bi-plus-circle me-1"></i>
+            Guardar Nueva Dirección
+          </button>
+
+          <Link
+            to="/profile/addresses"
+            className="btn btn-link btn-sm text-decoration-none"
+            target="_blank"
+          >
+            <i className="bi bi-pencil me-1"></i>
+            Administrar Direcciones
+          </Link>
+        </div>
+
+        {/* Modal para nueva dirección guardada */}
+        <SimpleAddressForm
+          isOpen={showManageForm}
+          onClose={() => setShowManageForm(false)}
+          onSave={handleSaveNewAddress}
+          loading={savingAddress}
         />
       </div>
     );
@@ -139,11 +201,13 @@ export const AddressSelector = ({
         </Link>
       </div>
 
-      {/* Modal para nueva dirección guardada - Se implementaría en un componente separado */}
-      {showManageForm && (
-        <div className="modal-placeholder">
-        </div>
-      )}
+      {/* Modal para nueva dirección guardada */}
+      <SimpleAddressForm
+        isOpen={showManageForm}
+        onClose={() => setShowManageForm(false)}
+        onSave={handleSaveNewAddress}
+        loading={savingAddress}
+      />
     </div>
   );
 };

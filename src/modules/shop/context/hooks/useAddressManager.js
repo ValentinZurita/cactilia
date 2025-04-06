@@ -16,7 +16,7 @@ export const useAddressManager = (userId) => {
   // Estados para dirección
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [selectedAddressType, setSelectedAddressType] = useState('');
+  const [selectedAddressType, setSelectedAddressType] = useState('new');
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [newAddressData, setNewAddressData] = useState({
     name: '',
@@ -34,82 +34,103 @@ export const useAddressManager = (userId) => {
   // Referencia para evitar múltiples llamadas durante el montaje
   const initialLoadComplete = useRef(false);
 
-  // Cargar direcciones cuando tenemos un userId
+  // Cargar direcciones al montar o cambiar userId
   useEffect(() => {
-    const loadAddresses = async () => {
-      // Si no hay userId o ya cargamos, no hacer nada
-      if (!userId || initialLoadComplete.current) return;
+    loadUserAddresses();
+  }, [userId]);
 
-      setLoadingAddresses(true);
-      try {
-        const result = await getUserAddresses(userId);
+  // Función para cargar direcciones del usuario
+  const loadUserAddresses = useCallback(async () => {
+    if (!userId) {
+      setLoadingAddresses(false);
+      return;
+    }
 
-        if (result.ok) {
-          const addressData = result.data || [];
-          setAddresses(addressData);
+    setLoadingAddresses(true);
 
-          // Seleccionar dirección por defecto
-          if (addressData.length > 0 && !selectedAddressId) {
-            const defaultAddress = addressData.find(addr => addr.isDefault);
-            if (defaultAddress) {
-              setSelectedAddressId(defaultAddress.id);
-              setSelectedAddressType('saved');
-            } else {
-              setSelectedAddressId(addressData[0].id);
-              setSelectedAddressType('saved');
-            }
+    try {
+      const result = await getUserAddresses(userId);
+      if (result.ok) {
+        const userAddresses = result.data || [];
+        setAddresses(userAddresses);
+        
+        // Si hay direcciones, seleccionar la predeterminada o la primera
+        if (userAddresses.length > 0) {
+          const defaultAddress = userAddresses.find(addr => addr.isDefault);
+          if (defaultAddress) {
+            setSelectedAddressId(defaultAddress.id);
+            setSelectedAddressType('saved');
+          } else {
+            setSelectedAddressId(userAddresses[0].id);
+            setSelectedAddressType('saved');
           }
-
-          initialLoadComplete.current = true;
         } else {
-          console.error('Error cargando direcciones:', result.error);
-          setAddresses([]);
+          // Para usuarios nuevos sin direcciones, configurar como "nueva dirección"
+          setSelectedAddressType('new');
+          setSelectedAddressId(null);
         }
-      } catch (error) {
-        console.error('Error en loadAddresses:', error);
+
+        initialLoadComplete.current = true;
+      } else {
+        console.error('Error obteniendo direcciones:', result.error);
         setAddresses([]);
-      } finally {
-        setLoadingAddresses(false);
+        // En caso de error, también configurar como nueva dirección
+        setSelectedAddressType('new');
+        setSelectedAddressId(null);
       }
-    };
+    } catch (error) {
+      console.error('Error en loadUserAddresses:', error);
+      setAddresses([]);
+      // En caso de error, también configurar como nueva dirección
+      setSelectedAddressType('new');
+      setSelectedAddressId(null);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  }, [userId]);
 
-    loadAddresses();
-  }, [userId, selectedAddressId]);
-
-  // Manejador para cambio de dirección
-  const handleAddressChange = useCallback((addressId, addressType = 'saved') => {
+  // Seleccionar una dirección existente
+  const handleAddressSelect = useCallback((addressId, type = 'saved') => {
     setSelectedAddressId(addressId);
-    setSelectedAddressType(addressType);
+    setSelectedAddressType(type);
   }, []);
 
-  // Manejador para seleccionar dirección nueva
+  // Seleccionar nueva dirección (formulario)
   const handleNewAddressSelect = useCallback(() => {
     setSelectedAddressId(null);
     setSelectedAddressType('new');
   }, []);
 
-  // Manejador para actualizar datos de dirección nueva
+  // Manejar cambios en los datos de la nueva dirección
   const handleNewAddressDataChange = useCallback((data) => {
     setNewAddressData(prev => ({ ...prev, ...data }));
   }, []);
 
-  // Obtener la dirección seleccionada del array de direcciones
-  const selectedAddress = selectedAddressType === 'saved'
-    ? addresses.find(addr => addr.id === selectedAddressId)
+  // Handler para cuando se agrega una nueva dirección permanente
+  const handleAddressAdded = useCallback(() => {
+    // Recargar direcciones del usuario
+    loadUserAddresses();
+  }, [loadUserAddresses]);
+
+  // Estado derivado - Dirección seleccionada actual
+  const selectedAddress = selectedAddressType === 'saved' && selectedAddressId
+    ? addresses.find(addr => addr.id === selectedAddressId) || null
     : null;
 
   return {
-    // Estado
+    // Estados
     addresses,
     selectedAddressId,
     selectedAddressType,
-    selectedAddress,
     loadingAddresses,
     newAddressData,
+    selectedAddress,
 
     // Métodos
-    handleAddressChange,
+    loadUserAddresses,
+    handleAddressSelect,
     handleNewAddressSelect,
-    handleNewAddressDataChange
+    handleNewAddressDataChange,
+    handleAddressAdded
   };
 };

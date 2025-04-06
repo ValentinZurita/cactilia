@@ -26,6 +26,7 @@ export const CheckoutForm = ({
                                handleAddressChange,
                                handleNewAddressSelect,
                                handleNewAddressDataChange,
+                               handleAddressAdded,
 
                                // Opciones de envío
                                shippingOptions = [],
@@ -40,10 +41,11 @@ export const CheckoutForm = ({
                                selectedPaymentId,
                                selectedPaymentType,
                                loadingPayments,
-                               handlePaymentChange,
+                               handlePaymentSelect,
                                handleNewCardSelect,
                                handleOxxoSelect,
                                handleNewCardDataChange,
+                               handlePaymentMethodAdded,
 
                                // Facturación
                                requiresInvoice,
@@ -75,6 +77,7 @@ export const CheckoutForm = ({
         onAddressSelect={handleAddressChange}
         onNewAddressSelect={handleNewAddressSelect}
         onNewAddressDataChange={handleNewAddressDataChange}
+        onAddAddress={handleAddressAdded}
       />
 
       {/* Sección: Opciones de Envío */}
@@ -97,10 +100,11 @@ export const CheckoutForm = ({
         selectedPaymentId={selectedPaymentId}
         selectedPaymentType={selectedPaymentType}
         loading={loadingPayments}
-        onPaymentSelect={handlePaymentChange}
+        onPaymentSelect={handlePaymentSelect}
         onNewCardSelect={handleNewCardSelect}
         onOxxoSelect={handleOxxoSelect}
         onNewCardDataChange={handleNewCardDataChange}
+        onPaymentMethodAdded={handlePaymentMethodAdded}
       />
 
       {/* Sección: Información Fiscal */}
