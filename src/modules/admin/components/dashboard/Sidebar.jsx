@@ -37,7 +37,8 @@ export const Sidebar = ({ onLinkClick }) => {
     products: false,
     users: false,
     orders: false,
-    media: false
+    media: false,
+    companyInfo: false
   });
   const [userRole, setUserRole] = useState("admin");
   const dispatch = useDispatch();
@@ -206,6 +207,20 @@ export const Sidebar = ({ onLinkClick }) => {
             label="Editor de Página de Contacto"
             onClick={handleNavClick}
             icon="bi-envelope-fill"
+          />
+        </SidebarDropdown>
+
+        {/* Datos de la Empresa */}
+        <SidebarDropdown
+          label="Datos de la Empresa"
+          icon="bi-building"
+          isOpen={openMenus.companyInfo}
+          toggle={() => toggleMenu("companyInfo")}
+        >
+          <SidebarItem 
+            to="/admin/company-info"
+            label="Información General"
+            onClick={handleNavClick}
           />
         </SidebarDropdown>
 

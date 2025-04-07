@@ -16,6 +16,7 @@ import ContactPageManagementPage from "../components/content/contact/ContactPage
 import { OrderManagementPage } from '../components/orders/OrderManagementPage.jsx'
 import { ShippingManagementPage } from '../components/shipping/pages/ShippingManagementPage.jsx'
 import { ShippingDebugTool } from '../components/dashboard/ShippingDebugTool.jsx'
+import CompanyInfoPage from '../companyInfo/pages/CompanyInfoPage'
 
 export const AdminRoutes = () => {
   return (
@@ -60,6 +61,9 @@ export const AdminRoutes = () => {
           <Route path="users" element={<Navigate to="users/customers" />} />
           <Route path="users/:type" element={<UserManagementPage />} />
           <Route path="users/:type/:mode/:id?" element={<UserManagementPage />} />
+
+          {/* Datos de la Empresa */}
+          <Route path="company-info" element={<CompanyInfoPage />} />
 
           {/* Ejemplo de rutas exclusivas superadmin */}
           <Route element={<RequireAdminAuth superadminOnly={true} />}>
