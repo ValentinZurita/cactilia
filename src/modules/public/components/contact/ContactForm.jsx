@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { InputField, SubmitButton } from '../../../../shared/components/index.js';
+import { useCompanyInfo } from '../../../admin/companyInfo/hooks/useCompanyInfo';
+import { contactService } from '../../../contact/services/contactService';
 
 /**
  * Regular expressions for form validations
@@ -37,6 +39,9 @@ export const ContactForm = ({
                               privacyText = 'Al enviar este formulario, aceptas nuestra política de privacidad.',
                               subjectOptions = ["Consulta general", "Soporte técnico", "Ventas", "Otro"]
                             }) => {
+  // Obtener la información de la empresa usando el hook personalizado
+  const { contactEmail, companyName, loading: companyInfoLoading } = useCompanyInfo();
+  
   // Form state
   const {
     register,
@@ -47,26 +52,46 @@ export const ContactForm = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   /**
    * Form submission handler
    * @param {Object} data - Form data
    */
-  const onSubmit = (data) => {
-    console.log('Form data:', data);
+  const onSubmit = async (data) => {
     setIsSubmitting(true);
-
-    // Simulate successful submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setSubmitError(null);
+    
+    try {
+      // Verificar que se tenga un correo de destino configurado
+      if (!contactEmail) {
+        throw new Error("El correo de contacto no está configurado. Por favor, contacte al administrador.");
+      }
+      
+      // Procesar el formulario
+      await contactService.processContactForm({
+        name: data.nombre,
+        email: data.email,
+        phone: data.telefono || '',
+        subject: data.asunto || 'Contacto desde la web',
+        message: data.mensaje,
+        companyName: companyName || 'Cactilia'
+      }, contactEmail);
+      
+      // Marcar como enviado y resetear el formulario
       setFormSubmitted(true);
       reset();
-
-      // Hide success message after 5 seconds
+      
+      // Ocultar mensaje de éxito después de 5 segundos
       setTimeout(() => {
         setFormSubmitted(false);
       }, 5000);
-    }, 1500);
+    } catch (error) {
+      console.error("Error al enviar el formulario:", error);
+      setSubmitError(error.message || "Hubo un problema al enviar el mensaje. Inténtelo de nuevo más tarde.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   /**
@@ -87,10 +112,39 @@ export const ContactForm = ({
       </div>
     );
   };
+  
+  /**
+   * Renders error message if submission failed
+   * @returns {JSX.Element|null}
+   */
+  const renderErrorMessage = () => {
+    if (!submitError) return null;
+    
+    return (
+      <div className="alert alert-danger mb-4">
+        <div className="d-flex align-items-center">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          <div>{submitError}</div>
+        </div>
+      </div>
+    );
+  };
+
+  // Si la información de la empresa está cargando, mostrar indicador
+  if (companyInfoLoading) {
+    return (
+      <div className="text-center py-4">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       {renderSuccessMessage()}
+      {renderErrorMessage()}
 
       <div className="row g-4">
         {/* Name field */}

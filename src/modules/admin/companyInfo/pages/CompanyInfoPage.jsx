@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CompanyInfoForm } from '../components/form/CompanyInfoForm';
 import { SaveFeedback } from '../components/common/SaveFeedback';
-import { companyInfoApi } from '../services/companyInfoApi';
+import { companyInfoService } from '../services/companyInfoService';
 import NavigationTabs from '../components/navigation/NavigationTabs';
 import GeneralSection from '../components/sections/GeneralSection';
 import ContactSection from '../components/sections/ContactSection';
@@ -33,8 +33,8 @@ const CompanyInfoPage = () => {
         setLoading(true);
         setError(null);
         
-        // Para propósitos de demostración, usamos datos de muestra
-        const data = await companyInfoApi.getCompanyInfo();
+        // Usar el servicio real para Firestore
+        const data = await companyInfoService.getCompanyInfo();
         
         setCompanyData(data);
       } catch (err) {
@@ -56,8 +56,8 @@ const CompanyInfoPage = () => {
     try {
       setSaveStatus({ success: false, error: null, loading: true });
       
-      // Para propósitos de demostración, simulamos el guardado
-      await companyInfoApi.saveCompanyInfo(data);
+      // Usar el servicio real para guardar en Firestore
+      await companyInfoService.saveCompanyInfo(data);
       
       // Actualizar datos locales
       setCompanyData(data);
@@ -78,7 +78,7 @@ const CompanyInfoPage = () => {
       console.error('Error saving company data:', err);
       setSaveStatus({ 
         success: false, 
-        error: 'No se pudieron guardar los datos de la empresa', 
+        error: 'No se pudieron guardar los datos de la empresa: ' + (err.message || 'Error desconocido'), 
         loading: false 
       });
     }
