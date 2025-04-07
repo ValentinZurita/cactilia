@@ -15,6 +15,7 @@ import { PaymentMethodSelector } from '../payment/index.js'
  * @param {Function} props.onNewCardSelect - Función para seleccionar nueva tarjeta
  * @param {Function} props.onOxxoSelect - Función para seleccionar OXXO
  * @param {Function} props.onNewCardDataChange - Función para actualizar datos de nueva tarjeta
+ * @param {Object} props.fiscalData - Datos fiscales
  * @returns {JSX.Element} Sección de selección de método de pago
  */
 export const PaymentSection = ({
@@ -25,12 +26,13 @@ export const PaymentSection = ({
                                  onPaymentSelect,
                                  onNewCardSelect,
                                  onOxxoSelect,
-                                 onNewCardDataChange
+                                 onNewCardDataChange,
+                                 fiscalData
                                }) => {
   return (
     <CheckoutSection title="Método de Pago" stepNumber={2}>
       {loading ? (
-        <LoadingSpinner size="sm" text="Cargando métodos de pago..." />
+        <LoadingSpinner text="Cargando métodos de pago..." />
       ) : (
         <PaymentMethodSelector
           paymentMethods={paymentMethods}
@@ -40,6 +42,7 @@ export const PaymentSection = ({
           onNewCardSelect={onNewCardSelect}
           onOxxoSelect={onOxxoSelect}
           onNewCardDataChange={onNewCardDataChange}
+          loading={loading}
         />
       )}
     </CheckoutSection>

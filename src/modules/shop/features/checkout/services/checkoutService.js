@@ -2,6 +2,7 @@ import { shouldUseMocks } from '../../../../user/services/stripeMock.js';
 import { apiService } from '../../../services/api.js';
 import { doc, runTransaction, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig';
+import { getAuth } from 'firebase/auth';
 
 const ORDERS_COLLECTION = 'orders';
 const PRODUCTS_COLLECTION = 'products';
@@ -137,8 +138,18 @@ export const createPaymentIntent = async (amount, paymentMethodId = null, custom
       return { ok: false, error: 'Método de pago no proporcionado' };
     }
 
+    // Para OXXO, intenta obtener el email del usuario actual como último recurso
     if (paymentType === 'oxxo' && !customerEmail) {
-      return { ok: false, error: 'Email de cliente no proporcionado para OXXO' };
+      // Obtener el usuario actual desde Firebase Auth
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (currentUser && currentUser.email) {
+        console.log(`Usando email del usuario autenticado para OXXO: ${currentUser.email}`);
+        customerEmail = currentUser.email;
+      } else {
+        return { ok: false, error: 'Email de cliente no proporcionado para OXXO' };
+      }
     }
 
     // Usar mocks si es necesario (desarrollo)
@@ -272,10 +283,30 @@ export const processPayment = async (
 
     console.log(`Creando Payment Intent por $${orderData.totals.total} (${amount} centavos)`);
 
+    // Si es un pago OXXO y no hay email proporcionado, intentar obtenerlo del objeto orderData
+    let emailForOxxo = customerEmail;
+    if (paymentType === 'oxxo' && !emailForOxxo) {
+      // Intentar obtener el email de orderData
+      emailForOxxo = orderData.customer?.email || orderData.shipping?.address?.email || '';
+      
+      // Si aún no tenemos email, obtenerlo desde el usuario autenticado
+      if (!emailForOxxo) {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        
+        if (currentUser && currentUser.email) {
+          emailForOxxo = currentUser.email;
+          console.log(`Usando email del usuario autenticado para OXXO: ${emailForOxxo}`);
+        }
+      }
+      
+      console.log(`Usando email de respaldo para OXXO: ${emailForOxxo || 'No disponible'}`);
+    }
+
     const paymentIntent = await createPaymentIntent(
       amount,
       paymentMethodId,
-      customerEmail,
+      emailForOxxo,
       paymentType
     );
 

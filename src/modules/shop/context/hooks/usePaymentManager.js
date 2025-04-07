@@ -91,7 +91,10 @@ export const usePaymentManager = (userId) => {
   }, []);
 
   // Manejador para seleccionar OXXO
-  const handleOxxoSelect = useCallback(() => {
+  const handleOxxoSelect = useCallback((billingManager) => {
+    // Los usuarios autenticados ya tienen email, así que no necesitamos verificar
+    // datos de facturación si la plataforma requiere autenticación para comprar
+    
     setSelectedPaymentId(null);
     setSelectedPaymentType('oxxo');
   }, []);

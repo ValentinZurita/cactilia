@@ -71,8 +71,9 @@ export const CheckoutProvider = ({ children }) => {
     // Datos y métodos de dirección
     ...addressManager,
 
-    // Datos y métodos de pago
+    // Datos y métodos de pago (modificar handleOxxoSelect para pasar billingManager)
     ...paymentManager,
+    handleOxxoSelect: () => paymentManager.handleOxxoSelect(billingManager),
 
     // Datos y métodos de facturación
     ...billingManager,

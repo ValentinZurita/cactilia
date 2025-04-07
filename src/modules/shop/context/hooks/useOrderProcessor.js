@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { processPayment } from '../../features/checkout/services/index.js';
 import { clearCartWithSync } from '../../features/cart/store/index.js';
 import { validateItemsStock } from '../../services/productServices.js';
+import { getAuth } from 'firebase/auth';
 
 /**
  * Hook personalizado para la lógica de procesamiento de órdenes
@@ -206,9 +207,18 @@ export const useOrderProcessor = ({
       throw new Error('Selecciona una dirección de envío');
     }
 
+    // Obtener el email del usuario autenticado (que se necesita para OXXO)
+    const userEmail = addressManager.addresses && addressManager.addresses.length > 0 
+                    ? addressManager.addresses[0].email  // Usar el email de dirección
+                    : null;
+
     // Preparar datos de la orden
     return {
       userId: uid,
+      customer: {
+        // Usar el email de datos fiscales, dirección o email del usuario autenticado
+        email: billingManager.fiscalData.email || shippingAddress.email || userEmail || ''
+      },
       items: cart.items.map(item => ({
         id: item.id,
         name: item.name || item.title,
@@ -295,13 +305,35 @@ export const useOrderProcessor = ({
         paymentMethodId = paymentMethod.stripePaymentMethodId;
       }
 
+      // Si es OXXO, asegurarnos de tener un email
+      let customerEmail = null;
+      if (paymentManager.selectedPaymentType === 'oxxo') {
+        // Intentar obtener el email en este orden:
+        // 1. Datos fiscales
+        // 2. Email del cliente en orderData
+        // 3. Email de dirección
+        // 4. Email del usuario autenticado
+        customerEmail = billingManager.fiscalData?.email || orderData.customer?.email || '';
+        
+        // Si aún no tenemos email, obtenerlo directamente de Firebase Auth
+        if (!customerEmail) {
+          const auth = getAuth();
+          const currentUser = auth.currentUser;
+          
+          if (currentUser && currentUser.email) {
+            customerEmail = currentUser.email;
+            console.log(`OXXO: Usando email del usuario autenticado: ${customerEmail}`);
+          }
+        }
+      }
+
       // Procesar la orden
       return await processPayment(
         orderData,
         paymentMethodId,
         paymentManager.selectedPaymentType === 'new_card' && paymentManager.newCardData.saveCard,
         paymentManager.selectedPaymentType,
-        paymentManager.selectedPaymentType === 'oxxo' ? billingManager.fiscalData.email || '' : null
+        customerEmail
       );
     } catch (error) {
       // Si hay productos sin stock, mostrar mensaje amigable

@@ -94,7 +94,7 @@ export const CheckoutForm = ({
         onCombinationsCalculated={onCombinationsCalculated}
       />
 
-      {/* Sección: Metodo de Pago */}
+      {/* Sección: Método de pago */}
       <PaymentSection
         paymentMethods={paymentMethods}
         selectedPaymentId={selectedPaymentId}
@@ -104,7 +104,7 @@ export const CheckoutForm = ({
         onNewCardSelect={handleNewCardSelect}
         onOxxoSelect={handleOxxoSelect}
         onNewCardDataChange={handleNewCardDataChange}
-        onPaymentMethodAdded={handlePaymentMethodAdded}
+        fiscalData={fiscalData}
       />
 
       {/* Sección: Información Fiscal */}
