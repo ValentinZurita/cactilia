@@ -40,7 +40,11 @@ exports.sendOrderShippedEmail = onCall({
     orderId,
     shippingInfo = {}, // transportista, número de guía, URL de seguimiento, etc.
     resendOnly = false, // Nuevo parámetro para indicar que solo es un reenvío
-    preserveOrderStatus = false // Parámetro adicional de compatibilidad
+    preserveOrderStatus = false, // Parámetro adicional de compatibilidad
+    trackingNumber,
+    trackingUrl,
+    carrier,
+    shippingNotes
   } = request.data;
 
   if (!orderId) {
@@ -51,6 +55,21 @@ exports.sendOrderShippedEmail = onCall({
   }
 
   try {
+    console.log(`Buscando pedido para envío, ID: ${orderId}`);
+    
+    // Verificar si estamos en los emuladores
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
+    if (isEmulator) {
+      console.log('Detectado entorno de emulador, usando modo de simulación para envío');
+      return {
+        success: true,
+        message: 'Email de envío enviado (SIMULACIÓN)',
+        emulatorMode: true,
+        trackingNumber,
+        carrier
+      };
+    }
+
     // Obtener el pedido
     const orderRef = admin.firestore().collection('orders').doc(orderId);
     const orderSnap = await orderRef.get();
@@ -156,8 +175,8 @@ exports.sendOrderShippedEmail = onCall({
   } catch (error) {
     console.error('Error en sendOrderShippedEmail:', error);
     throw new HttpsError(
-      'internal',
-      error.message || 'Error desconocido'
+      error.code || 'internal',
+      error.message || 'Error al enviar el email de envío'
     );
   }
 });

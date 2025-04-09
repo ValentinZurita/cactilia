@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "emulators": "firebase emulators:start --only functions,firestore",
+    "dev:emulators": "firebase emulators:start --only functions,firestore"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.5.1",

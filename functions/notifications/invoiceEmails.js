@@ -39,6 +39,19 @@ exports.sendInvoiceEmail = onCall({
   }
 
   try {
+    console.log(`Buscando pedido para factura, ID: ${orderId}`);
+    
+    // Verificar si estamos en los emuladores
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
+    if (isEmulator) {
+      console.log('Detectado entorno de emulador, usando modo de simulación para factura');
+      return {
+        success: true,
+        message: 'Email de factura enviado (SIMULACIÓN)',
+        emulatorMode: true
+      };
+    }
+
     // Obtener el pedido
     const orderRef = admin.firestore().collection('orders').doc(orderId);
     const orderSnap = await orderRef.get();
@@ -150,8 +163,8 @@ exports.sendInvoiceEmail = onCall({
   } catch (error) {
     console.error('Error en sendInvoiceEmail:', error);
     throw new HttpsError(
-      'internal',
-      error.message || 'Error desconocido'
+      error.code || 'internal',
+      error.message || 'Error al enviar el email de la factura'
     );
   }
 });

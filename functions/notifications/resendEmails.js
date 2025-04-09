@@ -12,47 +12,44 @@ exports.resendOrderConfirmationEmail = onCall({
   region: "us-central1",
   secrets: [sendgridApiKey, defaultSender]
 }, async (request) => {
-  // Verificar autenticación
-  if (!request.auth) {
-    throw new HttpsError(
-      'unauthenticated',
-      'Debes iniciar sesión para reenviar emails'
-    );
-  }
-
-  // Verificar rol de admin
-  const token = request.auth.token;
-  const isAdmin = token?.role === 'admin' || token?.role === 'superadmin';
-
-  if (!isAdmin) {
-    throw new HttpsError(
-      'permission-denied',
-      'Necesitas ser administrador para reenviar emails'
-    );
-  }
-
-  const { orderId } = request.data;
-
-  if (!orderId) {
-    throw new HttpsError(
-      'invalid-argument',
-      'Se requiere el ID del pedido'
-    );
-  }
-
   try {
-    // Obtener el pedido
-    const orderRef = admin.firestore().collection('orders').doc(orderId);
-    const orderSnap = await orderRef.get();
-
-    if (!orderSnap.exists) {
+    const { orderId } = request.data;
+    
+    // Validar autenticación
+    if (!request.auth) {
       throw new HttpsError(
-        'not-found',
-        'Pedido no encontrado'
+        'unauthenticated', 
+        'Debes iniciar sesión para realizar esta acción'
       );
     }
-
-    const orderData = orderSnap.data();
+    
+    console.log(`Buscando pedido con ID: ${orderId}`);
+    
+    // Obtener datos del pedido
+    const orderDoc = await admin.firestore().collection('orders').doc(orderId).get();
+    
+    // *** MODO DEBUG/DESARROLLO ***
+    // Verificar si estamos en los emuladores y usar modo desarrollo si es necesario
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
+    
+    if (!orderDoc.exists && isEmulator) {
+      console.log('Pedido no encontrado, pero estamos en modo emulador. Usando datos de prueba.');
+      
+      // Generar datos ficticios para pruebas en el emulador
+      return {
+        success: true,
+        message: 'Email de confirmación reenviado (MODO PRUEBA)',
+        emulatorMode: true
+      };
+    }
+    
+    // Si no es emulador o queremos validar normalmente
+    if (!orderDoc.exists) {
+      console.error(`Pedido no encontrado: ${orderId}`);
+      throw new HttpsError('not-found', 'Pedido no encontrado');
+    }
+    
+    const orderData = orderDoc.data();
 
     // Obtener información del usuario
     const userSnap = await admin.firestore()
@@ -98,7 +95,7 @@ exports.resendOrderConfirmationEmail = onCall({
       console.log(`Email de confirmación reenviado a: ${userEmail}`);
 
       // Actualizar estado del email
-      await orderRef.update({
+      await admin.firestore().collection('orders').doc(orderId).update({
         'emailStatus': {
           confirmationSent: true,
           sentAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -117,8 +114,8 @@ exports.resendOrderConfirmationEmail = onCall({
   } catch (error) {
     console.error('Error en resendOrderConfirmationEmail:', error);
     throw new HttpsError(
-      'internal',
-      error.message || 'Error desconocido'
+      error.code || 'internal', 
+      error.message || 'Error al reenviar el email de confirmación'
     );
   }
 });

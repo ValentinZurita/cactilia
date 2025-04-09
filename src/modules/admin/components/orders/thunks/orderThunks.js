@@ -9,6 +9,7 @@ import {
 import { addMessage } from '../../../../../store/messages/messageSlice.js'
 import { serializeFirestoreData } from '../utils/firestoreUtils';
 import { getFunctions, httpsCallable } from 'firebase/functions'
+import { callFunction } from '../utils/firebaseFunctions';
 
 /**
  * Thunk para obtener pedidos con filtros y paginación
@@ -198,15 +199,11 @@ export const sendInvoiceEmailThunk = createAsyncThunk(
   'orders/sendInvoiceEmail',
   async ({ orderId }, { rejectWithValue, dispatch }) => {
     try {
-      const functions = getFunctions();
-      const sendInvoiceEmail = httpsCallable(functions, 'sendInvoiceEmail');
-
-      const result = await sendInvoiceEmail({ orderId });
-
-      if (!result.data || !result.data.success) {
-        throw new Error(result.data?.message || 'Error al enviar facturas');
-      }
-
+      console.log('Preparando envío de factura para pedido:', orderId);
+      
+      // Usar la función auxiliar para usar Firebase real
+      const result = await callFunction('sendInvoiceEmail', { orderId });
+      
       // Mostrar mensaje de éxito
       dispatch(addMessage({
         type: 'success',
@@ -218,8 +215,12 @@ export const sendInvoiceEmailThunk = createAsyncThunk(
       // No necesitamos recargar el pedido completo si manejamos correctamente
       // el estado en el reducer, pero por seguridad podemos actualizarlo
       dispatch(fetchOrderById(orderId));
-
-      return result.data;
+      
+      if (!result.success) {
+        return rejectWithValue(result.message || 'Error al enviar el correo de factura');
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error enviando facturas:', error);
 
@@ -229,8 +230,8 @@ export const sendInvoiceEmailThunk = createAsyncThunk(
         autoHide: true,
         duration: 3000
       }));
-
-      return rejectWithValue(error.message);
+      
+      return rejectWithValue(error.message || 'Error al enviar el correo de factura');
     }
   }
 );
