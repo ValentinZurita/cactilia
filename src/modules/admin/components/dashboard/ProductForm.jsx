@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { addProduct, updateProduct } from '../../services/productService';
 import { getCategories } from '../../services/categoryService';
@@ -26,8 +26,18 @@ import { MultiSelectDropdown } from './MultiSelectDropdown';
  */
 
 export const ProductForm = ({ onProductSaved, editingProduct }) => {
-  const methods = useForm();
+  // Inicializar con los valores del producto si existe
+  const defaultValues = editingProduct ? {
+    active: editingProduct.active ? "true" : "false",
+    featured: editingProduct.featured ? "true" : "false",
+    // Otros valores por defecto si es necesario
+  } : {};
+  
+  const methods = useForm({
+    defaultValues
+  });
   const { handleSubmit, reset, setValue, control, formState: { isSubmitting } } = methods;
+  const [formInitialized, setFormInitialized] = useState(false);
 
   // Image upload hook for local image management
   const {
@@ -37,7 +47,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
     removeLocalImage,
     setPrimaryImage,
     setInitialImages,
-    getImagesToDelete // 🆕 Retrieve images marked for deletion
+    getImagesToDelete
   } = useImageUpload();
 
   /**
@@ -45,17 +55,20 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
    * It sets form values and existing images for editing.
    */
   useEffect(() => {
-    if (editingProduct && images.length === 0) { // ✅ Prevent infinite re-renders
+    if (editingProduct && !formInitialized) { // Prevenir múltiples inicializaciones
+      // Reset form with values from product
+      const formValues = {};
+      
       // Set form values
       Object.entries(editingProduct).forEach(([key, value]) => {
         // Skip arrays for now - handle them separately
         if (!Array.isArray(value) || key === 'shippingRuleIds') {
           // Convert boolean values to strings for select fields
           if (key === 'active' || key === 'featured') {
-            console.log(`Setting ${key} to`, value ? "true" : "false");
-            setValue(key, value ? "true" : "false");
+            const stringValue = value ? "true" : "false";
+            formValues[key] = stringValue;
           } else {
-            setValue(key, value);
+            formValues[key] = value;
           }
         }
       });
@@ -65,24 +78,15 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         setValue('images', editingProduct.images);
       }
       
-      // Log shipping rule IDs for debugging
-      console.log('Loading product shipping info:', {
-        shippingRuleId: editingProduct.shippingRuleId,
-        shippingRuleIds: editingProduct.shippingRuleIds
-      });
-      
       // Establecer valores para las reglas de envío
       if (editingProduct.shippingRuleIds && Array.isArray(editingProduct.shippingRuleIds)) {
         // Si ya tiene un array de shippingRuleIds, usamos ese
-        console.log('Setting multiple shipping rules:', editingProduct.shippingRuleIds);
         setValue('shippingRuleIds', editingProduct.shippingRuleIds);
       } else if (editingProduct.shippingRuleId) {
         // Para compatibilidad con versiones anteriores
-        console.log('Converting single shipping rule to array:', [editingProduct.shippingRuleId]);
         setValue('shippingRuleIds', [editingProduct.shippingRuleId]);
       } else {
         // Sin reglas de envío
-        console.log('No shipping rules found for this product');
         setValue('shippingRuleIds', []);
       }
 
@@ -97,8 +101,23 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       if (editingProduct.mainImage) {
         setPrimaryImage(editingProduct.mainImage);
       }
+
+      // Explícitamente establecer los valores booleanos
+      setTimeout(() => {
+        if (editingProduct.hasOwnProperty('active')) {
+          const activeValue = editingProduct.active ? "true" : "false";
+          setValue('active', activeValue, { shouldValidate: true, shouldDirty: true });
+        }
+        
+        if (editingProduct.hasOwnProperty('featured')) {
+          const featuredValue = editingProduct.featured ? "true" : "false";
+          setValue('featured', featuredValue, { shouldValidate: true, shouldDirty: true });
+        }
+      }, 100);
+
+      setFormInitialized(true); // Marcar como inicializado
     }
-  }, [editingProduct, setValue, images.length, setInitialImages, setPrimaryImage]);
+  }, [editingProduct, setValue, images.length, setInitialImages, setPrimaryImage, formInitialized]);
 
   /**
    * Handle form submission.
@@ -108,9 +127,6 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
    */
   const handleSubmitForm = async (data) => {
     // Verificar las reglas de envío antes de guardar
-    console.log('Form data before saving:', data);
-    console.log('Shipping rules to save:', data.shippingRuleIds);
-    
     if (!data.shippingRuleIds || data.shippingRuleIds.length === 0) {
       alert('Debe seleccionar al menos una regla de envío');
       return;
@@ -161,11 +177,6 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
     // Eliminar campos que podrían causar problemas
     delete productData.shippingRulesInfo;
     delete productData.shippingRuleInfo;
-    
-    console.log('Product data to save:', {
-      shippingRuleId: productData.shippingRuleId,
-      shippingRuleIds: productData.shippingRuleIds
-    });
 
     // 6️⃣ Save or update product
     const response = editingProduct
@@ -173,12 +184,12 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       : await addProduct(productData);
 
     if (!response.ok) {
-      alert(`Error ${editingProduct ? "updating" : "creating"} product: ${response.error}`);
+      alert(`Error ${editingProduct ? "actualizando" : "creando"} el producto: ${response.error}`);
       return;
     }
 
     // ✅ Success feedback
-    alert(`Product ${editingProduct ? "updated" : "created"} successfully`);
+    alert(`Producto ${editingProduct ? "actualizado" : "creado"} correctamente`);
     reset();
     onProductSaved();
   };
@@ -186,7 +197,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(handleSubmitForm)} className="mt-4">
-        <h3>{editingProduct ? "Edit Product" : "Add Product"}</h3>
+        <h3>{editingProduct ? "Editar Producto" : "Añadir Producto"}</h3>
 
         {/* 🧩 Category selection dropdown */}
         <DynamicDropdown
@@ -205,23 +216,18 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
           control={control}
           fetchFunction={async () => {
             try {
-              console.log('ProductForm: Fetching shipping rules');
               const result = await fetchShippingRules();
-              console.log('ProductForm: Shipping rules result', result);
               
               if (result.ok && result.data && result.data.length > 0) {
                 const formattedData = result.data.map(rule => ({
                   id: rule.id,
                   name: rule.zona || 'Regla sin nombre'
                 }));
-                console.log('ProductForm: Formatted shipping rules', formattedData);
                 return { ok: true, data: formattedData };
               } else {
-                console.error('ProductForm: No shipping rules found or error in response', result);
                 return { ok: false, data: [], error: result.error || 'No se encontraron reglas de envío' };
               }
             } catch (error) {
-              console.error('ProductForm: Error fetching shipping rules', error);
               return { ok: false, data: [], error: error.message };
             }
           }}
@@ -292,30 +298,28 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         {/* ⚙️ Product settings */}
         <SelectField 
           name="active" 
-          label="Active?" 
+          label="¿Activo?" 
           control={control} 
-          options={[["true", "Yes"], ["false", "No"]]} 
-          defaultValue="true"
+          options={[["true", "Sí"], ["false", "No"]]} 
           required={false}
         />
         <SelectField 
           name="featured" 
-          label="Featured?" 
+          label="¿Destacado?" 
           control={control} 
-          options={[["false", "No"], ["true", "Yes"]]} 
-          defaultValue="false"
+          options={[["true", "Sí"], ["false", "No"]]} 
           required={false}
         />
 
-        {/* 🚀 Submit button */}
+        {/*  Submit button */}
         <button
           type="submit"
           className="btn btn-primary w-100 mt-3"
           disabled={isSubmitting}
         >
           {isSubmitting
-            ? (editingProduct ? "Updating..." : "Creating...")
-            : (editingProduct ? "Update Product" : "Crear Producto")}
+            ? (editingProduct ? "Actualizando..." : "Creando...")
+            : (editingProduct ? "Actualizar Producto" : "Crear Producto")}
         </button>
       </form>
     </FormProvider>

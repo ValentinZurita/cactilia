@@ -1,4 +1,5 @@
-import { useController } from 'react-hook-form';
+import { useController, useFormContext } from 'react-hook-form';
+import { useEffect } from 'react';
 
 /**
  * Select field component.
@@ -29,6 +30,9 @@ export const SelectField = ({
   defaultValue = '', 
   required = false 
 }) => {
+  // Acceso al contexto del formulario para obtener más información
+  const formContext = useFormContext();
+  
   // Prepare validation rules
   const validationRules = {
     ...rules,
@@ -45,15 +49,16 @@ export const SelectField = ({
     defaultValue: defaultValue 
   });
   
-  // Log field value for debugging
-  console.log(`SelectField ${name} value:`, field.value);
+  // Asegurar que se respete el valor establecido por setValue
+  useEffect(() => {
+    if (formContext && formContext._formValues) {
+      const formValue = formContext._formValues[name];
+      if (formValue !== undefined && formValue !== field.value) {
+        field.onChange(formValue);
+      }
+    }
+  }, [field, name, formContext]);
   
-  // Handle selection change with logging
-  const handleSelectionChange = (e) => {
-    console.log(`${name} selection changed to:`, e.target.value);
-    field.onChange(e);
-  };
-
   return (
     <div className="mb-3">
       {/* Label */}
@@ -66,8 +71,8 @@ export const SelectField = ({
       <select 
         id={name} 
         className={`form-select ${error ? 'is-invalid' : ''}`} 
-        value={field.value}
-        onChange={handleSelectionChange}
+        value={field.value || ''}
+        onChange={(e) => field.onChange(e)}
         onBlur={field.onBlur}
         ref={field.ref}
       >

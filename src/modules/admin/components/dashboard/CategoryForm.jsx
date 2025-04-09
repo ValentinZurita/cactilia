@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { createCategory, updateCategory } from "../../services/categoryService";
 import { useImageUpload } from "../../hooks/useImageUpload";
@@ -22,9 +22,20 @@ import { ImageUploader, ImagePreview, SelectField, InputField } from './index.js
 
 export const CategoryForm = ({ onCategorySaved, editingCategory }) => {
 
+  // Inicializar con los valores de la categoría si existe
+  const defaultValues = editingCategory ? {
+    active: editingCategory.active ? "true" : "false",
+    featured: editingCategory.featured ? "true" : "false",
+    name: editingCategory.name || "",
+    description: editingCategory.description || ""
+  } : {};
+
   // Form methods and properties from react-hook-form
-  const methods = useForm();
+  const methods = useForm({
+    defaultValues
+  });
   const { handleSubmit, reset, setValue, control, formState: { isSubmitting } } = methods;
+  const [formInitialized, setFormInitialized] = useState(false);
 
   // Image hook: max 3 images, 2 MB each
   const {
@@ -33,17 +44,30 @@ export const CategoryForm = ({ onCategorySaved, editingCategory }) => {
     addLocalImages,
     removeLocalImage,
     setPrimaryImage,
-    setInitialImages, // 🆕 Allows setting initial images when editing
-    getImagesToDelete // 🆕 Retrieve images to delete
+    setInitialImages,
+    getImagesToDelete
   } = useImageUpload(3, 2); // Max 3 images, 2MB each
 
   // Load category data into the form
   useEffect(() => {
-    if (editingCategory && images.length === 0) {
-      // Set form values
+    if (editingCategory && !formInitialized) {
+      // Set form values for non-boolean fields
       Object.entries(editingCategory).forEach(([key, value]) => {
-        setValue(key, value);
+        if (key !== 'active' && key !== 'featured') {
+          setValue(key, value);
+        }
       });
+      
+      // Establecer explícitamente los campos booleanos
+      if (editingCategory.hasOwnProperty('active')) {
+        const activeValue = editingCategory.active ? "true" : "false";
+        setValue('active', activeValue, { shouldValidate: true });
+      }
+      
+      if (editingCategory.hasOwnProperty('featured')) {
+        const featuredValue = editingCategory.featured ? "true" : "false";
+        setValue('featured', featuredValue, { shouldValidate: true });
+      }
 
       // Prepare existing images
       if (editingCategory.images && Array.isArray(editingCategory.images)) {
@@ -57,8 +81,10 @@ export const CategoryForm = ({ onCategorySaved, editingCategory }) => {
           setPrimaryImage(editingCategory.mainImage);
         }
       }
+      
+      setFormInitialized(true);
     }
-  }, [editingCategory, setValue, images.length, setInitialImages, setPrimaryImage]);
+  }, [editingCategory, setValue, images.length, setInitialImages, setPrimaryImage, formInitialized]);
 
 
   /**
@@ -166,14 +192,16 @@ export const CategoryForm = ({ onCategorySaved, editingCategory }) => {
           label="Activa"
           control={control}
           options={[["true", "Sí"], ["false", "No"]]}
+          defaultValue={editingCategory?.active ? "true" : "false"}
         />
 
-        {/* Featured - Nuevo campo */}
+        {/* Featured */}
         <SelectField
           name="featured"
           label="Destacada"
           control={control}
-          options={[["false", "No"], ["true", "Sí"]]}
+          options={[["true", "Sí"], ["false", "No"]]}
+          defaultValue={editingCategory?.featured ? "true" : "false"}
         />
 
         {/* Submit button */}
