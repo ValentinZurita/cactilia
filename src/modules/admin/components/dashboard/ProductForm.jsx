@@ -32,7 +32,11 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
     featured: editingProduct.featured ? "true" : "false",
     categoryId: editingProduct.categoryId || "",
     // Otros valores por defecto si es necesario
-  } : {};
+  } : {
+    // Valores predeterminados para nuevo producto
+    active: "true",
+    featured: "false"
+  };
   
   const methods = useForm({
     defaultValues
