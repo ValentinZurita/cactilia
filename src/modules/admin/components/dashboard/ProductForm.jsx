@@ -74,6 +74,17 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         }
       });
       
+      // Establecer explícitamente los valores booleanos
+      if (editingProduct.hasOwnProperty('active')) {
+        const activeValue = editingProduct.active ? "true" : "false";
+        setValue('active', activeValue);
+      }
+      
+      if (editingProduct.hasOwnProperty('featured')) {
+        const featuredValue = editingProduct.featured ? "true" : "false";
+        setValue('featured', featuredValue);
+      }
+      
       // Asegurar que categoryId esté establecido
       if (editingProduct.categoryId) {
         setValue('categoryId', editingProduct.categoryId);
@@ -106,17 +117,6 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
 
       if (editingProduct.mainImage) {
         setPrimaryImage(editingProduct.mainImage);
-      }
-
-      // Establece explícitamente valores booleanos junto con los demás campos
-      if (editingProduct.hasOwnProperty('active')) {
-        const activeValue = editingProduct.active ? "true" : "false";
-        setValue('active', activeValue, { shouldValidate: true, shouldDirty: true });
-      }
-      
-      if (editingProduct.hasOwnProperty('featured')) {
-        const featuredValue = editingProduct.featured ? "true" : "false";
-        setValue('featured', featuredValue, { shouldValidate: true, shouldDirty: true });
       }
 
       setFormInitialized(true); // Marcar como inicializado
@@ -195,7 +195,13 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
 
     // ✅ Success feedback
     alert(`Producto ${editingProduct ? "actualizado" : "creado"} correctamente`);
-    reset();
+    
+    // Solo resetear el formulario para nuevos productos, no al actualizar
+    if (!editingProduct) {
+      reset();
+    }
+    
+    // Llamar al callback sin parámetros, igual que en CategoryForm
     onProductSaved();
   };
 

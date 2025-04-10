@@ -58,94 +58,115 @@ export const useProducts = () => {
   */
 
   useEffect(() => {
-
-    // Limpiar el cache para forzar la recarga de productos desde Firebase
-    localStorage.removeItem('products');
-    localStorage.removeItem('categories');
+    // Configuración de caché
+    const CACHE_VERSION = "1.0"; // Incrementar cuando cambie la estructura de datos
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutos en milisegundos
     
-    // 📦 Cargar productos y categorías desde cache
-    const cachedProducts = localStorage.getItem('products');
-    const cachedCategories = localStorage.getItem('categories');
-
-    // 🚀 Si tenemos datos en cache, los cargamos directamente
-    if (cachedProducts && cachedCategories) {
-      setOriginalProducts(JSON.parse(cachedProducts));
-      setCategoriesMap(JSON.parse(cachedCategories));
-      setLoading(false);
-      return;
-    }
-
-    // 🌐 Si no hay cache, solicitamos los datos a Firebase
-    const loadProductsAndCategories = async () => {
-      setLoading(true);
+    // Verificar caché y su validez
+    const cachedData = localStorage.getItem('shop_cache');
+    let isValidCache = false;
+    
+    if (cachedData) {
       try {
-        // 🔍 Cargar productos
-        const { ok: okProducts, data: productsData, error: productsError } = await getProducts();
-        if (!okProducts) throw new Error(productsError);
+        const cache = JSON.parse(cachedData);
+        const isExpired = Date.now() > cache.expiry;
+        const isCorrectVersion = cache.version === CACHE_VERSION;
+        
+        if (!isExpired && isCorrectVersion && cache.products && cache.categories) {
+          console.log("🚀 Usando datos de caché local (válido por", 
+            Math.round((cache.expiry - Date.now()) / 1000 / 60), "minutos más)");
+          setOriginalProducts(cache.products);
+          setCategoriesMap(cache.categories);
+          setLoading(false);
+          isValidCache = true;
+        } else {
+          console.log("🔄 Caché expirado o versión incorrecta, recargando datos");
+        }
+      } catch (e) {
+        console.warn("⚠️ Error leyendo caché:", e);
+      }
+    }
+    
+    // Si no hay caché válido, cargamos desde Firebase
+    if (!isValidCache) {
+      const loadProductsAndCategories = async () => {
+        setLoading(true);
+        try {
+          // 🔍 Cargar productos
+          const { ok: okProducts, data: productsData, error: productsError } = await getProducts();
+          if (!okProducts) throw new Error(productsError);
 
-        // 🏷️ Cargar categorías
-        const { ok: okCategories, data: categoriesData, error: categoriesError } = await getCategories();
-        if (!okCategories) throw new Error(categoriesError);
+          // 🏷️ Cargar categorías
+          const { ok: okCategories, data: categoriesData, error: categoriesError } = await getCategories();
+          if (!okCategories) throw new Error(categoriesError);
 
-        // 🗺️ Crear un mapa de categoryId -> categoryName
-        const categoryMap = categoriesData.reduce((acc, category) => {
-          acc[category.id] = category.name;
-          return acc;
-        }, {});
-        setCategoriesMap(categoryMap);
+          // 🗺️ Crear un mapa de categoryId -> categoryName
+          const categoryMap = categoriesData.reduce((acc, category) => {
+            acc[category.id] = category.name;
+            return acc;
+          }, {});
+          setCategoriesMap(categoryMap);
 
-        // 🔄 Asignar el nombre de la categoría a cada producto
-        const activeProducts = productsData
-          .filter((prod) => prod.active)
-          .map((prod) => ({
-            ...prod,
-            category: categoryMap[prod.categoryId] || 'Sin categoría',
-          }));
+          // 🔄 Asignar el nombre de la categoría a cada producto
+          const activeProducts = productsData
+            .filter((prod) => prod.active)
+            .map((prod) => ({
+              ...prod,
+              category: categoryMap[prod.categoryId] || 'Sin categoría',
+            }));
 
-        // 🛠️ Guardar en cache local
-        localStorage.setItem('products', JSON.stringify(activeProducts));
-        localStorage.setItem('categories', JSON.stringify(categoryMap));
+          // 🛠️ Guardar en cache local con tiempo de expiración
+          const cacheData = {
+            version: CACHE_VERSION,
+            expiry: Date.now() + CACHE_TTL,
+            products: activeProducts,
+            categories: categoryMap,
+            timestamp: Date.now()
+          };
+          
+          localStorage.setItem('shop_cache', JSON.stringify(cacheData));
+          console.log("✅ Nuevos datos almacenados en caché");
 
-        // ✅ Guardamos los productos activos en el estado
-        setOriginalProducts(activeProducts);
+          // ✅ Guardamos los productos activos en el estado
+          setOriginalProducts(activeProducts);
 
-        /*
-          +-------------------------------------------+
-          |                                           |
-          |   📸 Cachear imágenes en Cache Storage    |
-          |                                           |
-          +-------------------------------------------+
-        */
-        if ('caches' in window) {
-          const cache = await caches.open('cactilia-product-images');
-          for (const product of activeProducts) {
-            if (product.mainImage) {
-              try {
-                console.log(`🖼️ Intentando cachear: ${product.mainImage}`);
-                const response = await fetch(product.mainImage, { mode: 'cors' });
-                if (response.ok) {
-                  await cache.put(product.mainImage, response);
-                  console.log(`✅ Imagen cacheada: ${product.mainImage}`);
-                } else {
-                  console.warn(`⚠️ No se pudo cachear la imagen: ${product.mainImage}`);
+          /*
+            +-------------------------------------------+
+            |                                           |
+            |   📸 Cachear imágenes en Cache Storage    |
+            |                                           |
+            +-------------------------------------------+
+          */
+          if ('caches' in window) {
+            const cache = await caches.open('cactilia-product-images');
+            for (const product of activeProducts) {
+              if (product.mainImage) {
+                try {
+                  // Verificar si la imagen ya está en caché
+                  const cacheMatch = await cache.match(product.mainImage);
+                  if (!cacheMatch) {
+                    const response = await fetch(product.mainImage, { mode: 'cors' });
+                    if (response.ok) {
+                      await cache.put(product.mainImage, response);
+                    }
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ Error al cachear imagen:`, error);
                 }
-              } catch (error) {
-                console.error(`❌ Error al cachear imagen: ${product.mainImage}`, error);
               }
             }
           }
-        } else {
-          console.warn("⚠️ Cache Storage no disponible en este navegador.");
+
+        } catch (err) {
+          setError(err.message);
+          console.error("❌ Error cargando datos:", err);
+        } finally {
+          setLoading(false);
         }
+      };
 
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProductsAndCategories();
+      loadProductsAndCategories();
+    }
   }, []);
 
 

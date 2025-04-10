@@ -75,10 +75,14 @@ export const ProductManagementPage = () => {
     }
   }, []);
 
-  // Handle the product saved event
+  /**
+   * Manejador para cuando se guarda un producto correctamente
+   */
   const handleProductSaved = () => {
-    loadProducts(); // Reload the products
-    navigate("/admin/products/view"); // Redirect to the view mode
+    // Limpiar estado de producto en edición
+    setEditingProduct(null);
+    loadProducts();
+    navigate("/admin/products/view");
   };
 
   // Handle the product delete event
