@@ -59,6 +59,10 @@ export const useProducts = () => {
 
   useEffect(() => {
 
+    // Limpiar el cache para forzar la recarga de productos desde Firebase
+    localStorage.removeItem('products');
+    localStorage.removeItem('categories');
+    
     // 📦 Cargar productos y categorías desde cache
     const cachedProducts = localStorage.getItem('products');
     const cachedCategories = localStorage.getItem('categories');
