@@ -1,55 +1,99 @@
 // src/routes/AppRouter.jsx
 
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AuthRoutes } from "../modules/auth/router/AuthRoutes";
-import { AdminRoutes } from "../modules/admin/routes/AdminRoutes";
+import { lazy, Suspense } from "react";
 import { PublicLayout } from "../layout/PublicLayout";
-
-// Páginas públicas
-import { HomePage } from "../modules/public/pages/HomePage";
-import { ContactPage } from "../modules/public/pages/ContactPage";
-
-// Páginas/routers de shop y user
-import { ShopRoutes } from "../modules/shop/router/ShopRoutes";
-import { CartPage } from "../modules/shop/pages/CartPage.jsx";
 import { RequireAuth } from "../modules/auth/components/RequireAuth";
-
-// Anidado de rutas de perfil
 import { ProfileLayout } from '../modules/user/components/profile/index.js';
-import { OrdersPage, OrderDetailPage, AddressesPage, PaymentsPage, SettingsPage } from "../modules/user/pages";
-import { CheckoutPage } from '../modules/shop/pages/CheckoutPage.jsx'
 
+// Componente de carga
+import { Spinner } from "../shared/components/spinner/Spinner.jsx";
+
+// Importaciones estándar para AuthRoutes y AdminRoutes (que tienen export default)
+const AuthRoutes = lazy(() => import("../modules/auth/router/AuthRoutes"));
+const AdminRoutes = lazy(() => import("../modules/admin/routes/AdminRoutes"));
+const ShopRoutes = lazy(() => import("../modules/shop/router/ShopRoutes"));
+
+// Función de ayuda para importar componentes con exportaciones nombradas
+const lazyLoadNamed = (importFn, componentName) => {
+  return lazy(async () => {
+    const module = await importFn();
+    return { default: module[componentName] };
+  });
+};
+
+// Lazy loading de páginas con exportaciones nombradas
+const HomePage = lazyLoadNamed(() => import("../modules/public/pages/HomePage.jsx"), "HomePage");
+const ContactPage = lazyLoadNamed(() => import("../modules/public/pages/ContactPage.jsx"), "ContactPage");
+const CartPage = lazyLoadNamed(() => import("../modules/shop/pages/CartPage.jsx"), "CartPage");
+const CheckoutPage = lazyLoadNamed(() => import('../modules/shop/pages/CheckoutPage.jsx'), "CheckoutPage");
+
+// Lazy loading de páginas de perfil con exportaciones nombradas
+const OrdersPage = lazyLoadNamed(() => import("../modules/user/pages/OrdersPage.jsx"), "OrdersPage");
+const OrderDetailPage = lazyLoadNamed(() => import("../modules/user/pages/OrderDetailPage.jsx"), "OrderDetailPage");
+const AddressesPage = lazy(() => import("../modules/user/pages/AdressesPage.jsx"));
+const PaymentsPage = lazyLoadNamed(() => import("../modules/user/pages/PaymentsPage.jsx"), "PaymentsPage");
+const SettingsPage = lazyLoadNamed(() => import("../modules/user/pages/SettingsPage.jsx"), "SettingsPage");
+
+// Fallback para cuando se está cargando un componente
+const SuspenseFallback = () => <Spinner />;
 
 export const AppRouter = () => {
   return (
     <Routes>
       {/** 1) Rutas de autenticación (sin layout público) */}
-      <Route path="/auth/*" element={<AuthRoutes />} />
+      <Route path="/auth/*" element={
+        <Suspense fallback={<SuspenseFallback />}>
+          <AuthRoutes />
+        </Suspense>
+      } />
 
       {/** 2) Rutas de administrador (tienen AdminLayout dentro) */}
-      <Route path="/admin/*" element={<AdminRoutes />} />
+      <Route path="/admin/*" element={
+        <Suspense fallback={<SuspenseFallback />}>
+          <AdminRoutes />
+        </Suspense>
+      } />
 
       {/** 3) Rutas públicas/usuario, con PublicLayout */}
       <Route path="/" element={<PublicLayout />}>
 
         {/** Home como ruta index */}
-        <Route index element={<HomePage />} />
+        <Route index element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <HomePage />
+          </Suspense>
+        } />
 
         {/** Otra pública: /contacto */}
-        <Route path="contacto" element={<ContactPage />} />
+        <Route path="contacto" element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <ContactPage />
+          </Suspense>
+        } />
 
         {/** Rutas de la tienda: /shop/... */}
-        <Route path="shop/*" element={<ShopRoutes />} />
+        <Route path="shop/*" element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <ShopRoutes />
+          </Suspense>
+        } />
 
         {/** Carrito (no requiere auth) */}
-        <Route path="cart" element={<CartPage />} />
+        <Route path="cart" element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <CartPage />
+          </Suspense>
+        } />
 
         {/** Checkout (requiere auth) */}
         <Route
           path="checkout"
           element={
             <RequireAuth>
-              <CheckoutPage />
+              <Suspense fallback={<SuspenseFallback />}>
+                <CheckoutPage />
+              </Suspense>
             </RequireAuth>
           }
         />
@@ -66,11 +110,31 @@ export const AppRouter = () => {
           {/** Redirección por defecto a /profile/orders */}
           <Route index element={<Navigate to="orders" replace />} />
 
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="orders/:orderId" element={<OrderDetailPage />} />
-          <Route path="addresses" element={<AddressesPage />} />
-          <Route path="payments" element={<PaymentsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="orders" element={
+            <Suspense fallback={<SuspenseFallback />}>
+              <OrdersPage />
+            </Suspense>
+          } />
+          <Route path="orders/:orderId" element={
+            <Suspense fallback={<SuspenseFallback />}>
+              <OrderDetailPage />
+            </Suspense>
+          } />
+          <Route path="addresses" element={
+            <Suspense fallback={<SuspenseFallback />}>
+              <AddressesPage />
+            </Suspense>
+          } />
+          <Route path="payments" element={
+            <Suspense fallback={<SuspenseFallback />}>
+              <PaymentsPage />
+            </Suspense>
+          } />
+          <Route path="settings" element={
+            <Suspense fallback={<SuspenseFallback />}>
+              <SettingsPage />
+            </Suspense>
+          } />
 
           {/** Si algo no coincide en /profile/... => redirige a orders */}
           <Route path="*" element={<Navigate to="orders" replace />} />

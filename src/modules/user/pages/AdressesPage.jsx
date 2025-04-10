@@ -9,7 +9,7 @@ import { ConfirmationModal } from '../components/shared/ConfirmationModal.jsx';
  * Página mejorada de gestión de direcciones del usuario
  * Incluye soporte para direcciones mexicanas con campos adicionales
  */
-export const AddressesPage = () => {
+const AddressesPage = () => {
   // Usar los hooks mejorados para direcciones
   const {
     addresses,
@@ -109,3 +109,5 @@ export const AddressesPage = () => {
     </div>
   );
 };
+
+export default AddressesPage;

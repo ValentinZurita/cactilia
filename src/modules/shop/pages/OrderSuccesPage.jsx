@@ -242,7 +242,7 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
  * - Obtiene los detalles de la orden desde Firestore.
  * - Muestra la confirmación con los detalles o error si no se encuentra.
  */
-export const OrderSuccessPage = () => {
+const OrderSuccessPage = () => {
   const { orderId } = useParams();       // orderId desde la URL "/order-success/:orderId"
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -310,4 +310,6 @@ export const OrderSuccessPage = () => {
       )}
     </div>
   );
-}
+};
+
+export default OrderSuccessPage;
