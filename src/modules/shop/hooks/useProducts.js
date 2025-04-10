@@ -187,10 +187,14 @@ export const useProducts = () => {
 
     let result = [...originalProducts];
 
-    // 🔍 Filtrar por término de búsqueda (nombre)
+    // 🔍 Filtrar por término de búsqueda (nombre o categoría)
     if (searchTerm.trim() !== "") {
-      result = result.filter((prod) =>
-        prod.name.toLowerCase().includes(searchTerm.toLowerCase())
+      const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+      result = result.filter((prod) => 
+        // Buscar en el nombre del producto
+        (prod.name && prod.name.toLowerCase().includes(normalizedSearchTerm)) || 
+        // Buscar en la categoría del producto
+        (prod.category && prod.category.toLowerCase().includes(normalizedSearchTerm))
       );
     }
 

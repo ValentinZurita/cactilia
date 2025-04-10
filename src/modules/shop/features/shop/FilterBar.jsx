@@ -34,20 +34,33 @@ export const FilterBar = ({
       {/* Dropdown de Categoría */}
       <Dropdown
         label="Categoría"
-        options={["Todas", ...categories]}
-        selectedOption={selectedCategory || "Todas"}
+        options={["Todas las categorías", ...categories]}
+        selectedOption={selectedCategory || "Todas las categorías"}
         onSelect={(option) =>
-          setSelectedCategory(option === "Todas" ? "" : option)
+          setSelectedCategory(option === "Todas las categorías" ? "" : option)
         }
         className={`filter-button-left ${selectedCategory ? 'active' : ''}`}
       />
 
       {/* Dropdown de Precio / Destacados / Ninguno */}
       <Dropdown
-        label="Ordenar Por"
-        options={["Ninguno", "Destacados", "Menor a Mayor", "Mayor a Menor"]}
-        selectedOption={priceOrder || "Ordenar Por"}
-        onSelect={(option) => setPriceOrder(option)}
+        label="Filtros"
+        options={["Sin filtros", "Productos destacados", "Precio menor a mayor", "Precio mayor a menor"]}
+        selectedOption={priceOrder || "Filtros"}
+        onSelect={(option) => {
+          if (option === "Sin filtros") {
+            // Limpiar el filtro de ordenación
+            setPriceOrder("");
+          } else {
+            // Mapear los nuevos nombres a los nombres usados en la lógica interna
+            const optionMap = {
+              "Productos destacados": "Destacados",
+              "Precio menor a mayor": "Menor a Mayor",
+              "Precio mayor a menor": "Mayor a Menor"
+            };
+            setPriceOrder(optionMap[option] || option);
+          }
+        }}
         className={`filter-button-right ${priceOrder ? 'active' : ''}`}
       />
 
