@@ -41,27 +41,26 @@ const SuspenseFallback = () => <Spinner />;
 export const AppRouter = () => {
   return (
     <Routes>
-      {/** 1) Rutas de autenticación (sin layout público) */}
-      <Route path="/auth/*" element={
-        <Suspense fallback={<SuspenseFallback />}>
-          <AuthRoutes />
-        </Suspense>
-      } />
-
-      {/** 2) Rutas de administrador (tienen AdminLayout dentro) */}
+      {/** 1) Rutas de administrador (tienen AdminLayout dentro) */}
       <Route path="/admin/*" element={
         <Suspense fallback={<SuspenseFallback />}>
           <AdminRoutes />
         </Suspense>
       } />
 
-      {/** 3) Rutas públicas/usuario, con PublicLayout */}
+      {/** 2) Rutas públicas/usuario, con PublicLayout */}
       <Route path="/" element={<PublicLayout />}>
-
         {/** Home como ruta index */}
         <Route index element={
           <Suspense fallback={<SuspenseFallback />}>
             <HomePage />
+          </Suspense>
+        } />
+
+        {/** Incluir rutas de autenticación dentro del PublicLayout */}
+        <Route path="auth/*" element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <AuthRoutes />
           </Suspense>
         } />
 
