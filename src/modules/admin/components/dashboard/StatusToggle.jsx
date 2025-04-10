@@ -10,6 +10,7 @@ import PropTypes from 'prop-types';
  * @param {boolean} showLabel - Si se debe mostrar el texto de estado
  * @param {boolean} disabled - Si el toggle está deshabilitado
  * @param {boolean} error - Si hay un error en el toggle
+ * @param {boolean} hideText - Si se debe ocultar el texto del estado
  * @returns {JSX.Element}
  */
 export const StatusToggle = ({ 
@@ -18,7 +19,8 @@ export const StatusToggle = ({
   size = 'md',
   showLabel = true,
   disabled = false,
-  error = false
+  error = false,
+  hideText = false
 }) => {
   // Clases dinámicas basadas en el tamaño
   const toggleSizeClass = {
@@ -51,7 +53,7 @@ export const StatusToggle = ({
         </div>
       </div>
       
-      {showLabel && (
+      {showLabel && !hideText && (
         <span className={`toggle-label ms-2 ${error ? 'text-danger' : isActive ? 'text-success' : 'text-secondary'}`}>
           {error ? 'Error' : isActive ? 'Activo' : 'Inactivo'}
         </span>
@@ -169,5 +171,6 @@ StatusToggle.propTypes = {
   size: PropTypes.oneOf(['sm', 'md', 'lg']),
   showLabel: PropTypes.bool,
   disabled: PropTypes.bool,
-  error: PropTypes.bool
+  error: PropTypes.bool,
+  hideText: PropTypes.bool
 }; 

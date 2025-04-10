@@ -30,6 +30,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
   const defaultValues = editingProduct ? {
     active: editingProduct.active ? "true" : "false",
     featured: editingProduct.featured ? "true" : "false",
+    categoryId: editingProduct.categoryId || "",
     // Otros valores por defecto si es necesario
   } : {};
   
@@ -56,8 +57,8 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
    */
   useEffect(() => {
     if (editingProduct && !formInitialized) { // Prevenir múltiples inicializaciones
-      // Reset form with values from product
-      const formValues = {};
+      // Reset formulario primero para evitar valores residuales
+      reset();
       
       // Set form values
       Object.entries(editingProduct).forEach(([key, value]) => {
@@ -66,12 +67,17 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
           // Convert boolean values to strings for select fields
           if (key === 'active' || key === 'featured') {
             const stringValue = value ? "true" : "false";
-            formValues[key] = stringValue;
+            setValue(key, stringValue, { shouldValidate: true });
           } else {
-            formValues[key] = value;
+            setValue(key, value, { shouldValidate: true });
           }
         }
       });
+      
+      // Asegurar que categoryId esté establecido
+      if (editingProduct.categoryId) {
+        setValue('categoryId', editingProduct.categoryId);
+      }
       
       // Handle arrays separately to avoid string conversion
       if (editingProduct.images && Array.isArray(editingProduct.images)) {
@@ -102,22 +108,20 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         setPrimaryImage(editingProduct.mainImage);
       }
 
-      // Explícitamente establecer los valores booleanos
-      setTimeout(() => {
-        if (editingProduct.hasOwnProperty('active')) {
-          const activeValue = editingProduct.active ? "true" : "false";
-          setValue('active', activeValue, { shouldValidate: true, shouldDirty: true });
-        }
-        
-        if (editingProduct.hasOwnProperty('featured')) {
-          const featuredValue = editingProduct.featured ? "true" : "false";
-          setValue('featured', featuredValue, { shouldValidate: true, shouldDirty: true });
-        }
-      }, 100);
+      // Establece explícitamente valores booleanos junto con los demás campos
+      if (editingProduct.hasOwnProperty('active')) {
+        const activeValue = editingProduct.active ? "true" : "false";
+        setValue('active', activeValue, { shouldValidate: true, shouldDirty: true });
+      }
+      
+      if (editingProduct.hasOwnProperty('featured')) {
+        const featuredValue = editingProduct.featured ? "true" : "false";
+        setValue('featured', featuredValue, { shouldValidate: true, shouldDirty: true });
+      }
 
       setFormInitialized(true); // Marcar como inicializado
     }
-  }, [editingProduct, setValue, images.length, setInitialImages, setPrimaryImage, formInitialized]);
+  }, [editingProduct, setValue, images.length, setInitialImages, setPrimaryImage, formInitialized, reset]);
 
   /**
    * Handle form submission.
@@ -168,6 +172,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
       mainImage: mainUrl,
       active: data.active === "true",
       featured: data.featured === "true",
+      categoryId: data.categoryId || null, // Asegurar que siempre se incluya el categoryId
       shippingRuleIds: Array.isArray(data.shippingRuleIds) ? data.shippingRuleIds : [], // Asegurarse que sea array
       shippingRuleId: Array.isArray(data.shippingRuleIds) && data.shippingRuleIds.length > 0 
         ? data.shippingRuleIds[0] 
@@ -202,10 +207,10 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         {/* 🧩 Category selection dropdown */}
         <DynamicDropdown
           name="categoryId"
-          label="Category"
+          label="Categoría"
           control={control}
           fetchFunction={getCategories}
-          defaultValue=""
+          defaultValue={editingProduct?.categoryId || ""}
           rules={{ required: false }}
         />
 
@@ -239,14 +244,14 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         {/* 🖋️ Basic product info */}
         <InputField 
           name="name" 
-          label="Name" 
+          label="Nombre" 
           control={control} 
           required={true}
           defaultValue="" 
         />
         <InputField 
           name="description" 
-          label="Description" 
+          label="Descripción" 
           control={control} 
           type="textarea" 
           required={false}
@@ -254,7 +259,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         />
         <InputField 
           name="price" 
-          label="Price" 
+          label="Precio" 
           control={control} 
           type="number" 
           required={true}
@@ -262,7 +267,7 @@ export const ProductForm = ({ onProductSaved, editingProduct }) => {
         />
         <InputField 
           name="weight" 
-          label="Weight (kg)" 
+          label="Peso (kg)" 
           control={control} 
           type="number" 
           required={true}

@@ -60,21 +60,8 @@ export const ProductManagementPage = () => {
     
     try {
       const response = await getProducts();
-      console.log('Productos cargados desde la base de datos:', response.data);
       
       if (response.ok) {
-        // Log shipping rules info
-        console.log('Reglas de envío en los productos:');
-        response.data.forEach(product => {
-          console.log(`Producto ${product.name}:`, {
-            id: product.id,
-            shippingRuleId: product.shippingRuleId,
-            shippingRuleIds: product.shippingRuleIds,
-            shippingRuleInfo: product.shippingRuleInfo,
-            shippingRulesInfo: product.shippingRulesInfo
-          });
-        });
-        
         setProducts(response.data);
       } else {
         console.error('Error obteniendo productos:', response.error);
@@ -203,7 +190,21 @@ export const ProductManagementPage = () => {
     },
     {
       header: "Categoría",
-      accessor: "category",
+      accessor: "categoryId",
+      cell: (row) => {
+        // Si no hay categoryId, mostrar mensaje apropiado
+        if (!row.categoryId) {
+          return <span className="text-muted">Sin categoría</span>;
+        }
+        
+        // Si tenemos categoryName disponible, lo usamos
+        if (row.categoryName) {
+          return row.categoryName;
+        }
+        
+        // Si solo tenemos el ID, mostramos eso con formato abreviado
+        return <span className="text-secondary">ID: {row.categoryId.substring(0, 6)}...</span>;
+      }
     },
     {
       header: "Precio",
@@ -223,7 +224,7 @@ export const ProductManagementPage = () => {
         
         if (rulesInfo.length === 0) {
           return (
-            <span className="badge bg-warning text-dark">
+            <span className="text-muted">
               <i className="bi bi-exclamation-triangle-fill me-1"></i>
               Sin regla de envío
             </span>
@@ -236,7 +237,7 @@ export const ProductManagementPage = () => {
             {rulesInfo.slice(0, 2).map(rule => (
               <span 
                 key={rule.id} 
-                className="badge bg-info text-dark d-flex align-items-center"
+                className="badge bg-light text-dark border d-flex align-items-center"
                 style={{ fontSize: '0.8rem' }}
               >
                 <i className="bi bi-truck me-1"></i>
@@ -244,7 +245,7 @@ export const ProductManagementPage = () => {
               </span>
             ))}
             {rulesInfo.length > 2 && (
-              <span className="badge bg-secondary text-white">
+              <span className="badge bg-light text-dark border">
                 +{rulesInfo.length - 2} más
               </span>
             )}
@@ -253,7 +254,7 @@ export const ProductManagementPage = () => {
       },
     },
     {
-      header: "Estado",
+      header: "Activo",
       accessor: "active",
       cell: (row) => {
         // Usar estado de actualización si existe, o el estado real del producto
@@ -270,6 +271,7 @@ export const ProductManagementPage = () => {
             size="md"
             disabled={isUpdating}
             error={hasError}
+            hideText={true}
           />
         );
       },

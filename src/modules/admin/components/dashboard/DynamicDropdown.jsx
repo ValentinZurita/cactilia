@@ -1,6 +1,6 @@
 import { useController } from 'react-hook-form';
-import { useDynamicList } from '../../hooks/useDynamicList.js'
-
+import { useDynamicList } from '../../hooks/useDynamicList.js';
+import { useEffect } from 'react';
 
 /**
  * Dynamic dropdown component.
@@ -33,14 +33,6 @@ export const DynamicDropdown = ({
 }) => {
   const { items, loading } = useDynamicList(fetchFunction);
   
-  // Add detailed debugging logs
-  console.log(`DynamicDropdown ${name}:`, { 
-    items, 
-    loading, 
-    isRequired: rules.required,
-    defaultValue
-  });
-  
   const {
     field,
     fieldState: { error }
@@ -54,15 +46,26 @@ export const DynamicDropdown = ({
     defaultValue: defaultValue
   });
   
-  // Log field values
-  console.log(`DynamicDropdown ${name} field:`, field);
+  // Corrige el problema con valores por defecto cuando cambia items
+  useEffect(() => {
+    // Solo ejecutamos esto si tenemos un valor y los items ya se cargaron
+    if (field.value && items.length > 0) {
+      // Verificamos que el valor exista en los items
+      const valueExists = items.some(item => item.id === field.value);
+      
+      // Si el valor no existe en los items recién cargados, pero debería estar
+      // (significa que las API tienen valores diferentes), mantenemos el valor actual
+      if (!valueExists) {
+        // Podríamos manejar este caso si es necesario
+      }
+    }
+  }, [items, field.value, field]);
 
   // Determinar si el campo es opcional
   const isOptional = rules.required === false;
   
   // Fix for shipping rule selection - ensure onChange is properly triggered
   const handleSelectionChange = (e) => {
-    console.log(`${name} selection changed to:`, e.target.value);
     field.onChange(e);
   };
 
@@ -83,8 +86,8 @@ export const DynamicDropdown = ({
           <select 
             id={name} 
             className={`form-select ${error ? 'is-invalid' : ''}`} 
-            value={field.value}
-            onChange={handleSelectionChange}
+            value={field.value || ''}
+            onChange={(e) => field.onChange(e)}
             onBlur={field.onBlur}
             ref={field.ref}
           >

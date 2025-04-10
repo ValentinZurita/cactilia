@@ -34,10 +34,37 @@ export const getProducts = async () => {
         });
       });
       
-      // Obtener información de reglas de envío para productos que las tienen
-      const productsWithShippingRules = await Promise.all(
+      // Crear un mapa para almacenar categorías por ID para evitar duplicar solicitudes
+      const categoryCache = new Map();
+      
+      // Obtener información de categorías y reglas de envío para los productos
+      const productsWithDetails = await Promise.all(
         productsData.map(async (product) => {
-          // Inicializar el array de información de reglas de envío
+          // 1. Obtener información de categoría si el producto tiene categoryId
+          let categoryName = null;
+          
+          if (product.categoryId) {
+            try {
+              // Primero verificar si ya tenemos la categoría en caché
+              if (categoryCache.has(product.categoryId)) {
+                categoryName = categoryCache.get(product.categoryId);
+              } else {
+                // Si no está en caché, obtenerla de la base de datos
+                const categoryRef = doc(FirebaseDB, 'categories', product.categoryId);
+                const categoryDoc = await getDoc(categoryRef);
+                
+                if (categoryDoc.exists()) {
+                  categoryName = categoryDoc.data().name;
+                  // Guardar en caché para futuras referencias
+                  categoryCache.set(product.categoryId, categoryName);
+                }
+              }
+            } catch (err) {
+              console.warn(`Error al obtener información de categoría para producto ${product.id}:`, err);
+            }
+          }
+          
+          // 2. Obtener información de reglas de envío
           let shippingRulesInfo = [];
           
           // Procesar reglas de envío, ya sea del array de IDs o del ID único (compatibilidad)
@@ -56,7 +83,6 @@ export const getProducts = async () => {
                   
                   // If not found, try zonas_envio
                   if (!shippingRuleDoc.exists()) {
-                    console.log(`Shipping rule not found in reglas_envio, trying zonas_envio for ID: ${ruleId}`);
                     shippingRuleRef = doc(FirebaseDB, 'zonas_envio', ruleId);
                     shippingRuleDoc = await getDoc(shippingRuleRef);
                   }
@@ -83,14 +109,17 @@ export const getProducts = async () => {
           // Añadir la información de reglas al producto
           return {
             ...product,
+            // Información de categoría
+            categoryName: categoryName,
+            // Información de reglas de envío
             shippingRulesInfo: shippingRulesInfo.length > 0 ? shippingRulesInfo : undefined,
             // Mantener compatibilidad con el campo shippingRuleInfo
             shippingRuleInfo: shippingRulesInfo.length > 0 ? shippingRulesInfo[0] : undefined
           };
         })
       );
-
-      return { ok: true, data: productsWithShippingRules, error: null };
+      
+      return { ok: true, data: productsWithDetails, error: null };
     } catch (permissionError) {
       console.warn('Posible error de permisos al obtener productos:', permissionError);
       
@@ -177,7 +206,10 @@ export const updateProduct = async (id, product) => {
     delete cleanProductData.shippingRulesInfo;
     delete cleanProductData.shippingRuleInfo;
     
-    console.log(`Actualizando producto ${id} con datos limpios:`, cleanProductData);
+    // Asegurar que categoryId se incluya, incluso si es null (para limpiar un valor previo)
+    if (!cleanProductData.hasOwnProperty('categoryId') && product.hasOwnProperty('categoryId')) {
+      cleanProductData.categoryId = product.categoryId;
+    }
     
     const productRef = doc(FirebaseDB, 'products', id);
     await updateDoc(productRef, cleanProductData);

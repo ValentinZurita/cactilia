@@ -29,15 +29,6 @@ export const MultiSelectDropdown = ({
   const [selectedItems, setSelectedItems] = useState([]);
   const [currentSelection, setCurrentSelection] = useState('');
   
-  // Log para depuración
-  console.log(`MultiSelectDropdown ${name}:`, { 
-    items, 
-    loading, 
-    isRequired: rules.required,
-    defaultValue,
-    selectedItems
-  });
-  
   const {
     field,
     fieldState: { error }
@@ -54,7 +45,6 @@ export const MultiSelectDropdown = ({
   // Actualizar los items seleccionados cuando cambia el campo
   useEffect(() => {
     if (field.value && Array.isArray(field.value)) {
-      console.log(`MultiSelectDropdown: Actualizando selección desde field.value:`, field.value);
       setSelectedItems(field.value);
     }
   }, [field.value]);
@@ -74,7 +64,6 @@ export const MultiSelectDropdown = ({
     // Evitar duplicados
     if (!selectedItems.includes(currentSelection)) {
       const newItems = [...selectedItems, currentSelection];
-      console.log(`MultiSelectDropdown: Añadiendo regla, nueva selección:`, newItems);
       setSelectedItems(newItems);
       field.onChange(newItems);
     }
@@ -86,7 +75,6 @@ export const MultiSelectDropdown = ({
   // Eliminar una regla de la selección
   const removeRule = (itemId) => {
     const newSelection = selectedItems.filter(id => id !== itemId);
-    console.log(`MultiSelectDropdown: Eliminando regla, nueva selección:`, newSelection);
     setSelectedItems(newSelection);
     field.onChange(newSelection);
   };
