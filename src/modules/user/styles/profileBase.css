@@ -101,7 +101,9 @@
     }
 
     .container.user-profile-container {
-        padding-bottom: 70px; /* Espacio para el menú móvil fijo */
+        padding-bottom: 90px; /* Aumentar el espacio para el menú móvil fijo */
+        margin-bottom: 0;     /* Eliminar el margen inferior */
+        min-height: auto;     /* Permitir que el contenido determine la altura */
     }
 
     /* Ajustes para tarjetas en mobile */

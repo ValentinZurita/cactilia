@@ -1,5 +1,6 @@
 // src/App.jsx
 import '../src/styles/global.css';
+import '../src/styles/scrollbar.css';
 import { AppRouter } from './routes/AppRouter';
 import { useCheckAuth } from './shared/hooks/useCheckAuth.js';
 import { Spinner } from './shared/components/spinner/Spinner.jsx';

@@ -61,9 +61,10 @@
 body {
     /*padding-top: 55px; !* Ajustar según la altura del navbar *!*/
     overflow-y: auto;
+    min-height: 100vh;
+    position: relative;
     /* font-family: 'Nohemi', sans-serif;*/
 }
-
 
 /*
   📌 NAVBAR STYLES
