@@ -239,16 +239,15 @@ export const getShippingZonesForPostalCode = async (postalCode) => {
 };
 
 /**
- * Calcula el precio de envío para unos productos según la regla y opción de mensajería
- * @param {Array} products - Productos a enviar
- * @param {Object} shippingOption - Opción de mensajería
+ * Calcula el precio de envío para un paquete según las reglas configuradas
+ * @param {Array} products - Productos en el paquete
+ * @param {Object} mensajeria - Opción de mensajería
  * @param {Object} zone - Zona de envío
- * @returns {Object} - Información del precio calculado
+ * @returns {Object} Información del precio calculado
  */
-export const calculateShippingPrice = (products, shippingOption = {}, zone = {}) => {
+export const calculateShippingPrice = (products, mensajeria = {}, zone = {}) => {
   try {
-    // Si no hay productos o zona, devolver precio 0
-    if (!products || !Array.isArray(products) || products.length === 0 || !zone) {
+    if (!products?.length || !zone) {
       return {
         price: 0,
         basePrice: 0,
@@ -258,251 +257,178 @@ export const calculateShippingPrice = (products, shippingOption = {}, zone = {})
         exceedsLimits: false
       };
     }
-    
-    console.log(`🧮 Calculando precio para envío con ${products.length} productos y zona ${zone.id || 'desconocida'}`);
-    
-    // Precio base (de la opción o de la zona)
-    const basePrice = parseFloat(shippingOption.precio || 
-                                shippingOption.costo_base || 
-                                zone.precio || 
-                                zone.costo_base || 
-                                0);
-    
-    // Verificar si hay una regla explícita de envío gratis: directa o por monto mínimo
-    const hasForcedFreeShipping = 
-      // Envío gratis directo en zona u opción
-      zone.envio_gratis === true || 
-      shippingOption.envio_gratis === true ||
-      // Envío gratis específico para el producto
-      products.some(item => {
-        const product = item.product || item;
-        // Verificar si el producto tiene envío gratis explícito
-        return product.free_shipping === true || 
-               product.envio_gratis === true ||
-               product.shipping_free === true;
-      });
-    
-    // Si está forzado como gratis, terminamos rápido
-    if (hasForcedFreeShipping) {
-      console.log('✅ Envío gratuito forzado por regla explícita');
+
+    // 1. Calcular totales del paquete
+    const packageInfo = products.reduce((acc, item) => {
+      const quantity = parseInt(item.quantity || 1);
+      const weight = parseFloat(item.product?.weight || item.product?.peso || item.weight || item.peso || 0) * quantity;
+      const price = parseFloat(item.product?.price || item.product?.precio || item.price || item.precio || 0) * quantity;
+      
       return {
-        price: 0,
-        basePrice,
-        isFree: true,
-        freeReason: 'Envío gratuito para este método',
-        productCount: products.length,
-        totalWeight: products.reduce((sum, item) => {
-          const product = item.product || item;
-          const quantity = item.quantity || 1;
-          const weight = parseFloat(product.weight || product.peso || 0) * quantity;
-          return sum + weight;
-        }, 0),
-        subtotal: products.reduce((sum, item) => {
-          const product = item.product || item;
-          const quantity = item.quantity || 1;
-          const price = parseFloat(product.price || product.precio || 0) * quantity;
-          return sum + price;
-        }, 0),
-        exceedsLimits: false
+        totalWeight: acc.totalWeight + weight,
+        totalProducts: acc.totalProducts + quantity,
+        totalAmount: acc.totalAmount + price
+      };
+    }, { totalWeight: 0, totalProducts: 0, totalAmount: 0 });
+
+    console.log('📦 Información del paquete:', packageInfo);
+
+    // 2. Verificar límites del paquete
+    const packageConfig = zone.configuracion_paquetes || mensajeria.configuracion_paquetes || {};
+    const maxWeight = packageConfig.peso_maximo_paquete || mensajeria.peso_maximo || 0;
+    const maxProducts = packageConfig.maximo_productos_por_paquete || 0;
+
+    if (maxWeight > 0 && packageInfo.totalWeight > maxWeight) {
+      return {
+        exceedsLimits: true,
+        limitMessage: `El peso total (${packageInfo.totalWeight}kg) excede el máximo permitido (${maxWeight}kg)`,
+        ...packageInfo
       };
     }
-    
-    // Calcular cantidad de productos y peso total
-    const productCount = products.length;
-    let totalWeight = 0;
-    let subtotal = 0;
-    
-    products.forEach(item => {
-      const product = item.product || item;
-      const quantity = item.quantity || 1;
-      
-      // Sumar al peso total
-      const productWeight = parseFloat(product.weight || product.peso || 0) * quantity;
-      totalWeight += productWeight;
-      
-      // Sumar al subtotal
-      const price = parseFloat(product.price || product.precio || 0) * quantity;
-      subtotal += price;
-    });
-    
-    // Verificar límites de paquetes - con manejo especial para paquetes pequeños
-    const checkPackageLimits = () => {
-      const packageConfig = zone.configuracion_paquetes || {};
-      
-      // Si solo hay un producto, no considerarlo como exceso
-      if (products.length === 1) {
-        console.log('ℹ️ Solo hay un producto, ignorando límites de paquete');
-        return { exceedsLimits: false };
-      }
-      
-      // Límite de productos por paquete
-      if (packageConfig.maximo_productos_por_paquete && 
-          productCount > packageConfig.maximo_productos_por_paquete) {
-        // En vez de fallar, podríamos considerar envío en múltiples paquetes
-        console.log(`⚠️ Excede el máximo de ${packageConfig.maximo_productos_por_paquete} productos por paquete`);
-        
-        // Calcular cuántos paquetes serían necesarios
-        const requiredPackages = Math.ceil(productCount / packageConfig.maximo_productos_por_paquete);
-        
-        if (requiredPackages > 1) {
-          return {
-            exceedsLimits: false, // No fallamos, pero indicamos que son múltiples paquetes
-            isMultiPackage: true,
-            packageCount: requiredPackages,
-            limitMessage: `Requiere ${requiredPackages} paquetes (máx. ${packageConfig.maximo_productos_por_paquete} productos por paquete)`
-          };
-        }
-      }
-      
-      // Límite de peso por paquete
-      if (packageConfig.peso_maximo_paquete && 
-          totalWeight > packageConfig.peso_maximo_paquete) {
-        // En vez de fallar, podríamos considerar envío en múltiples paquetes
-        console.log(`⚠️ Excede el peso máximo de ${packageConfig.peso_maximo_paquete} por paquete`);
-        
-        // Calcular cuántos paquetes serían necesarios
-        const requiredPackages = Math.ceil(totalWeight / packageConfig.peso_maximo_paquete);
-        
-        if (requiredPackages > 1) {
-          return {
-            exceedsLimits: false, // No fallamos, pero indicamos que son múltiples paquetes
-            isMultiPackage: true,
-            packageCount: requiredPackages,
-            limitMessage: `Requiere ${requiredPackages} paquetes (máx. ${packageConfig.peso_maximo_paquete} de peso por paquete)`
-          };
-        }
-      }
-      
-      return { exceedsLimits: false };
-    };
-    
-    // Verificar si el paquete excede límites
-    const limitCheck = checkPackageLimits();
-    
-    // Si excede límites y no se puede manejar como múltiples paquetes
-    if (limitCheck.exceedsLimits && !limitCheck.isMultiPackage) {
-      console.log('❌ Los productos exceden límites y no se pueden dividir en paquetes');
+
+    if (maxProducts > 0 && packageInfo.totalProducts > maxProducts) {
       return {
-        ...limitCheck,
+        exceedsLimits: true,
+        limitMessage: `La cantidad de productos (${packageInfo.totalProducts}) excede el máximo permitido (${maxProducts})`,
+        ...packageInfo
+      };
+    }
+
+    // 3. Verificar si aplica envío gratis
+    if (zone.envio_gratis) {
+      console.log('✨ Zona con envío gratis');
+      return {
         price: 0,
         basePrice: 0,
-        isFree: false,
-        productCount,
-        totalWeight
+        isFree: true,
+        freeReason: 'Envío gratuito en esta zona',
+        ...packageInfo
       };
     }
+
+    // 4. Verificar envío gratis por monto mínimo
+    console.log('🔍 Verificando envío gratis por monto mínimo:');
+    console.log(`   - Monto mínimo configurado: ${zone.envio_gratis_monto_minimo} (tipo: ${typeof zone.envio_gratis_monto_minimo})`);
+    console.log(`   - Subtotal del paquete: ${packageInfo.totalAmount} (tipo: ${typeof packageInfo.totalAmount})`);
     
-    // Calcular costos extra por productos adicionales
-    const extraProductCost = () => {
-      let cost = 0;
-      
-      // Configuración de productos extra
-      const extraProductConfig = zone.producto_extra || shippingOption.producto_extra || {};
-      
-      // Si hay configuración de costo por producto extra
-      if (extraProductConfig.costo_por_producto && extraProductConfig.cantidad_base) {
-        const baseCount = parseInt(extraProductConfig.cantidad_base);
-        const extraCost = parseFloat(extraProductConfig.costo_por_producto);
-        
-        if (!isNaN(baseCount) && !isNaN(extraCost) && productCount > baseCount) {
-          const extraProducts = productCount - baseCount;
-          cost = extraProducts * extraCost;
-          console.log(`📌 Costo extra por ${extraProducts} productos adicionales: $${cost.toFixed(2)}`);
-        }
-      }
-      
-      return cost;
-    };
-    
-    // Calcular costos extra por peso adicional
-    const extraWeightCost = () => {
-      let cost = 0;
-      
-      // Configuración de peso extra
-      const extraWeightConfig = zone.peso_extra || shippingOption.peso_extra || {};
-      
-      // Si hay configuración de costo por peso extra
-      if (extraWeightConfig.costo_por_kilo && extraWeightConfig.peso_base) {
-        const baseWeight = parseFloat(extraWeightConfig.peso_base);
-        const extraCost = parseFloat(extraWeightConfig.costo_por_kilo);
-        
-        if (!isNaN(baseWeight) && !isNaN(extraCost) && totalWeight > baseWeight) {
-          const extraWeight = totalWeight - baseWeight;
-          cost = extraWeight * extraCost;
-          console.log(`📌 Costo extra por ${extraWeight.toFixed(2)} kg adicionales: $${cost.toFixed(2)}`);
-        }
-      }
-      
-      return cost;
-    };
-    
-    // Calcular costos adicionales
-    const productExtraCost = extraProductCost();
-    const weightExtraCost = extraWeightCost();
-    const extraCosts = productExtraCost + weightExtraCost;
-    
-    // Factor multiplicador para múltiples paquetes
-    const packageMultiplier = limitCheck.isMultiPackage ? 
-      limitCheck.packageCount || Math.ceil(productCount / (zone.configuracion_paquetes?.maximo_productos_por_paquete || 1)) : 
-      1;
-    
-    console.log(`📦 Factor multiplicador por paquetes: ${packageMultiplier}`);
-    
-    // Verificar si califica para envío gratis por monto mínimo
-    const freeShippingMinAmount = parseFloat(zone.envio_gratis_monto_minimo || 
-                                             shippingOption.envio_gratis_monto_minimo || 
-                                             0);
-    
-    const qualifiesForFreeShipping = !isNaN(freeShippingMinAmount) && 
-                                     freeShippingMinAmount > 0 && 
-                                     subtotal >= freeShippingMinAmount;
-    
-    if (qualifiesForFreeShipping) {
-      console.log(`✅ Califica para envío gratis por monto mínimo (subtotal: $${subtotal.toFixed(2)}, mínimo: $${freeShippingMinAmount.toFixed(2)})`);
+    let minFreeAmount = 0;
+    if (typeof zone.envio_gratis_monto_minimo === 'string') {
+      minFreeAmount = parseFloat(zone.envio_gratis_monto_minimo);
+      console.log(`   - Convertido de string a número: ${minFreeAmount}`);
+    } else if (typeof zone.envio_gratis_monto_minimo === 'number') {
+      minFreeAmount = zone.envio_gratis_monto_minimo;
+      console.log(`   - Ya es número: ${minFreeAmount}`);
     }
     
-    // Determinar si el envío es gratuito
-    const isFree = hasForcedFreeShipping || qualifiesForFreeShipping;
-    
-    // Calcular precio final
-    const finalPrice = isFree ? 0 : (basePrice * packageMultiplier + extraCosts);
-    
-    console.log(`💰 Precio final calculado: $${finalPrice.toFixed(2)}`);
-    
-    // Preparar razón para envío gratuito (si aplica)
-    let freeReason = null;
-    if (isFree) {
-      if (hasForcedFreeShipping) {
-        freeReason = 'Envío gratuito para este método';
-      } else if (qualifiesForFreeShipping) {
-        freeReason = `Envío gratuito por compra mínima de $${freeShippingMinAmount.toFixed(2)}`;
+    // Verificar si el envío es gratuito por monto mínimo
+    if (minFreeAmount > 0 && packageInfo.totalAmount >= minFreeAmount) {
+      console.log(`✨ Envío gratis aplicado: subtotal ${packageInfo.totalAmount} >= monto mínimo ${minFreeAmount}`);
+      return {
+        price: 0,
+        basePrice: 0,
+        isFree: true,
+        freeReason: `Envío gratuito en compras mayores a $${minFreeAmount}`,
+        rule: zone,
+        subtotal: packageInfo.totalAmount,
+        ...packageInfo
+      };
+    } else {
+      console.log(`❌ No aplica envío gratis por monto: ${packageInfo.totalAmount} < ${minFreeAmount}`);
+    }
+
+    // 5. Calcular precio base
+    let basePrice = parseFloat(mensajeria.precio || mensajeria.costo_base || 0);
+    let finalPrice = basePrice;
+    let priceDetails = [`Precio base: $${basePrice}`];
+
+    // Log detallado para diagnóstico de precios
+    console.log('💰 Calculando precio de envío:', {
+      zona: zone.zona || zone.nombre || 'Sin nombre',
+      basePrice,
+      mensajeria_precio: mensajeria.precio,
+      mensajeria_costo_base: mensajeria.costo_base,
+      zone_precio_base: zone.precio_base,
+      packageInfo
+    });
+
+    // Corrección: Si el precio es 0 pero la zona no tiene envío gratuito, asignar un precio base razonable
+    if (basePrice === 0 && !zone.envio_gratis && 
+        (!zone.envio_gratis_monto_minimo || 
+         packageInfo.totalAmount < parseFloat(zone.envio_gratis_monto_minimo))) {
+      
+      console.log('⚠️ Detectada inconsistencia: precio base es 0 pero no hay razón para envío gratuito');
+      
+      // Buscar precio en la primera opción de mensajería disponible
+      if (zone.opciones_mensajeria && zone.opciones_mensajeria.length > 0) {
+        const firstOption = zone.opciones_mensajeria[0];
+        basePrice = parseFloat(firstOption.precio || 0);
+        console.log(`🔧 Usando precio de primera opción de mensajería: $${basePrice}`);
+      } 
+      // O usar precio_base de la zona
+      else if (zone.precio_base) {
+        basePrice = parseFloat(zone.precio_base);
+        console.log(`🔧 Usando precio_base de la zona: $${basePrice}`);
+      }
+      // O usar un valor predeterminado
+      else {
+        basePrice = zone.zona?.toLowerCase() === 'nacional' ? 200 : 0;
+        console.log(`🔧 Usando precio predeterminado por tipo de zona: $${basePrice}`);
+      }
+      
+      finalPrice = basePrice;
+      priceDetails = [`Precio base (corregido): $${basePrice}`];
+    }
+
+    // 6. Aplicar reglas variables de envío
+    if (zone.envio_variable) {
+      // 6.1 Costo extra por peso
+      const extraWeightKg = Math.max(0, packageInfo.totalWeight - (packageConfig.peso_base || 0));
+      if (extraWeightKg > 0 && packageConfig.costo_por_kg_extra > 0) {
+        const extraWeightCost = extraWeightKg * packageConfig.costo_por_kg_extra;
+        finalPrice += extraWeightCost;
+        priceDetails.push(`Cargo por peso extra (${extraWeightKg}kg): $${extraWeightCost}`);
+      }
+
+      // 6.2 Costo extra por productos
+      const extraProducts = Math.max(0, packageInfo.totalProducts - (packageConfig.productos_base || 1));
+      if (extraProducts > 0 && packageConfig.costo_por_producto_extra > 0) {
+        const extraProductsCost = extraProducts * packageConfig.costo_por_producto_extra;
+        finalPrice += extraProductsCost;
+        priceDetails.push(`Cargo por productos extra (${extraProducts}): $${extraProductsCost}`);
+      }
+
+      // 6.3 Aplicar reglas específicas de la zona
+      if (zone.envio_variable.reglas_peso) {
+        // Ordenar reglas por peso de mayor a menor
+        const weightRules = [...zone.envio_variable.reglas_peso].sort((a, b) => b.peso - a.peso);
+        
+        // Encontrar la primera regla que aplique
+        const applicableRule = weightRules.find(rule => packageInfo.totalWeight >= rule.peso);
+        if (applicableRule) {
+          finalPrice = applicableRule.precio;
+          priceDetails = [`Precio por regla de peso (>${applicableRule.peso}kg): $${finalPrice}`];
+        }
       }
     }
-    
+
+    console.log('💰 Desglose del precio:', priceDetails.join('\n'));
+
     return {
       price: finalPrice,
       basePrice,
-      isFree,
-      freeReason,
-      productCount,
-      totalWeight,
-      subtotal,
-      extraProductCost: productExtraCost,
-      extraWeightCost: weightExtraCost,
+      isFree: finalPrice === 0,
+      priceDetails,
       exceedsLimits: false,
-      isMultiPackage: limitCheck.isMultiPackage || false,
-      packageCount: limitCheck.packageCount || 1
+      ...packageInfo
     };
   } catch (error) {
-    console.error('Error al calcular precio de envío:', error);
-    // En caso de error, retornar un precio válido por defecto
+    console.error('❌ Error calculando precio de envío:', error);
     return {
       price: 0,
       basePrice: 0,
       isFree: false,
-      exceedsLimits: false,
-      isError: true,
-      errorMessage: 'Error al calcular precio'
+      error: error.message,
+      exceedsLimits: true
     };
   }
 }; 

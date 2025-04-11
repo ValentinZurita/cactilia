@@ -470,13 +470,7 @@ export const buildCombinations = (cartItems, zones, productGroups) => {
     return [];
   }
   
-  // 1. Convertir zonas a un formato de mapa para acceso rápido
-  const zonesMap = {};
-  zones.forEach(zone => {
-    zonesMap[zone.id] = zone;
-  });
-  
-  // Extraer IDs únicos de productos para contar correctamente
+  // 1. Extraer IDs únicos de productos para validación
   const uniqueProductIds = new Set();
   cartItems.forEach(item => {
     const productId = item.product?.id || item.id;
@@ -484,232 +478,208 @@ export const buildCombinations = (cartItems, zones, productGroups) => {
   });
   console.log(`🛒 Total de productos únicos en carrito: ${uniqueProductIds.size}`);
   
-  // 2. Determinar reglas válidas para cada producto según la dirección
-  // (En esta implementación las zonas ya vienen filtradas por CP, así que todas son válidas)
-  const validRulesByProduct = {};
-  
+  // 2. Mapear productos a sus zonas compatibles
+  const productZonesMap = new Map();
   cartItems.forEach(item => {
     const product = item.product || item;
     const productId = product.id;
     
-    // Obtener todas las zonas/reglas válidas para este producto
-    const validRules = [];
-    zones.forEach(zone => {
-      // Verificar si este producto puede usar esta zona
-      const canUseZone = productGroups.some(group => 
-        group.ruleId === zone.id && 
-        group.products.some(p => 
-          (p.product?.id || p.id) === productId
-        )
-      );
-      
-      if (canUseZone) {
-        validRules.push(zone.id);
-      }
-    });
-    
-    // Guardar las reglas válidas para este producto
-    validRulesByProduct[productId] = validRules;
-    
-    // Verificar que haya al menos una regla válida
-    if (validRules.length === 0) {
-      console.warn(`⚠️ Producto ${productId} no tiene reglas de envío válidas`);
+    if (!productId) {
+      console.warn('⚠️ Producto sin ID, ignorando');
+      return;
     }
+    
+    // Obtener reglas de envío del producto
+    const productRules = product.shippingRuleIds || 
+                        (product.shippingRuleId ? [product.shippingRuleId] : []);
+    
+    // Encontrar zonas compatibles
+    const compatibleZones = zones.filter(zone => 
+      productRules.includes(zone.id)
+    );
+    
+    if (compatibleZones.length === 0) {
+      console.warn(`⚠️ No hay zonas compatibles para producto ${productId}`);
+    } else {
+      console.log(`✅ Producto ${productId} tiene ${compatibleZones.length} zonas compatibles`);
+    }
+    
+    productZonesMap.set(productId, compatibleZones);
   });
   
-  // 3. Generar todas las combinaciones posibles
-  // (cada combinación asigna una regla válida a cada producto)
-  const ruleCombinations = generateRuleCombinations(validRulesByProduct);
-  console.log(`🔄 Se generaron ${ruleCombinations.length} combinaciones posibles`);
+  // 3. Generar todas las combinaciones posibles que cubran TODOS los productos
+  const combinations = [];
   
-  // 4. Transformar cada combinación en una opción concreta de envío
+  // Función recursiva para generar combinaciones
+  const generateCombinations = (remainingProducts, currentCombo = [], usedZones = new Set()) => {
+    // Si no quedan productos, tenemos una combinación válida
+    if (remainingProducts.length === 0) {
+      combinations.push([...currentCombo]);
+      return;
+    }
+    
+    // Tomar el siguiente producto
+    const currentProduct = remainingProducts[0];
+    const compatibleZones = productZonesMap.get(currentProduct);
+    
+    // Probar cada zona compatible para este producto
+    compatibleZones.forEach(zone => {
+      // Si ya usamos esta zona, ver si podemos agregar este producto a ella
+      if (usedZones.has(zone.id)) {
+        const existingCombo = currentCombo.find(c => c.zoneId === zone.id);
+        if (existingCombo) {
+          existingCombo.products.push(currentProduct);
+          generateCombinations(remainingProducts.slice(1), currentCombo, usedZones);
+          existingCombo.products.pop();
+        }
+      } else {
+        // Usar una nueva zona
+        currentCombo.push({
+          zoneId: zone.id,
+          zone,
+          products: [currentProduct]
+        });
+        usedZones.add(zone.id);
+        generateCombinations(remainingProducts.slice(1), currentCombo, usedZones);
+        usedZones.delete(zone.id);
+        currentCombo.pop();
+      }
+    });
+  };
+  
+  // Iniciar generación con todos los productos
+  generateCombinations([...uniqueProductIds]);
+  
+  console.log(`🔄 Se generaron ${combinations.length} combinaciones base`);
+  
+  // 4. Convertir combinaciones en opciones de envío
   const shippingCombinations = [];
   
-  ruleCombinations.forEach((combination, combinationIndex) => {
-    // 4.1 Agrupar productos por regla en esta combinación
-    const groupsByRule = groupCombinationByRule(combination, cartItems);
+  combinations.forEach((combo, index) => {
+    // Agrupar por zona para calcular precios
+    const zoneGroups = new Map();
     
-    // 4.2 Crear opciones de envío para cada grupo
-    const options = [];
-    let totalPrice = 0;
-    
-    Object.entries(groupsByRule).forEach(([ruleId, products]) => {
-      const zone = zonesMap[ruleId];
-      
-      if (!zone) {
-        console.warn(`⚠️ No se encontró la zona ${ruleId}`);
-        return;
-      }
-      
-      // Obtener configuración de paquetes para esta zona/mensajería
-      const packageConfig = zone.configuracion_paquetes || {};
-      
-      // Dividir productos en paquetes según restricciones
-      const packages = splitIntoPackages(products, packageConfig);
-      
-      // Si la zona tiene opciones de mensajería
-      if (zone.opciones_mensajeria && Array.isArray(zone.opciones_mensajeria) && zone.opciones_mensajeria.length > 0) {
-        // Procesar cada paquete con cada opción de mensajería
-        zone.opciones_mensajeria.forEach((mensajeria, optionIndex) => {
-          // Precio total para esta mensajería considerando todos los paquetes
-          let optionTotalPrice = 0;
-          let allPackagesValid = true;
-          const packagePrices = [];
-          
-          // Calcular precio para cada paquete
-          packages.forEach((packageProducts, packageIndex) => {
-            // Verificar si esta opción de mensajería es válida para este paquete
-            const priceInfo = calculateShippingPrice(packageProducts, mensajeria, zone);
-            
-            // Si un paquete excede límites y no se pudo dividir más, marcar como inválido
-            if (priceInfo.exceedsLimits) {
-              allPackagesValid = false;
-              console.warn(`⚠️ Paquete ${packageIndex + 1} excede límites y no se puede dividir más: ${priceInfo.limitMessage}`);
-            } else {
-              optionTotalPrice += priceInfo.price;
-              packagePrices.push({
-                packageIndex,
-                products: packageProducts,
-                price: priceInfo.price,
-                isFree: priceInfo.isFree
-              });
-            }
-          });
-          
-          // Solo crear la opción si todos los paquetes son válidos
-          if (allPackagesValid) {
-            // Crear ID único para esta opción
-            const optionId = `${zone.id}_${mensajeria.id || mensajeria.nombre || 'default'}_${combinationIndex}_${optionIndex}`;
-            
-            // Crear descripción sin duplicados
-            const carrierName = mensajeria.transportista || mensajeria.nombre || 'Servicio de Envío';
-            const optionName = mensajeria.nombre || mensajeria.label || `Envío ${zone.zona || 'Estándar'}`;
-            
-            // Crear la opción de envío
-            const option = {
-              id: optionId,
-              zoneId: zone.id,
-              zoneName: zone.nombre || zone.zona || 'Zona de envío',
-              zoneType: zone.zona || zone.coverage_type || 'standard',
-              optionName,
-              carrierId: mensajeria.transportista_id || 'default',
-              carrierName,
-              products,
-              price: optionTotalPrice,
-              basePrice: parseFloat(mensajeria.precio || mensajeria.costo_base || 0),
-              isFree: packagePrices.every(p => p.isFree),
-              multiPackage: packages.length > 1,
-              packageCount: packages.length,
-              packages: packagePrices,
-              estimatedDelivery: mensajeria.tiempo_entrega || 
-                `${mensajeria.minDays || 3}-${mensajeria.maxDays || 7} días`,
-              // Agregar información de envío gratis si aplica
-              freeShipping: zone.envio_gratis || false,
-              freeShippingReason: zone.envio_gratis ? 'Envío gratuito en esta zona' : null
-            };
-            
-            options.push(option);
-            // Solo sumar al precio total si no es envío gratis
-            if (!option.freeShipping) {
-              totalPrice += optionTotalPrice;
-            }
-          }
+    combo.forEach(item => {
+      if (!zoneGroups.has(item.zoneId)) {
+        zoneGroups.set(item.zoneId, {
+          zone: item.zone,
+          products: []
         });
-      } else {
-        // Si no hay opciones de mensajería, crear una opción genérica
-        // usando la zona directamente como único proveedor
-        
-        // Precio total para esta opción considerando todos los paquetes
-        let optionTotalPrice = 0;
-        let allPackagesValid = true;
-        const packagePrices = [];
-        
-        // Calcular precio para cada paquete
-        packages.forEach((packageProducts, packageIndex) => {
-          // Verificar si es válida para este paquete
-          const priceInfo = calculateShippingPrice(packageProducts, {}, zone);
-          
-          // Si un paquete excede límites y no se pudo dividir más, marcar como inválido
-          if (priceInfo.exceedsLimits) {
-            allPackagesValid = false;
-            console.warn(`⚠️ Paquete ${packageIndex + 1} excede límites y no se puede dividir más: ${priceInfo.limitMessage}`);
-          } else {
-            optionTotalPrice += priceInfo.price;
-            packagePrices.push({
-              packageIndex,
-              products: packageProducts,
-              price: priceInfo.price,
-              isFree: priceInfo.isFree
-            });
-          }
-        });
-        
-        // Solo crear la opción si todos los paquetes son válidos
-        if (allPackagesValid) {
-          // Crear ID único para esta opción
-          const optionId = `${zone.id}_default_${combinationIndex}`;
-          
-          // Crear la opción de envío
-          const option = {
-            id: optionId,
-            zoneId: zone.id,
-            zoneName: zone.nombre || zone.zona || 'Zona de envío',
-            zoneType: zone.zona || zone.coverage_type || 'standard',
-            optionName: zone.nombre_servicio || `Envío ${zone.zona || 'Estándar'}`,
-            carrierId: 'default',
-            carrierName: zone.transportista || zone.nombre || 'Servicio de Envío',
-            products,
-            price: optionTotalPrice,
-            basePrice: 0,
-            isFree: packagePrices.every(p => p.isFree),
-            multiPackage: packages.length > 1,
-            packageCount: packages.length,
-            packages: packagePrices,
-            estimatedDelivery: zone.tiempo_entrega || '3-7 días'
-          };
-          
-          options.push(option);
-          totalPrice += optionTotalPrice;
-        }
       }
+      zoneGroups.get(item.zoneId).products.push(...item.products);
     });
     
-    // Solo crear la combinación si hay opciones válidas
-    if (options.length > 0) {
-      // Verificar si todas las opciones de esta combinación cubren todos los productos
-      const productsCovered = new Set();
-      options.forEach(option => {
-        (option.products || []).forEach(p => {
-          const productId = p.product?.id || p.id;
-          if (productId) productsCovered.add(productId);
-        });
-      });
+    // Calcular precio para cada grupo
+    const options = [];
+    let totalPrice = 0;
+    let allProductsCovered = true;
+    
+    for (const [zoneId, group] of zoneGroups) {
+      const zone = group.zone;
       
-      const isComplete = productsCovered.size === uniqueProductIds.size;
+      // Obtener productos completos del grupo
+      const groupProducts = group.products.map(productId => 
+        cartItems.find(item => (item.product?.id || item.id) === productId)
+      ).filter(Boolean);
       
-      if (isComplete) {
-        console.log(`✅ Combinación ${combinationIndex + 1} cubre TODOS los productos (${productsCovered.size}/${uniqueProductIds.size})`);
-      } else {
-        console.log(`⚠️ Combinación ${combinationIndex + 1} cubre ${productsCovered.size}/${uniqueProductIds.size} productos`);
+      // Calcular precio para este grupo
+      const priceInfo = calculateShippingPrice(groupProducts, {}, zone);
+      
+      if (priceInfo.exceedsLimits) {
+        allProductsCovered = false;
+        break;
       }
       
-      // Crear la combinación
-      const combinationId = `combo_${combinationIndex}_${Date.now()}`;
-      shippingCombinations.push({
-        id: combinationId,
-        options,
-        totalPrice,
-        isComplete
-      });
+      // Verificar si hay alguna opción de mensajería configurada
+      let mensajerias = [];
+      if (zone.opciones_mensajeria && zone.opciones_mensajeria.length > 0) {
+        // Usar todas las opciones de mensajería disponibles
+        mensajerias = zone.opciones_mensajeria;
+        console.log(`💰 Zona ${zone.zona || zone.nombre} tiene ${mensajerias.length} opciones de mensajería`);
+      } else {
+        // Si no hay opciones, usar un objeto vacío como fallback
+        mensajerias = [{}];
+      }
+      
+      // Para cada opción de mensajería, crear una opción de envío
+      const zoneOptions = [];
+      
+      for (const mensajeria of mensajerias) {
+        // Calcular con la opción de mensajería explícita
+        const detailedPriceInfo = calculateShippingPrice(groupProducts, mensajeria, zone);
+        
+        // Verificar si el precio es 0 pero no debería serlo
+        if (detailedPriceInfo.price === 0 && !zone.envio_gratis) {
+          console.log(`⚠️ Posible error de cálculo: precio 0 para zona ${zone.zona} con opción ${mensajeria.nombre || 'default'}`);
+        }
+        
+        // Generar un ID único para esta opción
+        const optionId = `${zoneId}_${mensajeria.nombre || 'default'}_${index}`;
+        
+        zoneOptions.push({
+          id: optionId,
+          zoneId,
+          zoneName: zone.nombre || zone.zona || 'Zona de envío',
+          zoneType: zone.zona || zone.coverage_type || 'standard',
+          carrierName: mensajeria.nombre || zone.transportista || zone.nombre || 'Servicio de Envío',
+          carrierLabel: mensajeria.label || 'Estándar',
+          products: groupProducts,
+          price: detailedPriceInfo.price,
+          isFree: detailedPriceInfo.isFree,
+          freeShipping: zone.envio_gratis || detailedPriceInfo.isFree,
+          estimatedDelivery: mensajeria.tiempo_entrega || zone.tiempo_entrega || '1-7 días',
+          // Añadir información detallada para diagnóstico
+          rule: zone,
+          mensajeria: mensajeria,
+          subtotal: detailedPriceInfo.totalAmount || groupProducts.reduce((sum, item) => {
+            const price = parseFloat(item.product?.price || item.price || 0);
+            const quantity = parseInt(item.quantity || 1);
+            return sum + (price * quantity);
+          }, 0),
+          freeReason: detailedPriceInfo.freeReason
+        });
+        
+        totalPrice += detailedPriceInfo.price;
+      }
+      
+      options.push(...zoneOptions);
+    }
+    
+    // Solo agregar si es una combinación válida que cubre todos los productos
+    if (allProductsCovered) {
+      const coveredProducts = new Set(
+        options.flatMap(opt => opt.products.map(p => p.product?.id || p.id))
+      );
+      
+      if (coveredProducts.size === uniqueProductIds.size) {
+        shippingCombinations.push({
+          id: `combo_${index}_${Date.now()}`,
+          options,
+          totalPrice,
+          isComplete: true
+        });
+      }
     }
   });
   
-  // Ordenar las combinaciones por precio total (menor a mayor)
+  // 5. Ordenar por precio y optimizar
   shippingCombinations.sort((a, b) => a.totalPrice - b.totalPrice);
   
-  // Optimizar combinaciones antes de retornar
-  const optimizedCombinations = optimizeCombinations(shippingCombinations);
+  // Eliminar duplicados y mantener solo la opción más barata para cada conjunto de productos
+  const uniqueCombos = new Map();
+  shippingCombinations.forEach(combo => {
+    const key = combo.options
+      .map(opt => `${opt.zoneId}:${opt.products.map(p => p.product?.id || p.id).sort().join(',')}`)
+      .sort()
+      .join('|');
+    
+    if (!uniqueCombos.has(key) || uniqueCombos.get(key).totalPrice > combo.totalPrice) {
+      uniqueCombos.set(key, combo);
+    }
+  });
   
-  console.log(`✅ Se generaron ${optimizedCombinations.length} combinaciones de envío optimizadas`);
-  return optimizedCombinations;
+  const finalCombinations = Array.from(uniqueCombos.values());
+  console.log(`✅ Se generaron ${finalCombinations.length} combinaciones válidas finales`);
+  
+  return finalCombinations;
 }; 

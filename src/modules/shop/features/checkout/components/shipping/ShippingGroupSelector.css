@@ -669,4 +669,87 @@
   font-size: 0.85rem;
   color: #856404;
   margin-bottom: 15px;
+}
+
+/* Destacar opciones nacionales para que sean más visibles */
+.shipping-option-card.national-option {
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+  position: relative;
+}
+
+.shipping-option-card.national-option::before {
+  content: "Opción Nacional";
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background-color: #3498db;
+  color: white;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  z-index: 1;
+}
+
+/* Asegurar que la opción nacional seleccionada tiene prioridad visual */
+.shipping-option-card.national-option.selected {
+  border-color: #2ecc71;
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.4);
+}
+
+/* Los grupos prioritarios también se destacan */
+.shipping-option-group:first-child {
+  border-left: 4px solid #3498db;
+  padding-left: 15px;
+  position: relative;
+}
+
+/* Estilos para el desglose de costos */
+.shipping-cost-breakdown {
+  background-color: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.cost-breakdown-list {
+  list-style-type: none;
+  padding-left: 10px;
+  margin-bottom: 0;
+}
+
+.cost-breakdown-list li {
+  margin-bottom: 4px;
+}
+
+/* Estilos para el detalle de productos */
+.shipping-products-detail {
+  background-color: #f0f8ff;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.products-list {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin-bottom: 4px;
+}
+
+.package-products {
+  margin-bottom: 8px;
+}
+
+/* Para textos preformateados */
+.pre-wrap {
+  white-space: pre-wrap;
+  font-family: inherit;
+}
+
+/* Destacar información importante */
+.shipping-option-detailed-description {
+  border-left: 3px solid #6c757d;
+  padding-left: 8px;
 } 

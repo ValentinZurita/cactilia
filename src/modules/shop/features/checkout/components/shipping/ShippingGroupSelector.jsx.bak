@@ -545,9 +545,7 @@ const ShippingGroupSelector = ({
           </div>
           <div className="shipping-option-price">
             {!isFree ? 
-              <span>${(option.packages && option.packages.length > 0 ? 
-                option.packages.reduce((total, pkg) => total + (pkg.price || option.price), 0) : 
-                option.price).toFixed(2)}</span> : 
+              <span>${option.price.toFixed(2)}</span> : 
               <span className="text-success">Gratis</span>
             }
           </div>
@@ -580,13 +578,6 @@ const ShippingGroupSelector = ({
         {option.packages && option.packages.length > 0 && (
           <div className="shipping-packages">
             <h6 className="packages-title">Detalle de paquetes:</h6>
-            {/* Asegurar que cada paquete tenga un precio */}
-            {option.packages.forEach(pkg => {
-              if (!pkg.price || pkg.price === 0) {
-                // Asignar el precio base completo a cada paquete
-                pkg.price = option.price;
-              }
-            })}
             <div className="packages-list">
               {option.packages.map((pkg, idx) => {
                 // Calcular peso y número de productos para este paquete
@@ -622,30 +613,12 @@ const ShippingGroupSelector = ({
                 // Usar totalQuantity si está disponible (de otro formato)
                 const displayProductCount = pkgProductCount || pkg.totalQuantity || 1;
                 
-                console.log(`Paquete ${idx + 1}:`, {
-                  pkgPrice: pkg.price,
-                  optionPrice: option.price,
-                  packageCount: option.packages?.length || 1
-                });
-                
-                const displayPrice = (!pkg.price || pkg.price === 0) ? 
-                  option.price : // Precio base completo para cada paquete
-                  pkg.price;
-                
                 return (
                   <div key={idx} className="package-item">
                     <div className="package-header">
                       <span className="package-name">Paquete {idx + 1}</span>
                       <span className="package-price">
-                        {(() => {
-                          console.log(`Paquete ${idx + 1}:`, {
-                            pkgPrice: pkg.price,
-                            optionPrice: option.price,
-                            packageCount: option.packages?.length || 1
-                          });
-                          
-                          return pkg.isFree ? 'Gratis' : `$${displayPrice.toFixed(2)}`;
-                        })()}
+                        {pkg.isFree ? 'Gratis' : `$${(pkg.price || 0).toFixed(2)}`}
                       </span>
                     </div>
                     {showInvalidData ? (
