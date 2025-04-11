@@ -100,28 +100,167 @@ const ShippingGroupSelector = ({
         if (directOptions && directOptions.totalOptions && directOptions.totalOptions.length > 0) {
           setShippingGroups(directOptions.groups || []);
           
-          // Convertir las opciones directas al formato de combinaciones para mantener la compatibilidad
-          const directCombinations = directOptions.totalOptions.map(option => ({
-            id: option.id,
-            description: option.label,
-            totalPrice: option.totalCost,
-            isAllFree: option.isFreeShipping,
-            carrier: option.carrier,
-            ruleId: option.ruleId,
-            calculatedCost: option.calculatedCost,
-            deliveryTime: option.deliveryTime,
-            selections: [{
-              groupId: option.groupId || 'default-group',
-              option: {
-                name: option.carrier,
-                price: option.totalCost,
-                estimatedDelivery: option.deliveryTime,
-                isFreeShipping: option.isFreeShipping
-              },
-              products: option.group?.items || []
-            }]
-          }));
+          // Convertir las opciones directas al formato de combinaciones
+          // Aseguramos que cada opción de mensajería de cada regla se convierta en una opción individual
+          let directCombinations = [];
           
+          // Primero procesamos los grupos por separado
+          directOptions.groups.forEach(group => {
+            const rule = group.rule;
+            if (!rule || !rule.opciones_mensajeria || !Array.isArray(rule.opciones_mensajeria)) {
+              return;
+            }
+            
+            // Para cada opción de mensajería en la regla, crear una combinación
+            rule.opciones_mensajeria.forEach((opcion, optionIndex) => {
+              // Calcular si esta opción es gratis
+              const isFreeShipping = rule.envio_gratis === true || group.isFreeShipping === true;
+              
+              // Calcular precio final
+              const deliveryCost = isFreeShipping ? 0 : parseFloat(opcion.precio || 0);
+              
+              // Crear ID único para esta opción
+              const optionId = `${rule.id}-${opcion.nombre?.replace(/\s+/g, '-')?.toLowerCase() || 'option'}-${optionIndex}`;
+              
+              // Generar etiqueta descriptiva
+              let optionLabel = opcion.label || opcion.nombre || 'Envío';
+              
+              // Si es una de las opciones de Correos de México, añadir una etiqueta más descriptiva
+              if (opcion.nombre === 'Correos de México') {
+                optionLabel = optionIndex === 0 ? 'Basico' : 'Express';
+              }
+              
+              // Añadir combinación
+              directCombinations.push({
+                id: optionId,
+                description: rule.zona === 'Local' ? 'Entrega Local' : optionLabel,
+                totalPrice: deliveryCost,
+                isAllFree: isFreeShipping,
+                carrier: opcion.nombre || 'Servicio de envío',
+                ruleId: rule.id,
+                ruleName: rule.zona || 'Sin nombre',
+                calculatedCost: deliveryCost,
+                deliveryTime: opcion.tiempo_entrega || `${opcion.minDays || 1}-${opcion.maxDays || 5} días`,
+                selections: [{
+                  groupId: group.id || 'default-group',
+                  option: {
+                    name: opcion.nombre || 'Servicio de envío',
+                    price: deliveryCost,
+                    estimatedDelivery: opcion.tiempo_entrega || `${opcion.minDays || 1}-${opcion.maxDays || 5} días`,
+                    isFreeShipping
+                  },
+                  products: group.items || []
+                }]
+              });
+            });
+          });
+          
+          // Ordenar las combinaciones para que las gratuitas aparezcan primero
+          directCombinations.sort((a, b) => {
+            // Primero envío gratis
+            if (a.isAllFree && !b.isAllFree) return -1;
+            if (!a.isAllFree && b.isAllFree) return 1;
+            
+            // Luego por precio
+            return (a.totalPrice || 0) - (b.totalPrice || 0);
+          });
+          
+          // Generar opciones mixtas combinando grupos (Local + Nacional)
+          // Solo si tenemos al menos dos grupos diferentes
+          if (directOptions.groups.length > 1) {
+            const localGroups = directOptions.groups.filter(g => g.rule?.zona === 'Local');
+            const nationalGroups = directOptions.groups.filter(g => g.rule?.zona === 'Nacional');
+            
+            // Solo crear combinaciones mixtas si hay grupos locales y nacionales
+            if (localGroups.length > 0 && nationalGroups.length > 0) {
+              console.log('🔄 Creando combinaciones mixtas entre grupos Local y Nacional');
+              
+              // Para cada grupo local con productos
+              localGroups.forEach(localGroup => {
+                if (!localGroup.items || !localGroup.rule?.opciones_mensajeria) return;
+                
+                // Producto(s) que tienen envío local
+                const localProducts = localGroup.items;
+                
+                // Para cada grupo nacional
+                nationalGroups.forEach(nationalGroup => {
+                  if (!nationalGroup.items || !nationalGroup.rule?.opciones_mensajeria) return;
+                  
+                  // Productos que solo tienen envío nacional (no están en el grupo local)
+                  const nationalOnlyProducts = nationalGroup.items.filter(item => {
+                    const itemId = (item.product || item).id;
+                    return !localProducts.some(localItem => 
+                      (localItem.product || localItem).id === itemId
+                    );
+                  });
+                  
+                  // Solo crear combinación mixta si hay productos exclusivos del grupo nacional
+                  if (nationalOnlyProducts.length > 0) {
+                    // Para cada opción de mensajería nacional
+                    nationalGroup.rule.opciones_mensajeria.forEach((nationalOption, optionIndex) => {
+                      // Usar la primera opción local (suponiendo que es la más económica)
+                      const localOption = localGroup.rule.opciones_mensajeria[0];
+                      
+                      // Precio nacional
+                      const nationalPrice = nationalGroup.isFreeShipping ? 0 : parseFloat(nationalOption.precio || 0);
+                      
+                      // Crear combinación mixta
+                      const mixedCombination = {
+                        id: `mixed-${localGroup.id}-${nationalGroup.id}-${optionIndex}`,
+                        description: `Mixta: Local + ${optionIndex === 0 ? 'Básico' : 'Express'}`,
+                        totalPrice: nationalPrice, // Solo se cobra el envío nacional, el local es gratis
+                        isAllFree: nationalPrice === 0,
+                        carrier: 'Envío mixto',
+                        ruleName: 'Mixto',
+                        calculatedCost: nationalPrice,
+                        deliveryTime: nationalOption.tiempo_entrega || `${nationalOption.minDays || 3}-${nationalOption.maxDays || 10} días`,
+                        isMixed: true,
+                        selections: [
+                          // Opción local para productos con envío local
+                          {
+                            groupId: localGroup.id,
+                            option: {
+                              name: localOption.nombre || 'Entrega Local',
+                              price: 0, // Siempre gratis el local
+                              estimatedDelivery: localOption.tiempo_entrega || '1-1 días',
+                              isFreeShipping: true
+                            },
+                            products: localProducts
+                          },
+                          // Opción nacional para productos que solo tienen envío nacional
+                          {
+                            groupId: nationalGroup.id,
+                            option: {
+                              name: nationalOption.nombre || 'Envío Nacional',
+                              price: nationalPrice,
+                              estimatedDelivery: nationalOption.tiempo_entrega || `${nationalOption.minDays || 3}-${nationalOption.maxDays || 10} días`,
+                              isFreeShipping: nationalGroup.isFreeShipping
+                            },
+                            products: nationalOnlyProducts
+                          }
+                        ]
+                      };
+                      
+                      // Añadir a las combinaciones totales
+                      directCombinations.push(mixedCombination);
+                    });
+                  }
+                });
+              });
+              
+              // Re-ordenar después de añadir las combinaciones mixtas
+              directCombinations.sort((a, b) => {
+                // Primero envío gratis
+                if (a.isAllFree && !b.isAllFree) return -1;
+                if (!a.isAllFree && b.isAllFree) return 1;
+                
+                // Luego por precio
+                return (a.totalPrice || 0) - (b.totalPrice || 0);
+              });
+            }
+          }
+          
+          console.log('🚢 Combinaciones generadas:', directCombinations.length);
           setShippingCombinations(directCombinations);
           setStatus({ loading: false, error: null, noOptions: false });
           
@@ -490,6 +629,12 @@ const ShippingGroupSelector = ({
                       <div className={`shipping-name ${isSelected ? 'fw-semibold' : ''}`}>
                         {description}
                         
+                        {combination.ruleName && (
+                          <span className="badge bg-light text-dark ms-2 small">
+                            {combination.ruleName}
+                          </span>
+                        )}
+                        
                         {combination.selections && combination.selections.length > 1 && (
                           <span className="shipping-group-count">
                             {combination.selections.length} grupos
@@ -518,22 +663,71 @@ const ShippingGroupSelector = ({
                       </div>
                     </div>
                     
+                    {/* Información sobre productos en esta opción */}
+                    <div className="mt-1 small text-muted">
+                      {combination.selections && combination.selections[0]?.products?.length > 0 && (
+                        <div>
+                          <i className="bi bi-box small me-1"></i>
+                          <span>
+                            {combination.selections[0].products.length === 1 
+                              ? "1 producto" 
+                              : `${combination.selections[0].products.length} productos`}
+                            {combination.selections[0].products.map(item => 
+                              (item.product?.name || item.name)
+                            ).join(", ").length < 50 && 
+                              `: ${combination.selections[0].products.map(item => 
+                                  (item.product?.name || item.name)
+                                ).join(", ")}`
+                            }
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
                     {/* Detalles de la combinación */}
-                    {isSelected && combination.selections && Array.isArray(combination.selections) && combination.selections.length > 1 && (
+                    {isSelected && combination.selections && Array.isArray(combination.selections) && combination.selections.length > 0 && (
                       <div className="shipping-option-details mt-2">
-                        {combination.selections.map((selection, selIndex) => (
-                          <div key={`${selection.groupId || selIndex}-detail`} className="shipping-option-details-item">
-                            <div className="d-flex justify-content-between">
-                              <div>
-                                <i className="bi bi-box-seam me-1"></i>
-                                <span className="fw-medium">Grupo {selIndex + 1}:</span> {selection.option?.name || 'Opción'}
+                        {combination.isMixed ? (
+                          <div className="alert alert-light p-2 mb-0">
+                            <div className="mb-1 fw-medium">Detalle de envíos separados:</div>
+                            {combination.selections.map((selection, selIndex) => (
+                              <div key={`${selection.groupId || selIndex}-detail`} className="shipping-option-details-item mb-1">
+                                <div className="d-flex justify-content-between">
+                                  <div>
+                                    <i className="bi bi-box-seam me-1"></i>
+                                    <span className="fw-medium">{selIndex === 0 ? 'Envío Local' : 'Envío Nacional'}:</span> {selection.option?.name || 'Opción'}
+                                    <span className="ms-1 text-nowrap">
+                                      ({selection.option?.isFreeShipping ? 'Gratis' : `$${(selection.option?.price || 0).toFixed(2)}`})
+                                    </span>
+                                  </div>
+                                  <div className="text-muted">
+                                    {selection.products?.length || 0} producto(s)
+                                  </div>
+                                </div>
+                                <div className="ps-4 mt-1 mb-1 small text-muted">
+                                  <i className="bi bi-dot"></i>
+                                  Productos: {selection.products.map(item => 
+                                    (item.product?.name || item.name)
+                                  ).join(", ")}
+                                </div>
                               </div>
-                              <div className="text-muted">
-                                {selection.products?.length || 0} productos
+                            ))}
+                          </div>
+                        ) : (
+                          combination.selections.map((selection, selIndex) => (
+                            <div key={`${selection.groupId || selIndex}-detail`} className="shipping-option-details-item">
+                              <div className="d-flex justify-content-between">
+                                <div>
+                                  <i className="bi bi-box-seam me-1"></i>
+                                  <span className="fw-medium">Grupo {selIndex + 1}:</span> {selection.option?.name || 'Opción'}
+                                </div>
+                                <div className="text-muted">
+                                  {selection.products?.length || 0} productos
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     )}
                   </td>
