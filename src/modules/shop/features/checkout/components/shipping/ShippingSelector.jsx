@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { FirebaseDB } from '../../../../../../config/firebase/firebaseConfig';
 import ShippingGroupSelector from './ShippingGroupSelector';
+import { allProductsCovered } from '../../services/ShippingRuleService';
 
 /**
  * Componente adaptador para el selector de envío
@@ -19,6 +20,9 @@ const ShippingSelector = ({
   const [shippingRules, setShippingRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [incompleteShipping, setIncompleteShipping] = useState(false);
+  const [filteredShippingRules, setFilteredShippingRules] = useState([]);
   
   // Efecto para cargar las reglas directamente desde Firebase
   useEffect(() => {
@@ -171,6 +175,44 @@ const ShippingSelector = ({
     fetchShippingRulesFromFirebase();
   }, []);
 
+  // Manejar selección de opción y verificar cobertura completa
+  const handleOptionSelect = (option) => {
+    setSelectedOption(option);
+    
+    // Verificar si esta opción cubre todos los productos
+    if (option && option.selections) {
+      const allCovered = allProductsCovered(option.selections, cartItems);
+      setIncompleteShipping(!allCovered);
+      
+      console.log(`🔍 Opción de envío seleccionada: ${option.id}`);
+      console.log(`📦 ¿Cubre todos los productos?: ${allCovered ? 'SÍ' : 'NO'}`);
+    }
+    
+    // Llamar al callback original
+    onOptionSelect(option);
+  };
+
+  // Callback para recibir las combinaciones calculadas
+  const handleCombinationsCalculated = (combinations) => {
+    // Verificar que las combinaciones sean un array válido
+    if (!combinations || !Array.isArray(combinations)) {
+      console.warn('⚠️ Se recibieron combinaciones inválidas o nulas');
+      // Pasar array vacío al componente padre para evitar errores
+      if (onCombinationsCalculated) {
+        onCombinationsCalculated([]);
+      }
+      return;
+    }
+    
+    console.log(`📦 Total combinaciones recibidas: ${combinations.length}`);
+    
+    // En lugar de filtrar, pasamos todas las combinaciones y dejaremos que el componente
+    // ShippingGroupSelector las organice por zonas
+    if (onCombinationsCalculated) {
+      onCombinationsCalculated(combinations);
+    }
+  };
+
   // Log del estado actual
   console.log('📦 ShippingSelector: Rendering with props', { 
     cartItemsCount: cartItems?.length || 0,
@@ -196,15 +238,27 @@ const ShippingSelector = ({
   }
   
   return (
-    <ShippingGroupSelector
-      cartItems={cartItems}
-      onOptionSelect={onOptionSelect}
-      selectedOptionId={selectedOptionId}
-      selectedOptionDesc={selectedOptionDesc}
-      userAddress={userAddress}
-      onCombinationsCalculated={onCombinationsCalculated}
-      shippingRules={shippingRules}
-    />
+    <>
+      <ShippingGroupSelector
+        cartItems={cartItems}
+        onOptionSelect={handleOptionSelect}
+        selectedOptionId={selectedOptionId}
+        selectedOptionDesc={selectedOptionDesc}
+        userAddress={userAddress}
+        onCombinationsCalculated={handleCombinationsCalculated}
+        shippingRules={shippingRules}
+        filterOnlyComplete={false} // No filtrar, mostrar todas las opciones
+        groupByZone={true} // Nuevo prop para agrupar por zonas
+      />
+      
+      {incompleteShipping && (
+        <div className="alert alert-warning mt-3">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Envío incompleto:</strong> La opción seleccionada no cubre todos los productos de tu carrito.
+          Por favor, seleccione una combinación que incluya todos los productos para continuar.
+        </div>
+      )}
+    </>
   );
 };
 

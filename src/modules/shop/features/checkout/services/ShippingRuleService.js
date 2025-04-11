@@ -176,9 +176,10 @@ export const isPostalCodeValidForRule = (rule, postalCode, userState) => {
  * @param {Array} productGroups - Grupos de productos agrupados por regla de envío
  * @param {Object} addressInfo - Información de la dirección (código postal, estado, etc.)
  * @param {Array} shippingRules - Reglas de envío
+ * @param {Array} cartItems - Todos los productos en el carrito para calcular combinaciones óptimas
  * @returns {Array} - Combinaciones de envío válidas
  */
-export const generateShippingCombinations = (productGroups, addressInfo, shippingRules = []) => {
+export const generateShippingCombinations = (productGroups, addressInfo, shippingRules = [], cartItems = []) => {
   if (!productGroups || productGroups.length === 0) return [];
   
   // Normalizar información de dirección
@@ -226,400 +227,395 @@ export const generateShippingCombinations = (productGroups, addressInfo, shippin
   
   // Obtener todos los IDs de productos en el carrito
   const allProductIds = new Set();
-  validGroups.forEach(group => {
-    group.products.forEach(item => {
-      allProductIds.add(item.product.id);
+  
+  // Si recibimos los cartItems directamente, usarlos para obtener todos los productos
+  if (cartItems && cartItems.length > 0) {
+    cartItems.forEach(item => {
+      allProductIds.add(item.product?.id || item.id);
     });
+  } else {
+    // Si no, obtenerlos de los grupos válidos
+    validGroups.forEach(group => {
+      group.products.forEach(item => {
+        allProductIds.add(item.product.id);
+      });
+    });
+  }
+  
+  // Calcular el total de productos en el carrito
+  const totalProductsInCart = allProductIds.size;
+  console.log(`📦 Total de productos únicos en el carrito: ${totalProductsInCart}`);
+  
+  // Clasificar los grupos por zona
+  const groupsByZone = {};
+  
+  validGroups.forEach(group => {
+    const zoneName = group.rule.zona || 'Sin zona';
+    
+    if (!groupsByZone[zoneName]) {
+      groupsByZone[zoneName] = [];
+    }
+    
+    groupsByZone[zoneName].push(group);
   });
   
-  // Generar combinaciones individuales por regla
-  validGroups.forEach(group => {
-    const rule = group.rule;
-    console.log(`📦 Procesando regla ${rule.id} (${rule.zona || 'sin zona'}):`, rule);
+  console.log(`📦 Agrupados por zona: ${Object.keys(groupsByZone).length} zonas`, Object.keys(groupsByZone));
+  
+  // Generar combinaciones individuales por zona
+  Object.entries(groupsByZone).forEach(([zoneName, zoneGroups]) => {
+    console.log(`📦 Procesando zona ${zoneName} con ${zoneGroups.length} grupos`);
     
-    // Usar opciones_mensajeria o opciones dependiendo de lo que esté disponible
-    let shippingOptions = rule.opciones_mensajeria || rule.opciones || [];
-    
-    // Si tenemos shippingOptions como número, es posible que solo sea un contador
-    if (typeof shippingOptions === 'number') {
-      console.log(`⚠️ La regla ${rule.id} tiene opciones como número: ${shippingOptions}, intentando buscar de otra forma`);
+    // Para cada grupo en esta zona
+    zoneGroups.forEach(group => {
+      const rule = group.rule;
+      console.log(`📦 Procesando regla ${rule.id} (${rule.zona || 'sin zona'}):`, rule);
       
-      // Intenta buscar directamente en las reglas del panel de diagnóstico
-      if (window.__SHIPPING_RULES__) {
-        const debugRule = window.__SHIPPING_RULES__.find(r => r.id === rule.id);
-        if (debugRule && debugRule.opciones && Array.isArray(debugRule.opciones)) {
-          console.log(`✅ Encontradas opciones en panel de diagnóstico para ${rule.id}:`, debugRule.opciones);
-          shippingOptions = debugRule.opciones;
+      // Usar opciones_mensajeria o opciones dependiendo de lo que esté disponible
+      let shippingOptions = rule.opciones_mensajeria || rule.opciones || [];
+      
+      // Si tenemos shippingOptions como número, es posible que solo sea un contador
+      if (typeof shippingOptions === 'number') {
+        console.log(`⚠️ La regla ${rule.id} tiene opciones como número: ${shippingOptions}, intentando buscar de otra forma`);
+        
+        // Intenta buscar directamente en las reglas del panel de diagnóstico
+        if (window.__SHIPPING_RULES__) {
+          const debugRule = window.__SHIPPING_RULES__.find(r => r.id === rule.id);
+          if (debugRule && debugRule.opciones && Array.isArray(debugRule.opciones)) {
+            console.log(`✅ Encontradas opciones en panel de diagnóstico para ${rule.id}:`, debugRule.opciones);
+            shippingOptions = debugRule.opciones;
+          }
         }
       }
-    }
-    
-    if (!shippingOptions || !Array.isArray(shippingOptions) || shippingOptions.length === 0) {
-      console.warn(`⚠️ La regla ${rule.id} (${rule.zona || 'sin zona'}) no tiene opciones de mensajería válidas. Contenido:`, rule);
-      return;
-    }
-    
-    console.log(`✅ Procesando ${shippingOptions.length} opciones para ${rule.id} (${rule.zona || 'sin zona'})`);
-    
-    // Verificar si esta regla cubre todos los productos
-    const coveredProductIds = new Set();
-    group.products.forEach(item => {
-      coveredProductIds.add(item.product.id);
-    });
-    
-    const ruleCoversAll = Array.from(allProductIds).every(id => coveredProductIds.has(id));
-    
-    // Para cada opción de envío de esta regla
-    shippingOptions.forEach((option, optionIndex) => {
-      // Obtener label si existe, o generar uno a partir del nombre
-      const optionLabel = option.label || 
-                         (option.nombre === "Correos de México" ? 
-                           (optionIndex === 0 ? "Basico" : "Express") : 
-                           (option.nombre || `Opción ${optionIndex + 1}`));
       
-      // Calcular precio según configuración avanzada de la regla
-      let optionPrice = parseFloat(option.precio || 0);
-      
-      // Calcular el subtotal de los productos en este grupo
-      const groupSubtotal = group.products.reduce((total, item) => {
-        const price = parseFloat(item.product.price || item.product.precio || 0);
-        const quantity = item.quantity || 1;
-        return total + (price * quantity);
-      }, 0);
-      
-      // Calcular número total de productos y peso total
-      const productCount = group.products.reduce((count, item) => count + (item.quantity || 1), 0);
-      const totalWeight = group.products.reduce((weight, item) => {
-        const productWeight = parseFloat(item.product.weight || item.product.peso || 0);
-        const quantity = item.quantity || 1;
-        return weight + (productWeight * quantity);
-      }, 0);
-      
-      console.log(`📦 Grupo ${rule.id}: ${productCount} productos, peso total: ${totalWeight}kg, subtotal: $${groupSubtotal}`);
-      
-      // Verificar si aplica envío gratuito por cualquier razón
-      let isFreeShipping = false;
-      let freeShippingReason = '';
-      
-      // 1. Verificar si la regla tiene envío gratuito global
-      if (rule.envio_gratis === true) {
-        isFreeShipping = true;
-        freeShippingReason = 'Envío gratuito para todos los productos de esta regla';
+      if (!shippingOptions || !Array.isArray(shippingOptions) || shippingOptions.length === 0) {
+        console.warn(`⚠️ La regla ${rule.id} (${rule.zona || 'sin zona'}) no tiene opciones de mensajería válidas. Contenido:`, rule);
+        return;
       }
       
-      // 2. Verificar si aplica envío gratuito por monto mínimo
-      else if (rule.envio_gratis_monto_minimo && 
-              typeof rule.envio_gratis_monto_minimo === 'number' && 
-              groupSubtotal >= rule.envio_gratis_monto_minimo) {
-        isFreeShipping = true;
-        freeShippingReason = `Subtotal ($${groupSubtotal}) mayor al mínimo para envío gratis ($${rule.envio_gratis_monto_minimo})`;
-      }
+      console.log(`✅ Procesando ${shippingOptions.length} opciones para ${rule.id} (${rule.zona || 'sin zona'})`);
       
-      // 3. Verificar otras condiciones de envío gratuito
-      else if (rule.condiciones_envio_gratis) {
-        // Si hay una condición por número de productos
-        if (rule.condiciones_envio_gratis.minimo_productos && 
-            productCount >= rule.condiciones_envio_gratis.minimo_productos) {
+      // Verificar si esta regla cubre todos los productos
+      const coveredProductIds = new Set();
+      group.products.forEach(item => {
+        coveredProductIds.add(item.product.id);
+      });
+      
+      const ruleCoversAll = Array.from(allProductIds).every(id => coveredProductIds.has(id));
+      
+      // Para cada opción de envío de esta regla
+      shippingOptions.forEach((option, optionIndex) => {
+        // Obtener label si existe, o generar uno a partir del nombre
+        const optionLabel = option.label || 
+                           (option.nombre === "Correos de México" ? 
+                             (optionIndex === 0 ? "Basico" : "Express") : 
+                             (option.nombre || `Opción ${optionIndex + 1}`));
+        
+        // Calcular precio según configuración avanzada de la regla
+        let optionPrice = parseFloat(option.precio || 0);
+        
+        // Calcular el subtotal de los productos en este grupo
+        const groupSubtotal = group.products.reduce((total, item) => {
+          const price = parseFloat(item.product.price || item.product.precio || 0);
+          const quantity = item.quantity || 1;
+          return total + (price * quantity);
+        }, 0);
+        
+        // Calcular número total de productos y peso total
+        const productCount = group.products.reduce((count, item) => count + (item.quantity || 1), 0);
+        const totalWeight = group.products.reduce((weight, item) => {
+          const productWeight = parseFloat(item.product.weight || item.product.peso || 0);
+          const quantity = item.quantity || 1;
+          return weight + (productWeight * quantity);
+        }, 0);
+        
+        console.log(`📦 Grupo ${rule.id}: ${productCount} productos, peso total: ${totalWeight}kg, subtotal: $${groupSubtotal}`);
+        
+        // Verificar si aplica envío gratuito por cualquier razón
+        let isFreeShipping = false;
+        let freeShippingReason = '';
+        
+        // 1. Verificar si la regla tiene envío gratuito global
+        if (rule.envio_gratis === true) {
           isFreeShipping = true;
-          freeShippingReason = `Cantidad de productos (${productCount}) mayor al mínimo para envío gratis (${rule.condiciones_envio_gratis.minimo_productos})`;
-        }
-      }
-      
-      // Si aplica envío gratuito, el precio es 0
-      if (isFreeShipping) {
-        console.log(`✅ Envío gratuito aplicado: ${freeShippingReason}`);
-        optionPrice = 0;
-      } else {
-        // Calcular costos adicionales si no es gratuito
-        
-        // 1. Costo adicional por producto extra
-        if (rule.costo_por_producto_extra && productCount > 1) {
-          const extraProducts = productCount - 1; // El primer producto ya está en el precio base
-          const extraProductCost = extraProducts * parseFloat(rule.costo_por_producto_extra);
-          optionPrice += extraProductCost;
-          console.log(`💰 Costo adicional por ${extraProducts} productos extra: $${extraProductCost}`);
+          freeShippingReason = 'Envío gratuito para todos los productos de esta regla';
         }
         
-        // 2. Costo adicional por peso extra
-        if (rule.costo_por_kg_extra && rule.peso_base) {
-          const baseWeight = parseFloat(rule.peso_base);
-          if (totalWeight > baseWeight) {
-            const extraWeight = totalWeight - baseWeight;
-            const extraWeightCost = extraWeight * parseFloat(rule.costo_por_kg_extra);
-            optionPrice += extraWeightCost;
-            console.log(`💰 Costo adicional por ${extraWeight}kg extra: $${extraWeightCost}`);
+        // 2. Verificar si aplica envío gratuito por monto mínimo
+        else if (rule.envio_gratis_monto_minimo && 
+                typeof rule.envio_gratis_monto_minimo === 'number' && 
+                groupSubtotal >= rule.envio_gratis_monto_minimo) {
+          isFreeShipping = true;
+          freeShippingReason = `Subtotal ($${groupSubtotal}) mayor al mínimo para envío gratis ($${rule.envio_gratis_monto_minimo})`;
+        }
+        
+        // 3. Verificar otras condiciones de envío gratuito
+        else if (rule.condiciones_envio_gratis) {
+          // Si hay una condición por número de productos
+          if (rule.condiciones_envio_gratis.minimo_productos && 
+              productCount >= rule.condiciones_envio_gratis.minimo_productos) {
+            isFreeShipping = true;
+            freeShippingReason = `Cantidad de productos (${productCount}) mayor al mínimo para envío gratis (${rule.condiciones_envio_gratis.minimo_productos})`;
           }
         }
         
-        // 3. Verificar límites máximos
-        let exceedsLimits = false;
-        let limitMessage = '';
-        
-        // Verificar límite máximo de productos por paquete
-        if (rule.maximo_productos_por_paquete && productCount > rule.maximo_productos_por_paquete) {
-          exceedsLimits = true;
-          limitMessage = `Excede el máximo de productos por paquete (${rule.maximo_productos_por_paquete})`;
+        // Si aplica envío gratuito, el precio es 0
+        if (isFreeShipping) {
+          console.log(`✅ Envío gratuito aplicado: ${freeShippingReason}`);
+          optionPrice = 0;
+        } else {
+          // Calcular costos adicionales si no es gratuito
+          
+          // 1. Costo adicional por producto extra
+          if (rule.costo_por_producto_extra && productCount > 1) {
+            const extraProducts = productCount - 1; // El primer producto ya está en el precio base
+            const extraProductCost = extraProducts * parseFloat(rule.costo_por_producto_extra);
+            optionPrice += extraProductCost;
+            console.log(`💰 Costo adicional por ${extraProducts} productos extra: $${extraProductCost}`);
+          }
+          
+          // 2. Costo adicional por peso extra
+          if (rule.costo_por_kg_extra && rule.peso_base) {
+            const baseWeight = parseFloat(rule.peso_base);
+            if (totalWeight > baseWeight) {
+              const extraWeight = totalWeight - baseWeight;
+              const extraWeightCost = extraWeight * parseFloat(rule.costo_por_kg_extra);
+              optionPrice += extraWeightCost;
+              console.log(`💰 Costo adicional por ${extraWeight}kg extra: $${extraWeightCost}`);
+            }
+          }
+          
+          // 3. Verificar límites máximos
+          let exceedsLimits = false;
+          let limitMessage = '';
+          
+          // Verificar límite máximo de productos por paquete
+          if (rule.maximo_productos_por_paquete && productCount > rule.maximo_productos_por_paquete) {
+            exceedsLimits = true;
+            limitMessage = `Excede el máximo de productos por paquete (${rule.maximo_productos_por_paquete})`;
+          }
+          
+          // Verificar límite máximo de peso por paquete
+          if (rule.peso_maximo_paquete && totalWeight > rule.peso_maximo_paquete) {
+            exceedsLimits = true;
+            limitMessage = `${limitMessage ? limitMessage + ' y ' : ''}excede el peso máximo por paquete (${rule.peso_maximo_paquete}kg)`;
+          }
+          
+          // Si excede límites, marcar esta combinación
+          if (exceedsLimits) {
+            console.warn(`⚠️ ${limitMessage}. Esto podría requerir división en múltiples paquetes.`);
+            // En lugar de descartar, podríamos dividir en subpaquetes (implementación más avanzada)
+          }
         }
         
-        // Verificar límite máximo de peso por paquete
-        if (rule.peso_maximo_paquete && totalWeight > rule.peso_maximo_paquete) {
-          exceedsLimits = true;
-          limitMessage = `${limitMessage ? limitMessage + ' y ' : ''}excede el peso máximo por paquete (${rule.peso_maximo_paquete}kg)`;
-        }
-        
-        // Si excede límites, marcar esta combinación
-        if (exceedsLimits) {
-          console.warn(`⚠️ ${limitMessage}. Esto podría requerir división en múltiples paquetes.`);
-          // En lugar de descartar, podríamos dividir en subpaquetes (implementación más avanzada)
-        }
-      }
-      
-      // Crear una combinación para esta opción
-      combinations.push({
-        id: `${rule.id}-${(option.nombre || '').toLowerCase().replace(/\s+/g, '-')}-${optionIndex}`,
-        description: rule.zona,
-        option: {
-          name: option.nombre || "Servicio de envío",
-          label: optionLabel,
-          price: optionPrice,
-          isFree: optionPrice === 0,
-          freeReason: isFreeShipping ? freeShippingReason : '',
-          estimatedDelivery: option.tiempo_entrega || option.tiempoEntrega || '?-? días'
-        },
-        ruleId: rule.id,
-        ruleName: rule.zona,
-        products: group.products,
-        productCount: productCount,
-        totalWeight: totalWeight,
-        groupSubtotal: groupSubtotal,
-        coversAllProducts: ruleCoversAll,
-        isComplete: ruleCoversAll
+        // Crear una combinación para esta opción
+        combinations.push({
+          id: `${rule.id}-${(option.nombre || '').toLowerCase().replace(/\s+/g, '-')}-${optionIndex}`,
+          description: rule.zona,
+          option: {
+            name: option.nombre || "Servicio de envío",
+            label: optionLabel,
+            price: optionPrice,
+            isFree: optionPrice === 0,
+            freeReason: isFreeShipping ? freeShippingReason : '',
+            estimatedDelivery: option.tiempo_entrega || option.tiempoEntrega || '?-? días'
+          },
+          ruleId: rule.id,
+          ruleName: rule.zona,
+          products: group.products,
+          productCount: productCount,
+          totalWeight: totalWeight,
+          groupSubtotal: groupSubtotal,
+          coversAllProducts: ruleCoversAll,
+          isComplete: ruleCoversAll,
+          carrier: option.nombre || "Servicio de envío",
+          deliveryTime: option.tiempo_entrega || option.tiempoEntrega || '?-? días',
+          totalPrice: optionPrice,
+          zoneName: rule.zona,
+          selections: [{
+            groupId: rule.id,
+            option: {
+              name: option.nombre || "Servicio de envío",
+              price: optionPrice,
+              isFree: optionPrice === 0,
+              estimatedDelivery: option.tiempo_entrega || option.tiempoEntrega || '?-? días'
+            },
+            products: group.products,
+            ruleName: rule.zona
+          }]
+        });
       });
     });
   });
   
-  // Si ninguna regla individual cubre todos los productos, generar combinaciones múltiples
-  if (!combinations.some(combo => combo.coversAllProducts)) {
-    // Aquí iría la lógica para generar combinaciones que cubran todos los productos
-    // usando múltiples reglas
-    console.log('Ninguna regla individual cubre todos los productos - generando combinaciones mixtas');
+  // Si hay al menos dos zonas (e.g. local y nacional) que no cubren todos los productos individualmente,
+  // crear combinaciones automáticas entre zonas
+  if (Object.keys(groupsByZone).length >= 2) {
+    console.log('⚡ Generando combinaciones entre zonas');
     
-    // Identificar reglas con envío gratuito vs reglas con costo
-    const freeShippingGroups = validGroups.filter(g => g.rule?.envio_gratis === true);
-    const paidShippingGroups = validGroups.filter(g => g.rule?.envio_gratis !== true);
+    const zonas = Object.keys(groupsByZone);
     
-    // Si tenemos al menos una regla gratuita y una con costo, podemos crear combinaciones mixtas
-    if (freeShippingGroups.length > 0 && paidShippingGroups.length > 0) {
-      console.log(`✅ Generando combinaciones mixtas (gratuitas: ${freeShippingGroups.length}, con costo: ${paidShippingGroups.length})`);
+    // Buscar la zona local y nacional específicamente
+    const hasLocal = zonas.some(z => z.toLowerCase().includes('local'));
+    const hasNacional = zonas.some(z => z.toLowerCase().includes('nacional'));
+    
+    if (hasLocal && hasNacional) {
+      console.log('⚡ Tenemos zona local y nacional, generando combinación local+nacional');
       
-      // Para cada grupo gratuito
-      freeShippingGroups.forEach(freeGroup => {
-        // Para cada grupo con costo
-        paidShippingGroups.forEach(paidGroup => {
-          // Verificar si la combinación de ambos grupos cubre todos los productos
+      // Obtener los mejores grupos de cada zona
+      const localGroups = groupsByZone[zonas.find(z => z.toLowerCase().includes('local'))];
+      const nacionalGroups = groupsByZone[zonas.find(z => z.toLowerCase().includes('nacional'))];
+      
+      // Para cada grupo local
+      localGroups.forEach(localGroup => {
+        // Para cada grupo nacional
+        nacionalGroups.forEach(nacionalGroup => {
+          // Verificar si estos dos grupos juntos cubren todos los productos
           const combinedProductIds = new Set();
-          const freeProducts = [];
-          const paidProducts = [];
           
-          // Clasificar productos en gratuitos y pagados para esta combinación
-          [...freeGroup.products, ...paidGroup.products].forEach(item => {
+          [...localGroup.products, ...nacionalGroup.products].forEach(item => {
             combinedProductIds.add(item.product.id);
-            
-            // Verificar si ya está en alguna lista para evitar duplicados
-            const productInFree = freeProducts.some(p => p.product.id === item.product.id);
-            const productInPaid = paidProducts.some(p => p.product.id === item.product.id);
-            
-            if (!productInFree && !productInPaid) {
-              // Si el producto está en ambos grupos, priorizamos el gratuito
-              const isInFreeGroup = freeGroup.products.some(p => p.product.id === item.product.id);
-              
-              if (isInFreeGroup) {
-                freeProducts.push(item);
-              } else {
-                paidProducts.push(item);
-              }
-            }
           });
           
-          const combinationCoversAll = Array.from(allProductIds).every(id => 
-            combinedProductIds.has(id)
-          );
+          const combinationCoversAll = Array.from(allProductIds).every(id => combinedProductIds.has(id));
           
           if (combinationCoversAll) {
-            console.log(`✅ Combinación mixta cubre todos los productos (${freeProducts.length} gratuitos, ${paidProducts.length} con costo)`);
+            console.log('✅ Combinación local+nacional cubre todos los productos');
             
-            // Usar la primera opción de cada grupo
-            const freeOptions = freeGroup.rule.opciones_mensajeria || freeGroup.rule.opciones || [];
-            const paidOptions = paidGroup.rule.opciones_mensajeria || paidGroup.rule.opciones || [];
+            // Separar productos que pertenecen solo a local o solo a nacional
+            const localOnlyProducts = [];
+            const nacionalOnlyProducts = [];
             
-            if (freeOptions.length > 0 && paidOptions.length > 0) {
-              paidOptions.forEach((paidOption, paidIndex) => {
-                const freeOption = freeOptions[0]; // Primera opción gratuita
+            // Clasificar productos
+            const localProductIds = new Set(localGroup.products.map(item => item.product.id));
+            const nacionalProductIds = new Set(nacionalGroup.products.map(item => item.product.id));
+            
+            [...localGroup.products, ...nacionalGroup.products].forEach(item => {
+              const productId = item.product.id;
+              
+              // Si está en local pero no en nacional, es solo local
+              if (localProductIds.has(productId) && !nacionalProductIds.has(productId)) {
+                localOnlyProducts.push(item);
+              }
+              // Si está en nacional pero no en local, es solo nacional
+              else if (nacionalProductIds.has(productId) && !localProductIds.has(productId)) {
+                nacionalOnlyProducts.push(item);
+              }
+              // Si está en ambos, priorizamos local (porque suele ser gratis)
+              else if (localProductIds.has(productId) && nacionalProductIds.has(productId)) {
+                localOnlyProducts.push(item);
+              }
+            });
+            
+            // Obtener la primera opción de cada grupo (o la mejor)
+            const localOptions = localGroup.rule.opciones_mensajeria || localGroup.rule.opciones || [];
+            const nacionalOptions = nacionalGroup.rule.opciones_mensajeria || nacionalGroup.rule.opciones || [];
+            
+            if (localOptions.length > 0 && nacionalOptions.length > 0) {
+              // Para cada opción nacional (suele haber básica y express)
+              nacionalOptions.forEach((nacionalOption, nacionalIndex) => {
+                // Usar la primera opción local, que suele ser gratuita
+                const localOption = localOptions[0];
                 
-                // Calcular datos de productos en grupos libres y pagados
-                const freeProductsCount = freeProducts.reduce((count, item) => count + (item.quantity || 1), 0);
-                const paidProductsCount = paidProducts.reduce((count, item) => count + (item.quantity || 1), 0);
+                // Calcular precios y métricas para cada grupo
+                const localPrice = parseFloat(localOption.precio || 0);
+                const nacionalPrice = parseFloat(nacionalOption.precio || 0);
                 
-                const freeProductsWeight = freeProducts.reduce((weight, item) => {
+                // Calcular datos para mostrar
+                const localProductCount = localOnlyProducts.reduce((count, item) => count + (item.quantity || 1), 0);
+                const nacionalProductCount = nacionalOnlyProducts.reduce((count, item) => count + (item.quantity || 1), 0);
+                
+                const localWeight = localOnlyProducts.reduce((weight, item) => {
                   const productWeight = parseFloat(item.product.weight || item.product.peso || 0);
                   const quantity = item.quantity || 1;
                   return weight + (productWeight * quantity);
                 }, 0);
                 
-                const paidProductsWeight = paidProducts.reduce((weight, item) => {
+                const nacionalWeight = nacionalOnlyProducts.reduce((weight, item) => {
                   const productWeight = parseFloat(item.product.weight || item.product.peso || 0);
                   const quantity = item.quantity || 1;
                   return weight + (productWeight * quantity);
                 }, 0);
                 
-                const freeGroupSubtotal = freeProducts.reduce((total, item) => {
+                const localSubtotal = localOnlyProducts.reduce((total, item) => {
                   const price = parseFloat(item.product.price || item.product.precio || 0);
                   const quantity = item.quantity || 1;
                   return total + (price * quantity);
                 }, 0);
                 
-                const paidGroupSubtotal = paidProducts.reduce((total, item) => {
+                const nacionalSubtotal = nacionalOnlyProducts.reduce((total, item) => {
                   const price = parseFloat(item.product.price || item.product.precio || 0);
                   const quantity = item.quantity || 1;
                   return total + (price * quantity);
                 }, 0);
                 
-                // Calcular precio final de la opción pagada
-                let paidPrice = parseFloat(paidOption.precio || 0);
-                let paidFreeReason = '';
-                let isPaidFree = false;
+                // Descripción de la entrega nacional
+                const nacionalLabel = nacionalOption.label || 
+                                     (nacionalOption.nombre === "Correos de México" ? 
+                                       (nacionalIndex === 0 ? "Básico" : "Express") : 
+                                       (nacionalOption.nombre || `Opción ${nacionalIndex + 1}`));
                 
-                // Verificar si el grupo pagado aplica para envío gratuito
-                if (paidGroup.rule.envio_gratis) {
-                  isPaidFree = true;
-                  paidFreeReason = 'Envío gratuito para todos los productos de esta regla';
-                } 
-                // Verificar monto mínimo para envío gratuito
-                else if (paidGroup.rule.envio_gratis_monto_minimo && 
-                         typeof paidGroup.rule.envio_gratis_monto_minimo === 'number' && 
-                         paidGroupSubtotal >= paidGroup.rule.envio_gratis_monto_minimo) {
-                  isPaidFree = true;
-                  paidFreeReason = `Subtotal ($${paidGroupSubtotal}) mayor al mínimo para envío gratis ($${paidGroup.rule.envio_gratis_monto_minimo})`;
-                }
-                
-                // Si aplica envío gratuito, el precio es 0
-                if (isPaidFree) {
-                  console.log(`✅ Envío gratuito aplicado para grupo pagado: ${paidFreeReason}`);
-                  paidPrice = 0;
-                } else {
-                  // Calcular costos adicionales si no es gratuito
-                  
-                  // 1. Costo adicional por producto extra
-                  if (paidGroup.rule.costo_por_producto_extra && paidProductsCount > 1) {
-                    const extraProducts = paidProductsCount - 1;
-                    const extraProductCost = extraProducts * parseFloat(paidGroup.rule.costo_por_producto_extra);
-                    paidPrice += extraProductCost;
-                    console.log(`💰 Grupo pagado: costo adicional por ${extraProducts} productos extra: $${extraProductCost}`);
-                  }
-                  
-                  // 2. Costo adicional por peso extra
-                  if (paidGroup.rule.costo_por_kg_extra && paidGroup.rule.peso_base) {
-                    const baseWeight = parseFloat(paidGroup.rule.peso_base);
-                    if (paidProductsWeight > baseWeight) {
-                      const extraWeight = paidProductsWeight - baseWeight;
-                      const extraWeightCost = extraWeight * parseFloat(paidGroup.rule.costo_por_kg_extra);
-                      paidPrice += extraWeightCost;
-                      console.log(`💰 Grupo pagado: costo adicional por ${extraWeight}kg extra: $${extraWeightCost}`);
-                    }
-                  }
-                  
-                  // 3. Verificar límites máximos
-                  let paidExceedsLimits = false;
-                  let paidLimitMessage = '';
-                  
-                  // Verificar límite máximo de productos por paquete
-                  if (paidGroup.rule.maximo_productos_por_paquete && paidProductsCount > paidGroup.rule.maximo_productos_por_paquete) {
-                    paidExceedsLimits = true;
-                    paidLimitMessage = `Excede el máximo de productos por paquete (${paidGroup.rule.maximo_productos_por_paquete})`;
-                  }
-                  
-                  // Verificar límite máximo de peso por paquete
-                  if (paidGroup.rule.peso_maximo_paquete && paidProductsWeight > paidGroup.rule.peso_maximo_paquete) {
-                    paidExceedsLimits = true;
-                    paidLimitMessage = `${paidLimitMessage ? paidLimitMessage + ' y ' : ''}excede el peso máximo por paquete (${paidGroup.rule.peso_maximo_paquete}kg)`;
-                  }
-                  
-                  // Si excede límites, marcar esta combinación
-                  if (paidExceedsLimits) {
-                    console.warn(`⚠️ Grupo pagado: ${paidLimitMessage}. Esto podría requerir división en múltiples paquetes.`);
-                  }
-                }
-                
-                // Precio gratuito (siempre 0)
-                const freePrice = 0;
-                
-                // Verificar límites máximos para el grupo gratuito
-                let freeExceedsLimits = false;
-                let freeLimitMessage = '';
-                
-                // Verificar límite máximo de productos por paquete
-                if (freeGroup.rule.maximo_productos_por_paquete && freeProductsCount > freeGroup.rule.maximo_productos_por_paquete) {
-                  freeExceedsLimits = true;
-                  freeLimitMessage = `Excede el máximo de productos por paquete (${freeGroup.rule.maximo_productos_por_paquete})`;
-                }
-                
-                // Verificar límite máximo de peso por paquete
-                if (freeGroup.rule.peso_maximo_paquete && freeProductsWeight > freeGroup.rule.peso_maximo_paquete) {
-                  freeExceedsLimits = true;
-                  freeLimitMessage = `${freeLimitMessage ? freeLimitMessage + ' y ' : ''}excede el peso máximo por paquete (${freeGroup.rule.peso_maximo_paquete}kg)`;
-                }
-                
-                // Si excede límites, marcar esta combinación
-                if (freeExceedsLimits) {
-                  console.warn(`⚠️ Grupo gratuito: ${freeLimitMessage}. Esto podría requerir división en múltiples paquetes.`);
-                }
-                
-                // Obtener o generar labels
-                const paidLabel = paidOption.label || 
-                                 (paidOption.nombre === "Correos de México" ? 
-                                   (paidIndex === 0 ? "Basico" : "Express") : 
-                                   (paidOption.nombre || `Opción ${paidIndex + 1}`));
-                
-                // Crear la combinación mixta
-                combinations.push({
-                  id: `mixed-${freeGroup.rule.id}-${paidGroup.rule.id}-${paidIndex}`,
-                  description: `Mixto: ${paidLabel}`,
+                // Crear la combinación con detalles para visualización
+                const combinedOption = {
+                  id: `combined-local-nacional-${nacionalIndex}-${Date.now()}`,
+                  description: `Combinado (Local + Nacional)`,
                   option: {
-                    name: `Combinado (${freeGroup.rule.zona} + ${paidGroup.rule.zona})`,
-                    label: paidLabel,
-                    price: paidPrice + freePrice,
-                    isFree: paidPrice + freePrice === 0,
-                    freeReason: isPaidFree ? `${paidFreeReason} en el grupo pagado` : '',
-                    estimatedDelivery: paidOption.tiempo_entrega || paidOption.tiempoEntrega || '?-? días'
+                    name: `Local y Nacional`,
+                    label: nacionalLabel,
+                    price: localPrice + nacionalPrice,
+                    isFree: (localPrice + nacionalPrice) === 0,
+                    estimatedDelivery: nacionalOption.tiempo_entrega || nacionalOption.tiempoEntrega || '?-? días'
                   },
-                  ruleId: `mixed-${freeGroup.rule.id}-${paidGroup.rule.id}`,
+                  ruleId: `combined-${localGroup.rule.id}-${nacionalGroup.rule.id}`,
                   ruleName: 'Combinado',
-                  // Incluir los productos clasificados para mejor visualización
-                  products: [...freeProducts, ...paidProducts],
-                  // Metadatos para mejor visualización
-                  freeProducts: freeProducts,
-                  paidProducts: paidProducts,
-                  freePrice: freePrice,
-                  paidPrice: paidPrice,
-                  freeProductsCount: freeProductsCount,
-                  paidProductsCount: paidProductsCount,
-                  freeProductsWeight: freeProductsWeight,
-                  paidProductsWeight: paidProductsWeight,
-                  freeGroupSubtotal: freeGroupSubtotal,
-                  paidGroupSubtotal: paidGroupSubtotal,
-                  isFreeGroup: true,
-                  freeGroupName: freeGroup.rule.zona,
-                  paidGroupName: paidGroup.rule.zona,
-                  // Información de validación
-                  freeExceedsLimits: freeExceedsLimits,
-                  freeLimitMessage: freeLimitMessage,
-                  paidExceedsLimits: paidExceedsLimits, 
-                  paidLimitMessage: paidLimitMessage,
-                  // Información de cobertura
+                  products: [...localOnlyProducts, ...nacionalOnlyProducts],
                   coversAllProducts: true,
                   isComplete: true,
-                  isMixed: true
-                });
+                  isMixed: true,
+                  carrier: 'Servicios combinados',
+                  deliveryTime: nacionalOption.tiempo_entrega || nacionalOption.tiempoEntrega || '?-? días',
+                  totalPrice: localPrice + nacionalPrice,
+                  // Datos para la UI
+                  freeProducts: localOnlyProducts,
+                  paidProducts: nacionalOnlyProducts,
+                  freePrice: localPrice,
+                  paidPrice: nacionalPrice,
+                  freeProductsCount: localProductCount,
+                  paidProductsCount: nacionalProductCount,
+                  freeProductsWeight: localWeight,
+                  paidProductsWeight: nacionalWeight,
+                  freeGroupSubtotal: localSubtotal,
+                  paidGroupSubtotal: nacionalSubtotal,
+                  freeGroupName: 'Local',
+                  paidGroupName: 'Nacional',
+                  // Selecciones para procesamiento interno
+                  selections: [
+                    {
+                      groupId: localGroup.rule.id,
+                      option: {
+                        name: localOption.nombre || "Servicio local",
+                        price: localPrice,
+                        isFree: localPrice === 0,
+                        estimatedDelivery: localOption.tiempo_entrega || localOption.tiempoEntrega || '1-1 días'
+                      },
+                      products: localOnlyProducts,
+                      ruleName: 'Local'
+                    },
+                    {
+                      groupId: nacionalGroup.rule.id,
+                      option: {
+                        name: nacionalOption.nombre || "Servicio nacional",
+                        price: nacionalPrice,
+                        isFree: nacionalPrice === 0,
+                        estimatedDelivery: nacionalOption.tiempo_entrega || nacionalOption.tiempoEntrega || '?-? días'
+                      },
+                      products: nacionalOnlyProducts,
+                      ruleName: 'Nacional'
+                    }
+                  ]
+                };
+                
+                // Añadir a las combinaciones
+                combinations.push(combinedOption);
               });
             }
           }
@@ -628,66 +624,205 @@ export const generateShippingCombinations = (productGroups, addressInfo, shippin
     }
   }
   
-  // Ordenar y optimizar las combinaciones para mostrar las más relevantes primero
-  const sortedCombinations = combinations.sort((a, b) => {
-    // Puntuación de relevancia (menor es mejor)
-    let scoreA = 0;
-    let scoreB = 0;
+  // Después de generar todas las combinaciones individuales y mixtas...
+  
+  // Verificar si hay alguna combinación que cubra todos los productos
+  const hasCompleteCoverage = combinations.some(combo => 
+    combo.coversAllProducts === true || combo.isComplete === true
+  );
+  
+  // Si NO hay ninguna combinación que cubra todos los productos, intentar generar una combinación óptima
+  if (!hasCompleteCoverage && cartItems && cartItems.length > 0) {
+    console.log('🔄 Ninguna combinación cubre todos los productos. Generando combinación óptima...');
     
-    // Factor 1: Cobertura completa de productos (muy importante)
-    if (a.coversAllProducts) scoreA -= 1000;
-    if (b.coversAllProducts) scoreB -= 1000;
+    // Primero agrupar productos por las reglas de envío que los cubren
+    const productCoverage = new Map(); // Map de productId -> Array de combinaciones que lo cubren
     
-    // Factor 2: Envío gratuito (muy importante)
-    if (a.option.isFree) scoreA -= 500;
-    if (b.option.isFree) scoreB -= 500;
-    
-    // Factor 3: Precio más bajo (importante)
-    scoreA += a.option.price;
-    scoreB += b.option.price;
-    
-    // Factor 4: Preferir opciones no mixtas sobre mixtas (menos importante)
-    if (a.isMixed) scoreA += 50;
-    if (b.isMixed) scoreB += 50;
-    
-    // Factor 5: Penalizar opciones que exceden límites
-    if (a.limitMessage) scoreA += 100;
-    if (b.limitMessage) scoreB += 100;
-    
-    // Factor 6: Tiempo de entrega (si disponible)
-    // Extraer números de dias para comparación
-    const getMaxDays = (str) => {
-      if (!str) return 999; // Si no hay información, asumir que es muy tardado
-      const matches = str.match(/(\d+)\s*días/i);
-      if (matches && matches[1]) {
-        return parseInt(matches[1], 10);
+    // Para cada combinación, registrar qué productos cubre
+    combinations.forEach(combo => {
+      const productIds = new Set();
+      
+      if (combo.products) {
+        combo.products.forEach(item => {
+          const productId = item.product?.id || item.id;
+          productIds.add(productId);
+        });
       }
-      return 999;
-    };
+      
+      productIds.forEach(productId => {
+        if (!productCoverage.has(productId)) {
+          productCoverage.set(productId, []);
+        }
+        productCoverage.get(productId).push(combo);
+      });
+    });
     
-    scoreA += getMaxDays(a.option.estimatedDelivery) * 5; // Multiplicar por un factor menor
-    scoreB += getMaxDays(b.option.estimatedDelivery) * 5;
+    // Crear una lista de todos los productos sin cobertura
+    const uncoveredProducts = new Set(allProductIds);
     
-    // Comparar puntuaciones finales (menor es mejor)
-    if (scoreA !== scoreB) {
-      return scoreA - scoreB;
+    // Para cada producto, encontrar la mejor opción de envío
+    const bestOptions = new Map(); // Map de productId -> mejor opción
+    
+    uncoveredProducts.forEach(productId => {
+      const optionsForProduct = productCoverage.get(productId) || [];
+      
+      // Si hay opciones para este producto, encontrar la mejor (menor precio)
+      if (optionsForProduct.length > 0) {
+        // Ordenar por precio (menor primero)
+        optionsForProduct.sort((a, b) => {
+          // Primero priorizar envío gratuito
+          const aIsFree = a.option?.isFree || a.isAllFree || false;
+          const bIsFree = b.option?.isFree || b.isAllFree || false;
+          
+          if (aIsFree && !bIsFree) return -1;
+          if (!aIsFree && bIsFree) return 1;
+          
+          // Luego por precio
+          const aPrice = a.option?.price || a.totalPrice || 0;
+          const bPrice = b.option?.price || b.totalPrice || 0;
+          return aPrice - bPrice;
+        });
+        
+        // La mejor opción es la primera después de ordenar
+        bestOptions.set(productId, optionsForProduct[0]);
+      }
+    });
+    
+    // Ahora tenemos la mejor opción para cada producto
+    // Para minimizar el número de servicios de envío, agrupar productos que pueden
+    // compartir el mismo servicio
+    const optimalCombinations = [];
+    const optionsUsed = new Set();
+    
+    // Comenzar con las opciones gratuitas
+    bestOptions.forEach((option, productId) => {
+      const optionId = option.id;
+      
+      if (option.option?.isFree || option.isAllFree) {
+        if (!optionsUsed.has(optionId)) {
+          optimalCombinations.push(option);
+          optionsUsed.add(optionId);
+        }
+      }
+    });
+    
+    // Luego agregar opciones pagadas
+    bestOptions.forEach((option, productId) => {
+      const optionId = option.id;
+      
+      if (!(option.option?.isFree || option.isAllFree)) {
+        if (!optionsUsed.has(optionId)) {
+          optimalCombinations.push(option);
+          optionsUsed.add(optionId);
+        }
+      }
+    });
+    
+    // Si tenemos combinaciones óptimas
+    if (optimalCombinations.length > 0) {
+      // Calcular el precio total
+      const totalPrice = optimalCombinations.reduce((sum, combo) => {
+        const price = combo.option?.price || combo.totalPrice || 0;
+        return sum + price;
+      }, 0);
+      
+      // Crear una combinación "óptima" que incluya todas las opciones
+      const optimalCombination = {
+        id: `optimal-combination-${Date.now()}`,
+        description: `Combinación óptima (${optimalCombinations.length} servicios)`,
+        selections: optimalCombinations.map(combo => ({
+          option: combo.option || {
+            name: combo.ruleName || 'Servicio de envío',
+            price: combo.totalPrice || 0,
+            isFree: combo.isAllFree || false,
+            estimatedDelivery: combo.estimatedDelivery || '3-5 días'
+          },
+          products: combo.products || [],
+          groupId: combo.ruleId || combo.id,
+          ruleName: combo.ruleName || combo.description,
+        })),
+        totalPrice: totalPrice,
+        calculatedCost: totalPrice,
+        coversAllProducts: true,
+        allProductsCovered: true,
+        isOptimalCombination: true,
+        isMultiOption: true
+      };
+      
+      // Agregar esta combinación óptima
+      combinations.push(optimalCombination);
+      
+      console.log(`✅ Generada combinación óptima con ${optimalCombinations.length} servicios y precio total: $${totalPrice}`);
+    }
+  }
+  
+  // Al final, después de todas las combinaciones...
+  // Marcar combinaciones completas vs. incompletas
+  const processedCombinations = combinations.map(combination => {
+    // Contar productos cubiertos por esta combinación
+    const coveredProductIds = new Set();
+    
+    if (combination.products) {
+      combination.products.forEach(item => {
+        coveredProductIds.add(item.product?.id || item.id);
+      });
+    } else if (combination.selections) {
+      combination.selections.forEach(selection => {
+        if (selection.products) {
+          selection.products.forEach(item => {
+            coveredProductIds.add(item.product?.id || item.id);
+          });
+        }
+      });
     }
     
-    // Si hay empate, usar alfabeticamente la descripción
-    return (a.description || '').localeCompare(b.description || '');
+    // Calcular si todos los productos están cubiertos
+    const allProductsCovered = coveredProductIds.size === totalProductsInCart;
+    const coveragePercentage = totalProductsInCart > 0 ? 
+      (coveredProductIds.size / totalProductsInCart) * 100 : 0;
+    
+    return {
+      ...combination,
+      allProductsCovered,
+      coveragePercentage,
+      description: combination.description + (allProductsCovered || combination.isOptimalCombination ? 
+        '' : 
+        ` (Cubre ${coveredProductIds.size}/${totalProductsInCart} productos)`)
+    };
   });
   
-  // Agregar puntuación a cada combinación para posible uso en UI
-  const scoredCombinations = sortedCombinations.map((combo, index) => {
-    return {
-      ...combo,
-      relevanceScore: index, // El índice después de ordenar es su puntuación (0 = mejor)
-      isRecommended: index === 0 // Marcar la mejor opción como recomendada
-    };
+  // Ordenar las combinaciones: primero las que cubren todos los productos,
+  // luego por precio y relevancia
+  const sortedCombinations = processedCombinations.sort((a, b) => {
+    // Primero priorizar cobertura completa
+    if (a.allProductsCovered && !b.allProductsCovered) return -1;
+    if (!a.allProductsCovered && b.allProductsCovered) return 1;
+    
+    // Segundo, priorizar combinaciones óptimas generadas
+    if (a.isOptimalCombination && !b.isOptimalCombination) return -1;
+    if (!a.isOptimalCombination && b.isOptimalCombination) return 1;
+    
+    // Si ambas tienen la misma cobertura, ordenar por porcentaje (mayor primero)
+    if (a.coveragePercentage !== b.coveragePercentage) {
+      return b.coveragePercentage - a.coveragePercentage;
+    }
+    
+    // Si tienen el mismo porcentaje, priorizar opciones gratuitas
+    const aIsFree = a.isAllFree || a.isFreeShipping || false;
+    const bIsFree = b.isAllFree || b.isFreeShipping || false;
+    
+    if (aIsFree && !bIsFree) return -1;
+    if (!aIsFree && bIsFree) return 1;
+    
+    // Si tienen el mismo estado de gratuidad, ordenar por precio
+    const aPrice = a.totalPrice || a.option?.price || 9999;
+    const bPrice = b.totalPrice || b.option?.price || 9999;
+    
+    return aPrice - bPrice;
   });
   
   // Devolver combinaciones ordenadas por relevancia
-  return scoredCombinations;
+  return sortedCombinations;
 };
 
 /**

@@ -5,6 +5,7 @@ import { CheckoutSummaryPanel } from './CheckoutSummaryPanel';
 import { useCheckout } from '../hooks/useCheckout';
 import { useShippingOptions } from '../hooks/useShippingOptions';
 import CheckoutDebugInfo from './CheckoutDebugInfo';
+import { allProductsCovered } from '../services/ShippingRuleService';
 
 /**
  * Componente principal del contenido de checkout
@@ -183,7 +184,11 @@ export const CheckoutContent = () => {
     if (!selectedShippingOption) return true;
     
     // Verificar que la opción de envío cubra todos los productos
-    if (selectedShippingOption && selectedShippingOption.coversAllProducts === false) {
+    if (selectedShippingOption && 
+        (selectedShippingOption.allProductsCovered === false || 
+         (selectedShippingOption.selections && 
+          !allProductsCovered(selectedShippingOption.selections, cartItems)))
+    ) {
       console.log('⚠️ Botón deshabilitado: La opción de envío no cubre todos los productos');
       return true;
     }
@@ -209,7 +214,8 @@ export const CheckoutContent = () => {
     checkout.selectedPaymentType,
     checkout.selectedPaymentId,
     checkout.newCardData,
-    selectedShippingOption
+    selectedShippingOption,
+    cartItems
   ]);
 
   // Manejador para cuando se selecciona una opción de envío

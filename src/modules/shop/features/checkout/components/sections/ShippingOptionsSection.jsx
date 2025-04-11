@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { SectionTitle } from '../ui/SectionTitle';
 import ShippingSelector from '../shipping/ShippingSelector';
 import { useCart } from '../../../cart/hooks/useCart';
+import { allProductsCovered } from '../../services/ShippingRuleService';
 
 /**
  * Sección del checkout que muestra las opciones de envío disponibles
@@ -31,6 +32,10 @@ export const ShippingOptionsSection = ({
 }) => {
   // Obtener productos del carrito
   const { items: cartItems } = useCart();
+  // Estado para controlar si todos los productos están cubiertos
+  const [shippingCoversAllProducts, setShippingCoversAllProducts] = useState(true);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [noValidOptionsError, setNoValidOptionsError] = useState(null);
   
   // Verificar si los cartItems están disponibles
   useEffect(() => {
@@ -40,6 +45,39 @@ export const ShippingOptionsSection = ({
       console.log(`✅ ShippingOptionsSection: ${cartItems.length} productos en carrito`);
     }
   }, [cartItems]);
+  
+  // Manejar la selección de opción
+  const handleOptionSelect = (option) => {
+    setSelectedOption(option);
+    
+    // Verificar si esta opción cubre todos los productos
+    if (option && option.selections) {
+      const covered = allProductsCovered(option.selections, cartItems);
+      setShippingCoversAllProducts(covered);
+      
+      console.log(`📦 ShippingOptionsSection: Opción ${option.id}`);
+      console.log(`📦 ¿Cubre todos los productos?: ${covered ? 'SÍ' : 'NO'}`);
+    } else {
+      setShippingCoversAllProducts(true);
+    }
+    
+    // Llamar al callback original
+    onOptionSelect(option);
+  };
+  
+  // Manejar el caso de que no haya opciones de envío válidas
+  const handleCombinationsCalculated = (combinations) => {
+    if (combinations.length === 0) {
+      setNoValidOptionsError('No encontramos opciones de envío que cubran todos tus productos. Por favor, intenta con otra dirección.');
+    } else {
+      setNoValidOptionsError(null);
+    }
+    
+    // Pasar las combinaciones al callback original
+    if (onCombinationsCalculated) {
+      onCombinationsCalculated(combinations);
+    }
+  };
   
   // Obtener la dirección apropiada según el tipo
   const userAddress = selectedAddressType === 'saved' ? savedAddressData : newAddressData;
@@ -114,7 +152,9 @@ export const ShippingOptionsSection = ({
   }
   
   // Mostrar error específico si existe
-  if (error) {
+  if (error || noValidOptionsError) {
+    const displayError = error || noValidOptionsError;
+    
     return (
       <div className="checkout-section mb-4">
         <SectionTitle
@@ -126,8 +166,20 @@ export const ShippingOptionsSection = ({
         <div className="checkout-section-content p-3 p-md-4 bg-white rounded border">
           <div className="alert alert-danger">
             <i className="bi bi-exclamation-triangle-fill me-2"></i>
-            {error}
+            {displayError}
           </div>
+          {noValidOptionsError && (
+            <div className="mt-3 p-3 border rounded bg-light">
+              <h5 className="mb-3"><i className="bi bi-info-circle me-2"></i>¿Por qué sucede esto?</h5>
+              <p>Algunos productos en tu carrito tienen diferentes reglas de envío y la dirección seleccionada no es compatible con todas ellas.</p>
+              <p>Puedes intentar lo siguiente:</p>
+              <ul>
+                <li>Seleccionar una dirección en otra zona</li>
+                <li>Contactar a soporte para asistencia</li>
+                <li>Comprar los productos en pedidos separados</li>
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -150,13 +202,23 @@ export const ShippingOptionsSection = ({
             <div className="text-muted">Calculando opciones de envío...</div>
           </div>
         ) : (
-          <ShippingSelector
-            cartItems={cartItems}
-            selectedOptionId={selectedOptionId}
-            onOptionSelect={onOptionSelect}
-            userAddress={userAddress}
-            onCombinationsCalculated={onCombinationsCalculated}
-          />
+          <>
+            <ShippingSelector
+              cartItems={cartItems}
+              selectedOptionId={selectedOptionId}
+              onOptionSelect={handleOptionSelect}
+              userAddress={userAddress}
+              onCombinationsCalculated={handleCombinationsCalculated}
+            />
+            
+            {selectedOption && !shippingCoversAllProducts && (
+              <div className="alert alert-danger mt-3">
+                <i className="bi bi-exclamation-circle-fill me-2"></i>
+                <strong>No se puede proceder con el pago</strong>: La opción de envío seleccionada no cubre todos los productos.
+                Debe seleccionar una opción que incluya todos los productos para continuar.
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
