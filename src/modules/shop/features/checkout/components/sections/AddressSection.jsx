@@ -24,34 +24,6 @@ export const AddressSection = ({
                                  onNewAddressSelect,
                                  onNewAddressDataChange
                                }) => {
-  // Log para asegurarnos que los handlers existen en este nivel
-  console.log('AddressSection props:', {
-    addressesCount: addresses?.length || 0,
-    onAddressSelect: typeof onAddressSelect,
-    onAddressSelectValue: onAddressSelect,
-    onNewAddressSelect: typeof onNewAddressSelect,
-    onNewAddressSelectValue: onNewAddressSelect
-  });
-  
-  // Crear wrappers para los handlers para confirmar que funcionan
-  const handleAddressSelect = (id, type) => {
-    console.log('AddressSection.handleAddressSelect llamado con:', { id, type });
-    if (typeof onAddressSelect === 'function') {
-      onAddressSelect(id, type);
-    } else {
-      console.error('onAddressSelect no es una función en AddressSection:', onAddressSelect);
-    }
-  };
-  
-  const handleNewAddressSelect = () => {
-    console.log('AddressSection.handleNewAddressSelect llamado');
-    if (typeof onNewAddressSelect === 'function') {
-      onNewAddressSelect();
-    } else {
-      console.error('onNewAddressSelect no es una función en AddressSection:', onNewAddressSelect);
-    }
-  };
-                                 
   return (
     <CheckoutSection title="Dirección de Envío" stepNumber={1}>
       {loading ? (
@@ -61,8 +33,8 @@ export const AddressSection = ({
           addresses={addresses}
           selectedAddressId={selectedAddressId}
           selectedAddressType={selectedAddressType}
-          onAddressSelect={handleAddressSelect}
-          onNewAddressSelect={handleNewAddressSelect}
+          onAddressSelect={onAddressSelect}
+          onNewAddressSelect={onNewAddressSelect}
           onNewAddressDataChange={onNewAddressDataChange}
         />
       )}

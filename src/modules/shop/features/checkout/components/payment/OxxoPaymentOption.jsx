@@ -25,7 +25,6 @@ export const OxxoPaymentOption = ({ selected, onSelect }) => {
           className="form-check-label d-flex align-items-start"
           htmlFor="payment-oxxo"
           style={{ cursor: 'pointer' }}
-          onClick={onSelect}
         >
           <div className="oxxo-logo-container me-3">
             <img

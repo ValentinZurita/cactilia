@@ -53,66 +53,57 @@ export const groupProductsByShippingRules = async (cartItems = []) => {
       
       console.log(`📦 Procesando producto ${product.name || product.id} con reglas:`, ruleIds);
       
-      // Modificación: Procesar TODAS las reglas, no solo la primera
-      for (const ruleId of ruleIds) {
-        // Si ya tenemos esta regla en el mapa, agregar el producto
-        if (productsByRuleMap.has(ruleId)) {
-          // Verificar si este producto ya fue agregado a este grupo para evitar duplicados
-          const itemsInGroup = productsByRuleMap.get(ruleId).items;
-          const isDuplicate = itemsInGroup.some(existingItem => {
-            const existingProduct = existingItem.product || existingItem;
-            return existingProduct.id === product.id;
-          });
+      // Por simplicidad, usamos solo la primera regla
+      const ruleId = ruleIds[0];
+      
+      // Si ya tenemos esta regla en el mapa, agregar el producto
+      if (productsByRuleMap.has(ruleId)) {
+        productsByRuleMap.get(ruleId).items.push(item);
+        continue;
+      }
+      
+      // Si ya tenemos la regla en caché, usarla
+      let ruleData;
+      if (rulesCache.has(ruleId)) {
+        ruleData = rulesCache.get(ruleId);
+        console.log(`🔍 Usando regla en caché: ${ruleId} - ${ruleData.zona || 'Sin nombre'}`);
+      } else {
+        // Obtener regla desde Firestore
+        try {
+          console.log(`🔍 Consultando regla en Firestore: ${ruleId}`);
+          ruleData = await fetchShippingRuleById(ruleId);
           
-          if (!isDuplicate) {
-            productsByRuleMap.get(ruleId).items.push(item);
-          }
-          continue;
-        }
-        
-        // Si ya tenemos la regla en caché, usarla
-        let ruleData;
-        if (rulesCache.has(ruleId)) {
-          ruleData = rulesCache.get(ruleId);
-          console.log(`🔍 Usando regla en caché: ${ruleId} - ${ruleData.zona || 'Sin nombre'}`);
-        } else {
-          // Obtener regla desde Firestore
-          try {
-            console.log(`🔍 Consultando regla en Firestore: ${ruleId}`);
-            ruleData = await fetchShippingRuleById(ruleId);
-            
-            if (!ruleData) {
-              console.error(`🚨 Regla de envío ${ruleId} no encontrada. El producto ${product.name || product.id} no será incluido en el cálculo.`);
-              continue;
-            }
-            
-            console.log(`✅ Regla encontrada: ${ruleId} - ${ruleData.zona || 'Sin nombre'}`);
-            
-            // Validar que la regla tenga opciones de mensajería
-            if (!ruleData.opciones_mensajeria || !Array.isArray(ruleData.opciones_mensajeria) || ruleData.opciones_mensajeria.length === 0) {
-              console.warn(`🚨 Regla ${ruleId} no tiene opciones de mensajería. El producto ${product.name || product.id} no será incluido.`);
-              continue;
-            }
-            
-            console.log(`📨 Regla ${ruleId} tiene ${ruleData.opciones_mensajeria.length} opciones de mensajería`);
-            
-            // Agregar a caché
-            rulesCache.set(ruleId, ruleData);
-          } catch (error) {
-            console.error(`🚨 Error al obtener regla ${ruleId}:`, error);
+          if (!ruleData) {
+            console.error(`🚨 Regla de envío ${ruleId} no encontrada. El producto ${product.name || product.id} no será incluido en el cálculo.`);
             continue;
           }
+          
+          console.log(`✅ Regla encontrada: ${ruleId} - ${ruleData.zona || 'Sin nombre'}`);
+          
+          // Validar que la regla tenga opciones de mensajería
+          if (!ruleData.opciones_mensajeria || !Array.isArray(ruleData.opciones_mensajeria) || ruleData.opciones_mensajeria.length === 0) {
+            console.warn(`🚨 Regla ${ruleId} no tiene opciones de mensajería. El producto ${product.name || product.id} no será incluido.`);
+            continue;
+          }
+          
+          console.log(`📨 Regla ${ruleId} tiene ${ruleData.opciones_mensajeria.length} opciones de mensajería`);
+          
+          // Agregar a caché
+          rulesCache.set(ruleId, ruleData);
+        } catch (error) {
+          console.error(`🚨 Error al obtener regla ${ruleId}:`, error);
+          continue;
         }
-        
-        // Crear nuevo grupo con esta regla
-        productsByRuleMap.set(ruleId, {
-          id: `group-${ruleId}`,
-          name: `Grupo: ${ruleData.zona || 'Sin nombre'}`,
-          rule: ruleData,
-          rules: [ruleData],
-          items: [item]
-        });
       }
+      
+      // Crear nuevo grupo con esta regla
+      productsByRuleMap.set(ruleId, {
+        id: `group-${ruleId}`,
+        name: `Grupo: ${ruleData.zona || 'Sin nombre'}`,
+        rule: ruleData,
+        rules: [ruleData],
+        items: [item]
+      });
     }
     
     // Convertir el mapa a un array de grupos
@@ -226,20 +217,28 @@ export const prepareShippingOptionsForCheckout = async (shippingGroups = [], add
         // Añadir al grupo
         group.shippingOptions.push(groupOption);
         
-        // No combinar opciones de diferentes grupos - mantener cada opción separada
-        // para que el usuario pueda elegir específicamente cómo enviar cada grupo
-        totalOptions.push({
-          id: optionId,
-          carrier: method.nombre || 'Envío',
-          label: `${rule.zona}: ${method.nombre || 'Envío'}`,
-          basePrice,
-          totalCost: deliveryCost,
-          deliveryTime: method.tiempo_entrega || `${minDays}-${maxDays} días`,
-          isFreeShipping,
-          details: `${method.tiempo_entrega || `${minDays}-${maxDays} días`} (${isFreeShipping ? 'Gratis' : `$${deliveryCost.toFixed(2)}`})`,
-          groups: [group],
-          zona: rule.zona // Añadir la zona para identificar mejor el tipo de envío
-        });
+        // Verificar si ya existe esta opción en las opciones totales
+        const existingOption = totalOptions.find(opt => opt.carrier === method.nombre);
+        
+        if (existingOption) {
+          // Agregar este grupo a la opción existente
+          existingOption.groups.push(group);
+          existingOption.totalCost += deliveryCost;
+          existingOption.isFreeShipping = existingOption.isFreeShipping && isFreeShipping;
+        } else {
+          // Crear nueva opción total
+          totalOptions.push({
+            id: optionId,
+            carrier: method.nombre || 'Envío',
+            label: method.label || method.nombre || 'Envío',
+            basePrice,
+            totalCost: deliveryCost,
+            deliveryTime: method.tiempo_entrega || `${minDays}-${maxDays} días`,
+            isFreeShipping,
+            details: `${method.tiempo_entrega || `${minDays}-${maxDays} días`} (${isFreeShipping ? 'Gratis' : `$${deliveryCost.toFixed(2)}`})`,
+            groups: [group]
+          });
+        }
       }
     }
     

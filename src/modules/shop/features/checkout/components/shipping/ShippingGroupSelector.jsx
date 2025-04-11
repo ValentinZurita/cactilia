@@ -106,15 +106,19 @@ const ShippingGroupSelector = ({
             description: option.label,
             totalPrice: option.totalCost,
             isAllFree: option.isFreeShipping,
+            carrier: option.carrier,
+            ruleId: option.ruleId,
+            calculatedCost: option.calculatedCost,
+            deliveryTime: option.deliveryTime,
             selections: [{
-              groupId: option.groups[0]?.id || 'default-group',
+              groupId: option.groupId || 'default-group',
               option: {
                 name: option.carrier,
                 price: option.totalCost,
                 estimatedDelivery: option.deliveryTime,
                 isFreeShipping: option.isFreeShipping
               },
-              products: option.groups[0]?.items || []
+              products: option.group?.items || []
             }]
           }));
           
@@ -276,7 +280,15 @@ const ShippingGroupSelector = ({
         name: option.name || description,
         description: description,
         totalPrice: option.totalPrice || 0,
-        isAllFree: option.isAllFree || false
+        isAllFree: option.isAllFree || false,
+        // Información adicional para mejor integración
+        totalCost: option.totalPrice || option.calculatedCost || 0,
+        calculatedCost: option.calculatedCost || option.totalPrice || 0,
+        carrier: option.carrier,
+        deliveryTime: option.deliveryTime,
+        isFreeShipping: option.isAllFree,
+        ruleId: option.ruleId,
+        ruleName: option.ruleName || (option.id.includes('-') ? option.id.split('-')[0] : '')
       });
     } else {
       console.error('❌ Error: onOptionSelect no está definido');
@@ -488,9 +500,11 @@ const ShippingGroupSelector = ({
                       <div className="shipping-details d-flex align-items-center">
                         <div className="shipping-delivery me-3">
                           <i className="bi bi-clock-history me-1 small"></i>
-                          {combination.selections && Array.isArray(combination.selections) 
-                            ? (combination.selections.map(s => s.option?.estimatedDelivery || '').filter(Boolean).sort().pop() || '3-5 días')
-                            : '3-5 días'
+                          {combination.deliveryTime || 
+                            (combination.selections && Array.isArray(combination.selections) 
+                              ? (combination.selections.map(s => s.option?.estimatedDelivery || '').filter(Boolean).sort().pop() || '3-5 días')
+                              : '3-5 días'
+                            )
                           }
                         </div>
                         
@@ -508,7 +522,7 @@ const ShippingGroupSelector = ({
                     {isSelected && combination.selections && Array.isArray(combination.selections) && combination.selections.length > 1 && (
                       <div className="shipping-option-details mt-2">
                         {combination.selections.map((selection, selIndex) => (
-                          <div key={selection.groupId || `grupo-${selIndex}`} className="shipping-option-details-item">
+                          <div key={`${selection.groupId || selIndex}-detail`} className="shipping-option-details-item">
                             <div className="d-flex justify-content-between">
                               <div>
                                 <i className="bi bi-box-seam me-1"></i>
