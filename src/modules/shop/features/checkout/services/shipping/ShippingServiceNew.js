@@ -147,6 +147,9 @@ class ShippingService {
       const maxProductsPerPackage = option.maximo_productos_por_paquete || 1; // Default a 1 si no se especifica
       console.log(`📦 Máximo productos por paquete: ${maxProductsPerPackage}`);
       
+      // Guardar este valor para referencia
+      option.maxProductsPerPackage = maxProductsPerPackage;
+      
       // Si la opción no tiene paquetes, crearlos
       if (!option.packages || option.packages.length === 0) {
         console.log(`🆕 Creando paquetes para opción ${option.name || 'sin nombre'}`);
@@ -185,6 +188,16 @@ class ShippingService {
           option.packageCount = packages.length;
           // Actualizar el precio total como la suma de todos los paquetes
           option.price = option.packageCount * option.price;
+          
+          // Asegurarse de que la opción tiene todos los productos
+          option.products = [...cartItems];
+          
+          // Añadir propiedades para indicar que cubre todos los productos
+          option.coversAllProducts = true;
+          option.productIds = cartItems.map(item => {
+            const product = item.product || item;
+            return product.id;
+          });
         } else {
           // Paquete único con todos los productos si no hay restricción específica
           option.packages = [{
@@ -198,10 +211,16 @@ class ShippingService {
           
           option.totalWeight = totalWeight;
           option.packageCount = 1;
-        }
-        
-        if (!option.products || option.products.length === 0) {
+          
+          // Asegurarse de que la opción tiene todos los productos
           option.products = [...cartItems];
+          
+          // Añadir propiedades para indicar que cubre todos los productos
+          option.coversAllProducts = true;
+          option.productIds = cartItems.map(item => {
+            const product = item.product || item;
+            return product.id;
+          });
         }
         
         return; // Continuar con la siguiente opción
@@ -210,6 +229,13 @@ class ShippingService {
       // FUERZA LA ASIGNACIÓN DE PRODUCTOS: Primero, asegúrate de que cada opción tenga una lista de productos
       if (!option.products || option.products.length === 0) {
         option.products = [...cartItems];
+        
+        // Añadir propiedades para indicar que cubre todos los productos
+        option.coversAllProducts = true;
+        option.productIds = cartItems.map(item => {
+          const product = item.product || item;
+          return product.id;
+        });
       }
       
       // Verificar si hay paquetes vacíos
@@ -250,6 +276,16 @@ class ShippingService {
           option.packageCount = packages.length;
           // Actualizar el precio total como la suma de todos los paquetes
           option.price = option.packageCount * option.price;
+          
+          // Asegurarse de que la opción tiene todos los productos
+          option.products = [...cartItems];
+          
+          // Añadir propiedades para indicar que cubre todos los productos
+          option.coversAllProducts = true;
+          option.productIds = cartItems.map(item => {
+            const product = item.product || item;
+            return product.id;
+          });
         } else {
           // Distribuir productos equitativamente entre paquetes existentes
           const packageCount = option.packages.length;
@@ -282,6 +318,16 @@ class ShippingService {
             }
             
             console.log(`📦 Paquete ${index+1}: ${pkg.productCount} productos - ${pkg.packageWeight.toFixed(2)}kg - $${pkg.price}`);
+          });
+          
+          // Asegurarse de que la opción tiene todos los productos
+          option.products = [...cartItems];
+          
+          // Añadir propiedades para indicar que cubre todos los productos
+          option.coversAllProducts = true;
+          option.productIds = cartItems.map(item => {
+            const product = item.product || item;
+            return product.id;
           });
         }
         

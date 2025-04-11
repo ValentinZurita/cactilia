@@ -8,7 +8,7 @@ import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/
 import '../../styles/paymentFormModal.css';
 
 /**
- * Simplified modal form for adding payment methods with Stripe
+ * Modal simplificado para añadir métodos de pago con Stripe
  */
 export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
   // Local states
@@ -103,17 +103,17 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
 
     // Initial validations
     if (!stripe || !elements) {
-      setError("Stripe is not initialized. Please wait a moment and try again.");
+      setError("Stripe no está inicializado. Por favor, espera un momento e intenta de nuevo.");
       return;
     }
 
     if (!cardComplete) {
-      setError("Please complete your card details");
+      setError("Por favor, completa los datos de tu tarjeta");
       return;
     }
 
     if (!cardHolder.trim()) {
-      setError("Please enter the cardholder's name");
+      setError("Por favor, ingresa el nombre del titular de la tarjeta");
       return;
     }
 
@@ -135,7 +135,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       const setupResponse = await createSetupIntent({});
 
       if (!setupResponse.data?.clientSecret) {
-        throw new Error("Failed to create setup intent");
+        throw new Error("Error al crear la intención de configuración");
       }
 
       // Confirm the setup with Stripe
@@ -156,7 +156,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       }
 
       if (!setupIntent || !setupIntent.payment_method) {
-        throw new Error("Setup failed. Please try again.");
+        throw new Error("La configuración falló. Por favor, intenta de nuevo.");
       }
 
       // Save the payment method via Cloud Function
@@ -171,7 +171,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       // Show success message
       dispatch(addMessage({
         type: 'success',
-        text: 'Payment method added successfully'
+        text: 'Método de pago añadido correctamente'
       }));
 
       // Clear the form
@@ -186,12 +186,12 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       // Safe to close now
       onClose();
     } catch (err) {
-      console.error('Error adding payment method:', err);
-      setError(err.message || "An error occurred while processing the card");
+      console.error('Error al añadir método de pago:', err);
+      setError(err.message || "Ocurrió un error al procesar la tarjeta");
 
       dispatch(addMessage({
         type: 'error',
-        text: 'There was a problem adding your payment method'
+        text: 'Hubo un problema al añadir tu método de pago'
       }));
 
       // Allow a new attempt
@@ -251,12 +251,12 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
         role="document"
       >
         <div className="payment-modal-header">
-          <h5 className="payment-modal-title" id="payment-modal-title">Add Payment Method</h5>
+          <h5 className="payment-modal-title" id="payment-modal-title">Añadir Método de Pago</h5>
           <button
             type="button"
             className="payment-modal-close"
             onClick={handleSafeClose}
-            aria-label="Close"
+            aria-label="Cerrar"
             disabled={loading}
           >
             ×
@@ -275,13 +275,13 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
 
             {/* Cardholder name */}
             <div className="payment-form-group">
-              <label htmlFor="cardHolder">Cardholder name</label>
+              <label htmlFor="cardHolder">Nombre del titular</label>
               <input
                 type="text"
                 id="cardHolder"
                 value={cardHolder}
                 onChange={(e) => setCardHolder(e.target.value)}
-                placeholder="Full name as it appears on card"
+                placeholder="Nombre completo como aparece en la tarjeta"
                 required
                 className="payment-form-input"
                 disabled={loading}
@@ -291,7 +291,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
 
             {/* Stripe card element */}
             <div className="payment-form-group">
-              <label>Card details</label>
+              <label>Datos de la tarjeta</label>
               <div className="payment-card-element">
                 <CardElement
                   options={cardElementOptions}
@@ -300,11 +300,11 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
                 />
               </div>
               <small className="payment-text-muted">
-                Enter card number, expiration date, and CVC.
+                Ingresa el número de tarjeta, fecha de expiración y CVC.
               </small>
               {cardComplete && (
                 <div className="payment-card-complete">
-                  <i className="bi bi-check-circle-fill"></i> Card information complete
+                  <i className="bi bi-check-circle-fill"></i> Información de la tarjeta completa
                 </div>
               )}
             </div>
@@ -320,14 +320,14 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
                 disabled={loading}
               />
               <label htmlFor="defaultPayment">
-                Set as default payment method
+                Establecer como método de pago predeterminado
               </label>
             </div>
 
             {/* Test card info for development */}
             <div className="payment-test-cards">
               <p className="payment-text-muted">
-                <strong>Test card:</strong> Use 4242 4242 4242 4242, any future date, and 3 digits for CVC
+                <strong>Tarjeta de prueba:</strong> Usa 4242 4242 4242 4242, cualquier fecha futura y 3 dígitos para el CVC
               </p>
             </div>
 
@@ -339,7 +339,7 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
                 onClick={handleSafeClose}
                 disabled={loading}
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 type="submit"
@@ -349,10 +349,10 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
                 {loading ? (
                   <>
                     <span className="payment-spinner"></span>
-                    Processing...
+                    Procesando...
                   </>
                 ) : (
-                  'Add Payment Method'
+                  'Añadir Método de Pago'
                 )}
               </button>
             </div>

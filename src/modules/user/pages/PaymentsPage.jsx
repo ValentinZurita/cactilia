@@ -15,7 +15,7 @@ import { getFirebaseFunctions } from '../../../utils/firebaseFunctions';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 /**
- * Enhanced page for managing payment methods with Stripe
+ * Página mejorada para administrar métodos de pago con Stripe
  */
 export const PaymentsPage = () => {
   // Initialize Firebase Functions once at component mount
@@ -53,7 +53,7 @@ export const PaymentsPage = () => {
       stripePromise.then(() => {
         setStripeReady(true);
       }).catch(err => {
-        console.error("Error initializing Stripe:", err);
+        console.error("Error inicializando Stripe:", err);
         setStripeReady(false);
       });
     }
@@ -110,19 +110,19 @@ export const PaymentsPage = () => {
     const lastFourDigits = cardNumber.trim().split(' ').pop() || 'xxxx';
 
     // Format card type
-    const cardType = confirmData.type ? confirmData.type.charAt(0).toUpperCase() + confirmData.type.slice(1) : 'card';
+    const cardType = confirmData.type ? confirmData.type.charAt(0).toUpperCase() + confirmData.type.slice(1) : 'tarjeta';
 
-    return `${cardType} ending in ${lastFourDigits}`;
+    return `${cardType} terminada en ${lastFourDigits}`;
   };
 
   return (
     <div className="payments-container">
       {/* Section title */}
-      <SectionTitle title="Payment Methods" />
+      <SectionTitle title="Métodos de Pago" />
 
       {/* Description about payment methods */}
       <p className="text-muted mb-4">
-        Manage your payment methods to make purchases securely and quickly.
+        Administra tus métodos de pago para realizar compras de forma segura y rápida.
       </p>
 
       {/* General error message */}
@@ -144,7 +144,7 @@ export const PaymentsPage = () => {
       {/* Button to add payment method */}
       <AddItemButton
         onClick={addPayment}
-        label="Add payment method"
+        label="Agregar método de pago"
         icon="plus"
       />
 
@@ -156,20 +156,20 @@ export const PaymentsPage = () => {
         isOpen={showConfirmModal}
         onClose={cancelConfirmation}
         onConfirm={handleConfirmedAction}
-        title="Delete payment method"
+        title="Eliminar método de pago"
         message={getPaymentDetails()}
         detail={
           <p>
-            If you don't want this payment method to appear in your list of payment options,
-            click "Confirm delete". <br/><br/>
+            Si no deseas que este método de pago aparezca en tu lista de opciones de pago,
+            haz clic en "Confirmar eliminación". <br/><br/>
             <span className="text-muted small">
-              Disabling this payment method won't cancel any of your open orders
-              or fail any automatic payment settings using this method.
+              Deshabilitar este método de pago no cancelará ninguno de tus pedidos abiertos
+              ni afectará ninguna configuración de pago automático que utilice este método.
             </span>
           </p>
         }
-        confirmText="Confirm delete"
-        cancelText="Cancel"
+        confirmText="Confirmar eliminación"
+        cancelText="Cancelar"
         icon="bi-credit-card-2-front"
         iconColor="danger"
         confirmColor="danger"
@@ -192,9 +192,9 @@ export const PaymentsPage = () => {
         <div className="payment-loading-overlay">
           <div className="payment-loading-content">
             <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
+              <span className="visually-hidden">Cargando...</span>
             </div>
-            <p className="mt-2">Initializing payment gateway...</p>
+            <p className="mt-2">Inicializando pasarela de pago...</p>
           </div>
         </div>
       )}

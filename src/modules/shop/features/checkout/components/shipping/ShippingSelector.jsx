@@ -104,19 +104,24 @@ const ShippingSelector = ({
     }
   }, [shippingOptions, hasExtractedNationalOptions, processedOptions]);
   
-  // Callback for option selection
+  /**
+   * Manejar la selección de una opción de envío
+   */
   const handleOptionSelect = (option) => {
-    // Determine if the selected option covers all products
-    let isComplete = false;
+    // Initialize as true, and only set to false if we can determine it's not complete
+    let isComplete = true;
     
-    // For standalone national options, check if they can handle all national products
-    if (option && option.standalone && option.type === 'nacional') {
-      console.log('🚚 Seleccionada opción nacional independiente:', option.name);
-      
-      // Para opciones nacionales independientes, necesitamos verificar si el carrito tiene
-      // productos que requieren envío local
+    // If the option already has an explicit coversAllProducts flag, respect it
+    if (option.coversAllProducts !== undefined) {
+      isComplete = option.coversAllProducts;
+      console.log(`👁️ Opción ${option.id || option.optionId}: usando coversAllProducts=${isComplete}`);
+    }
+    // For options from standalone/national services with isNational flag
+    else if (option && option.isNational && option.standalone) {
+      // Check if there are any products that require local shipping
       const hasLocalProducts = cartItems.some(item => {
         const product = item.product || item;
+        
         // Verificar si este producto requiere envío local
         return product.shippingRuleIds && 
                product.shippingRuleIds.some(ruleId => ruleId.toLowerCase().includes('local'));
@@ -131,31 +136,32 @@ const ShippingSelector = ({
     else if (option && option.combination?.isComplete) {
       isComplete = true;
     }
-    // For options from original system with ruleId
-    else if (option && option.ruleId) {
-      // Check if this rule can handle all products
+    // For options with product coverage by rule
+    else if (option && option.covered_products) {
+      // Check if all cart items are covered by this option
+      const productRuleIds = new Set();
+      
+      if (Array.isArray(option.covered_products)) {
+        option.covered_products.forEach(productId => {
+          productRuleIds.add(productId);
+        });
+      }
+      
+      // Count how many cart items have their rules covered
       const rulesInCart = new Set();
+      
       cartItems.forEach(item => {
         const product = item.product || item;
-        // If a product has a single shipping rule and it matches our option's rule, it's covered
-        if (product.shippingRuleId === option.ruleId) {
-          rulesInCart.add(product.id);
-        }
-        // If a product has multiple shipping rules and one matches our option's rule, it's covered
-        else if (product.shippingRuleIds && Array.isArray(product.shippingRuleIds)) {
-          if (product.shippingRuleIds.includes(option.ruleId)) {
-            rulesInCart.add(product.id);
-          }
+        const productId = product.id;
+        
+        if (productRuleIds.has(productId)) {
+          rulesInCart.add(productId);
         }
       });
       
       // If all products are covered, set isComplete to true
       isComplete = rulesInCart.size === cartItems.length;
       console.log(`👁️ Opción ${option.id}: cubre ${rulesInCart.size}/${cartItems.length} productos`);
-    }
-    // For options with explicit coversAllProducts flag
-    else if (option && option.coversAllProducts) {
-      isComplete = true;
     }
     
     setIncompleteShipping(!isComplete);

@@ -463,7 +463,35 @@ const ShippingGroupSelector = ({
         allProducts = cartItems;
       }
       
-      // Deduplicar productos usando un Map para evitar repeticiones
+      // Verificar si estamos en modo de 1 producto por paquete
+      const isOneProductPerPackage = option.maxProductsPerPackage === 1 || 
+                                   (option.packages && option.packages.length === cartItems.length);
+      
+      // Si es un producto por paquete, no deduplicar - mostrar todos los productos del carrito
+      if (isOneProductPerPackage && cartItems && cartItems.length > 0) {
+        return (
+          <div className="product-details mt-2">
+            <small>
+              <i className="bi bi-box me-1"></i>
+              <strong>Productos incluidos:</strong>
+            </small>
+            <ul className="products-list mt-1 mb-0">
+              {cartItems.map((item, idx) => {
+                const product = item.product || item;
+                const name = product.name || product.title || `Producto #${product.id}`;
+                const weight = parseFloat(product.weight || product.peso || 0);
+                return (
+                  <li key={idx} className="product-item">
+                    {name} ({weight.toFixed(2)} kg)
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      }
+      
+      // Para otros casos, deduplicar productos usando un Map para evitar repeticiones
       const productMap = new Map();
       allProducts.forEach(item => {
         const product = item.product || item;
@@ -501,12 +529,13 @@ const ShippingGroupSelector = ({
       }
       
       // Si hay categorización por peso, mostrarla
-          return (
+      
+      return (
         <div className="product-details mt-2">
-              <small>
+          <small>
             <i className="bi bi-box me-1"></i>
             <strong>Contenido del envío:</strong>
-              </small>
+          </small>
           <div className="product-weight-summary mt-1">
             {option.costBreakdown?.map((breakdown, idx) => {
               if (!breakdown.weightSummary) return null;
@@ -526,8 +555,8 @@ const ShippingGroupSelector = ({
               );
             })}
           </div>
-            </div>
-          );
+        </div>
+      );
     };
     
     return (

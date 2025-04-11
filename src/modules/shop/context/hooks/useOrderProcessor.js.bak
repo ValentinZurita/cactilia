@@ -4,7 +4,6 @@ import { processPayment } from '../../features/checkout/services/index.js';
 import { clearCartWithSync } from '../../features/cart/store/index.js';
 import { validateItemsStock } from '../../services/productServices.js';
 import { getAuth } from 'firebase/auth';
-import { CardElement } from '@stripe/react-stripe-js';
 
 /**
  * Hook personalizado para la lógica de procesamiento de órdenes
@@ -274,36 +273,29 @@ export const useOrderProcessor = ({
       let paymentMethodId = null;
 
       // Procesar según el tipo de pago seleccionado
-      if (orderData.payment.type === 'new_card') {
-        if (!stripe || !elements) {
-          console.error('Stripe or elements not initialized');
-          throw new Error('Error en la inicialización de Stripe');
-        }
+      if (paymentManager.selectedPaymentType === 'new_card') {
+        const cardElement = elements.getElement('CardElement');
 
-        // Get the stripe CardElement instance
-        const cardElement = elements.getElement(CardElement);
         if (!cardElement) {
-          console.error('Card element not found');
-          throw new Error('Error al obtener el elemento de tarjeta');
+          throw new Error('No se pudo acceder al formulario de tarjeta');
         }
 
-        // Create payment method with the card element
-        const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
+        const { error, paymentMethod } = await stripe.createPaymentMethod({
           type: 'card',
           card: cardElement,
           billing_details: {
-            name: orderData.payment.cardholderName || '',
-          },
+            name: paymentManager.newCardData.cardholderName
+          }
         });
 
-        if (paymentMethodError) {
-          throw new Error(paymentMethodError.message);
+        if (error) {
+          throw new Error(error.message);
         }
 
         paymentMethodId = paymentMethod.id;
-      } else if (orderData.payment.type === 'card') {
+      } else if (paymentManager.selectedPaymentType === 'card') {
         const paymentMethod = paymentManager.paymentMethods.find(
-          method => method.id === orderData.payment.methodId
+          method => method.id === paymentManager.selectedPaymentId
         );
 
         if (!paymentMethod) {
@@ -315,13 +307,13 @@ export const useOrderProcessor = ({
 
       // Si es OXXO, asegurarnos de tener un email
       let customerEmail = null;
-      if (orderData.payment.type === 'oxxo') {
+      if (paymentManager.selectedPaymentType === 'oxxo') {
         // Intentar obtener el email en este orden:
         // 1. Datos fiscales
         // 2. Email del cliente en orderData
         // 3. Email de dirección
         // 4. Email del usuario autenticado
-        customerEmail = orderData.billing?.fiscalData?.email || orderData.customer?.email || '';
+        customerEmail = billingManager.fiscalData?.email || orderData.customer?.email || '';
         
         // Si aún no tenemos email, obtenerlo directamente de Firebase Auth
         if (!customerEmail) {
@@ -339,8 +331,8 @@ export const useOrderProcessor = ({
       return await processPayment(
         orderData,
         paymentMethodId,
-        orderData.payment.type === 'new_card' && orderData.payment.saveForFuture,
-        orderData.payment.type,
+        paymentManager.selectedPaymentType === 'new_card' && paymentManager.newCardData.saveCard,
+        paymentManager.selectedPaymentType,
         customerEmail
       );
     } catch (error) {

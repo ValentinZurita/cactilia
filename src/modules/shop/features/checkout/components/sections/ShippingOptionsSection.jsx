@@ -63,8 +63,12 @@ export const ShippingOptionsSection = ({
     // Verificar si esta opción cubre todos los productos
     let covered = true;
     
+    // Si la opción ya indica explícitamente que cubre todos los productos
+    if (option.coversAllProducts !== undefined) {
+      covered = option.coversAllProducts;
+    }
     // Para opciones de nuestro nuevo servicio
-    if (option && option.combination && option.combination.options) {
+    else if (option && option.combination && option.combination.options) {
       covered = allProductsCovered(option.combination.options, cartItems);
     }
     // Para opciones del sistema original
@@ -74,6 +78,12 @@ export const ShippingOptionsSection = ({
     // Selecciones explícitas
     else if (option && option.selections) {
       covered = allProductsCovered(option.selections, cartItems);
+    }
+    
+    // Imprimir información sobre los productos cubiertos
+    if (!covered) {
+      console.warn('⚠️ La opción no cubre todos los productos:', 
+        option.productIds || option.covered_products || 'No se especificaron productos');
     }
     
     setShippingCoversAllProducts(covered);

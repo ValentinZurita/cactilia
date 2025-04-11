@@ -332,7 +332,7 @@ export const processPayment = async (
 
     // 5. Si se debe guardar el método de pago
     if (paymentType === 'card' && savePaymentMethod && paymentMethodId) {
-      await apiService.callCloudFunction('savePaymentMethod', {
+      await apiService.callCloudFunction('saveCheckoutPaymentMethod', {
         paymentMethodId,
         cardHolder: orderData.payment.cardholderName || '',
         isDefault: false
