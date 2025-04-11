@@ -59,6 +59,9 @@ const ShippingGroupSelector = ({
     
     console.log('✅ Procesando opciones de envío:', options);
     
+    // Aquí agrupamos según los datos reales de las zonas
+    // Usamos los tipos de cobertura y nombres reales
+    
     // Primero, identificamos todos los tipos de zonas disponibles
     const zoneTypes = new Set();
     options.forEach(option => {
@@ -69,17 +72,12 @@ const ShippingGroupSelector = ({
       }
     });
     
-    // Usaremos este conjunto para evitar duplicados
-    const processedOptionIds = new Set();
-    
     // Luego, creamos grupos dinámicos basados en los datos
     const groups = [];
     
     // Primero mostramos las opciones fallback, si existen
     const fallbackOptions = options.filter(option => option.isFallback);
     if (fallbackOptions.length > 0) {
-      fallbackOptions.forEach(option => processedOptionIds.add(option.id || option.optionId));
-      
       groups.push({
         id: 'fallback_shipping',
         title: 'Opción de Envío',
@@ -93,13 +91,10 @@ const ShippingGroupSelector = ({
     const freeOptions = options.filter(option => 
       !option.isFallback &&
       option.price === 0 &&
-      (option.combination?.isComplete || option.coversAllProducts) &&
-      !processedOptionIds.has(option.id || option.optionId)
+      (option.combination?.isComplete || option.coversAllProducts)
     );
     
     if (freeOptions.length > 0) {
-      freeOptions.forEach(option => processedOptionIds.add(option.id || option.optionId));
-      
       groups.push({
         id: 'free_shipping',
         title: 'Envío gratuito',
@@ -112,11 +107,8 @@ const ShippingGroupSelector = ({
     // Grupos por tipo de zona
     zoneTypes.forEach(zoneType => {
       // Filtrar opciones no gratuitas de este tipo y que no sean fallback
-      // y que no hayan sido procesadas ya
       const typeOptions = options.filter(option => {
-        const optionId = option.id || option.optionId;
-        
-        if (option.isFallback || processedOptionIds.has(optionId)) {
+        if (option.isFallback || (option.price === 0 && freeOptions.includes(option))) {
           return false;
         }
         
@@ -129,8 +121,6 @@ const ShippingGroupSelector = ({
       
       // Solo añadir si hay opciones
       if (typeOptions.length > 0) {
-        typeOptions.forEach(option => processedOptionIds.add(option.id || option.optionId));
-        
         // Nombre bonito para el tipo de zona
         let title = '';
         let icon = '';
@@ -170,14 +160,12 @@ const ShippingGroupSelector = ({
     // Grupo especial: combinaciones (opciones que usan múltiples servicios)
     const combinedOptions = options.filter(option => 
       !option.isFallback &&
-      !processedOptionIds.has(option.id || option.optionId) &&
+      option.price > 0 && // Solo opciones no gratuitas
       (option.type === 'combined' || 
        (option.combination && option.combination.options && option.combination.options.length > 1))
     );
     
     if (combinedOptions.length > 0) {
-      combinedOptions.forEach(option => processedOptionIds.add(option.id || option.optionId));
-      
       groups.push({
         id: 'combined_shipping',
         title: 'Combinaciones de envío',
@@ -212,35 +200,19 @@ const ShippingGroupSelector = ({
     
     // Si la opción viene de nuestro servicio con combination
     if (option.combination && option.combination.options) {
-      // Unir productos de todas las sub-opciones sin duplicados
-      const productSet = new Set();
-      option.combination.options.forEach(opt => {
-        (opt.products || []).forEach(p => {
-          const productId = p.product?.id || p.id;
-          if (productId) productSet.add(productId);
-        });
-      });
-      includedProducts = Array.from(productSet);
+      // Unir productos de todas las sub-opciones
+      includedProducts = option.combination.options.flatMap(opt => 
+        opt.products?.map(p => p.product?.id || p.id) || []
+      );
     }
     // Si la opción tiene productos directamente
     else if (option.products) {
-      const productSet = new Set();
-      option.products.forEach(p => {
-        const productId = p.product?.id || p.id;
-        if (productId) productSet.add(productId);
-      });
-      includedProducts = Array.from(productSet);
+      includedProducts = option.products.map(p => p.product?.id || p.id);
     }
     // Si la opción tiene productIds
     else if (option.productIds) {
-      includedProducts = [...new Set(option.productIds)];
+      includedProducts = option.productIds;
     }
-    
-    // Obtener el número real de productos (sin duplicados)
-    const productCount = includedProducts.length;
-    
-    // Total de productos únicos en el carrito
-    const cartProductCount = new Set(cartItems.map(item => item.product?.id || item.id)).size;
     
     // Convertir duración de envío a texto legible
     const getDeliveryTimeText = () => {
@@ -270,18 +242,10 @@ const ShippingGroupSelector = ({
         return option.carrier || option.carrierName;
       }
       if (option.combination && option.combination.options && option.combination.options.length > 0) {
-        const uniqueServices = new Set();
-        option.combination.options.forEach(opt => {
-          const serviceName = opt.carrierName || opt.carrier || 'Servicio de envío';
-          uniqueServices.add(serviceName);
-        });
-        return `Combinación de ${uniqueServices.size} servicios`;
+        return `Combinación de ${option.combination.options.length} servicios`;
       }
       return 'Opción de envío';
     };
-    
-    // Determinar si la opción es gratuita
-    const isFree = option.price === 0 || option.isFree || option.freeShipping;
     
     return (
       <div 
@@ -291,12 +255,12 @@ const ShippingGroupSelector = ({
       >
         <div className="shipping-option-header">
           <div className="shipping-option-name">
-            <i className={isFree ? 'bi bi-gift text-success' : 'bi bi-truck'}></i>
+            <i className={option.price === 0 ? 'bi bi-gift text-success' : 'bi bi-truck'}></i>
             <span className="ms-2">
               {getOptionDisplayName()}
               {option.optionName && option.name !== option.optionName && ` - ${option.optionName}`}
             </span>
-            {isFree && <span className="badge bg-success ms-2">GRATIS</span>}
+            {option.price === 0 && <span className="badge bg-success ms-2">GRATIS</span>}
             {isMultiPackage && (
               <span className="badge bg-info ms-2">
                 {option.packageCount || 2} paquetes
@@ -307,7 +271,7 @@ const ShippingGroupSelector = ({
             )}
           </div>
           <div className="shipping-option-price">
-            {!isFree ? 
+            {option.price > 0 ? 
               <span>${option.price.toFixed(2)}</span> : 
               <span className="text-success">Gratis</span>
             }
@@ -320,10 +284,10 @@ const ShippingGroupSelector = ({
             <span>{getDeliveryTimeText()}</span>
           </div>
           
-          {productCount > 0 && (
+          {includedProducts.length > 0 && includedProducts.length < cartItems.length && (
             <div className="shipping-option-products mt-2">
               <small>
-                <strong>Productos incluidos:</strong> {productCount} de {cartProductCount}
+                <strong>Productos incluidos:</strong> {includedProducts.length} de {cartItems.length}
               </small>
             </div>
           )}
@@ -334,11 +298,11 @@ const ShippingGroupSelector = ({
             </div>
           )}
           
-          {(option.freeShippingReason || option.freeReason) && (
+          {option.freeReason && (
             <div className="shipping-option-free-reason mt-2">
               <small className="text-success">
                 <i className="bi bi-info-circle me-1"></i>
-                {option.freeShippingReason || option.freeReason}
+                {option.freeReason}
               </small>
             </div>
           )}
@@ -353,7 +317,7 @@ const ShippingGroupSelector = ({
                 {option.packages.map((pkg, idx) => (
                   <li key={idx}>
                     Paquete {idx + 1}: {pkg.products.length} productos - 
-                    {pkg.isFree ? ' Gratis' : ` $${pkg.price.toFixed(2)}`}
+                    {pkg.price > 0 ? ` $${pkg.price.toFixed(2)}` : ' Gratis'}
                   </li>
                 ))}
               </ul>

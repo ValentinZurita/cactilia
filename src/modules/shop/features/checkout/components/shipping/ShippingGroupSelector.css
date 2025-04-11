@@ -37,7 +37,7 @@
 
 /* Contenedor principal */
 .shipping-groups-container {
-  font-size: 0.95rem;
+  margin-top: 1rem;
 }
 
 /* Estilo para opción seleccionada */
@@ -294,4 +294,379 @@
   margin-bottom: 0.25rem;
   border-left: 2px solid var(--green-3);
   font-size: 0.85rem;
+}
+
+/* ShippingGroupSelector Component Styles */
+
+.shipping-selector {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin-bottom: 20px;
+}
+
+.shipping-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* Shipping Option Group */
+.shipping-option-group {
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Cabecera del grupo */
+.shipping-group-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.shipping-group-header h5 {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  color: #333;
+}
+
+.shipping-group-header p {
+  font-size: 0.875rem;
+  margin-bottom: 0;
+  color: #666;
+}
+
+/* Contenedor de opciones */
+.shipping-options-container {
+  padding: 0.75rem;
+}
+
+/* Tarjeta de opción de envío */
+.shipping-option-card {
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.shipping-option-card:last-child {
+  margin-bottom: 0;
+}
+
+.shipping-option-card:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.shipping-option-card.selected {
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+}
+
+/* Cabecera de la opción de envío */
+.shipping-option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.shipping-option-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.shipping-option-name i {
+  margin-right: 0.5rem;
+}
+
+.shipping-option-price {
+  font-weight: 700;
+  color: #28a745;
+  font-size: 1.1rem;
+}
+
+.shipping-option-price span {
+  white-space: nowrap;
+}
+
+/* Detalles de la opción */
+.shipping-option-details {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.shipping-option-delivery {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.shipping-option-products, 
+.shipping-option-description,
+.shipping-option-free-reason {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 0.5rem;
+}
+
+.shipping-option-free-reason {
+  color: #28a745;
+}
+
+/* Selector de opción */
+.shipping-option-select {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.shipping-option-select .form-check {
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.shipping-option-select .form-check-input {
+  margin-right: 0.5rem;
+}
+
+.shipping-option-select .form-check-label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.shipping-option-select .form-check.checked .form-check-label {
+  font-weight: 600;
+  color: #28a745;
+  opacity: 1;
+}
+
+/* Listado de paquetes */
+.packages-list {
+  list-style-type: none;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.packages-list li {
+  margin-bottom: 0.25rem;
+}
+
+/* Estilos para badges */
+.shipping-option-name .badge {
+  margin-left: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+.badge.bg-info {
+  background-color: #17a2b8 !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #212529;
+}
+
+/* Pantalla de carga */
+.shipping-options-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-height: 200px;
+}
+
+.shipping-options-loading p {
+  margin-top: 1rem;
+  color: #666;
+}
+
+/* Alertas de información */
+.alert {
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.alert i {
+  margin-right: 0.5rem;
+}
+
+/* Adaptaciones responsivas */
+@media (max-width: 768px) {
+  .shipping-option-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .shipping-option-price {
+    margin-top: 0.5rem;
+    align-self: flex-end;
+  }
+  
+  .shipping-option-name {
+    font-size: 0.9rem;
+  }
+}
+
+/* Estado de hover y focus para accesibilidad */
+.shipping-option-card:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Animaciones */
+.shipping-option-card {
+  transform: translateY(0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.shipping-option-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Products List */
+.products-list {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.products-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.products-group {
+  margin-top: 8px;
+  padding-left: 8px;
+}
+
+.group-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  margin: 4px 0;
+}
+
+.free-tag {
+  display: inline-block;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 0.7rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 5px;
+}
+
+.product-item {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 2px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.quantity {
+  font-weight: normal;
+  color: #999;
+}
+
+/* Loading State */
+.shipping-selector-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.shipping-selector-error {
+  padding: 15px;
+  background-color: #fff2f2;
+  border: 1px solid #ffcccc;
+  border-radius: 6px;
+  color: #d32f2f;
+}
+
+/* Empty State */
+.shipping-selector-empty {
+  padding: 20px;
+  background-color: #fffbe6;
+  border: 1px solid #ffe082;
+  border-radius: 6px;
+  color: #856404;
+  text-align: center;
+}
+
+.show-partial-btn {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #555;
+}
+
+.show-partial-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.partial-options-container {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed #ddd;
+}
+
+.partial-warning {
+  font-size: 0.85rem;
+  color: #856404;
+  margin-bottom: 15px;
 } 

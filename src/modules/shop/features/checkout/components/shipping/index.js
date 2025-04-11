@@ -1,15 +1,15 @@
-// Exportación de componentes de envío
-import ShippingSelector from './ShippingSelector';
-import ShippingOptionGroup from './ShippingOptionGroup';
-import ShippingOption from './ShippingOption';
+/**
+ * Shipping Components Index
+ * Export all shipping-related components
+ */
 import ShippingGroupSelector from './ShippingGroupSelector';
+import ShippingSelector from './ShippingSelector';
+import ShippingOption from './ShippingOption';
 
-// Componentes nuevos
-export { 
+export {
+  ShippingGroupSelector,
   ShippingSelector,
-  ShippingOptionGroup,
   ShippingOption
 };
 
-// Componente original (no se modifica para compatibilidad con código existente)
-export { ShippingGroupSelector }; 
+export default ShippingSelector; 

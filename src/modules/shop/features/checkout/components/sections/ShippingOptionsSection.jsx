@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { SectionTitle } from '../ui/SectionTitle';
 import ShippingSelector from '../shipping/ShippingSelector';
 import { useCart } from '../../../cart/hooks/useCart';
-import { allProductsCovered } from '../../services/ShippingRuleService';
+import { allProductsCovered } from '../../services/shipping/RuleService';
 
 /**
  * Sección del checkout que muestra las opciones de envío disponibles
@@ -18,6 +18,7 @@ import { allProductsCovered } from '../../services/ShippingRuleService';
  * @param {Object} props.savedAddressData - Datos de la dirección guardada (si aplica)
  * @param {string} props.error - Mensaje de error (si aplica)
  * @param {Function} props.onCombinationsCalculated - Función llamada cuando se calculan las combinaciones
+ * @param {Array} props.shippingOptions - Opciones de envío precalculadas (opcional)
  */
 export const ShippingOptionsSection = ({
   selectedOptionId,
@@ -28,7 +29,8 @@ export const ShippingOptionsSection = ({
   newAddressData = null,
   savedAddressData = null,
   error = null,
-  onCombinationsCalculated
+  onCombinationsCalculated,
+  shippingOptions = []
 }) => {
   // Obtener productos del carrito
   const { items: cartItems } = useCart();
@@ -45,29 +47,58 @@ export const ShippingOptionsSection = ({
       console.log(`✅ ShippingOptionsSection: ${cartItems.length} productos en carrito`);
     }
   }, [cartItems]);
+
+  // Verificar si hay opciones de envío disponibles
+  useEffect(() => {
+    if (shippingOptions && shippingOptions.length > 0) {
+      console.log(`✅ ShippingOptionsSection: ${shippingOptions.length} opciones de envío disponibles`);
+      setNoValidOptionsError(null);
+    }
+  }, [shippingOptions]);
   
   // Manejar la selección de opción
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
     
     // Verificar si esta opción cubre todos los productos
-    if (option && option.selections) {
-      const covered = allProductsCovered(option.selections, cartItems);
-      setShippingCoversAllProducts(covered);
-      
-      console.log(`📦 ShippingOptionsSection: Opción ${option.id}`);
-      console.log(`📦 ¿Cubre todos los productos?: ${covered ? 'SÍ' : 'NO'}`);
-    } else {
-      setShippingCoversAllProducts(true);
+    let covered = true;
+    
+    // Para opciones de nuestro nuevo servicio
+    if (option && option.combination && option.combination.options) {
+      covered = allProductsCovered(option.combination.options, cartItems);
+    }
+    // Para opciones del sistema original
+    else if (option && (option.productIds || option.covered_products)) {
+      covered = allProductsCovered([option], cartItems);
+    }
+    // Selecciones explícitas
+    else if (option && option.selections) {
+      covered = allProductsCovered(option.selections, cartItems);
     }
     
+    setShippingCoversAllProducts(covered);
+    
+    console.log(`📦 ShippingOptionsSection: Opción seleccionada ${option.id || option.optionId}`);
+    console.log(`📦 ¿Cubre todos los productos?: ${covered ? 'SÍ' : 'NO'}`);
+    console.log(`💲 Precio de envío: $${option.price?.toFixed(2) || '0.00'}, Es gratis: ${option.price === 0 ? 'SÍ' : 'NO'}`);
+    
+    // Enriquecemos la información de la opción para mejor manejo en el checkout
+    const enrichedOption = {
+      ...option,
+      shipping_cost: option.price || 0,
+      shipping_cost_formatted: `$${(option.price || 0).toFixed(2)}`,
+      shipping_method: option.name || option.carrier || 'Opción de envío',
+      shipping_description: option.description || '',
+      coversAllProducts: covered
+    };
+    
     // Llamar al callback original
-    onOptionSelect(option);
+    onOptionSelect(enrichedOption);
   };
   
   // Manejar el caso de que no haya opciones de envío válidas
   const handleCombinationsCalculated = (combinations) => {
-    if (combinations.length === 0) {
+    if (!combinations || combinations.length === 0) {
       setNoValidOptionsError('No encontramos opciones de envío que cubran todos tus productos. Por favor, intenta con otra dirección.');
     } else {
       setNoValidOptionsError(null);
@@ -209,6 +240,7 @@ export const ShippingOptionsSection = ({
               onOptionSelect={handleOptionSelect}
               userAddress={userAddress}
               onCombinationsCalculated={handleCombinationsCalculated}
+              shippingOptions={shippingOptions}
             />
             
             {selectedOption && !shippingCoversAllProducts && (
@@ -234,7 +266,8 @@ ShippingOptionsSection.propTypes = {
   newAddressData: PropTypes.object,
   savedAddressData: PropTypes.object,
   error: PropTypes.string,
-  onCombinationsCalculated: PropTypes.func
+  onCombinationsCalculated: PropTypes.func,
+  shippingOptions: PropTypes.array
 };
 
 export default ShippingOptionsSection; 

@@ -2,69 +2,46 @@ import React from 'react';
 import './ShippingOption.css';
 
 /**
- * Componente que representa una opción de envío individual
- * 
- * @param {Object} props
- * @param {Object} props.option - Datos de la opción de envío
- * @param {boolean} props.isSelected - Si la opción está seleccionada
- * @param {Function} props.onSelect - Función para seleccionar esta opción
- * @param {boolean} props.isComplete - Si esta opción cubre todos los productos
- * @param {boolean} props.disabled - Si la opción está deshabilitada
- * @returns {JSX.Element}
+ * Individual shipping option component
+ * @param {Object} props - Component props
+ * @param {Object} props.option - Shipping option data
+ * @param {boolean} props.selected - Whether this option is selected
+ * @param {Function} props.onSelect - Function to call when option is selected
  */
-const ShippingOption = ({ option, isSelected, onSelect, isComplete = false, disabled = false }) => {
-  const handleSelect = () => {
-    if (!disabled && onSelect) {
-      onSelect(option);
-    }
-  };
-
-  const formattedPrice = option.option?.price === 0 
-    ? 'Gratis' 
-    : `$${parseFloat(option.option?.price || 0).toFixed(2)}`;
-
+const ShippingOption = ({ option, selected, onSelect }) => {
+  if (!option) return null;
+  
+  const isFree = option.isFree || option.price === 0;
+  const formattedPrice = isFree ? 'Gratis' : `$${(option.price || 0).toFixed(2)}`;
+  
   return (
     <div 
-      className={`shipping-option ${isSelected ? 'shipping-option--selected' : ''} ${disabled ? 'shipping-option--disabled' : ''}`}
-      onClick={handleSelect}
+      className={`shipping-option ${selected ? 'selected' : ''}`}
+      onClick={() => onSelect && onSelect(option)}
     >
-      <div className="shipping-option__radio">
-        <input 
-          type="radio" 
-          checked={isSelected} 
-          onChange={handleSelect} 
-          disabled={disabled}
-        />
+      <div className="option-header">
+        <div className="carrier-info">
+          <span className="carrier-name">{option.carrierName || option.name || 'Servicio de envío'}</span>
+          <span className="option-name">{option.optionName || option.description || ''}</span>
+        </div>
+        <div className="price-info">
+          <span className={`price ${isFree ? 'free' : ''}`}>{formattedPrice}</span>
+        </div>
       </div>
       
-      <div className="shipping-option__content">
-        <div className="shipping-option__header">
-          <h4 className="shipping-option__title">
-            {option.description || option.ruleName}
-            {!isComplete && <span className="shipping-option__partial-badge">Parcial</span>}
-          </h4>
-          <span className="shipping-option__price">
-            {formattedPrice}
+      {option.estimatedDelivery && (
+        <div className="delivery-info">
+          <span className="delivery-time">{option.estimatedDelivery}</span>
+        </div>
+      )}
+      
+      {option.products && option.products.length > 0 && (
+        <div className="products-summary">
+          <span className="products-count">
+            {option.products.length} {option.products.length === 1 ? 'producto' : 'productos'}
           </span>
         </div>
-        
-        <div className="shipping-option__details">
-          <p className="shipping-option__carrier">
-            {option.option?.name}
-          </p>
-          <p className="shipping-option__delivery-time">
-            {option.option?.estimatedDelivery}
-          </p>
-        </div>
-        
-        {option.products && (
-          <div className="shipping-option__products">
-            <span className="shipping-option__products-count">
-              {option.products.length} producto(s)
-            </span>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

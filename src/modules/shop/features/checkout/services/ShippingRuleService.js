@@ -489,20 +489,48 @@ export const generateShippingCombinations = (productGroups, addressInfo, shippin
             const localProductIds = new Set(localGroup.products.map(item => item.product.id));
             const nacionalProductIds = new Set(nacionalGroup.products.map(item => item.product.id));
             
-            [...localGroup.products, ...nacionalGroup.products].forEach(item => {
+            // Usamos un Map para evitar duplicados, clave será el ID del producto
+            const productMap = new Map();
+            
+            // Primero procesamos productos locales (tienen prioridad)
+            localGroup.products.forEach(item => {
               const productId = item.product.id;
-              
-              // Si está en local pero no en nacional, es solo local
-              if (localProductIds.has(productId) && !nacionalProductIds.has(productId)) {
-                localOnlyProducts.push(item);
+              // Guardamos en el mapa, priorizando local
+              productMap.set(productId, {
+                item,
+                isLocal: true,
+                isNacional: false
+              });
+            });
+            
+            // Luego productos nacionales, solo si no existen ya en local
+            nacionalGroup.products.forEach(item => {
+              const productId = item.product.id;
+              if (productMap.has(productId)) {
+                // Si ya existe, solo marcamos que también está en nacional
+                const entry = productMap.get(productId);
+                entry.isNacional = true;
+              } else {
+                // Si no existe, lo agregamos como producto nacional
+                productMap.set(productId, {
+                  item,
+                  isLocal: false,
+                  isNacional: true
+                });
               }
-              // Si está en nacional pero no en local, es solo nacional
-              else if (nacionalProductIds.has(productId) && !localProductIds.has(productId)) {
-                nacionalOnlyProducts.push(item);
-              }
-              // Si está en ambos, priorizamos local (porque suele ser gratis)
-              else if (localProductIds.has(productId) && nacionalProductIds.has(productId)) {
-                localOnlyProducts.push(item);
+            });
+            
+            // Ahora clasificamos en local o nacional según corresponda
+            productMap.forEach((entry, productId) => {
+              if (entry.isLocal && !entry.isNacional) {
+                // Solo está en local
+                localOnlyProducts.push(entry.item);
+              } else if (!entry.isLocal && entry.isNacional) {
+                // Solo está en nacional
+                nacionalOnlyProducts.push(entry.item);
+              } else if (entry.isLocal && entry.isNacional) {
+                // Está en ambos, priorizamos local
+                localOnlyProducts.push(entry.item);
               }
             });
             
@@ -517,10 +545,6 @@ export const generateShippingCombinations = (productGroups, addressInfo, shippin
                 const localOption = localOptions[0];
                 
                 // Calcular precios y métricas para cada grupo
-                const localPrice = parseFloat(localOption.precio || 0);
-                const nacionalPrice = parseFloat(nacionalOption.precio || 0);
-                
-                // Calcular datos para mostrar
                 const localProductCount = localOnlyProducts.reduce((count, item) => count + (item.quantity || 1), 0);
                 const nacionalProductCount = nacionalOnlyProducts.reduce((count, item) => count + (item.quantity || 1), 0);
                 
@@ -561,8 +585,8 @@ export const generateShippingCombinations = (productGroups, addressInfo, shippin
                   option: {
                     name: `Local y Nacional`,
                     label: nacionalLabel,
-                    price: localPrice + nacionalPrice,
-                    isFree: (localPrice + nacionalPrice) === 0,
+                    price: localOption.precio + nacionalOption.precio,
+                    isFree: (localOption.precio + nacionalOption.precio) === 0,
                     estimatedDelivery: nacionalOption.tiempo_entrega || nacionalOption.tiempoEntrega || '?-? días'
                   },
                   ruleId: `combined-${localGroup.rule.id}-${nacionalGroup.rule.id}`,
@@ -573,12 +597,12 @@ export const generateShippingCombinations = (productGroups, addressInfo, shippin
                   isMixed: true,
                   carrier: 'Servicios combinados',
                   deliveryTime: nacionalOption.tiempo_entrega || nacionalOption.tiempoEntrega || '?-? días',
-                  totalPrice: localPrice + nacionalPrice,
+                  totalPrice: localOption.precio + nacionalOption.precio,
                   // Datos para la UI
                   freeProducts: localOnlyProducts,
                   paidProducts: nacionalOnlyProducts,
-                  freePrice: localPrice,
-                  paidPrice: nacionalPrice,
+                  freePrice: localOption.precio,
+                  paidPrice: nacionalOption.precio,
                   freeProductsCount: localProductCount,
                   paidProductsCount: nacionalProductCount,
                   freeProductsWeight: localWeight,
@@ -593,8 +617,8 @@ export const generateShippingCombinations = (productGroups, addressInfo, shippin
                       groupId: localGroup.rule.id,
                       option: {
                         name: localOption.nombre || "Servicio local",
-                        price: localPrice,
-                        isFree: localPrice === 0,
+                        price: localOption.precio,
+                        isFree: localOption.precio === 0,
                         estimatedDelivery: localOption.tiempo_entrega || localOption.tiempoEntrega || '1-1 días'
                       },
                       products: localOnlyProducts,
@@ -604,8 +628,8 @@ export const generateShippingCombinations = (productGroups, addressInfo, shippin
                       groupId: nacionalGroup.rule.id,
                       option: {
                         name: nacionalOption.nombre || "Servicio nacional",
-                        price: nacionalPrice,
-                        isFree: nacionalPrice === 0,
+                        price: nacionalOption.precio,
+                        isFree: nacionalOption.precio === 0,
                         estimatedDelivery: nacionalOption.tiempo_entrega || nacionalOption.tiempoEntrega || '?-? días'
                       },
                       products: nacionalOnlyProducts,
