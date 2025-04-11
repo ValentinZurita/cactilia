@@ -1,7 +1,257 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { processCartForShipping } from '../../../cart/services/shippingGroupService';
-import { groupProductsByShippingRules, prepareShippingOptionsForCheckout } from '../../services/shippingGroupingService';
-import './ShippingGroupSelector.css';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  groupProductsByShippingRule, 
+  generateShippingCombinations,
+  allProductsCovered
+} from '../../services/ShippingRuleService';
+import './ShippingSelector.css';
+
+// Función para capturar las reglas de envío del panel de diagnóstico
+const captureShippingRulesFromDebugPanel = () => {
+  try {
+    console.log('🔍 Intentando capturar reglas del panel de diagnóstico...');
+    
+    // Primero intentar capturar el panel de diagnóstico
+    const debugPanelEl = document.querySelector('.debug-panel');
+    
+    if (debugPanelEl) {
+      console.log('✅ Panel de diagnóstico encontrado');
+      
+      // Intentar método 1: Buscar sección directa "Reglas de Envío"
+      const reglasTitulo = Array.from(debugPanelEl.querySelectorAll('h3, h4, h5, strong, b')).find(
+        el => el.textContent.includes('Reglas de Envío')
+      );
+      
+      if (reglasTitulo) {
+        console.log('✅ Encontrada sección "Reglas de Envío"');
+        // Buscar el siguiente elemento pre después del título
+        let nextEl = reglasTitulo.nextElementSibling;
+        while (nextEl && nextEl.tagName !== 'PRE') {
+          nextEl = nextEl.nextElementSibling;
+        }
+        
+        if (nextEl && nextEl.tagName === 'PRE') {
+          try {
+            const rulesJSON = nextEl.textContent;
+            const rules = JSON.parse(rulesJSON);
+            
+            if (Array.isArray(rules) && rules.length > 0) {
+              console.log(`✅ Capturadas ${rules.length} reglas del panel de diagnóstico (método 1)`);
+              window.__SHIPPING_RULES__ = rules;
+              
+              // Imprimir detalles de las reglas para depuración
+              rules.forEach(rule => {
+                console.log(`  📦 Regla ${rule.id} (${rule.zona || 'sin zona'}): ${rule.opciones?.length || 0} opciones`);
+              });
+              
+              return rules;
+            }
+          } catch (e) {
+            console.error('Error al parsear reglas (método 1):', e);
+          }
+        }
+      }
+      
+      // Método 2: Buscar cualquier pre que contenga las propiedades esperadas
+      const allPres = debugPanelEl.querySelectorAll('pre');
+      for (const pre of allPres) {
+        try {
+          if (pre.textContent.includes('"zona":') && 
+              (pre.textContent.includes('"opciones":') || pre.textContent.includes('"id":"'))) {
+            
+            const rulesJSON = pre.textContent;
+            const rules = JSON.parse(rulesJSON);
+            
+            if (Array.isArray(rules) && rules.length > 0) {
+              console.log(`✅ Capturadas ${rules.length} reglas del panel de diagnóstico (método 2)`);
+              window.__SHIPPING_RULES__ = rules;
+              
+              // Imprimir detalles de las reglas para depuración
+              rules.forEach(rule => {
+                console.log(`  📦 Regla ${rule.id} (${rule.zona || 'sin zona'}): ${rule.opciones?.length || 0} opciones`);
+              });
+              
+              return rules;
+            }
+          }
+        } catch (e) {
+          // Ignorar errores de parseo en este método
+        }
+      }
+    } else {
+      console.log('⚠️ Panel de diagnóstico no encontrado');
+    }
+  } catch (e) {
+    console.error('Error al capturar reglas de envío:', e);
+  }
+  return null;
+};
+
+// Ejecutar captura al cargar
+setTimeout(captureShippingRulesFromDebugPanel, 1000);
+
+// Estilos CSS para el componente
+const productItemStyle = {
+  fontSize: '0.85rem',
+  color: '#666',
+  marginBottom: '2px',
+  display: 'flex',
+  justifyContent: 'space-between'
+};
+
+const productsListStyle = {
+  marginTop: '8px',
+  paddingTop: '8px',
+  borderTop: '1px solid #eee'
+};
+
+const productsGroupStyle = {
+  marginTop: '6px',
+  paddingTop: '6px',
+  borderTop: '1px dashed #eee'
+};
+
+const quantityStyle = {
+  fontWeight: 'normal',
+  color: '#999'
+};
+
+const groupTitleStyle = {
+  fontSize: '0.8rem',
+  fontWeight: 'bold',
+  color: '#555',
+  margin: '4px 0'
+};
+
+const freeTagStyle = {
+  display: 'inline-block',
+  backgroundColor: '#4CAF50',
+  color: 'white',
+  fontSize: '0.7rem',
+  padding: '1px 4px',
+  borderRadius: '3px',
+  marginLeft: '5px'
+};
+
+/**
+ * Componente para mostrar los productos incluidos en una opción de envío
+ */
+const ProductsList = ({ products, isMixed, freeProducts, paidProducts, isFreeGroup, freeGroupName, paidGroupName, freeProductsCount, paidProductsCount, freeProductsWeight, paidProductsWeight, freeGroupSubtotal, paidGroupSubtotal }) => {
+  if (!products || products.length === 0) return null;
+  
+  // Si es una opción mixta, mostrar los productos separados por tipo de envío
+  if (isMixed && freeProducts && paidProducts) {
+    return (
+      <div style={productsListStyle}>
+        <p style={{ fontSize: '0.85rem', marginBottom: '5px', fontWeight: 'bold' }}>
+          Productos incluidos:
+        </p>
+        
+        {/* Productos con envío gratuito */}
+        {freeProducts.length > 0 && (
+          <div style={productsGroupStyle}>
+            <p style={groupTitleStyle}>
+              {freeGroupName || "Envío gratuito"} <span style={freeTagStyle}>GRATIS</span>
+            </p>
+            
+            {/* Métricas del grupo gratuito */}
+            {(freeProductsCount || freeProductsWeight || freeGroupSubtotal) && (
+              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '5px' }}>
+                {freeGroupSubtotal && (
+                  <span style={{ marginRight: '8px' }}>
+                    Subtotal: ${freeGroupSubtotal.toFixed(2)}
+                  </span>
+                )}
+                {freeProductsCount && (
+                  <span style={{ marginRight: '8px' }}>
+                    {freeProductsCount} {freeProductsCount === 1 ? 'producto' : 'productos'}
+                  </span>
+                )}
+                {freeProductsWeight && (
+                  <span>
+                    Peso: {freeProductsWeight.toFixed(2)}kg
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {freeProducts.map((item) => {
+              const product = item.product || item;
+              const quantity = item.quantity || 1;
+              
+              return (
+                <div key={`free-${product.id}`} style={productItemStyle}>
+                  <span>{product.name}</span>
+                  <span style={quantityStyle}>x{quantity}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        
+        {/* Productos con costo de envío */}
+        {paidProducts.length > 0 && (
+          <div style={productsGroupStyle}>
+            <p style={groupTitleStyle}>{paidGroupName || "Envío estándar"}</p>
+            
+            {/* Métricas del grupo con costo */}
+            {(paidProductsCount || paidProductsWeight || paidGroupSubtotal) && (
+              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '5px' }}>
+                {paidGroupSubtotal && (
+                  <span style={{ marginRight: '8px' }}>
+                    Subtotal: ${paidGroupSubtotal.toFixed(2)}
+                  </span>
+                )}
+                {paidProductsCount && (
+                  <span style={{ marginRight: '8px' }}>
+                    {paidProductsCount} {paidProductsCount === 1 ? 'producto' : 'productos'}
+                  </span>
+                )}
+                {paidProductsWeight && (
+                  <span>
+                    Peso: {paidProductsWeight.toFixed(2)}kg
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {paidProducts.map((item) => {
+              const product = item.product || item;
+              const quantity = item.quantity || 1;
+              
+              return (
+                <div key={`paid-${product.id}`} style={productItemStyle}>
+                  <span>{product.name}</span>
+                  <span style={quantityStyle}>x{quantity}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // Mostrar todos los productos en una sola lista
+  return (
+    <div style={productsListStyle}>
+      <p style={{ fontSize: '0.85rem', marginBottom: '5px', fontWeight: 'bold' }}>
+        Productos incluidos:
+      </p>
+      {products.map((item) => {
+        const product = item.product || item;
+        const quantity = item.quantity || 1;
+        
+        return (
+          <div key={product.id} style={productItemStyle}>
+            <span>{product.name}</span>
+            <span style={quantityStyle}>x{quantity}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 /**
  * Componente para seleccionar opciones de envío agrupadas por reglas
@@ -14,6 +264,7 @@ import './ShippingGroupSelector.css';
  * @param {string} props.selectedOptionDesc - Descripción de la opción seleccionada
  * @param {Object} props.userAddress - Dirección del usuario (opcional)
  * @param {Function} props.onCombinationsCalculated - Función llamada cuando se calculan las combinaciones
+ * @param {Array} props.shippingRules - Reglas de envío recibidas como prop
  */
 const ShippingGroupSelector = ({ 
   cartItems = [], 
@@ -21,10 +272,12 @@ const ShippingGroupSelector = ({
   selectedOptionId = '',
   selectedOptionDesc = '',
   userAddress = null,
-  onCombinationsCalculated = () => {}
+  onCombinationsCalculated = () => {},
+  shippingRules = []
 }) => {
-  const [shippingGroups, setShippingGroups] = useState([]);
+  // Estados del componente
   const [shippingCombinations, setShippingCombinations] = useState([]);
+  const [showAllOptions, setShowAllOptions] = useState(false);
   const [status, setStatus] = useState({
     loading: true,
     error: null,
@@ -32,20 +285,37 @@ const ShippingGroupSelector = ({
     debug: null
   });
   
-  // Referencia para controlar si ya se ha seleccionado la primera opción automáticamente
-  const initialSelectionMade = useRef(false);
+  // Referencia para rastrear cambios en la dirección y evitar bucles infinitos
+  const [prevAddressInfo, setPrevAddressInfo] = useState(null);
+  const processedRef = useRef(false);
+
+  // Estabilizar las funciones de callback
+  const stableOnOptionSelect = useCallback((option) => {
+    onOptionSelect(option);
+  }, [onOptionSelect]);
+
+  const stableOnCombinationsCalculated = useCallback((combinations) => {
+    onCombinationsCalculated(combinations);
+  }, [onCombinationsCalculated]);
   
-  // Extraer la descripción del ID si no se proporciona explícitamente
-  const effectiveSelectedOptionDesc = selectedOptionDesc || selectedOptionId?.includes('-') 
-    ? selectedOptionId.split('-').slice(1).join('-').replace(/-/g, ' ') 
-    : '';
-  
+  // Procesar carrito y generar opciones de envío
   useEffect(() => {
-    // Resetear la bandera si cambian los items del carrito o la dirección
-    if (!selectedOptionId) {
-      initialSelectionMade.current = false;
+    // Evitar procesamiento doble durante montaje inicial
+    if (processedRef.current) {
+      // Si ya hemos procesado y no hay cambios significativos, salir
+      const userPostalCode = userAddress?.zip || userAddress?.zipcode || '';
+      const userState = userAddress?.state || userAddress?.provincia || '';
+      const addressKey = `${userAddress?.id || 'none'}-${userPostalCode || 'none'}-${userState || 'none'}`;
+      const prevKey = prevAddressInfo ? 
+        `${prevAddressInfo.id || 'none'}-${prevAddressInfo.postalCode || 'none'}-${prevAddressInfo.state || 'none'}` : 
+        null;
+      
+      if (prevKey === addressKey && shippingCombinations.length > 0) {
+        console.log('🔄 Evitando procesamiento redundante');
+        return;
+      }
     }
-    
+
     if (!cartItems || cartItems.length === 0) {
       setStatus({ 
         loading: false, 
@@ -55,14 +325,40 @@ const ShippingGroupSelector = ({
       return;
     }
 
+    // Comprobar si la dirección ha cambiado para evitar recálculos innecesarios
+    const userPostalCode = userAddress?.zip || userAddress?.zipcode || '';
+    const userState = userAddress?.state || userAddress?.provincia || '';
+    const currentAddressInfo = {
+      id: userAddress?.id,
+      postalCode: userPostalCode,
+      state: userState
+    };
+    
+    // Comparar direcciones para evitar re-cálculos innecesarios
+    const addressChanged = 
+      !prevAddressInfo || 
+      prevAddressInfo.id !== currentAddressInfo.id || 
+      prevAddressInfo.postalCode !== currentAddressInfo.postalCode ||
+      prevAddressInfo.state !== currentAddressInfo.state;
+    
+    // Si la dirección no ha cambiado y ya tenemos combinaciones, evitar recalcular
+    if (!addressChanged && shippingCombinations.length > 0) {
+      console.log('🔍 Dirección sin cambios, manteniendo opciones existentes');
+      return;
+    }
+
     setStatus(prevStatus => ({ ...prevStatus, loading: true }));
+    setPrevAddressInfo(currentAddressInfo);
     
     // Función asíncrona para procesar el carrito
     const processCart = async () => {
       try {
         console.log('🔍 ShippingGroupSelector: Procesando opciones de envío');
         console.log('📦 Productos en carrito:', cartItems.length);
-        console.log('🏠 Dirección de usuario:', userAddress);
+        console.log('📦 Detalle del primer producto:', cartItems[0]);
+        
+        console.log('🔍 Código postal de la dirección seleccionada:', userPostalCode);
+        console.log('🔍 Dirección completa:', userAddress);
         
         // Asegurarse de que los items del carrito tengan el formato correcto
         const formattedCartItems = cartItems.map(item => {
@@ -86,657 +382,395 @@ const ShippingGroupSelector = ({
           };
         });
         
-        console.log('📝 Productos formateados:', formattedCartItems.length);
+        console.log('📦 Items formateados:', formattedCartItems);
         
-        // Método 1: Usar las funciones de shippingGroupingService
-        // Este método crea grupos por regla de envío y cada producto puede estar en múltiples grupos
-        const shippingGroups = await groupProductsByShippingRules(formattedCartItems);
-        console.log('📦 Grupos creados con groupProductsByShippingRules:', shippingGroups.length);
+        // Usar el nuevo servicio para calcular las opciones de envío
+        const productGroups = groupProductsByShippingRule(formattedCartItems);
+        console.log('📦 Grupos de productos:', productGroups);
         
-        const directOptions = await prepareShippingOptionsForCheckout(shippingGroups, userAddress?.id);
-        console.log('🚚 Opciones de envío calculadas directamente:', directOptions.totalOptions?.length);
+        // Usar las reglas recibidas como prop si están disponibles
+        let availableRules = shippingRules;
         
-        // Si tenemos opciones directas, usarlas
-        if (directOptions && directOptions.totalOptions && directOptions.totalOptions.length > 0) {
-          setShippingGroups(directOptions.groups || []);
+        // Si no hay reglas en las props, intentar otros métodos
+        if (!availableRules || !Array.isArray(availableRules) || availableRules.length === 0) {
+          console.log('⚠️ No hay reglas en las props, buscando de otras fuentes...');
           
-          // Convertir las opciones directas al formato de combinaciones
-          // Aseguramos que cada opción de mensajería de cada regla se convierta en una opción individual
-          let directCombinations = [];
-          
-          // Primero procesamos los grupos por separado
-          directOptions.groups.forEach(group => {
-            const rule = group.rule;
-            if (!rule || !rule.opciones_mensajeria || !Array.isArray(rule.opciones_mensajeria)) {
-              return;
+          // Intentar obtener las reglas directamente del DOM si están disponibles
+          try {
+            // Si no tenemos reglas guardadas, intentar capturarlas de nuevo
+            if (!window.__SHIPPING_RULES__) {
+              console.log('🔄 Intentando capturar reglas de nuevo...');
+              captureShippingRulesFromDebugPanel();
             }
             
-            // Para cada opción de mensajería en la regla, crear una combinación
-            rule.opciones_mensajeria.forEach((opcion, optionIndex) => {
-              // Calcular si esta opción es gratis
-              const isFreeShipping = rule.envio_gratis === true || group.isFreeShipping === true;
-              
-              // Calcular precio final
-              const deliveryCost = isFreeShipping ? 0 : parseFloat(opcion.precio || 0);
-              
-              // Crear ID único para esta opción
-              const optionId = `${rule.id}-${opcion.nombre?.replace(/\s+/g, '-')?.toLowerCase() || 'option'}-${optionIndex}`;
-              
-              // Generar etiqueta descriptiva
-              let optionLabel = opcion.label || opcion.nombre || 'Envío';
-              
-              // Si es una de las opciones de Correos de México, añadir una etiqueta más descriptiva
-              if (opcion.nombre === 'Correos de México') {
-                optionLabel = optionIndex === 0 ? 'Basico' : 'Express';
-              }
-              
-              // Añadir combinación
-              directCombinations.push({
-                id: optionId,
-                description: rule.zona === 'Local' ? 'Entrega Local' : optionLabel,
-                totalPrice: deliveryCost,
-                isAllFree: isFreeShipping,
-                carrier: opcion.nombre || 'Servicio de envío',
-                ruleId: rule.id,
-                ruleName: rule.zona || 'Sin nombre',
-                calculatedCost: deliveryCost,
-                deliveryTime: opcion.tiempo_entrega || `${opcion.minDays || 1}-${opcion.maxDays || 5} días`,
-                selections: [{
-                  groupId: group.id || 'default-group',
-                  option: {
-                    name: opcion.nombre || 'Servicio de envío',
-                    price: deliveryCost,
-                    estimatedDelivery: opcion.tiempo_entrega || `${opcion.minDays || 1}-${opcion.maxDays || 5} días`,
-                    isFreeShipping
-                  },
-                  products: group.items || []
-                }]
-              });
-            });
-          });
-          
-          // Ordenar las combinaciones para que las gratuitas aparezcan primero
-          directCombinations.sort((a, b) => {
-            // Primero envío gratis
-            if (a.isAllFree && !b.isAllFree) return -1;
-            if (!a.isAllFree && b.isAllFree) return 1;
-            
-            // Luego por precio
-            return (a.totalPrice || 0) - (b.totalPrice || 0);
-          });
-          
-          // Generar opciones mixtas combinando grupos (Local + Nacional)
-          // Solo si tenemos al menos dos grupos diferentes
-          if (directOptions.groups.length > 1) {
-            const localGroups = directOptions.groups.filter(g => g.rule?.zona === 'Local');
-            const nationalGroups = directOptions.groups.filter(g => g.rule?.zona === 'Nacional');
-            
-            // Solo crear combinaciones mixtas si hay grupos locales y nacionales
-            if (localGroups.length > 0 && nationalGroups.length > 0) {
-              console.log('🔄 Creando combinaciones mixtas entre grupos Local y Nacional');
-              
-              // Para cada grupo local con productos
-              localGroups.forEach(localGroup => {
-                if (!localGroup.items || !localGroup.rule?.opciones_mensajeria) return;
-                
-                // Producto(s) que tienen envío local
-                const localProducts = localGroup.items;
-                
-                // Para cada grupo nacional
-                nationalGroups.forEach(nationalGroup => {
-                  if (!nationalGroup.items || !nationalGroup.rule?.opciones_mensajeria) return;
-                  
-                  // Productos que solo tienen envío nacional (no están en el grupo local)
-                  const nationalOnlyProducts = nationalGroup.items.filter(item => {
-                    const itemId = (item.product || item).id;
-                    return !localProducts.some(localItem => 
-                      (localItem.product || localItem).id === itemId
-                    );
-                  });
-                  
-                  // Solo crear combinación mixta si hay productos exclusivos del grupo nacional
-                  if (nationalOnlyProducts.length > 0) {
-                    // Para cada opción de mensajería nacional
-                    nationalGroup.rule.opciones_mensajeria.forEach((nationalOption, optionIndex) => {
-                      // Usar la primera opción local (suponiendo que es la más económica)
-                      const localOption = localGroup.rule.opciones_mensajeria[0];
-                      
-                      // Precio nacional
-                      const nationalPrice = nationalGroup.isFreeShipping ? 0 : parseFloat(nationalOption.precio || 0);
-                      
-                      // Crear combinación mixta
-                      const mixedCombination = {
-                        id: `mixed-${localGroup.id}-${nationalGroup.id}-${optionIndex}`,
-                        description: `Mixta: Local + ${optionIndex === 0 ? 'Básico' : 'Express'}`,
-                        totalPrice: nationalPrice, // Solo se cobra el envío nacional, el local es gratis
-                        isAllFree: nationalPrice === 0,
-                        carrier: 'Envío mixto',
-                        ruleName: 'Mixto',
-                        calculatedCost: nationalPrice,
-                        deliveryTime: nationalOption.tiempo_entrega || `${nationalOption.minDays || 3}-${nationalOption.maxDays || 10} días`,
-                        isMixed: true,
-                        selections: [
-                          // Opción local para productos con envío local
-                          {
-                            groupId: localGroup.id,
-                            option: {
-                              name: localOption.nombre || 'Entrega Local',
-                              price: 0, // Siempre gratis el local
-                              estimatedDelivery: localOption.tiempo_entrega || '1-1 días',
-                              isFreeShipping: true
-                            },
-                            products: localProducts
-                          },
-                          // Opción nacional para productos que solo tienen envío nacional
-                          {
-                            groupId: nationalGroup.id,
-                            option: {
-                              name: nationalOption.nombre || 'Envío Nacional',
-                              price: nationalPrice,
-                              estimatedDelivery: nationalOption.tiempo_entrega || `${nationalOption.minDays || 3}-${nationalOption.maxDays || 10} días`,
-                              isFreeShipping: nationalGroup.isFreeShipping
-                            },
-                            products: nationalOnlyProducts
-                          }
-                        ]
-                      };
-                      
-                      // Añadir a las combinaciones totales
-                      directCombinations.push(mixedCombination);
-                    });
-                  }
-                });
-              });
-              
-              // Re-ordenar después de añadir las combinaciones mixtas
-              directCombinations.sort((a, b) => {
-                // Primero envío gratis
-                if (a.isAllFree && !b.isAllFree) return -1;
-                if (!a.isAllFree && b.isAllFree) return 1;
-                
-                // Luego por precio
-                return (a.totalPrice || 0) - (b.totalPrice || 0);
-              });
+            // Método 1: Reglas capturadas del panel de diagnóstico
+            if (window.__SHIPPING_RULES__ && Array.isArray(window.__SHIPPING_RULES__)) {
+              console.log('📋 Usando reglas de envío desde __SHIPPING_RULES__:', window.__SHIPPING_RULES__.length);
+              availableRules = window.__SHIPPING_RULES__;
             }
+            // Método 2: Reglas desde el debug del checkout
+            else if (window.checkoutDebug && window.checkoutDebug.shippingRules) {
+              console.log('📋 Usando reglas de envío desde checkoutDebug:', window.checkoutDebug.shippingRules.length);
+              availableRules = window.checkoutDebug.shippingRules;
+            } 
+            // Método 3: Reglas desde el contexto
+            else if (window.__CHECKOUT_CONTEXT__ && window.__CHECKOUT_CONTEXT__.shippingRules) {
+              console.log('📋 Usando reglas de envío desde CHECKOUT_CONTEXT');
+              availableRules = window.__CHECKOUT_CONTEXT__.shippingRules;
+            }
+          } catch (error) {
+            console.error('❌ Error al obtener reglas:', error);
           }
-          
-          console.log('🚢 Combinaciones generadas:', directCombinations.length);
-          setShippingCombinations(directCombinations);
-          setStatus({ loading: false, error: null, noOptions: false });
+        } else {
+          console.log('✅ Usando reglas de envío desde props:', availableRules.length);
+        }
+        
+        // Si no hay reglas, no podemos continuar
+        if (!availableRules || !Array.isArray(availableRules) || availableRules.length === 0) {
+          console.log('⚠️ No se encontraron reglas de envío disponibles');
+          setStatus({ 
+            loading: false, 
+            error: 'No hay reglas de envío configuradas para este pedido. Por favor contacta al administrador.', 
+            noOptions: true 
+          });
           
           // Notificar al componente padre
-          if (onCombinationsCalculated && typeof onCombinationsCalculated === 'function') {
-            console.log('🔄 Notificando combinaciones calculadas:', directCombinations.length);
-            onCombinationsCalculated(directCombinations);
+          if (onCombinationsCalculated) {
+            stableOnCombinationsCalculated([]);
           }
-          
-          // Seleccionar automáticamente la primera opción si no hay selección
-          if (!selectedOptionId && directCombinations.length > 0 && onOptionSelect && !initialSelectionMade.current) {
-            setTimeout(() => {
-              try {
-                const firstOption = directCombinations[0];
-                console.log('🔄 Seleccionando primera opción automáticamente:', firstOption.id);
-                
-                if (firstOption && firstOption.id) {
-                  initialSelectionMade.current = true;
-                  onOptionSelect(firstOption);
-                }
-              } catch (err) {
-                console.error('Error al seleccionar primera opción:', err);
-              }
-            }, 100);
-          }
-          
           return;
         }
         
-        // Método 2: Respaldo - Usar processCartForShipping como estaba originalmente
-        // Procesar los items del carrito
-        const result = await processCartForShipping(formattedCartItems, userAddress);
-        
-        // Verificar si el resultado es válido
-        if (!result || !result.groups || !result.combinations) {
-          console.error('❌ El servicio devolvió un resultado inválido:', result);
+        // Generar combinaciones de envío válidas - aquí pasamos el código postal y estado
+        const combinations = generateShippingCombinations(
+          productGroups, 
+          { 
+            postalCode: userPostalCode, 
+            state: userState,
+            addressId: userAddress?.id 
+          }, 
+          availableRules
+        );
+        console.log('🚢 Combinaciones generadas:', combinations);
+
+        // Si no hay combinaciones válidas
+        if (!combinations || combinations.length === 0) {
           setStatus({ 
             loading: false, 
-            error: 'No se pudieron obtener opciones de envío', 
+            error: 'No hay opciones de envío disponibles para esta dirección. Intenta seleccionar otra dirección o contacta al vendedor.', 
             noOptions: true,
             debug: {
-              cartItemsCount: cartItems.length,
-              formattedItemsCount: formattedCartItems.length,
-              hasUserAddress: !!userAddress,
-              result: result || 'No hay resultado'
+              formattedCartItems,
+              productGroups,
+              userAddress,
+              availableRules
             }
           });
+          setShippingCombinations([]);
+          
+          // Notificar al componente padre
+          if (onCombinationsCalculated) {
+            stableOnCombinationsCalculated([]);
+          }
           return;
         }
         
-        const { groups, combinations } = result;
-        
-        console.log(`📊 Resultado: ${groups?.length || 0} grupos, ${combinations?.length || 0} combinaciones`);
-        
-        if (!groups || !combinations || groups.length === 0 || combinations.length === 0) {
-          setStatus({ 
-            loading: false, 
-            error: 'No se encontraron opciones de envío válidas para los productos seleccionados', 
-            noOptions: true,
-            debug: {
-              cartItemsCount: cartItems.length,
-              formattedItemsCount: formattedCartItems.length,
-              hasUserAddress: !!userAddress,
-              groups: groups || [],
-              combinations: combinations || []
-            }
-          });
-        } else {
-          setShippingGroups(groups);
-          setShippingCombinations(combinations);
-          setStatus({ loading: false, error: null, noOptions: false });
+        // Adaptar las combinaciones al formato que espera el componente padre
+        const adaptedCombinations = combinations.map(combo => {
+          // Estructura base para todas las combinaciones
+          const adaptedCombo = {
+            id: combo.id,
+            description: combo.description || combo.ruleName,
+            totalPrice: combo.option.price,
+            isAllFree: combo.option.isFree,
+            carrier: combo.option.name,
+            ruleName: combo.ruleName,
+            ruleId: combo.ruleId,
+            calculatedCost: combo.option.price,
+            deliveryTime: combo.option.estimatedDelivery,
+            // Pasar información de los productos para mostrar detalles
+            productCount: combo.productCount,
+            totalWeight: combo.totalWeight,
+            groupSubtotal: combo.groupSubtotal,
+            // Incluir los datos de free shipping
+            freeReason: combo.option.freeReason,
+            // Datos de validación de límites
+            exceedsLimits: !!combo.limitMessage,
+            limitMessage: combo.limitMessage,
+            selections: [{
+              groupId: combo.ruleId,
+              option: {
+                name: combo.option.name,
+                price: combo.option.price,
+                estimatedDelivery: combo.option.estimatedDelivery,
+                isFreeShipping: combo.option.isFree,
+                freeReason: combo.option.freeReason
+              },
+              products: combo.products
+            }],
+            coversAllProducts: combo.coversAllProducts,
+            isComplete: combo.coversAllProducts,
+            isMixed: combo.isMixed
+          };
           
-          // Notificar al componente padre sobre las combinaciones calculadas
-          if (onCombinationsCalculated && typeof onCombinationsCalculated === 'function') {
-            console.log('🔄 Notificando combinaciones calculadas:', combinations.length);
-            onCombinationsCalculated(combinations);
+          // Agregar metadatos específicos para opciones mixtas
+          if (combo.isMixed) {
+            adaptedCombo.freeProducts = combo.freeProducts;
+            adaptedCombo.paidProducts = combo.paidProducts;
+            adaptedCombo.freeProductsCount = combo.freeProductsCount;
+            adaptedCombo.paidProductsCount = combo.paidProductsCount;
+            adaptedCombo.freeProductsWeight = combo.freeProductsWeight;
+            adaptedCombo.paidProductsWeight = combo.paidProductsWeight;
+            adaptedCombo.freeGroupSubtotal = combo.freeGroupSubtotal;
+            adaptedCombo.paidGroupSubtotal = combo.paidGroupSubtotal;
+            adaptedCombo.isFreeGroup = combo.isFreeGroup;
+            adaptedCombo.freeGroupName = combo.freeGroupName;
+            adaptedCombo.paidGroupName = combo.paidGroupName;
+            // Datos de validación de límites
+            adaptedCombo.freeExceedsLimits = combo.freeExceedsLimits;
+            adaptedCombo.freeLimitMessage = combo.freeLimitMessage;
+            adaptedCombo.paidExceedsLimits = combo.paidExceedsLimits;
+            adaptedCombo.paidLimitMessage = combo.paidLimitMessage;
           }
           
-          // Solo seleccionar la primera opción automáticamente si no hay opción seleccionada
-          // y no se ha realizado la selección inicial
-          if (!selectedOptionId && combinations.length > 0 && onOptionSelect && !initialSelectionMade.current) {
-            // Usar timeout para evitar problema de referencias inconsistentes durante el renderizado
-            setTimeout(() => {
-              try {
-                const firstOption = combinations[0];
-                console.log('🔄 Seleccionando primera opción automáticamente:', firstOption.id);
-                
-                // Asegurarnos de que el ID es válido antes de seleccionarlo
-                if (firstOption && firstOption.id) {
-                  initialSelectionMade.current = true;
-                  onOptionSelect(firstOption);
-                } else {
-                  console.warn('⚠️ No se pudo seleccionar la primera opción: ID no válido');
-                }
-              } catch (err) {
-                console.error('Error al seleccionar primera opción:', err);
-              }
-            }, 100);
-          }
+          return adaptedCombo;
+        });
+        
+        setShippingCombinations(adaptedCombinations);
+        setStatus({ loading: false, error: null, noOptions: false });
+        
+        // Notificar al componente padre
+        if (onCombinationsCalculated) {
+          stableOnCombinationsCalculated(adaptedCombinations);
         }
-      } catch (error) {
-        console.error('❌ Error al procesar opciones de envío:', error);
+        
+        // Verificar si la opción previamente seleccionada sigue siendo válida
+        if (selectedOptionId) {
+          const isCurrentSelectionValid = adaptedCombinations.some(option => option.id === selectedOptionId);
+          
+          if (!isCurrentSelectionValid && adaptedCombinations.length > 0) {
+            // Seleccionar automáticamente la primera opción
+            stableOnOptionSelect(adaptedCombinations[0]);
+          }
+        } 
+        // Si no hay selección previa, seleccionar la primera opción automáticamente
+        else if (adaptedCombinations.length > 0) {
+          stableOnOptionSelect(adaptedCombinations[0]);
+        }
+
+        // Marcar que ya hemos procesado el carrito
+        processedRef.current = true;
+      } catch (err) {
+        console.error('Error al calcular opciones de envío:', err);
         setStatus({ 
           loading: false, 
-          error: `Error al calcular opciones de envío: ${error.message}`,
-          noOptions: true,
-          debug: { errorStack: error.stack }
+          error: 'Error al calcular opciones de envío: ' + (err.message || 'Error desconocido'), 
+          noOptions: true, 
+          debug: err 
         });
+        
+        // Notificar al componente padre
+        if (onCombinationsCalculated) {
+          stableOnCombinationsCalculated([]);
+        }
       }
     };
     
-    // Ejecutar la función asíncrona
     processCart();
-  }, [cartItems, userAddress]);
+  }, [
+    cartItems, 
+    userAddress, 
+    stableOnCombinationsCalculated, 
+    stableOnOptionSelect, 
+    selectedOptionId,
+    shippingRules
+  ]);
   
-  // Mostrar el selectedOptionId cuando cambie (para debug)
-  useEffect(() => {
-    console.log('🔍 ShippingGroupSelector: selectedOptionId =', selectedOptionId);
-    console.log('🔍 ShippingGroupSelector: selectedOptionDesc =', effectiveSelectedOptionDesc);
-    console.log('📦 ShippingCombinations disponibles:', shippingCombinations.length);
-    
-    if (selectedOptionId) {
-      const selectedOption = shippingCombinations.find(c => c.id === selectedOptionId);
-      console.log('🔍 Opción seleccionada por ID:', selectedOption ? selectedOption.description || 'Opción' : 'No encontrada');
-      
-      if (!selectedOption && effectiveSelectedOptionDesc) {
-        const selectedByDesc = shippingCombinations.find(
-          c => c.description && c.description.toLowerCase().includes(effectiveSelectedOptionDesc.toLowerCase())
-        );
-        console.log('🔍 Opción seleccionada por descripción:', selectedByDesc ? selectedByDesc.description : 'No encontrada');
-      }
+  // Función para manejar la selección de una opción
+  const handleOptionSelect = useCallback((option) => {
+    if (option) {
+      stableOnOptionSelect(option);
     }
-  }, [selectedOptionId, effectiveSelectedOptionDesc, shippingCombinations]);
+  }, [stableOnOptionSelect]);
   
-  // Manejar selección de opción
-  const handleOptionSelect = (option) => {
-    // Validar que la opción existe y sigue siendo válida
-    const isValidOption = shippingCombinations.some(opt => opt.id === option.id);
-    
-    if (!isValidOption) {
-      console.error('❌ Error: Se intentó seleccionar una opción de envío que ya no es válida:', option.id);
-      return;
-    }
-    
-    console.log(`✅ Seleccionada opción de envío: ${option.id} (${option.description || option.name || 'Opción'}) - $${option.totalPrice}`);
-    console.log(`🔄 Estado anterior selectedOptionId: ${selectedOptionId}`);
-    
-    // Pasar el objeto completo con toda la información disponible para facilitar la búsqueda
-    // cuando cambiamos entre direcciones
-    if (onOptionSelect) {
-      const description = option.description || option.name || 'Opción de envío';
-      onOptionSelect({
-        ...option,
-        // Asegurar que tenemos todos los campos críticos
-        id: option.id,
-        name: option.name || description,
-        description: description,
-        totalPrice: option.totalPrice || 0,
-        isAllFree: option.isAllFree || false,
-        // Información adicional para mejor integración
-        totalCost: option.totalPrice || option.calculatedCost || 0,
-        calculatedCost: option.calculatedCost || option.totalPrice || 0,
-        carrier: option.carrier,
-        deliveryTime: option.deliveryTime,
-        isFreeShipping: option.isAllFree,
-        ruleId: option.ruleId,
-        ruleName: option.ruleName || (option.id.includes('-') ? option.id.split('-')[0] : '')
-      });
-    } else {
-      console.error('❌ Error: onOptionSelect no está definido');
-    }
-  };
-  
-  // Generar texto detallado para una combinación
-  const generateDetailsText = (combination) => {
-    if (!combination || !combination.selections) return '';
-    
-    try {
-      // Para el formato actual que usa selections
-      if (combination.selections && Array.isArray(combination.selections)) {
-        return combination.selections.map(selection => 
-          `${selection.option?.name || 'Opción'}: ${selection.option?.isFreeShipping ? 'Gratis' : `$${(selection.option?.price || 0).toFixed(2)}`}`
-        ).join(' + ');
-      }
-      
-      // Para el formato anterior que usaba groups
-      if (combination.groups && Array.isArray(combination.groups)) {
-        return combination.groups.map(({ group, option }) => 
-          `${group?.ruleName || 'Grupo'}: ${option?.label || 'Opción'} - ${option?.isFreeShipping ? 'Gratis' : `$${(option?.totalCost || 0).toFixed(2)}`}`
-        ).join('\n');
-      }
-      
-      // Fallback
-      return combination.description || 'Opción de envío';
-    } catch (err) {
-      console.error('Error generando texto de detalle:', err);
-      return 'Opción de envío';
-    }
-  };
-  
-  // Si el carrito está vacío, no mostrar nada
-  if (!cartItems || cartItems.length === 0) {
-    return null;
-  }
-  
-  // Mientras se cargan los datos
-  if (status.loading) {
-    return (
-      <div className="text-center py-4">
-        <div className="spinner-border text-success" role="status" style={{ width: '2rem', height: '2rem', borderWidth: '0.2em' }}>
-          <span className="visually-hidden">Calculando opciones de envío...</span>
-        </div>
-        <div className="mt-2 text-muted">Calculando opciones de envío...</div>
-      </div>
-    );
-  }
-  
-  // Si hay error
-  if (status.error) {
-    return (
-      <div className="py-2">
-        <div className="alert alert-danger border-0 rounded-3 shipping-error-alert" role="alert">
-          <div className="d-flex">
-            <i className="bi bi-exclamation-circle me-3"></i>
-            <div>
-              <h6 className="alert-heading fw-semibold mb-1">No se pudieron calcular las opciones</h6>
-              <p className="mb-0 small">{status.error}</p>
-              {status.debug && (
-                <div className="mt-2">
-                  <button 
-                    className="btn btn-sm btn-outline-danger py-0 px-2" 
-                    type="button" 
-                    data-bs-toggle="collapse" 
-                    data-bs-target="#errorDebugInfo" 
-                    aria-expanded="false" 
-                    aria-controls="errorDebugInfo"
-                  >
-                    <i className="bi bi-code-slash small me-1"></i> Detalles técnicos
-                  </button>
-                  <div className="collapse mt-2" id="errorDebugInfo">
-                    <div className="bg-light rounded p-2">
-                      <pre className="mb-0 small text-danger debug-info">{JSON.stringify(status.debug, null, 2)}</pre>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Si no hay combinaciones disponibles
-  if (shippingCombinations.length === 0 || status.noOptions) {
-    return (
-      <div className="py-2">
-        <div className="alert alert-warning border-0 rounded-3 shipping-warning-alert" role="alert">
-          <div className="d-flex">
-            <i className="bi bi-exclamation-triangle me-3"></i>
-            <div>
-              <h6 className="alert-heading fw-semibold mb-1">No hay opciones disponibles</h6>
-              <p className="mb-0 small">No pudimos encontrar opciones de envío para tus productos.</p>
-              
-              {status.debug && (
-                <div className="mt-2">
-                  <button 
-                    className="btn btn-sm btn-outline-warning py-0 px-2" 
-                    type="button" 
-                    data-bs-toggle="collapse" 
-                    data-bs-target="#debugInfo" 
-                    aria-expanded="false" 
-                    aria-controls="debugInfo"
-                  >
-                    <i className="bi bi-code-slash small me-1"></i> Información técnica
-                  </button>
-                  <div className="collapse mt-2" id="debugInfo">
-                    <div className="bg-light rounded p-2">
-                      <pre className="mb-0 small debug-info">{JSON.stringify(status.debug, null, 2)}</pre>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <button 
-                className="btn btn-sm btn-success mt-2" 
-                onClick={() => window.location.reload()}
-              >
-                <i className="bi bi-arrow-repeat me-1"></i> Intentar de nuevo
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
+  // Renderizar componente
   return (
-    <div className="shipping-groups-container">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5 className="shipping-section-title mb-0">Opciones de envío</h5>
-        <span className="shipping-options-count">{shippingCombinations.length} opciones</span>
-      </div>
-      
-      {shippingCombinations.length > 1 && (
-        <div className="alert alert-light shipping-options-alert mb-3">
-          <div className="d-flex align-items-center">
-            <i className="bi bi-info-circle me-2"></i>
-            <div>
-              <p className="mb-0">
-                <small>
-                  Tenemos <strong>{shippingCombinations.length}</strong> opciones disponibles para tus productos
-                  {shippingGroups.length > 1 && (
-                    <span> en <strong>{shippingGroups.length}</strong> grupos para optimizar costos</span>
-                  )}.
-                </small>
-              </p>
-            </div>
-          </div>
+    <div className="shipping-group-selector">
+      {status.loading ? (
+        <div className="shipping-selector__loading">
+          <p>Calculando opciones de envío...</p>
         </div>
-      )}
-      
-      {/* Debug info for single option scenarios */}
-      {shippingCombinations.length === 1 && (
-        <div className="debug-info small text-muted mb-2">
-          Solo hay 1 opción de envío disponible para esta dirección.
+      ) : status.error ? (
+        <div className="shipping-selector__error">
+          <p>{status.error}</p>
         </div>
-      )}
-
-      <div className="shipping-options-table">
-        <table className="table">
-          <tbody>
-            {shippingCombinations.map((combination, index) => {
-              // Permitir coincidencia por ID o por descripción para manejar diferencias entre sistemas
-              const isMatchById = combination.id === selectedOptionId;
-              const isMatchByDescription = effectiveSelectedOptionDesc && 
-                                          combination.description && 
-                                          combination.description.toLowerCase().includes(effectiveSelectedOptionDesc.toLowerCase());
+      ) : shippingCombinations.length === 0 ? (
+        <div className="shipping-selector__no-options">
+          <p>No hay opciones de envío disponibles para tu dirección.</p>
+        </div>
+      ) : (
+        <div className="shipping-options-list">
+          {/* Mostrar todas las opciones o solo las 3 primeras */}
+          {(showAllOptions 
+            ? shippingCombinations 
+            : shippingCombinations.slice(0, 3)).map((option) => (
+            <div 
+              key={option.id}
+              className={`shipping-option ${selectedOptionId === option.id ? 'shipping-option--selected' : ''}`}
+              onClick={() => handleOptionSelect(option)}
+            >
+              <div className="shipping-option__radio">
+                <input 
+                  type="radio" 
+                  checked={selectedOptionId === option.id} 
+                  onChange={() => handleOptionSelect(option)}
+                />
+              </div>
               
-              // Una opción está seleccionada si coincide por ID o por descripción
-              const isSelected = isMatchById || isMatchByDescription;
-              
-              // Verificar si es gratuita
-              const isFreeShipping = combination.isAllFree;
-              
-              // Simplificar descripción eliminando montos redundantes
-              let description = combination.description || '';
-              if (description.includes('($')) {
-                description = description.replace(/\s*\(\$[^)]*\)/g, '');
-              }
-              
-              return (
-                <tr 
-                  key={`${combination.id}-${index}`}
-                  className={`${isSelected ? 'shipping-option-selected' : 'shipping-option-normal'}`}
-                  onClick={() => handleOptionSelect(combination)}
-                >
-                  <td className="text-center selection-indicator first-cell">
-                    <div className={`select-marker ${isSelected ? 'selected' : ''}`}>
-                      {isSelected && <i className="bi bi-check"></i>}
-                    </div>
-                  </td>
-                  <td className="shipping-option-info last-cell">
-                    {/* Nombre de la combinación */}
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className={`shipping-name ${isSelected ? 'fw-semibold' : ''}`}>
-                        {description}
-                        
-                        {combination.ruleName && (
-                          <span className="badge bg-light text-dark ms-2 small">
-                            {combination.ruleName}
-                          </span>
-                        )}
-                        
-                        {combination.selections && combination.selections.length > 1 && (
-                          <span className="shipping-group-count">
-                            {combination.selections.length} grupos
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="shipping-details d-flex align-items-center">
-                        <div className="shipping-delivery me-3">
-                          <i className="bi bi-clock-history me-1 small"></i>
-                          {combination.deliveryTime || 
-                            (combination.selections && Array.isArray(combination.selections) 
-                              ? (combination.selections.map(s => s.option?.estimatedDelivery || '').filter(Boolean).sort().pop() || '3-5 días')
-                              : '3-5 días'
-                            )
-                          }
-                        </div>
-                        
-                        <div className="shipping-price">
-                          {isFreeShipping ? (
-                            <span className="shipping-free">Gratis</span>
-                          ) : (
-                            <span>${(combination.totalPrice || 0).toFixed(2)}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Información sobre productos en esta opción */}
-                    <div className="mt-1 small text-muted">
-                      {combination.selections && combination.selections[0]?.products?.length > 0 && (
-                        <div>
-                          <i className="bi bi-box small me-1"></i>
-                          <span>
-                            {combination.selections[0].products.length === 1 
-                              ? "1 producto" 
-                              : `${combination.selections[0].products.length} productos`}
-                            {combination.selections[0].products.map(item => 
-                              (item.product?.name || item.name)
-                            ).join(", ").length < 50 && 
-                              `: ${combination.selections[0].products.map(item => 
-                                  (item.product?.name || item.name)
-                                ).join(", ")}`
-                            }
-                          </span>
-                        </div>
+              <div className="shipping-option__content">
+                <div className="shipping-option__header">
+                  <h4 className="shipping-option__title">
+                    {option.description || option.ruleName}
+                    {option.isRecommended && (
+                      <span style={{ 
+                        marginLeft: '8px', 
+                        backgroundColor: '#4CAF50', 
+                        color: 'white', 
+                        padding: '2px 6px', 
+                        borderRadius: '3px', 
+                        fontSize: '0.7rem' 
+                      }}>
+                        RECOMENDADO
+                      </span>
+                    )}
+                  </h4>
+                  <span className="shipping-option__price">
+                    {option.totalPrice === 0 ? 'Gratis' : `$${parseFloat(option.totalPrice).toFixed(2)}`}
+                  </span>
+                </div>
+                
+                <div className="shipping-option__details">
+                  <p className="shipping-option__carrier">
+                    {option.carrier}
+                  </p>
+                  <p className="shipping-option__delivery-time">
+                    {option.deliveryTime}
+                  </p>
+                  
+                  {/* Mostrar información de envío gratuito si aplica */}
+                  {option.totalPrice === 0 && option.option && option.option.freeReason && (
+                    <p className="shipping-option__free-reason">
+                      <span style={{ color: '#4CAF50', fontSize: '0.85rem' }}>
+                        <i className="bi bi-check-circle-fill" style={{ marginRight: '4px' }}></i>
+                        {option.option.freeReason}
+                      </span>
+                    </p>
+                  )}
+                  
+                  {/* Mostrar información de peso y productos si está disponible */}
+                  {option.selections && option.selections[0] && (
+                    <div className="shipping-option__metrics" style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                      {option.groupSubtotal && (
+                        <span style={{ marginRight: '10px' }}>
+                          Subtotal: ${option.groupSubtotal.toFixed(2)}
+                        </span>
+                      )}
+                      {option.productCount && (
+                        <span style={{ marginRight: '10px' }}>
+                          {option.productCount} {option.productCount === 1 ? 'producto' : 'productos'}
+                        </span>
+                      )}
+                      {option.totalWeight && (
+                        <span>
+                          Peso: {option.totalWeight.toFixed(2)}kg
+                        </span>
                       )}
                     </div>
-                    
-                    {/* Detalles de la combinación */}
-                    {isSelected && combination.selections && Array.isArray(combination.selections) && combination.selections.length > 0 && (
-                      <div className="shipping-option-details mt-2">
-                        {combination.isMixed ? (
-                          <div className="alert alert-light p-2 mb-0">
-                            <div className="mb-1 fw-medium">Detalle de envíos separados:</div>
-                            {combination.selections.map((selection, selIndex) => (
-                              <div key={`${selection.groupId || selIndex}-detail`} className="shipping-option-details-item mb-1">
-                                <div className="d-flex justify-content-between">
-                                  <div>
-                                    <i className="bi bi-box-seam me-1"></i>
-                                    <span className="fw-medium">{selIndex === 0 ? 'Envío Local' : 'Envío Nacional'}:</span> {selection.option?.name || 'Opción'}
-                                    <span className="ms-1 text-nowrap">
-                                      ({selection.option?.isFreeShipping ? 'Gratis' : `$${(selection.option?.price || 0).toFixed(2)}`})
-                                    </span>
-                                  </div>
-                                  <div className="text-muted">
-                                    {selection.products?.length || 0} producto(s)
-                                  </div>
-                                </div>
-                                <div className="ps-4 mt-1 mb-1 small text-muted">
-                                  <i className="bi bi-dot"></i>
-                                  Productos: {selection.products.map(item => 
-                                    (item.product?.name || item.name)
-                                  ).join(", ")}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          combination.selections.map((selection, selIndex) => (
-                            <div key={`${selection.groupId || selIndex}-detail`} className="shipping-option-details-item">
-                              <div className="d-flex justify-content-between">
-                                <div>
-                                  <i className="bi bi-box-seam me-1"></i>
-                                  <span className="fw-medium">Grupo {selIndex + 1}:</span> {selection.option?.name || 'Opción'}
-                                </div>
-                                <div className="text-muted">
-                                  {selection.products?.length || 0} productos
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  )}
+                  
+                  {/* Mostrar advertencia sobre límites excedidos si es necesario */}
+                  {(option.paidExceedsLimits || option.freeExceedsLimits) && (
+                    <p className="shipping-option__warning" style={{ color: '#FF9800', fontSize: '0.85rem', marginTop: '5px' }}>
+                      <i className="bi bi-exclamation-triangle-fill" style={{ marginRight: '4px' }}></i>
+                      {option.paidLimitMessage || option.freeLimitMessage || 'Puede requerir embalaje especial'}
+                    </p>
+                  )}
+                  
+                  {/* Mostrar lista de productos incluidos */}
+                  <ProductsList 
+                    products={option.selections[0]?.products} 
+                    isMixed={option.isMixed}
+                    freeProducts={option.freeProducts}
+                    paidProducts={option.paidProducts}
+                    isFreeGroup={option.isFreeGroup}
+                    freeGroupName={option.freeGroupName}
+                    paidGroupName={option.paidGroupName}
+                    // Pasar información adicional para grupos mixtos
+                    freeProductsCount={option.freeProductsCount}
+                    paidProductsCount={option.paidProductsCount}
+                    freeProductsWeight={option.freeProductsWeight}
+                    paidProductsWeight={option.paidProductsWeight}
+                    freeGroupSubtotal={option.freeGroupSubtotal}
+                    paidGroupSubtotal={option.paidGroupSubtotal}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          {/* Botón "Ver más opciones" si hay más de 3 opciones */}
+          {!showAllOptions && shippingCombinations.length > 3 && (
+            <div 
+              className="shipping-options-more"
+              style={{
+                textAlign: 'center',
+                padding: '10px',
+                marginTop: '10px'
+              }}
+            >
+              <button 
+                onClick={() => setShowAllOptions(true)}
+                style={{
+                  padding: '5px 15px',
+                  backgroundColor: '#f0f0f0',
+                  border: '1px solid #ddd',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Ver {shippingCombinations.length - 3} opciones más
+              </button>
+            </div>
+          )}
+          
+          {/* Botón "Ver menos opciones" si se están mostrando todas */}
+          {showAllOptions && shippingCombinations.length > 3 && (
+            <div 
+              className="shipping-options-less"
+              style={{
+                textAlign: 'center',
+                padding: '10px',
+                marginTop: '10px'
+              }}
+            >
+              <button 
+                onClick={() => setShowAllOptions(false)}
+                style={{
+                  padding: '5px 15px',
+                  backgroundColor: '#f0f0f0',
+                  border: '1px solid #ddd',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Ver menos opciones
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

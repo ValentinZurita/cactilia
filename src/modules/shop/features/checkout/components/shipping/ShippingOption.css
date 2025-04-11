@@ -1,0 +1,79 @@
+.shipping-option {
+  display: flex;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shipping-option:hover {
+  border-color: #ccc;
+  background-color: #f9f9f9;
+}
+
+.shipping-option--selected {
+  border-color: #4a90e2;
+  background-color: #f0f7ff;
+}
+
+.shipping-option--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+.shipping-option__radio {
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.shipping-option__content {
+  flex: 1;
+}
+
+.shipping-option__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.shipping-option__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.shipping-option__partial-badge {
+  font-size: 12px;
+  background-color: #f39c12;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.shipping-option__price {
+  font-weight: 600;
+  color: #333;
+}
+
+.shipping-option__details {
+  margin-bottom: 8px;
+}
+
+.shipping-option__carrier,
+.shipping-option__delivery-time {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.shipping-option__products {
+  font-size: 13px;
+  color: #888;
+} 

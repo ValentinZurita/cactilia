@@ -1,10 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { SectionTitle } from '../ui/SectionTitle';
-import ShippingGroupSelector from '../shipping/ShippingGroupSelector';
+import ShippingSelector from '../shipping/ShippingSelector';
 import { useCart } from '../../../cart/hooks/useCart';
-import { processCartForShipping } from '../../../cart/services/shippingGroupService';
-
 
 /**
  * Sección del checkout que muestra las opciones de envío disponibles
@@ -31,98 +29,91 @@ export const ShippingOptionsSection = ({
   error = null,
   onCombinationsCalculated
 }) => {
-  // Referencia para controlar logs
-  const loggedStatesRef = useRef({});
-  
-  // Obtener los items del carrito
+  // Obtener productos del carrito
   const { items: cartItems } = useCart();
   
-  // Determinar qué dirección usar
-  const userAddress = selectedAddressType === 'new' ? newAddressData : savedAddressData;
-  
-  // Log detallado para diagnóstico de dirección
+  // Verificar si los cartItems están disponibles
   useEffect(() => {
-    console.log('🏠 Dirección para opciones de envío:', {
-      tipo: selectedAddressType,
-      direccion: userAddress ? JSON.stringify(userAddress).substring(0, 200) : 'No disponible',
-      completa: !!userAddress,
-      tieneCP: userAddress?.zipcode || userAddress?.zip || 'No',
-      tieneCartItems: cartItems?.length || 0
-    });
-  }, [userAddress, selectedAddressType, cartItems]);
-  
-  // Log para diagnóstico más controlado
-  useEffect(() => {
-    // Crear una clave única basada en el estado actual
-    const stateKey = `${selectedOptionId}-${loading}-${addressSelected}-${selectedAddressType}`;
-    
-    // Solo loggear si es un estado nuevo que no hemos visto antes
-    if (!loggedStatesRef.current[stateKey]) {
-      // Solo casos importantes: inicio, cambio de opciones, selección
-      if (selectedOptionId || !loggedStatesRef.current.initialized) {
-        console.log('📦 Estado de opciones de envío:', {
-          seleccionada: selectedOptionId ? 'Sí' : 'No',
-          tipoDir: selectedAddressType,
-          direccionCompleta: addressSelected
-        });
-        
-        // Marcar este estado como ya registrado
-        loggedStatesRef.current[stateKey] = true;
-        loggedStatesRef.current.initialized = true;
-      }
+    if (!cartItems || cartItems.length === 0) {
+      console.warn('⚠️ No hay productos en el carrito en ShippingOptionsSection');
+    } else {
+      console.log(`✅ ShippingOptionsSection: ${cartItems.length} productos en carrito`);
     }
-  }, [selectedOptionId, loading, addressSelected, selectedAddressType]);
-
-  // Verificar si estamos en modo de dirección nueva y si está incompleta
-  const isNewAddressIncomplete = selectedAddressType === 'new' && (
-    !newAddressData || 
-    !newAddressData.street || 
-    !newAddressData.city || 
-    !newAddressData.state || 
-    !newAddressData.zip
-  );
-
-  // Si estamos en modo de dirección nueva incompleta, mostrar mensaje especial
-  if (isNewAddressIncomplete) {
+  }, [cartItems]);
+  
+  // Obtener la dirección apropiada según el tipo
+  const userAddress = selectedAddressType === 'saved' ? savedAddressData : newAddressData;
+  
+  // Log para depuración de dirección
+  useEffect(() => {
+    console.log('🏠 ShippingOptionsSection - Dirección para envío:', userAddress);
+    console.log('🏠 ShippingOptionsSection - Tipo de dirección:', selectedAddressType);
+    
+    if (!userAddress) {
+      console.warn('⚠️ No hay dirección seleccionada para cálculo de envíos');
+    } else if (!userAddress.zip && !userAddress.zipcode) {
+      console.warn('⚠️ La dirección no tiene código postal, puede afectar cálculo de envíos');
+    }
+  }, [userAddress, selectedAddressType]);
+  
+  // Referencia para controlar logs únicos
+  const loggedRef = useRef(false);
+  
+  // Log para depuración inicial
+  useEffect(() => {
+    if (!loggedRef.current) {
+      console.log('📦 Inicializando ShippingOptionsSection con:', { 
+        addressSelected, 
+        selectedAddressType,
+        hasUserAddress: !!userAddress,
+        zip: userAddress?.zip || userAddress?.zipcode || 'ninguno'
+      });
+      loggedRef.current = true;
+    }
+  }, [addressSelected, selectedAddressType, userAddress]);
+  
+  // Verificar mínimos necesarios
+  if (!addressSelected || !userAddress) {
     return (
       <div className="checkout-section mb-4">
         <SectionTitle
           number="2"
           title="Opciones de envío"
-          subtitle="Complete su dirección para ver opciones de envío"
+          subtitle="Por favor, seleccione una dirección de envío primero"
           icon="bi-truck"
         />
-        <div className="checkout-section-content p-4 bg-light rounded">
-          <div className="alert alert-info mb-0">
-            <i className="bi bi-info-circle me-2"></i>
-            Por favor, complete todos los campos obligatorios de la dirección para ver las opciones de envío disponibles.
+        <div className="checkout-section-content p-3 p-md-4 bg-white rounded border">
+          <div className="alert alert-warning">
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            Para calcular opciones de envío, primero debe seleccionar una dirección.
           </div>
         </div>
       </div>
     );
   }
-
-  // Si no hay dirección seleccionada (modo guardado), mostrar mensaje
-  if (selectedAddressType === 'saved' && !addressSelected) {
+  
+  // Verificar código postal
+  if (!userAddress.zip && !userAddress.zipcode) {
     return (
       <div className="checkout-section mb-4">
         <SectionTitle
           number="2"
           title="Opciones de envío"
-          subtitle="Selecciona una dirección primero para ver las opciones de envío disponibles"
+          subtitle="Se requiere código postal para calcular envío"
           icon="bi-truck"
         />
-        <div className="checkout-section-content p-4 bg-light rounded">
-          <div className="alert alert-info mb-0">
-            <i className="bi bi-info-circle me-2"></i>
-            Por favor, selecciona primero una dirección de envío para ver las opciones disponibles.
+        <div className="checkout-section-content p-3 p-md-4 bg-white rounded border">
+          <div className="alert alert-warning">
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            La dirección seleccionada no tiene un código postal válido.
+            Por favor, actualice la dirección o seleccione otra.
           </div>
         </div>
       </div>
     );
   }
-
-  // Si hay un error específico, mostrarlo
+  
+  // Mostrar error específico si existe
   if (error) {
     return (
       <div className="checkout-section mb-4">
@@ -132,16 +123,16 @@ export const ShippingOptionsSection = ({
           subtitle="Error al calcular opciones"
           icon="bi-truck"
         />
-        <div className="checkout-section-content p-4 bg-light rounded">
-          <div className="alert alert-warning mb-0">
-            <i className="bi bi-exclamation-triangle me-2"></i>
+        <div className="checkout-section-content p-3 p-md-4 bg-white rounded border">
+          <div className="alert alert-danger">
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
             {error}
           </div>
         </div>
       </div>
     );
   }
-
+  
   return (
     <div className="checkout-section mb-4">
       <SectionTitle
@@ -159,7 +150,7 @@ export const ShippingOptionsSection = ({
             <div className="text-muted">Calculando opciones de envío...</div>
           </div>
         ) : (
-          <ShippingGroupSelector
+          <ShippingSelector
             cartItems={cartItems}
             selectedOptionId={selectedOptionId}
             onOptionSelect={onOptionSelect}

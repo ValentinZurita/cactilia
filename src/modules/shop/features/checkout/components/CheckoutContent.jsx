@@ -181,6 +181,12 @@ export const CheckoutContent = () => {
 
     // Verificar si hay opción de envío seleccionada
     if (!selectedShippingOption) return true;
+    
+    // Verificar que la opción de envío cubra todos los productos
+    if (selectedShippingOption && selectedShippingOption.coversAllProducts === false) {
+      console.log('⚠️ Botón deshabilitado: La opción de envío no cubre todos los productos');
+      return true;
+    }
 
     // Verificar según el tipo de pago
     switch (checkout.selectedPaymentType) {
