@@ -31,6 +31,16 @@ export const AddressSelector = ({
                                   loading = false,
                                   onAddAddress
                                 }) => {
+  // Añadir log para verificar qué props recibimos                                
+  console.log('AddressSelector props:', {
+    addressesCount: addresses.length,
+    selectedAddressId,
+    selectedAddressType,
+    onAddressSelect: typeof onAddressSelect,
+    onNewAddressSelect: typeof onNewAddressSelect,
+    onNewAddressDataChange: typeof onNewAddressDataChange
+  });
+
   // Estado para mostrar el formulario de nueva dirección permanente
   const [showManageForm, setShowManageForm] = useState(false);
   const { uid } = useSelector(state => state.auth);
@@ -78,6 +88,26 @@ export const AddressSelector = ({
       alert('No se pudo guardar la dirección: ' + error.message);
     } finally {
       setSavingAddress(false);
+    }
+  };
+
+  // Maneja la selección de dirección guardada
+  const handleSavedAddressSelect = (addressId) => {
+    console.log('handleSavedAddressSelect llamado con:', addressId);
+    if (typeof onAddressSelect === 'function') {
+      onAddressSelect(addressId, 'saved');
+    } else {
+      console.error('onAddressSelect no es una función:', onAddressSelect);
+    }
+  };
+
+  // Maneja la selección de nueva dirección
+  const handleNewAddressSelect = () => {
+    console.log('handleNewAddressSelect llamado en AddressSelector');
+    if (typeof onNewAddressSelect === 'function') {
+      onNewAddressSelect();
+    } else {
+      console.error('onNewAddressSelect no es una función:', onNewAddressSelect);
     }
   };
 
@@ -169,18 +199,28 @@ export const AddressSelector = ({
 
       {/* Lista de direcciones existentes */}
       <div className="address-list">
-        {addresses.map(address => (
-          <AddressOption
-            key={address.id}
-            isSelected={selectedAddressId === address.id && selectedAddressType === 'saved'}
-            onSelect={() => onAddressSelect(address.id, 'saved')}
-            name={address.name}
-            description={formatAddress(address)}
-            references={address.references}
-            isDefault={address.isDefault}
-            id={`address-${address.id}`}
-          />
-        ))}
+        {addresses.map(address => {
+          console.log(`Dirección ${address.id} - onAddressSelect es:`, typeof onAddressSelect, onAddressSelect);
+          return (
+            <AddressOption
+              key={address.id}
+              isSelected={selectedAddressId === address.id && selectedAddressType === 'saved'}
+              onSelect={() => {
+                console.log("Llamando a onAddressSelect:", typeof onAddressSelect);
+                if (typeof onAddressSelect === 'function') {
+                  onAddressSelect(address.id, 'saved');
+                } else {
+                  console.error('Error: onAddressSelect no es una función', onAddressSelect);
+                }
+              }}
+              name={address.name}
+              description={formatAddress(address)}
+              references={address.references}
+              isDefault={address.isDefault}
+              id={`address-${address.id}`}
+            />
+          );
+        })}
       </div>
 
       {/* Acciones */}

@@ -385,7 +385,7 @@ export const CheckoutContent = () => {
           selectedAddressId={checkout.selectedAddressId}
           selectedAddressType={checkout.selectedAddressType}
           loadingAddresses={checkout.loadingAddresses}
-          handleAddressChange={checkout.handleAddressChange}
+          handleAddressSelect={checkout.handleAddressSelect}
           handleNewAddressSelect={checkout.handleNewAddressSelect}
           handleNewAddressDataChange={checkout.handleNewAddressDataChange}
 
@@ -401,7 +401,7 @@ export const CheckoutContent = () => {
           selectedPaymentId={checkout.selectedPaymentId}
           selectedPaymentType={checkout.selectedPaymentType}
           loadingPayments={checkout.loadingPayments}
-          handlePaymentChange={checkout.handlePaymentChange}
+          handlePaymentSelect={checkout.handlePaymentSelect}
           handleNewCardSelect={checkout.handleNewCardSelect}
           handleOxxoSelect={checkout.handleOxxoSelect}
           handleNewCardDataChange={checkout.handleNewCardDataChange}

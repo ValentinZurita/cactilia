@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { processCartForShipping } from '../../../cart/services/shippingGroupService';
+import { groupProductsByShippingRules, prepareShippingOptionsForCheckout } from '../../services/shippingGroupingService';
 import './ShippingGroupSelector.css';
 
 /**
@@ -87,6 +88,66 @@ const ShippingGroupSelector = ({
         
         console.log('📝 Productos formateados:', formattedCartItems.length);
         
+        // Método 1: Usar las funciones de shippingGroupingService
+        // Este método crea grupos por regla de envío y cada producto puede estar en múltiples grupos
+        const shippingGroups = await groupProductsByShippingRules(formattedCartItems);
+        console.log('📦 Grupos creados con groupProductsByShippingRules:', shippingGroups.length);
+        
+        const directOptions = await prepareShippingOptionsForCheckout(shippingGroups, userAddress?.id);
+        console.log('🚚 Opciones de envío calculadas directamente:', directOptions.totalOptions?.length);
+        
+        // Si tenemos opciones directas, usarlas
+        if (directOptions && directOptions.totalOptions && directOptions.totalOptions.length > 0) {
+          setShippingGroups(directOptions.groups || []);
+          
+          // Convertir las opciones directas al formato de combinaciones para mantener la compatibilidad
+          const directCombinations = directOptions.totalOptions.map(option => ({
+            id: option.id,
+            description: option.label,
+            totalPrice: option.totalCost,
+            isAllFree: option.isFreeShipping,
+            selections: [{
+              groupId: option.groups[0]?.id || 'default-group',
+              option: {
+                name: option.carrier,
+                price: option.totalCost,
+                estimatedDelivery: option.deliveryTime,
+                isFreeShipping: option.isFreeShipping
+              },
+              products: option.groups[0]?.items || []
+            }]
+          }));
+          
+          setShippingCombinations(directCombinations);
+          setStatus({ loading: false, error: null, noOptions: false });
+          
+          // Notificar al componente padre
+          if (onCombinationsCalculated && typeof onCombinationsCalculated === 'function') {
+            console.log('🔄 Notificando combinaciones calculadas:', directCombinations.length);
+            onCombinationsCalculated(directCombinations);
+          }
+          
+          // Seleccionar automáticamente la primera opción si no hay selección
+          if (!selectedOptionId && directCombinations.length > 0 && onOptionSelect && !initialSelectionMade.current) {
+            setTimeout(() => {
+              try {
+                const firstOption = directCombinations[0];
+                console.log('🔄 Seleccionando primera opción automáticamente:', firstOption.id);
+                
+                if (firstOption && firstOption.id) {
+                  initialSelectionMade.current = true;
+                  onOptionSelect(firstOption);
+                }
+              } catch (err) {
+                console.error('Error al seleccionar primera opción:', err);
+              }
+            }, 100);
+          }
+          
+          return;
+        }
+        
+        // Método 2: Respaldo - Usar processCartForShipping como estaba originalmente
         // Procesar los items del carrito
         const result = await processCartForShipping(formattedCartItems, userAddress);
         
@@ -371,6 +432,13 @@ const ShippingGroupSelector = ({
         </div>
       )}
       
+      {/* Debug info for single option scenarios */}
+      {shippingCombinations.length === 1 && (
+        <div className="debug-info small text-muted mb-2">
+          Solo hay 1 opción de envío disponible para esta dirección.
+        </div>
+      )}
+
       <div className="shipping-options-table">
         <table className="table">
           <tbody>
@@ -384,9 +452,6 @@ const ShippingGroupSelector = ({
               // Una opción está seleccionada si coincide por ID o por descripción
               const isSelected = isMatchById || isMatchByDescription;
               
-              // Log para debuggear
-              console.log(`Opción ${combination.id}: isSelected=${isSelected}, byId=${isMatchById}, byDesc=${isMatchByDescription}`);
-              
               // Verificar si es gratuita
               const isFreeShipping = combination.isAllFree;
               
@@ -398,7 +463,7 @@ const ShippingGroupSelector = ({
               
               return (
                 <tr 
-                  key={combination.id}
+                  key={`${combination.id}-${index}`}
                   className={`${isSelected ? 'shipping-option-selected' : 'shipping-option-normal'}`}
                   onClick={() => handleOptionSelect(combination)}
                 >

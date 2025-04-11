@@ -23,7 +23,7 @@ export const CheckoutForm = ({
                                selectedAddressId,
                                selectedAddressType,
                                loadingAddresses,
-                               handleAddressChange,
+                               handleAddressSelect,
                                handleNewAddressSelect,
                                handleNewAddressDataChange,
                                handleAddressAdded,
@@ -74,8 +74,27 @@ export const CheckoutForm = ({
         selectedAddressId={selectedAddressId}
         selectedAddressType={selectedAddressType}
         loading={loadingAddresses}
-        onAddressSelect={handleAddressChange}
-        onNewAddressSelect={handleNewAddressSelect}
+        onAddressSelect={(id, type) => {
+          console.log('onAddressSelect llamado en CheckoutForm con:', { 
+            id, 
+            type, 
+            handleAddressSelect: typeof handleAddressSelect,
+            handleAddressSelectValue: handleAddressSelect
+          });
+          if (typeof handleAddressSelect === 'function') {
+            handleAddressSelect(id, type);
+          } else {
+            console.error('handleAddressSelect no es una función en CheckoutForm:', handleAddressSelect);
+          }
+        }}
+        onNewAddressSelect={() => {
+          console.log('onNewAddressSelect llamado en CheckoutForm');
+          if (typeof handleAddressSelect === 'function') {
+            handleAddressSelect(null, 'new');
+          } else {
+            console.error('handleAddressSelect no es una función en CheckoutForm al seleccionar nueva dirección:', handleAddressSelect);
+          }
+        }}
         onNewAddressDataChange={handleNewAddressDataChange}
         onAddAddress={handleAddressAdded}
       />

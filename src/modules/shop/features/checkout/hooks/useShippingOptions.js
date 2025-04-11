@@ -245,29 +245,33 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
         const validGroups = shippingGroups.filter(group => {
           // Validar si la regla aplica para esta dirección
           const rule = group.rule;
-          const zipcodes = rule.zipcodes || [];
           
-          // 1. Verificar si hay coincidencia exacta con el CP
-          if (zipcodes.includes(postalCode)) {
-            console.log(`✅ Regla ${rule.zona} aplica por coincidencia exacta de CP: ${postalCode}`);
-            return true;
+          // Si la regla tiene configuración de códigos postales incluidos
+          if (rule.codigos_postales_incluidos && Array.isArray(rule.codigos_postales_incluidos)) {
+            // Verificar si el código postal del usuario está en la lista
+            const postalCodeMatch = rule.codigos_postales_incluidos.includes(postalCode);
+            console.log(`✅ Regla ${rule.zona}: Código postal ${postalCode} está ${postalCodeMatch ? 'incluido' : 'no incluido'} en la lista`);
+            
+            if (postalCodeMatch) {
+              return true;
+            }
           }
           
-          // 2. Verificar si la regla incluye el estado
-          if (state && zipcodes.some(zip => zip.toLowerCase() === state.toLowerCase())) {
-            console.log(`✅ Regla ${rule.zona} aplica por coincidencia de estado: ${state}`);
-            return true;
-          }
-          
-          // 3. Verificar si la regla es nacional (incluye 'nacional', 'todos', 'all' o '*')
-          const nationalKeywords = ['nacional', 'todos', 'all', '*'];
-          if (zipcodes.some(zip => nationalKeywords.includes(zip.toLowerCase()))) {
+          // Si la regla es "Nacional", aplica a todos los códigos postales
+          if (rule.zona === "Nacional" || rule.es_nacional === true) {
             console.log(`✅ Regla ${rule.zona} aplica porque es nacional`);
             return true;
           }
           
+          // Si llegamos aquí, verificar si hay otras condiciones que puedan aplicar
+          // Por ejemplo, si no hay restricciones de código postal en la regla
+          if (!rule.codigos_postales_incluidos || rule.codigos_postales_incluidos.length === 0) {
+            console.log(`✅ Regla ${rule.zona} aplica porque no tiene restricciones de código postal`);
+            return true;
+          }
+          
           // Si llegamos aquí, la regla no aplica para esta dirección
-          console.log(`❌ Regla ${rule.zona} NO aplica para CP: ${postalCode}, Estado: ${state}`);
+          console.log(`❌ Regla ${rule.zona} NO aplica para CP: ${postalCode}`);
           return false;
         });
         
@@ -426,8 +430,8 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
           setSelectedOption(cheapestOption);
         }
       }
-    } else if (options.length === 0 || loading) {
-      // Reset the ref when options change or are loading
+    } else if ((options.length === 0 || loading) && shippingUpdateRef.current) {
+      // Resetear la referencia si no hay opciones o se está cargando
       shippingUpdateRef.current = null;
     }
   }, [options, selectedOption, loading]);
