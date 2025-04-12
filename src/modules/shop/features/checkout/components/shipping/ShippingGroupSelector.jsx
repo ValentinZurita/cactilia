@@ -575,8 +575,8 @@ const ShippingGroupSelector = ({
           <div className="shipping-option-price">
             {!isFree ? 
               <span>${(option.packages && option.packages.length > 0 ? 
-                option.packages.reduce((total, pkg) => total + (pkg.price || option.price), 0) : 
-                option.price).toFixed(2)}</span> : 
+                option.packages.reduce((total, pkg) => total + (pkg.price || option.price || 0), 0) : 
+                (option.price || option.totalCost || option.calculatedCost || 0)).toFixed(2)}</span> : 
               <span className="text-success">Gratis</span>
             }
           </div>
@@ -673,6 +673,8 @@ const ShippingGroupSelector = ({
                             packageCount: option.packages?.length || 1
                           });
                           
+                          // Asegurar que displayPrice nunca es undefined
+                          const displayPrice = pkg.isFree ? 0 : (pkg.price || option.price || option.totalCost || option.calculatedCost || 0);
                           return pkg.isFree ? 'Gratis' : `$${displayPrice.toFixed(2)}`;
                         })()}
                       </span>
@@ -684,7 +686,7 @@ const ShippingGroupSelector = ({
                     ) : (
                       <div className="package-details">
                         <span>{displayProductCount} productos</span>
-                        <span>{displayWeight.toFixed(2)} kg</span>
+                        <span>{(displayWeight || 0).toFixed(2)} kg</span>
                       </div>
                     )}
                   </div>

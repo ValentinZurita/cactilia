@@ -3,6 +3,22 @@ import { fetchShippingRuleById } from '../../../../admin/shipping/api/shippingAp
 import { groupProductsIntoPackages, calculateTotalShippingCost } from '../../../../checkout/utils/shippingCalculator';
 
 /**
+ * Calcula el total de un grupo de productos
+ * @param {Array} items - Items del carrito en el grupo
+ * @returns {number} - Total del grupo
+ */
+const calculateGroupTotal = (items) => {
+  if (!items || items.length === 0) return 0;
+  
+  return items.reduce((total, item) => {
+    const product = item.product || item;
+    const price = parseFloat(product.price || 0);
+    const quantity = parseInt(item.quantity || 1, 10);
+    return total + (price * quantity);
+  }, 0);
+};
+
+/**
  * Hook para gestionar las opciones de envío en el checkout
  * Obtiene las reglas de envío desde Firestore y calcula las opciones disponibles
  * @param {Array} cartItems - Ítems del carrito
@@ -117,6 +133,7 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
         const processedRules = new Map(); // Map para evitar duplicados
         const allRules = []; // Para almacenar todas las reglas de envío
         const excluded = []; // Para almacenar productos sin reglas de envío
+        const nationalRuleId = "fyfkhfITejBjMASFCMZ2"; // ID de la regla nacional
         
         // Recorrer cada item y procesarlo
         for (const item of cartItems) {
@@ -132,6 +149,9 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
             excluded.push({...product, quantity: item.quantity});
             continue;
           }
+          
+          // Verificar si el producto tiene asignada específicamente la regla nacional
+          const hasNationalRule = ruleIds.includes(nationalRuleId);
           
           // Procesar todas las reglas disponibles
           for (const ruleId of ruleIds) {
@@ -247,164 +267,193 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
           const rule = group.rule;
           const zipcodes = rule.zipcodes || [];
           
+          // Mostrar información de la regla para diagnóstico
+          console.log(`⚠️ Validando regla: ${rule.id}`, {
+            zona: rule.zona,
+            zipcodes: zipcodes.slice(0, 5), // Mostrar solo los primeros 5 para no saturar la consola
+            totalZipcodes: zipcodes.length,
+            userState: state,
+            userZip: postalCode,
+            ruleId: rule.id
+          });
+          
+          // Verificar si la regla es la nacional y conservarla solo si está asignada específicamente
+          if (rule.id === nationalRuleId) {
+            // Si es la regla nacional específica, permitirla siempre
+            console.log('📍 Regla nacional específica aplicada (ID explícito)');
+            return true;
+          }
+          
           // 1. Verificar si hay coincidencia exacta con el CP
           if (zipcodes.includes(postalCode)) {
-            console.log(`✅ Regla ${rule.zona} aplica por coincidencia exacta de CP: ${postalCode}`);
+            console.log(`📍 Match exacto de CP ${postalCode} para regla ${rule.id}`);
             return true;
           }
           
-          // 2. Verificar si la regla incluye el estado o coincide con la zona
-          if (state) {
-            if (zipcodes.some(zip => zip.toLowerCase() === state.toLowerCase())) {
-              console.log(`✅ Regla ${rule.zona} aplica por coincidencia de estado en zipcodes: ${state}`);
-              return true;
-            }
+          // 2. Verificar si la regla incluye el término "nacional"
+          const isNationalRule = 
+            zipcodes.some(z => z && z.toLowerCase() === 'nacional') || 
+            (rule.zipcode && rule.zipcode.toLowerCase() === 'nacional') ||
+            (rule.zona && rule.zona.toLowerCase() === 'nacional');
+          
+          // Si es regla nacional, permitirla
+          if (isNationalRule) {
+            console.log('📍 Regla nacional aplicada');
+            return true;
+          }
+          
+          // 3. Verificar coincidencia por estado (más casos de coincidencia)
+          // Primero verificar en campo estados si existe
+          const stateMatches = rule.estados && Array.isArray(rule.estados) && 
+            rule.estados.some(ruleState => 
+              ruleState && state && ruleState.toLowerCase() === state.toLowerCase()
+            );
+          
+          if (stateMatches) {
+            console.log(`📍 Match de estado ${state} para regla ${rule.id}`);
+            return true;
+          }
+
+          // También verificar si el estado coincide con la zona (para compatibilidad con formatos antiguos)
+          if (rule.zona && state && rule.zona.toLowerCase().includes(state.toLowerCase())) {
+            console.log(`📍 Match de estado con zona: ${state} incluido en zona ${rule.zona}`);
+            return true;
+          }
+          
+          // También verificar si la zona está incluida en el estado (caso inverso)
+          if (rule.zona && state && state.toLowerCase().includes(rule.zona.toLowerCase())) {
+            console.log(`📍 Match de zona incluida en estado: ${rule.zona} incluido en ${state}`);
+            return true;
+          }
+          
+          // También verificar si el estado está incluido en los zipcodes como una opción
+          if (state && zipcodes.some(zip => zip && zip.toLowerCase() === state.toLowerCase())) {
+            console.log(`📍 Match de estado incluido en zipcodes: ${state}`);
+            return true;
+          }
+          
+          // 4. Verificar coincidencia por primera sección del código postal (primeros 2 dígitos)
+          if (postalCode && postalCode.length >= 2) {
+            const postalPrefix = postalCode.substring(0, 2);
+            const prefixMatches = zipcodes.some(zip => 
+              zip && zip.length >= 2 && zip.substring(0, 2) === postalPrefix
+            );
             
-            // Verificar si la zona coincide exactamente con el estado
-            if (rule.zona && rule.zona.toLowerCase() === state.toLowerCase()) {
-              console.log(`✅ Regla ${rule.zona} coincide con estado: ${state}`);
+            if (prefixMatches) {
+              console.log(`📍 Match de prefijo postal ${postalPrefix} para regla ${rule.id}`);
               return true;
             }
           }
           
-          // 3. Verificar si la regla es nacional (incluye 'nacional', 'todos', 'all' o '*')
-          const nationalKeywords = ['nacional', 'todos', 'all', '*'];
-          if (zipcodes.some(zip => nationalKeywords.includes(zip.toLowerCase()))) {
-            console.log(`✅ Regla ${rule.zona} aplica porque es nacional`);
-            return true;
+          // 5. Verificar si la regla incluye rangos de códigos postales
+          const hasPostalRanges = rule.rangosCP && Array.isArray(rule.rangosCP) && rule.rangosCP.length > 0;
+          
+          if (hasPostalRanges && postalCode) {
+            const numericPostal = parseInt(postalCode, 10);
+            
+            if (!isNaN(numericPostal)) {
+              const rangeMatch = rule.rangosCP.some(range => {
+                const min = parseInt(range.min, 10);
+                const max = parseInt(range.max, 10);
+                
+                return !isNaN(min) && !isNaN(max) && 
+                  numericPostal >= min && numericPostal <= max;
+              });
+              
+              if (rangeMatch) {
+                console.log(`📍 Match de rango postal para CP ${postalCode} en regla ${rule.id}`);
+                return true;
+              }
+            }
           }
           
           // Si llegamos aquí, la regla no aplica para esta dirección
-          console.log(`❌ Regla ${rule.zona} NO aplica para CP: ${postalCode}, Estado: ${state}`);
+          console.log(`❌ No hay match para CP ${postalCode} con regla ${rule.id}`);
           return false;
         });
         
-        // Actualizar los grupos de envío con solo los grupos válidos
+        // Si no hay grupos válidos después de filtrar, mostrar mensaje
         if (validGroups.length === 0) {
-          console.warn('No hay reglas de envío aplicables para esta dirección');
+          console.warn('⚠️ No hay grupos de envío disponibles para la dirección seleccionada');
           setError('No hay opciones de envío disponibles para tu dirección');
           setOptions([]);
           setLoading(false);
           return;
         }
         
-        // Verificar qué productos están cubiertos y cuáles no
-        const coveredProductIds = new Set();
-        validGroups.forEach(group => {
-          group.items.forEach(item => {
-            const productId = (item.product || item).id;
-            coveredProductIds.add(productId);
-          });
-        });
+        console.log(`📦 Grupos de envío válidos para CP ${postalCode}: ${validGroups.length}`);
         
-        // Identificar productos no cubiertos por ninguna regla válida
-        const uncoveredProducts = cartItems.filter(item => {
-          const productId = (item.product || item).id;
-          return !coveredProductIds.has(productId);
-        });
-        
-        if (uncoveredProducts.length > 0) {
-          console.warn(`⚠️ ${uncoveredProducts.length} productos no tienen opciones de envío a esta dirección:`, 
-            uncoveredProducts.map(p => (p.product || p).name || (p.product || p).id));
-          setError(`${uncoveredProducts.length} productos no pueden ser enviados a esta dirección. Por favor, revisa tu pedido.`);
-          
-          // Agregar productos no cubiertos a la lista de excluidos
-          setExcludedProducts([...excluded, ...uncoveredProducts]);
-          setOptions([]);
-          setLoading(false);
-          return;
-        }
-        
-        console.log(`✅ ${validGroups.length} de ${shippingGroups.length} grupos aplican para esta dirección`);
-        
-        // 2. Para cada grupo VÁLIDO, calcular opciones de envío
+        // Crear opciones de envío a partir de los grupos válidos
         const allOptions = [];
         
+        // Recorrer cada grupo válido y generar opciones
         for (const group of validGroups) {
-          // Calcular peso y cantidad total del grupo
-          let totalWeight = 0;
-          let totalQuantity = 0;
+          // Verificar si es una regla nacional
+          const rule = group.rule;
+          const isNationalRule = rule.id === nationalRuleId || 
+            (rule.zipcodes && rule.zipcodes.some(z => z && z.toLowerCase() === 'nacional')) || 
+            (rule.zipcode && rule.zipcode.toLowerCase() === 'nacional');
           
-          for (const item of group.items) {
-            const product = item.product || item;
-            const weight = parseFloat(product.weight || 1);
-            const quantity = parseInt(item.quantity || 1);
+          // Para reglas nacionales, verificar que el producto tenga esta regla específicamente asignada
+          if (isNationalRule) {
+            // Solo crear opciones para grupos que tienen asignada esta regla específicamente
+            console.log(`🌎 Aplicando regla nacional para grupo: ${group.id}`);
+          }
+          
+          // Obtener opciones del grupo
+          const opciones = rule.opciones_mensajeria || [];
+          
+          if (opciones.length === 0) {
+            console.warn(`⚠️ Grupo ${group.id} no tiene opciones de mensajería configuradas`);
+            continue;
+          }
+          
+          // Recorrer cada opción del grupo
+          opciones.forEach(opcion => {
+            // Verificar si la opción es válida
+            if (!opcion || !opcion.precio) return;
             
-            totalWeight += weight * quantity;
-            totalQuantity += quantity;
-          }
-          
-          group.totalWeight = totalWeight;
-          group.totalQuantity = totalQuantity;
-          
-          // Procesar cada método de envío de la regla
-          if (group.rule.opciones_mensajeria && Array.isArray(group.rule.opciones_mensajeria)) {
-            for (const [methodIndex, method] of group.rule.opciones_mensajeria.entries()) {
-              // Extraer datos del método
-              const methodId = `${group.rule.id}-${method.nombre?.replace(/\s+/g, '-')?.toLowerCase() || 'method'}-${methodIndex}`;
-              const methodPrice = parseFloat(method.precio || 0);
-              
-              // Extraer configuración de paquetes
-              const configPaquetes = method.configuracion_paquetes || {};
-              const maxWeight = parseFloat(configPaquetes.peso_maximo_paquete || 20);
-              const extraWeightCost = parseFloat(configPaquetes.costo_por_kg_extra || 10);
-              const maxItems = parseInt(configPaquetes.maximo_productos_por_paquete || 10);
-              
-              // Configurar opción de envío
-              const shippingOption = {
-                id: methodId,
-                ruleId: group.rule.id,
-                ruleName: group.rule.zona || 'Envío',
-                carrier: method.nombre || 'Servicio',
-                label: method.label || method.nombre || 'Envío',
-                price: methodPrice,
-                tiempo_entrega: method.tiempo_entrega || '3-5 días',
-                minDays: parseInt(method.minDays || 3),
-                maxDays: parseInt(method.maxDays || 5),
-                maxPackageWeight: maxWeight,
-                extraWeightCost: extraWeightCost,
-                maxProductsPerPackage: maxItems
-              };
-              
-              // Calcular paquetes necesarios
-              const packages = groupProductsIntoPackages(group.items, shippingOption);
-              
-              // Calcular costo total
-              const totalCost = calculateTotalShippingCost(packages, shippingOption);
-              
-              // Verificar envío gratuito (si aplica)
-              const subtotal = group.items.reduce((sum, item) => {
-                const price = parseFloat((item.product || item).price || 0);
-                const quantity = parseInt(item.quantity || 1);
-                return sum + (price * quantity);
-              }, 0);
-              
-              const isFreeShipping = 
-                group.rule.envio_gratis || 
-                (group.rule.envio_gratis_monto_minimo && subtotal >= parseFloat(group.rule.envio_gratis_monto_minimo));
-              
-              // Añadir opción a la lista
-              allOptions.push({
-                ...shippingOption,
-                calculatedCost: isFreeShipping ? 0 : totalCost,
-                totalCost: isFreeShipping ? 0 : totalCost,
-                packages,
-                isFreeShipping,
-                details: `${method.tiempo_entrega || '3-5 días'} (${isFreeShipping ? 'Gratis' : `$${totalCost.toFixed(2)}`})`,
-                groupInfo: {
-                  id: group.id,
-                  items: group.items,
-                  totalWeight,
-                  totalQuantity
-                }
-              });
+            // Crear datos de opción
+            const optionId = `${group.id}-${opcion.nombre || 'default'}`;
+            
+            // Calcular si el envío es gratis según condiciones
+            const isFreeShipping = rule.envio_gratis === true || 
+              (rule.envio_gratis_monto_minimo && 
+               parseInt(rule.envio_gratis_monto_minimo) > 0 && 
+               calculateGroupTotal(group.items) >= parseInt(rule.envio_gratis_monto_minimo));
+            
+            // Calcular costo total del grupo
+            const groupTotal = calculateGroupTotal(group.items);
+            
+            // Crear objeto de opción
+            const option = {
+              id: optionId,
+              groupId: group.id,
+              label: `${rule.zona || 'Envío'} - ${opcion.nombre || 'Estándar'}`,
+              carrier: opcion.nombre || 'Mensajería',
+              minDays: opcion.minDays || 1,
+              maxDays: opcion.maxDays || 5,
+              calculatedCost: isFreeShipping ? 0 : parseFloat(opcion.precio || 0),
+              totalCost: isFreeShipping ? 0 : parseFloat(opcion.precio || 0),
+              price: isFreeShipping ? 0 : parseFloat(opcion.precio || 0),
+              isFreeShipping,
+              tiempoEntrega: opcion.tiempo_entrega || `${opcion.minDays || 1}-${opcion.maxDays || 5} días`,
+              details: rule.zona ? `Envío a ${rule.zona}` : 'Opción de envío',
+              isNationalRule
+            };
+            
+            // Si el envío es gratuito, modificar la etiqueta
+            if (isFreeShipping) {
+              option.label = `${option.label} (Gratis)`;
             }
-          }
+            
+            allOptions.push(option);
+          });
         }
         
         // Si no hay opciones disponibles después de todo el proceso
         if (allOptions.length === 0) {
-          setError('No hay opciones de envío disponibles para tu dirección');
+          setError('Los productos en tu carrito no tienen opciones de envío disponibles para tu dirección. Por favor, contacta a servicio al cliente o selecciona otra dirección de entrega.');
           setOptions([]);
           setLoading(false);
           return;
@@ -495,12 +544,16 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
     }
     
     return combinations.map(combination => {
+      // Obtener el precio para asegurar que siempre exista
+      const optionPrice = combination.totalPrice || 0;
+      
       // Crear formato estándar para cada combinación
       return {
         id: combination.id,
         label: combination.description || 'Opción de envío',
-        totalCost: combination.totalPrice || 0,
-        calculatedCost: combination.totalPrice || 0,
+        totalCost: optionPrice,
+        calculatedCost: optionPrice,
+        price: optionPrice, // Añadir campo price para compatibilidad
         isFreeShipping: combination.isAllFree || false,
         selections: combination.selections || [],
         carrier: (combination.selections && combination.selections.length > 1) 
@@ -648,6 +701,7 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
             label: option.description || option.name || 'Opción de envío seleccionada',
             totalCost: option.totalPrice || option.totalCost || option.calculatedCost || 0,
             calculatedCost: option.totalPrice || option.totalCost || option.calculatedCost || 0,
+            price: option.totalPrice || option.totalCost || option.calculatedCost || option.price || 0,
             isFreeShipping: option.isAllFree || option.isFreeShipping || false,
             selections: option.selections || [],
             carrier: option.carrier || 'Servicio de envío',
@@ -665,6 +719,7 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
               label: option.description || option.name || 'Opción de envío',
               totalCost: option.totalPrice || option.totalCost || 0,
               calculatedCost: option.calculatedCost || option.totalCost || 0,
+              price: option.totalPrice || option.totalCost || option.calculatedCost || option.price || 0,
               isFreeShipping: option.isAllFree || option.isFreeShipping || false,
               carrier: option.carrier || 'Servicio de envío'
             };
@@ -692,6 +747,7 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
         label: matchingCombination.description || 'Opción de envío',
         totalCost: matchingCombination.totalPrice || 0,
         calculatedCost: matchingCombination.totalPrice || 0,
+        price: matchingCombination.totalPrice || 0,
         isFreeShipping: matchingCombination.isAllFree,
         selections: matchingCombination.selections || [],
         carrier: 'Combinado',
@@ -716,6 +772,7 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
           label: selectedCombination.description || 'Opción de envío',
           totalCost: selectedCombination.totalPrice || 0,
           calculatedCost: selectedCombination.totalPrice || 0,
+          price: selectedCombination.totalPrice || 0,
           isFreeShipping: selectedCombination.isAllFree,
           selections: selectedCombination.selections || [],
           // Añadir campos necesarios para el resto del sistema
