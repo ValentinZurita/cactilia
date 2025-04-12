@@ -73,19 +73,11 @@ class ShippingService {
    * @returns {Array} - Opciones de envío de respaldo
    */
   createFallbackOption(cartItems) {
-    return [{
-      id: `fallback-${Date.now()}`,
-      name: 'Envío Especial',
-      carrier: 'Servicio Integral',
-      description: 'Envío especial para todos tus productos',
-      type: 'nacional',
-      minDays: 5,
-      maxDays: 10,
-      price: 950,
-      productIds: cartItems.map(item => item.id || item.product?.id),
-      coversAllProducts: true,
-      isFallback: true
-    }];
+    // En lugar de crear una opción de envío hardcodeada,
+    // retornar un array vacío para que el sistema maneje
+    // correctamente la falta de opciones de envío
+    console.warn('⚠️ No se encontraron opciones de envío válidas para estos productos');
+    return [];
   }
   
   /**

@@ -253,10 +253,18 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
             return true;
           }
           
-          // 2. Verificar si la regla incluye el estado
-          if (state && zipcodes.some(zip => zip.toLowerCase() === state.toLowerCase())) {
-            console.log(`✅ Regla ${rule.zona} aplica por coincidencia de estado: ${state}`);
-            return true;
+          // 2. Verificar si la regla incluye el estado o coincide con la zona
+          if (state) {
+            if (zipcodes.some(zip => zip.toLowerCase() === state.toLowerCase())) {
+              console.log(`✅ Regla ${rule.zona} aplica por coincidencia de estado en zipcodes: ${state}`);
+              return true;
+            }
+            
+            // Verificar si la zona coincide exactamente con el estado
+            if (rule.zona && rule.zona.toLowerCase() === state.toLowerCase()) {
+              console.log(`✅ Regla ${rule.zona} coincide con estado: ${state}`);
+              return true;
+            }
           }
           
           // 3. Verificar si la regla es nacional (incluye 'nacional', 'todos', 'all' o '*')
@@ -275,6 +283,33 @@ export const useShippingOptions = (cartItems, selectedAddressId, newAddressData,
         if (validGroups.length === 0) {
           console.warn('No hay reglas de envío aplicables para esta dirección');
           setError('No hay opciones de envío disponibles para tu dirección');
+          setOptions([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Verificar qué productos están cubiertos y cuáles no
+        const coveredProductIds = new Set();
+        validGroups.forEach(group => {
+          group.items.forEach(item => {
+            const productId = (item.product || item).id;
+            coveredProductIds.add(productId);
+          });
+        });
+        
+        // Identificar productos no cubiertos por ninguna regla válida
+        const uncoveredProducts = cartItems.filter(item => {
+          const productId = (item.product || item).id;
+          return !coveredProductIds.has(productId);
+        });
+        
+        if (uncoveredProducts.length > 0) {
+          console.warn(`⚠️ ${uncoveredProducts.length} productos no tienen opciones de envío a esta dirección:`, 
+            uncoveredProducts.map(p => (p.product || p).name || (p.product || p).id));
+          setError(`${uncoveredProducts.length} productos no pueden ser enviados a esta dirección. Por favor, revisa tu pedido.`);
+          
+          // Agregar productos no cubiertos a la lista de excluidos
+          setExcludedProducts([...excluded, ...uncoveredProducts]);
           setOptions([]);
           setLoading(false);
           return;

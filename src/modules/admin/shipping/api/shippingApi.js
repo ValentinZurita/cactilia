@@ -109,64 +109,10 @@ export const fetchShippingRuleById = async (ruleId) => {
         console.log(`Regla ${ruleId} tiene ${data.opciones_mensajeria.length} opciones en envio_variable`);
       }
       
-      // Si no hay opciones válidas, crear predeterminadas
+      // Si no hay opciones válidas, devolver null en lugar de crear predeterminadas
       if (!hasValidOptions) {
-        console.warn(`⚠️ Regla ${ruleId} no tiene opciones de mensajería, creando predeterminadas`);
-        
-        // Crear opciones predeterminadas
-        if (data.zona?.toLowerCase().includes('nacional')) {
-          // Opciones nacionales
-          data.opciones_mensajeria = [
-            {
-              nombre: "Correos de México",
-              label: "Básico",
-              precio: "200",
-              tiempo_entrega: "3-10 días",
-              configuracion_paquetes: {
-                peso_maximo_paquete: 20,
-                costo_por_kg_extra: 10,
-                maximo_productos_por_paquete: 10
-              }
-            },
-            {
-              nombre: "Correos de México",
-              label: "Express",
-              precio: "350",
-              tiempo_entrega: "1-3 días",
-              configuracion_paquetes: {
-                peso_maximo_paquete: 20,
-                costo_por_kg_extra: 15,
-                maximo_productos_por_paquete: 10
-              }
-            }
-          ];
-        } else {
-          // Opciones locales
-          data.opciones_mensajeria = [{
-            nombre: "Entrega local",
-            label: "Estándar",
-            precio: data.envio_gratis ? "0" : "50",
-            tiempo_entrega: "1-2 días",
-            configuracion_paquetes: {
-              peso_maximo_paquete: 20,
-              costo_por_kg_extra: 10,
-              maximo_productos_por_paquete: 10
-            }
-          }];
-        }
-        
-        // Si no existía envio_variable, crearlo
-        if (!data.envio_variable) {
-          data.envio_variable = {
-            aplica: true,
-            opciones_mensajeria: [...data.opciones_mensajeria]
-          };
-        }
-        // Si existe pero no tiene opciones_mensajeria
-        else if (!data.envio_variable.opciones_mensajeria || !Array.isArray(data.envio_variable.opciones_mensajeria)) {
-          data.envio_variable.aplica = true;
-          data.envio_variable.opciones_mensajeria = [...data.opciones_mensajeria];
-        }
+        console.warn(`⚠️ Regla ${ruleId} no tiene opciones de mensajería válidas`);
+        return null; // Devolver null para que el sistema excluya el producto en lugar de usar valores predeterminados
       }
       
       // 2. Asegurar que cada opción tenga configuración de paquetes

@@ -107,13 +107,14 @@ export const CheckoutContent = () => {
   useEffect(() => {
     if (selectedShippingOption && updateShipping) {
       // Verificar si el costo de envío ya fue actualizado con este valor
-      const shippingCost = selectedShippingOption.totalCost || selectedShippingOption.calculatedCost || 0;
+      const shippingCost = parseFloat(selectedShippingOption.totalCost || selectedShippingOption.calculatedCost || 0);
       
       // Solo actualizar si el costo cambió realmente
       if (shippingUpdateRef.current !== shippingCost) {
-        console.log(`💸 Costo de envío actualizado a $${shippingCost}`);
+        console.log(`💸 Costo de envío actualizado a $${shippingCost.toFixed(2)}`);
         shippingUpdateRef.current = shippingCost;
-        updateShipping(shippingCost);
+        // Asegurarse de que se pasa un número válido
+        updateShipping(isNaN(shippingCost) ? 0 : shippingCost);
       }
     }
   }, [selectedShippingOption, updateShipping]);
@@ -278,114 +279,7 @@ export const CheckoutContent = () => {
 
   return (
     <div className="container checkout-page my-5">
-      {/* Alerta de Diagnóstico */}
-      <div className="alert alert-danger mb-4 p-4 text-center">
-        <h3 className="mb-3">PANEL DE DIAGNÓSTICO</h3>
-        <p>Este panel aparece para diagnosticar problemas con el checkout</p>
-        <hr/>
-        <div className="row">
-          <div className="col-md-6 text-start">
-            <h5 className="mb-2">Información de envío:</h5>
-            <ul className="list-unstyled">
-              <li><strong>Direcciones disponibles:</strong> {checkout.addresses ? checkout.addresses.length : 0}</li>
-              <li><strong>Dirección seleccionada:</strong> {checkout.selectedAddressId || 'Ninguna'}</li>
-              <li><strong>Métodos de pago:</strong> {checkout.paymentMethods ? checkout.paymentMethods.length : 0}</li>
-              <li><strong>Opciones de envío:</strong> {shippingOptions ? shippingOptions.length : 0}</li>
-              <li><strong>Opción de envío seleccionada:</strong> {selectedShippingOption ? selectedShippingOption.label : 'Ninguna'}</li>
-            </ul>
-          </div>
-          <div className="col-md-6 text-start">
-            <h5 className="mb-2">Información del carrito:</h5>
-            <ul className="list-unstyled">
-              <li><strong>Productos en carrito:</strong> {cartItems ? cartItems.length : 0}</li>
-              <li><strong>Subtotal:</strong> ${cartSubtotal?.toFixed(2) || '0.00'}</li>
-              <li><strong>Envío:</strong> ${cartShipping?.toFixed(2) || '0.00'}</li>
-              <li><strong>Total:</strong> ${cartTotal?.toFixed(2) || '0.00'}</li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-3">
-          <button 
-            className="btn btn-warning"
-            onClick={() => {
-              console.warn('DATOS COMPLETOS PARA DEBUGGING:', {
-                cart: {
-                  items: cartItems,
-                  subtotal: cartSubtotal,
-                  taxes: cartTaxes,
-                  shipping: cartShipping,
-                  total: cartTotal,
-                  shippingGroups: calculatedShippingGroups,
-                  shippingRules: calculatedShippingRules,
-                  shippingOptions: shippingOptions,
-                  selectedOption: selectedShippingOption
-                },
-                checkout: {
-                  addresses: checkout.addresses,
-                  selectedAddressId: checkout.selectedAddressId,
-                  paymentMethods: checkout.paymentMethods,
-                  selectedPaymentId: checkout.selectedPaymentId
-                }
-              });
-              alert('Datos de diagnóstico enviados a la consola');
-            }}
-          >
-            Mostrar Datos en Consola
-          </button>
-        </div>
-      </div>
-
-      {/* Añadir componente de debug bajo el panel de alerta */}
-      <CheckoutDebugInfo 
-        cartInfo={{
-          items: cartItems,
-          itemsCount: cartItems?.reduce((total, item) => total + item.quantity, 0) || 0,
-          subtotal: cartSubtotal,
-          taxes: cartTaxes,
-          shipping: cartShipping,
-          finalTotal: cartTotal,
-          isFreeShipping,
-          hasStockIssues,
-          shippingDetails: shippingDetails || {},
-          shippingGroups: calculatedShippingGroups || [],
-          shippingRules: calculatedShippingRules || [],
-          isLoadingShipping,
-          shippingOptions: shippingOptions || [],
-          selectedShippingOption: selectedShippingOption,
-          excludedProducts: excludedProducts || []
-        }}
-        checkoutInfo={{
-          addresses: checkout.addresses,
-          selectedAddressId: checkout.selectedAddressId,
-          selectedAddressType: checkout.selectedAddressType,
-          paymentMethods: checkout.paymentMethods,
-          selectedPaymentId: checkout.selectedPaymentId,
-          selectedPaymentType: checkout.selectedPaymentType,
-          step: checkout.step,
-          error: checkout.error
-        }}
-      />
-
-      {/* Panel de diagnóstico (solo en desarrollo) */}
-      {isDevelopment && (
-        <CheckoutDebugInfo 
-          cart={{
-            items: cartItems,
-            itemsCount: cartItems?.reduce((total, item) => total + item.quantity, 0) || 0,
-            subtotal: cartSubtotal,
-            taxes: cartTaxes,
-            shipping: cartShipping,
-            finalTotal: cartTotal,
-            isFreeShipping
-          }}
-          shippingDetails={shippingDetails}
-          shippingGroups={calculatedShippingGroups}
-          shippingRules={calculatedShippingRules}
-          shippingOptions={shippingOptions}
-          selectedShippingOption={selectedShippingOption}
-          excludedProducts={excludedProducts}
-        />
-      )}
+      {/* The diagnostic panel and debug components have been removed */}
 
       <h1 className="checkout-title mb-4">Finalizar Compra</h1>
 

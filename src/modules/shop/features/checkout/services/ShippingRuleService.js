@@ -105,6 +105,12 @@ export const isPostalCodeValidForRule = (rule, postalCode, userState) => {
     return true;
   }
 
+  // Verificar exactamente por estado
+  if (userState && rule.zona && rule.zona.toLowerCase() === userState.toLowerCase()) {
+    console.log(`✅ Regla ${rule.id} con zona '${rule.zona}' coincide con estado '${userState}': VÁLIDO`);
+    return true;
+  }
+
   // Verificar códigos postales específicos si están definidos
   if (rule.codigos_postales && Array.isArray(rule.codigos_postales) && rule.codigos_postales.length > 0) {
     const isValid = rule.codigos_postales.includes(postalCode);

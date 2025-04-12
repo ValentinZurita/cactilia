@@ -81,13 +81,13 @@ export const CheckoutSummary = ({
           {isFreeShipping ? (
             <span className="text-success">Gratis</span>
           ) : (
-            <span>{formatPrice(shipping)}</span>
+            <span>{shipping === 0 ? 'Pendiente' : formatPrice(Number(shipping))}</span>
           )}
         </div>
 
         <div className="d-flex justify-content-between">
           <span className="fw-bold">Total:</span>
-          <span className="fw-bold fs-5 text-green-1">{formatPrice(total)}</span>
+          <span className="fw-bold fs-5 text-green-1">{formatPrice(Number(total))}</span>
         </div>
 
       </div>

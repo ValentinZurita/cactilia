@@ -363,29 +363,10 @@ const calculateShippingOptionsForGroup = (group, productDetails, ruleDetails) =>
     }
   });
   
-  // Si después de todo no hay opciones, crear una predeterminada
+  // Si después de todo no hay opciones, devolver array vacío (sin opción predeterminada)
   if (shippingOptions.length === 0) {
-    console.warn(`⚠️ No se encontraron opciones de envío para el grupo. Creando opción predeterminada.`);
-    
-    const defaultOption = {
-      optionId: uuidv4(),
-      ruleId: rules[0],
-      name: "Envío Estándar",
-      price: 200,
-      originalPrice: 200,
-      estimatedDelivery: "3-5 días",
-      isFreeShipping: false,
-      zoneName: 'No especificada',
-      details: {
-        nombre: "Envío Estándar",
-        label: "Estándar",
-        precio: "200",
-        tiempo_entrega: "3-5 días"
-      },
-      rule: ruleDetails[rules[0]] || {}
-    };
-    
-    shippingOptions.push(defaultOption);
+    console.warn(`⚠️ No se encontraron opciones de envío para el grupo. Saltando este grupo.`);
+    return [];
   }
   
   console.log(`✅ Total de opciones para el grupo: ${shippingOptions.length}`);

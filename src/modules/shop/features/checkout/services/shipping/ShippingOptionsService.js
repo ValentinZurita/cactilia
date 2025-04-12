@@ -80,20 +80,8 @@ export const getShippingOptions = async (cartItems, userAddress, precalculatedOp
     if (!result.success) {
       console.error('Error finding shipping options:', result.error);
       
-      // Create a fallback option if needed
-      if (result.error && result.error.includes('cannot be shipped')) {
-        return [{
-          id: 'fallback-option',
-          name: 'Envío Especial',
-          description: 'Algunos productos no tienen opciones de envío a tu dirección',
-          price: 950,
-          carrier: 'Servicio especial',
-          minDays: 5,
-          maxDays: 10,
-          isFallback: true
-        }];
-      }
-      
+      // No crear opciones de fallback - devolver array vacío para que la UI
+      // muestre un mensaje apropiado al usuario
       return [];
     }
     
@@ -102,17 +90,8 @@ export const getShippingOptions = async (cartItems, userAddress, precalculatedOp
   } catch (error) {
     console.error('Error in getShippingOptions:', error);
     
-    // Return a fallback option in case of error
-    return [{
-      id: 'error-fallback',
-      name: 'Envío Especial',
-      description: 'Error al calcular opciones de envío',
-      price: 950,
-      carrier: 'Servicio especial',
-      minDays: 5, 
-      maxDays: 10,
-      isFallback: true
-    }];
+    // No devolver fallback - devolver array vacío
+    return [];
   }
 };
 

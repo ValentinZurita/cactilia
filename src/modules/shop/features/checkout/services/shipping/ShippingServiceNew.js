@@ -422,38 +422,11 @@ class ShippingService {
    * @returns {Array} - Opciones de envío de respaldo
    */
   createFallbackOption(cartItems) {
-    // Calcular peso total para mostrar en opción de respaldo
-    const totalWeight = cartItems.reduce((sum, item) => {
-      const product = item.product || item;
-      const weight = parseFloat(product.weight || product.peso || 0);
-      const quantity = parseInt(item.quantity || 1);
-      return sum + (weight * quantity);
-    }, 0);
-    
-    return [{
-      id: `fallback-${Date.now()}`,
-      name: 'Envío Especial',
-      carrier: 'Servicio Integral',
-      description: 'Envío especial para todos tus productos',
-      type: 'nacional',
-      minDays: 5,
-      maxDays: 10,
-      price: 950,
-      productIds: cartItems.map(item => item.id || item.product?.id),
-      coversAllProducts: true,
-      isFallback: true,
-      totalWeight: totalWeight,
-      products: cartItems,
-      // Crear un único paquete con todos los productos
-      packages: [{
-        id: `pkg-fallback-${Date.now()}`,
-        name: 'Paquete único',
-        price: 950,
-        products: cartItems,
-        productCount: cartItems.length,
-        packageWeight: totalWeight
-      }]
-    }];
+    // En lugar de crear una opción de envío hardcodeada,
+    // retornar un array vacío para que el sistema maneje
+    // correctamente la falta de opciones de envío
+    console.warn('⚠️ No se encontraron opciones de envío válidas para estos productos');
+    return [];
   }
   
   /**

@@ -10,14 +10,25 @@
  * @returns {string} - Precio formateado
  */
 export const formatPrice = (price, locale = 'es-MX', currency = 'MXN') => {
-  if (typeof price !== 'number' || isNaN(price)) return '';
-
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(price);
+  // Validación más estricta para asegurar que sea un número válido
+  if (price === null || price === undefined || isNaN(parseFloat(price))) {
+    return '$0.00';
+  }
+  
+  // Convertir a número para asegurar que sea un valor numérico
+  const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+  
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(numericPrice);
+  } catch (error) {
+    console.error('Error al formatear precio:', error);
+    return `$${numericPrice.toFixed(2)}`;
+  }
 };
 
 /**

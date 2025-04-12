@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
  * Hook ultra simplificado para cálculos del carrito
  */
 export const useCartTotals = (items) => {
-  const [manualShippingCost, setManualShippingCost] = useState(200); // $200 por defecto (opción más barata)
+  const [manualShippingCost, setManualShippingCost] = useState(0); // Iniciar en 0 en lugar de un valor predeterminado
   
   // Función para actualizar manualmente el costo de envío
   const updateShipping = useCallback((cost) => {
