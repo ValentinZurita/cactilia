@@ -1,90 +1,47 @@
-# Shipping Services Architecture
+# Servicios de Shipping Centralizados
 
-This directory contains the refactored shipping calculation system for the e-commerce platform. The architecture has been redesigned to be modular, maintainable, and efficient.
+Esta carpeta contiene todos los servicios relacionados con opciones de envío, cálculos y procesamiento de reglas de envío. 
 
-## Overview
+## Estructura
 
-The shipping system is responsible for calculating available shipping options based on the user's cart contents and address. It supports:
+- **ShippingService.js**: Servicio principal para todas las funcionalidades de envío.
+- **ShippingZonesService.js**: Gestión de zonas de envío y cobertura geográfica.
+- **RuleService.js**: Servicio para manejar reglas de envío y agrupar productos.
+- **CombinationService.js**: Manejo de combinaciones óptimas de envío para pedidos complejos.
+- **ShippingGroupingService.js**: Agrupación de productos por reglas de envío comunes.
+- **ShippingOptionsService.js**: Manejo de opciones de envío disponibles.
+- **ShippingRulesEngine.js**: Motor para aplicación de reglas de envío.
+- **ShippingRulesGreedy.js**: Algoritmo greedy para optimización de envíos.
+- **mockData.js**: Datos de prueba para development.
 
-- Dynamic loading of shipping zones from Firebase
-- Complex rule-based shipping calculations
-- Optimal combinations of shipping options to cover all products
-- Free shipping rules based on subtotal or product type
-- Mixed shipping options (combining local and national shipping)
+## Centralización
 
-## Services
+Todos los servicios relacionados con shipping han sido centralizados en esta carpeta. Cualquier función o servicio relacionado con envíos debe colocarse aquí. 
 
-The system is divided into several specialized services:
+## Uso
 
-### 1. ShippingService.js
+Para importar estos servicios:
 
-The main entry point and coordinator for all shipping functionality. It handles:
-- Loading shipping options for a cart and address
-- Error handling and response standardization
-- Orchestration of the other services
+```js
+// Importar funciones específicas
+import { getShippingOptions, allProductsCovered } from '../services/shipping';
 
-### 2. ShippingZonesService.js
-
-Responsible for interacting with Firebase to fetch shipping zones:
-- Loading active shipping zones from Firestore
-- Filtering zones by postal code
-- Calculating shipping prices based on zone rules
-
-### 3. RuleService.js
-
-Handles product grouping and rule application:
-- Grouping products by applicable shipping rules
-- Validating postal codes against rule criteria
-- Checking if all products are covered by selected options
-
-### 4. CombinationService.js
-
-Builds optimal shipping combinations:
-- Maps products to compatible shipping zones
-- Finds zone combinations that cover all products
-- Assigns products to zones in optimal ways
-- Builds final shipping combinations with pricing
-
-## Components
-
-The UI components have been simplified:
-
-- `ShippingGroupSelector.jsx` - Main component for displaying shipping options
-- `ShippingSelector.jsx` - Adapter component that handles selection state
-- `ShippingOption.jsx` - Individual shipping option display
-
-## Usage
-
-```jsx
-import shippingService from '../services/shipping';
-
-// Get shipping options
-const { combinations, isLoading, error } = await shippingService.getShippingOptions(
-  cartItems,
-  userAddress
-);
-
-// Display shipping options
-return (
-  <ShippingSelector
-    cartItems={cartItems}
-    userAddress={userAddress}
-    onOptionSelect={handleShippingSelection}
-  />
-);
+// Importar un servicio completo
+import { ShippingZonesService } from '../services/shipping';
 ```
 
-## Error Handling
+## Consideraciones para desarrollo
 
-The system provides detailed error messages and fallbacks:
-- When no shipping zones match the postal code
-- When no valid combinations can be found
-- When shipping rules are missing or incomplete
+1. **Evitar duplicación**: No crear funciones/servicios relacionados con shipping fuera de esta carpeta.
+2. **Mantener ordenado**: Cada archivo debe tener responsabilidades claras y específicas.
+3. **Documentación**: Documentar las funciones públicas con JSDoc.
+4. **Compatibilidad**: Al hacer cambios, asegurar que los componentes existentes siguen funcionando.
 
-## Future Improvements
+## Servicios migrados
 
-Potential areas for enhancement:
-- Caching of shipping calculations for performance
-- More granular error reporting
-- Support for international shipping with customs
-- Integration with real-time carrier rate APIs 
+Los siguientes archivos han sido migrados a esta carpeta centralizada:
+
+- `shippingGroupingService.js` (anteriormente en la raíz de services)
+- `ShippingZonesService.js` (anteriormente en la raíz de services)
+
+Si encuentras referencias a estos archivos en su ubicación antigua, deberían actualizarse para usar esta ubicación centralizada. 

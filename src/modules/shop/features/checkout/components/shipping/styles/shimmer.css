@@ -1,0 +1,100 @@
+/**
+ * Estilos para el efecto shimmer en los componentes de carga
+ */
+
+/* Variables para personalizar el efecto shimmer */
+:root {
+  --shimmer-base-color: #e0e0e0;
+  --shimmer-shine-color: #f5f5f5;
+  --shimmer-animation-duration: 1.5s;
+}
+
+/* Efecto shimmer base */
+.shimmer-effect {
+  position: relative;
+  background-color: var(--shimmer-base-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Crear el brillo que se anima a través del elemento */
+.shimmer-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--shimmer-shine-color),
+    transparent
+  );
+  animation: shimmer var(--shimmer-animation-duration) infinite linear;
+}
+
+/* Contenedor para múltiples elementos shimmer */
+.shimmer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Animación para el efecto shimmer */
+@keyframes shimmer {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+/* Estilos específicos para shimmer en opciones de envío */
+.shipping-options-shimmer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+/* Estilos para shimmer en cards y otros contenedores */
+.shimmer-card {
+  border-radius: 8px;
+  height: 100px;
+}
+
+.shimmer-title {
+  height: 1.25rem;
+  width: 70%;
+  margin-bottom: 0.5rem;
+}
+
+.shimmer-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.shimmer-text.short {
+  width: 30%;
+}
+
+.shimmer-text.medium {
+  width: 50%;
+}
+
+.shimmer-text.long {
+  width: 80%;
+}
+
+/* Shimmer con diferentes formas y tamaños */
+.shimmer-circle {
+  border-radius: 50%;
+}
+
+.shimmer-button {
+  height: 2.5rem;
+  border-radius: 4px;
+} 

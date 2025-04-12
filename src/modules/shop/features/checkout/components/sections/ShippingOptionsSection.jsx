@@ -1,9 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import { SectionTitle } from '../ui/SectionTitle';
-import ShippingSelector from '../shipping/ShippingSelector';
 import { useCart } from '../../../cart/hooks/useCart';
-import { allProductsCovered } from '../../services/shipping/RuleService';
+import { allProductsCovered } from '../../services/shipping';
+import { EmptyState } from '../ui/EmptyState';
+import Spinner from '../common/Spinner';
+
+// Lazy load del componente pesado
+const ShippingSelector = lazy(() => import('../shipping/ShippingSelector'));
 
 /**
  * Sección del checkout que muestra las opciones de envío disponibles
@@ -42,16 +46,13 @@ export const ShippingOptionsSection = ({
   // Verificar si los cartItems están disponibles
   useEffect(() => {
     if (!cartItems || cartItems.length === 0) {
-      console.warn('⚠️ No hay productos en el carrito en ShippingOptionsSection');
-    } else {
-      console.log(`✅ ShippingOptionsSection: ${cartItems.length} productos en carrito`);
+      // No hay productos en el carrito
     }
   }, [cartItems]);
 
   // Verificar si hay opciones de envío disponibles
   useEffect(() => {
     if (shippingOptions && shippingOptions.length > 0) {
-      console.log(`✅ ShippingOptionsSection: ${shippingOptions.length} opciones de envío disponibles`);
       setNoValidOptionsError(null);
     }
   }, [shippingOptions]);
@@ -82,15 +83,10 @@ export const ShippingOptionsSection = ({
     
     // Imprimir información sobre los productos cubiertos
     if (!covered) {
-      console.warn('⚠️ La opción no cubre todos los productos:', 
-        option.productIds || option.covered_products || 'No se especificaron productos');
+      // La opción no cubre todos los productos
     }
     
     setShippingCoversAllProducts(covered);
-    
-    console.log(`📦 ShippingOptionsSection: Opción seleccionada ${option.id || option.optionId}`);
-    console.log(`📦 ¿Cubre todos los productos?: ${covered ? 'SÍ' : 'NO'}`);
-    console.log(`💲 Precio de envío: $${option.price?.toFixed(2) || '0.00'}, Es gratis: ${option.price === 0 ? 'SÍ' : 'NO'}`);
     
     // Enriquecemos la información de la opción para mejor manejo en el checkout
     const enrichedOption = {
@@ -122,34 +118,6 @@ export const ShippingOptionsSection = ({
   
   // Obtener la dirección apropiada según el tipo
   const userAddress = selectedAddressType === 'saved' ? savedAddressData : newAddressData;
-  
-  // Log para depuración de dirección
-  useEffect(() => {
-    console.log('🏠 ShippingOptionsSection - Dirección para envío:', userAddress);
-    console.log('🏠 ShippingOptionsSection - Tipo de dirección:', selectedAddressType);
-    
-    if (!userAddress) {
-      console.warn('⚠️ No hay dirección seleccionada para cálculo de envíos');
-    } else if (!userAddress.zip && !userAddress.zipcode) {
-      console.warn('⚠️ La dirección no tiene código postal, puede afectar cálculo de envíos');
-    }
-  }, [userAddress, selectedAddressType]);
-  
-  // Referencia para controlar logs únicos
-  const loggedRef = useRef(false);
-  
-  // Log para depuración inicial
-  useEffect(() => {
-    if (!loggedRef.current) {
-      console.log('📦 Inicializando ShippingOptionsSection con:', { 
-        addressSelected, 
-        selectedAddressType,
-        hasUserAddress: !!userAddress,
-        zip: userAddress?.zip || userAddress?.zipcode || 'ninguno'
-      });
-      loggedRef.current = true;
-    }
-  }, [addressSelected, selectedAddressType, userAddress]);
   
   // Verificar mínimos necesarios
   if (!addressSelected || !userAddress) {
@@ -235,23 +203,33 @@ export const ShippingOptionsSection = ({
         icon="bi-truck"
       />
       <div className="checkout-section-content p-3 p-md-4 bg-white rounded border">
-        {loading ? (
-          <div className="d-flex flex-column align-items-center justify-content-center py-4">
-            <div className="spinner-border text-success mb-3" role="status" style={{ width: '2rem', height: '2rem', borderWidth: '0.2em' }}>
+        {!userAddress ? (
+          <EmptyState 
+            icon="bi-geo-alt"
+            title="Sin dirección seleccionada"
+            message="Selecciona una dirección para ver opciones de envío" 
+          />
+        ) : loading ? (
+          <div className="d-flex flex-column align-items-center py-4">
+            <div className="spinner-border text-primary mb-3" role="status" style={{ width: '2rem', height: '2rem', borderWidth: '0.2em' }}>
               <span className="visually-hidden">Cargando opciones de envío...</span>
             </div>
             <div className="text-muted">Calculando opciones de envío...</div>
           </div>
         ) : (
           <>
-            <ShippingSelector
-              cartItems={cartItems}
-              selectedOptionId={selectedOptionId}
-              onOptionSelect={handleOptionSelect}
-              userAddress={userAddress}
-              onCombinationsCalculated={handleCombinationsCalculated}
-              shippingOptions={shippingOptions}
-            />
+            <Suspense fallback={<Spinner />}>
+              <ShippingSelector
+                cartItems={cartItems}
+                selectedOptionId={selectedOptionId}
+                onOptionSelect={handleOptionSelect}
+                userAddress={userAddress}
+                onCombinationsCalculated={handleCombinationsCalculated}
+                shippingOptions={shippingOptions}
+                isLoading={loading}
+                error={error}
+              />
+            </Suspense>
             
             {selectedOption && !shippingCoversAllProducts && (
               <div className="alert alert-danger mt-3">

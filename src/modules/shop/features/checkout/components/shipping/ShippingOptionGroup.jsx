@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import ShippingOption from './ShippingOption';
-import './ShippingOptionGroup.css';
+import './styles/shipping.css';
 
 /**
  * Componente que agrupa opciones de envío bajo una misma regla
@@ -90,6 +91,14 @@ const ShippingOptionGroup = ({
       ))}
     </div>
   );
+};
+
+ShippingOptionGroup.propTypes = {
+  options: PropTypes.array.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  selectedOptionId: PropTypes.string,
+  disabled: PropTypes.bool,
+  selectedProducts: PropTypes.array
 };
 
 export default ShippingOptionGroup; 

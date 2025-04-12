@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import '../../styles/shippingSelector.css';
+import './styles/shipping.css';
 
 /**
  * Componente para seleccionar opciones de envío en el checkout

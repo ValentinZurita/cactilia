@@ -1,144 +1,106 @@
 /**
  * ShippingService - Servicio para gestionar opciones de envío
  * 
- * Este servicio es un reemplazo simplificado del ShippingService original
- * que implementa solo las funciones necesarias para el checkout.
+ * Este servicio proporciona la funcionalidad principal para calcular y obtener
+ * opciones de envío basadas en el carrito y la dirección del usuario.
  */
 
-import { getShippingOptions as getOptions } from './ShippingServiceNew';
-import { getActiveShippingZones, getShippingZonesForPostalCode } from './ShippingZonesService';
-import { findBestShippingOptions } from './ShippingRulesEngine';
+import { getActiveShippingZones } from './ShippingZonesService';
+import { findBestShippingOptions } from './ShippingRulesGreedy';
 
 /**
- * Main ShippingService to coordinate shipping functionality
+ * Obtiene todas las opciones de envío disponibles para un carrito y una dirección
+ * @param {Array} cartItems - Items del carrito con información de productos
+ * @param {Object} addressInfo - Información de la dirección del usuario
+ * @returns {Promise<Array>} - Array de opciones de envío
  */
-class ShippingService {
-  /**
-   * Get all available shipping options for a cart and address
-   * @param {Array} cartItems - Cart items with product information
-   * @param {Object} addressInfo - User's address information
-   * @returns {Promise<Array>} - Array of shipping options organized for display
-   */
-  async getShippingOptions(cartItems, addressInfo) {
-    try {
-      if (!cartItems?.length) {
-        console.log('⚠️ No cart items provided');
-        return [];
-      }
-
-      // Normalize address format
-      let postalCode = addressInfo?.postalCode || addressInfo?.zip || addressInfo?.zipcode || '';
-      if (!postalCode) {
-        console.log('⚠️ No postal code provided in address:', addressInfo);
-        throw new Error('Se requiere un código postal para calcular opciones de envío');
-      }
-
-      // Normalizar código postal
-      postalCode = postalCode.toString().trim().replace(/[-\s]/g, '');
-      
-      const normalizedAddress = {
-        ...addressInfo,
-        postalCode,
-        state: addressInfo?.state || addressInfo?.provincia || addressInfo?.estado || '',
-        city: addressInfo?.city || addressInfo?.ciudad || addressInfo?.localidad || '',
-        zip: postalCode
-      };
-
-      // Obtener reglas de envío activas
-      const shippingRules = await getActiveShippingZones();
-      
-      if (!shippingRules || shippingRules.length === 0) {
-        console.warn('⚠️ No se encontraron reglas de envío activas');
-        return this.createFallbackOption(cartItems);
-      }
-      
-      // Usar el motor de reglas de envío para encontrar las mejores opciones
-      const result = await findBestShippingOptions(cartItems, normalizedAddress, shippingRules);
-      
-      if (!result.success || !result.options || result.options.length === 0) {
-        console.warn('⚠️ No se encontraron opciones de envío válidas');
-        return this.createFallbackOption(cartItems);
-      }
-      
-      return result.options;
-    } catch (error) {
-      console.error('Error getting shipping options:', error);
-      return this.createFallbackOption(cartItems);
+export const getShippingOptions = async (cartItems, addressInfo) => {
+  try {
+    // Validaciones básicas
+    if (!cartItems?.length) {
+      console.log('⚠️ No se proporcionaron productos en el carrito');
+      return [];
     }
-  }
-  
-  /**
-   * Crea una opción de envío de respaldo para casos de error
-   * @param {Array} cartItems - Productos en el carrito
-   * @returns {Array} - Opciones de envío de respaldo
-   */
-  createFallbackOption(cartItems) {
-    // En lugar de crear una opción de envío hardcodeada,
-    // retornar un array vacío para que el sistema maneje
-    // correctamente la falta de opciones de envío
-    console.warn('⚠️ No se encontraron opciones de envío válidas para estos productos');
+
+    // Normalizar formato de dirección
+    let postalCode = addressInfo?.postalCode || addressInfo?.zip || addressInfo?.zipcode || '';
+    if (!postalCode) {
+      console.log('⚠️ No se proporcionó código postal en la dirección:', addressInfo);
+      throw new Error('Se requiere un código postal para calcular opciones de envío');
+    }
+
+    // Normalizar código postal
+    postalCode = postalCode.toString().trim().replace(/[-\s]/g, '');
+    
+    const normalizedAddress = {
+      ...addressInfo,
+      postalCode,
+      state: addressInfo?.state || addressInfo?.provincia || addressInfo?.estado || '',
+      city: addressInfo?.city || addressInfo?.ciudad || addressInfo?.localidad || '',
+      zip: postalCode
+    };
+
+    // Obtener reglas de envío activas desde Firebase
+    const shippingRules = await getActiveShippingZones();
+    
+    if (!shippingRules || shippingRules.length === 0) {
+      console.warn('⚠️ No se encontraron reglas de envío activas');
+      return [];
+    }
+    
+    // Usar los valores exactos de los productos
+    const normalizedCartItems = cartItems.map(item => {
+      const product = item.product || item;
+      return {
+        ...item,
+        product: {
+          ...product,
+          weight: parseFloat(product.weight || product.peso || 0)
+        }
+      };
+    });
+    
+    // Log de información para diagnóstico
+    console.log(`📦 Calculando opciones de envío para ${normalizedCartItems.length} productos`);
+    console.log(`📍 Dirección de envío: CP ${normalizedAddress.postalCode}, ${normalizedAddress.state}`);
+    
+    // Utilizar el algoritmo Greedy para encontrar las mejores opciones
+    const result = await findBestShippingOptions(normalizedCartItems, normalizedAddress, shippingRules);
+    
+    // Verificar resultado
+    if (!result?.success) {
+      console.warn(`⚠️ Error en cálculo de envío: ${result?.error || 'Error desconocido'}`);
+      return [];
+    }
+    
+    // Obtener y retornar opciones de envío
+    const options = result.options || [];
+    
+    if (options.length > 0) {
+      console.log(`✅ Se encontraron ${options.length} opciones de envío válidas`);
+    } else {
+      console.warn('⚠️ No se encontraron opciones de envío válidas');
+    }
+    
+    return options;
+  } catch (error) {
+    console.error('❌ Error al obtener opciones de envío:', error);
     return [];
   }
-  
-  /**
-   * Extract minimum days from delivery time string
-   * @param {string} deliveryTime - Delivery time string (e.g., "3-5 días")
-   * @returns {number} - Minimum days
-   */
-  extractMinDays(deliveryTime) {
-    if (!deliveryTime) return 3; // default
-    
-    const match = deliveryTime.match(/(\d+)[-–](\d+)/);
-    if (match) {
-      return parseInt(match[1]);
-    }
-    
-    const singleMatch = deliveryTime.match(/(\d+)/);
-    if (singleMatch) {
-      return parseInt(singleMatch[1]);
-    }
-    
-    return 3; // default
-  }
-  
-  /**
-   * Extract maximum days from delivery time string
-   * @param {string} deliveryTime - Delivery time string (e.g., "3-5 días")
-   * @returns {number} - Maximum days
-   */
-  extractMaxDays(deliveryTime) {
-    if (!deliveryTime) return 7; // default
-    
-    const match = deliveryTime.match(/(\d+)[-–](\d+)/);
-    if (match) {
-      return parseInt(match[2]);
-    }
-    
-    const singleMatch = deliveryTime.match(/(\d+)/);
-    if (singleMatch) {
-      return parseInt(singleMatch[1]);
-    }
-    
-    return 7; // default
+};
+
+// Clase ShippingService para mantener compatibilidad con código existente
+class ShippingService {
+  async getShippingOptions(cartItems, addressInfo) {
+    return getShippingOptions(cartItems, addressInfo);
   }
 }
 
-// Export as a singleton instance
-const shippingService = new ShippingService();
+// Instancia singleton para compatibilidad
+export const shippingService = new ShippingService();
 
-// Export the getShippingOptions function for direct use
-export const getShippingOptions = (cartItems, addressInfo) => {
-  // Pasar true para usar el algoritmo Greedy optimizado
-  return getOptions(cartItems, addressInfo, true);
-};
+// Exportación por defecto
+export default ShippingService;
 
-// Función para uso directo sin Greedy si es necesario
-export const getStandardShippingOptions = (cartItems, addressInfo) => {
-  return getOptions(cartItems, addressInfo, false);
-};
-
-// Re-exportar todo lo demás desde el ShippingServiceNew
-export * from './ShippingServiceNew';
-
-// Export for testing and extension
-export { shippingService, ShippingService, getActiveShippingZones, getShippingZonesForPostalCode }; 
+// Exportar funciones auxiliares
+export { getActiveShippingZones }; 

@@ -57,7 +57,14 @@ export const CheckoutForm = ({
                                orderNotes,
                                handleNotesChange,
                                cartItems = [],
-                               onCombinationsCalculated
+                               onCombinationsCalculated,
+                               
+                               // Componente personalizado de envío
+                               customShippingComponent,
+                               
+                               // Otros props
+                               error,
+                               setError
                              }) => {
 
   // Hook para validación de stock
@@ -80,19 +87,37 @@ export const CheckoutForm = ({
         onAddAddress={handleAddressAdded}
       />
 
-      {/* Sección: Opciones de Envío */}
-      <ShippingOptionsSection
-        shippingOptions={shippingOptions}
-        selectedOptionId={selectedShippingOptionId}
-        onOptionSelect={handleShippingOptionSelect}
-        loading={loadingShippingOptions}
-        addressSelected={!!(selectedAddressId || (newAddressData?.street && newAddressData?.city))}
-        selectedAddressType={selectedAddressType}
-        newAddressData={newAddressData}
-        savedAddressData={addresses?.find(addr => addr.id === selectedAddressId)}
-        error={shippingError}
-        onCombinationsCalculated={onCombinationsCalculated}
-      />
+      {/* Componente personalizado de envío si existe */}
+      {customShippingComponent && typeof customShippingComponent === 'function' && (
+        customShippingComponent({
+          shippingOptions,
+          selectedOptionId: selectedShippingOptionId,
+          onOptionSelect: handleShippingOptionSelect,
+          loading: loadingShippingOptions,
+          addressSelected: !!(selectedAddressId || (newAddressData?.street && newAddressData?.city)),
+          selectedAddressType,
+          newAddressData,
+          savedAddressData: addresses?.find(addr => addr.id === selectedAddressId),
+          error: shippingError,
+          onCombinationsCalculated
+        })
+      )}
+
+      {/* Sección: Opciones de Envío (original) */}
+      {!customShippingComponent && (
+        <ShippingOptionsSection
+          shippingOptions={shippingOptions}
+          selectedOptionId={selectedShippingOptionId}
+          onOptionSelect={handleShippingOptionSelect}
+          loading={loadingShippingOptions}
+          addressSelected={!!(selectedAddressId || (newAddressData?.street && newAddressData?.city))}
+          selectedAddressType={selectedAddressType}
+          newAddressData={newAddressData}
+          savedAddressData={addresses?.find(addr => addr.id === selectedAddressId)}
+          error={shippingError}
+          onCombinationsCalculated={onCombinationsCalculated}
+        />
+      )}
 
       {/* Sección: Método de pago */}
       <PaymentSection

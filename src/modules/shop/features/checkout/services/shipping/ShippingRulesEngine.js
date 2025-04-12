@@ -15,36 +15,71 @@
  * @returns {boolean} - True if the rule applies to the address
  */
 export const coverageMatches = (rule, address) => {
-  if (!rule || !address) return false;
+  if (!rule || !address) {
+    console.log('❌ coverageMatches: Regla o dirección faltante');
+    return false;
+  }
+
+  // Normalizar y extraer campos de dirección
+  const zip = (address.zip || address.postalCode || address.zipcode || '').toString().trim().toLowerCase();
+  const state = (address.state || address.provincia || address.estado || '').toString().trim().toLowerCase();
+  
+  console.log(`🔍 Verificando cobertura para dirección: ZIP=${zip}, Estado=${state}`);
+  console.log(`📦 Regla: ID=${rule.id}, Nombre=${rule.nombre || rule.name || 'N/A'}`);
 
   // Extract coverage type and values
   const coverageType = rule.coverage_type || '';
-  const coverageValues = rule.coverage_values || [];
+  let coverageValues = (rule.coverage_values || []).map(val => val.toString().trim().toLowerCase());
   
+  console.log(`📋 Tipo de cobertura: ${coverageType}, Valores: ${JSON.stringify(coverageValues)}`);
+
   // Coverage by postal code
-  if (coverageType === 'por_codigo_postal' && address.zip) {
-    return coverageValues.includes(address.zip);
+  if (coverageType === 'por_codigo_postal' && zip) {
+    const matches = coverageValues.includes(zip);
+    console.log(`🔍 Cobertura por código postal: ${matches ? '✅ Coincide' : '❌ No coincide'}`);
+    return matches;
   }
   
   // Coverage by state
-  if (coverageType === 'por_estado' && address.state) {
-    return coverageValues.includes(address.state);
+  if (coverageType === 'por_estado' && state) {
+    const matches = coverageValues.includes(state);
+    console.log(`🔍 Cobertura por estado: ${matches ? '✅ Coincide' : '❌ No coincide'}`);
+    return matches;
   }
   
   // National coverage (applies to all addresses)
   if (coverageType === 'nacional') {
+    console.log('🔍 Cobertura nacional: ✅ Coincide');
     return true;
   }
   
   // Alternative fields that might be used in the DB schema
-  if (rule.cobertura_cp && Array.isArray(rule.cobertura_cp) && address.zip) {
-    return rule.cobertura_cp.includes(address.zip);
+  if (rule.cobertura_cp && Array.isArray(rule.cobertura_cp) && zip) {
+    // Normalizar códigos postales
+    const normalizedCPs = rule.cobertura_cp.map(cp => cp.toString().trim().toLowerCase());
+    const matches = normalizedCPs.includes(zip);
+    console.log(`🔍 Cobertura alternativa por CP: ${matches ? '✅ Coincide' : '❌ No coincide'}`);
+    if (matches) return true;
   }
   
-  if (rule.cobertura_estados && Array.isArray(rule.cobertura_estados) && address.state) {
-    return rule.cobertura_estados.includes(address.state);
+  if (rule.cobertura_estados && Array.isArray(rule.cobertura_estados) && state) {
+    // Normalizar estados
+    const normalizedStates = rule.cobertura_estados.map(s => s.toString().trim().toLowerCase());
+    const matches = normalizedStates.includes(state);
+    console.log(`🔍 Cobertura alternativa por estado: ${matches ? '✅ Coincide' : '❌ No coincide'}`);
+    if (matches) return true;
   }
   
+  // Checkear cobertura por país si está especificada
+  if (rule.cobertura_pais && address.country) {
+    const country = address.country.toString().trim().toLowerCase();
+    const coveragePais = rule.cobertura_pais.toString().trim().toLowerCase();
+    const matches = country === coveragePais;
+    console.log(`🔍 Cobertura por país: ${matches ? '✅ Coincide' : '❌ No coincide'}`);
+    if (matches) return true;
+  }
+  
+  console.log('❌ No se encontraron coincidencias de cobertura');
   return false;
 };
 

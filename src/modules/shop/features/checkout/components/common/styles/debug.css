@@ -1,0 +1,92 @@
+/**
+ * Estilos para componentes de depuración
+ */
+
+/* Panel de depuración */
+.debug-panel {
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+.debug-panel-primary {
+  border-color: #17a2b8;
+}
+
+.debug-panel-header {
+  padding: 8px 12px;
+  background-color: #f1f3f5;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.debug-panel-primary .debug-panel-header {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.debug-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.debug-toggle {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.debug-panel-content {
+  padding: 12px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.debug-content {
+  margin: 0;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Botón de depuración */
+.debug-mode-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.debug-mode-button:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.debug-mode-button.active {
+  background-color: #dc3545;
+} 

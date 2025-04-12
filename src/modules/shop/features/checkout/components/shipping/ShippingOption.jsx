@@ -1,5 +1,6 @@
 import React from 'react';
-import './ShippingOption.css';
+import PropTypes from 'prop-types';
+import './styles/shipping.css';
 
 /**
  * Individual shipping option component
@@ -128,6 +129,12 @@ const ShippingOption = ({ option, selected, onSelect }) => {
       )}
     </div>
   );
+};
+
+ShippingOption.propTypes = {
+  option: PropTypes.object.isRequired,
+  selected: PropTypes.bool.isRequired,
+  onSelect: PropTypes.func.isRequired
 };
 
 export default ShippingOption; 

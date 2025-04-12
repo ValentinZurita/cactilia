@@ -1,11 +1,17 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useCart } from '../../cart/hooks/useCart';
 import { CheckoutForm } from './CheckoutForm';
 import { CheckoutSummaryPanel } from './CheckoutSummaryPanel';
 import { useCheckout } from '../hooks/useCheckout';
-import { useShippingOptions } from '../hooks/useShippingOptions';
+import { useShippingOptions } from '../components/shipping/hooks/useShippingOptions';
 import CheckoutDebugInfo from './CheckoutDebugInfo';
-import { allProductsCovered } from '../services/ShippingRuleService';
+import { allProductsCovered } from '../services/shipping';
+import Spinner from './common/Spinner';
+import ShippingOptionsList from '../newShipping/components/ShippingOptionsList';
+
+// Lazy loading de componentes pesados de shipping
+const ShippingSelector = lazy(() => import('../components/shipping/ShippingSelector'));
+const ShippingGroupSelector = lazy(() => import('../components/shipping/ShippingGroupSelector'));
 
 /**
  * Componente principal del contenido de checkout
@@ -57,21 +63,23 @@ export const CheckoutContent = () => {
 
   // Obtener opciones de envío
   const {
-    loading: loadingShipping,
-    options: shippingOptions,
-    selectedOption: selectedShippingOption,
-    selectShippingOption,
-    shippingGroups: calculatedShippingGroups,
-    shippingRules: calculatedShippingRules,
-    excludedProducts,
-    updateShippingCombinations,
-    error: shippingError
+    isLoading: loadingShipping,
+    error: shippingError,
+    rawOptions: shippingOptions,
+    optionGroups: calculatedShippingGroups,
+    reloadOptions: updateShippingCombinations
   } = useShippingOptions(
     cartItems, 
-    selectedAddress, 
-    checkout.newAddressData, 
-    checkout.selectedAddressType
+    selectedAddress
   );
+  
+  // Estado local para la opción seleccionada
+  const [selectedShippingOption, setSelectedShippingOption] = useState(null);
+  
+  // Función para seleccionar una opción de envío
+  const selectShippingOption = useCallback((option) => {
+    setSelectedShippingOption(option);
+  }, []);
 
   // Cuando se cargan las opciones, seleccionar automáticamente la más económica
   useEffect(() => {
@@ -126,7 +134,6 @@ export const CheckoutContent = () => {
     
     // Log avanzado para diagnóstico
     console.log('🚚 SHIPPING GROUPS:', calculatedShippingGroups?.length || 0);
-    console.log('📏 SHIPPING RULES:', calculatedShippingRules?.length || 0);
     console.log('🚢 SHIPPING OPTIONS:', shippingOptions?.length || 0);
     
     // Al cambiar la dirección seleccionada, registrar el cambio para diagnóstico
@@ -156,7 +163,7 @@ export const CheckoutContent = () => {
     }
     
     setPreviousAddress(selectedAddress);
-  }, [selectedAddress, calculatedShippingGroups, calculatedShippingRules, shippingOptions, selectedShippingOption]);
+  }, [selectedAddress, calculatedShippingGroups, shippingOptions, selectedShippingOption]);
 
   /**
    * Determina si el botón de procesamiento debe estar deshabilitado
@@ -259,8 +266,9 @@ export const CheckoutContent = () => {
   // Manejador para actualizar las combinaciones de envío calculadas
   const handleCombinationsCalculated = (combinations) => {
     console.log('🔄 CheckoutContent: Recibidas combinaciones:', combinations.length);
+    // Recargar opciones después de recibir nuevas combinaciones
     if (updateShippingCombinations) {
-      updateShippingCombinations(combinations);
+      updateShippingCombinations();
     }
   };
 
@@ -323,6 +331,22 @@ export const CheckoutContent = () => {
           error={checkout.error}
           setError={checkout.setError}
           cartItems={cartItems}
+          
+          customShippingComponent={(props) => (
+            checkout.selectedAddressType && 
+            (checkout.selectedAddressType === 'saved' ? checkout.selectedAddressId : checkout.newAddressData) ? (
+              <div className="shipping-options-new-implementation mb-4">
+                <ShippingOptionsList 
+                  cartItems={cartItems}
+                  address={checkout.selectedAddressType === 'saved' ? 
+                    checkout.addresses.find(addr => addr.id === checkout.selectedAddressId) : 
+                    checkout.newAddressData
+                  }
+                  onShippingSelected={handleShippingOptionSelect}
+                />
+              </div>
+            ) : null
+          )}
         />
 
         {/* Resumen del pedido y botón de procesamiento */}

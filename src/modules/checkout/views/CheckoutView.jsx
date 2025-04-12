@@ -6,7 +6,7 @@ import { FirebaseDB } from '../../../config/firebase/firebaseConfig';
 import AddressForm from '../components/AddressForm';
 import PaymentForm from '../components/PaymentForm';
 import CheckoutSummary from '../components/CheckoutSummary';
-import { ShippingOptionSelector } from '../index.js'
+import NewShipping from '../NewShipping2';
 import { useCart } from '../../shop/features/cart/hooks/index.js'
 
 /**
@@ -99,7 +99,7 @@ const CheckoutView = () => {
       const tax = subtotal * 0.16;
 
       // Obtener costo de envío
-      const shippingCost = orderData.shipping.totalCost || 0;
+      const shippingCost = orderData.shipping.calculatedCost || 0;
 
       // Crear el pedido en Firebase
       const orderRef = await addDoc(collection(FirebaseDB, 'orders'), {
@@ -113,12 +113,13 @@ const CheckoutView = () => {
         shipping: {
           option: {
             id: orderData.shipping.id,
-            label: orderData.shipping.label,
-            carrier: orderData.shipping.carrier,
+            name: orderData.shipping.name,
+            ruleId: orderData.shipping.ruleId,
             deliveryTime: orderData.shipping.deliveryTime
           },
           cost: shippingCost,
-          isFreeShipping: orderData.shipping.isFreeShipping || false
+          isFreeShipping: orderData.shipping.isFree || false,
+          packages: orderData.shipping.packages || []
         },
 
         // Datos de pago (ocultando información sensible)
@@ -248,11 +249,10 @@ const CheckoutView = () => {
                 <h5 className="mb-0">Opciones de envío</h5>
               </div>
               <div className="card-body">
-                <ShippingOptionSelector
-                  cart={cart}
-                  userAddress={orderData.address}
-                  onOptionSelected={handleShippingSelected}
-                  initialOption={orderData.shipping}
+                <NewShipping
+                  cartItems={cart.items}
+                  selectedAddress={orderData.address}
+                  onShippingOptionSelected={handleShippingSelected}
                 />
 
                 <div className="d-flex justify-content-between mt-4 pt-3 border-top">
@@ -329,16 +329,16 @@ const CheckoutView = () => {
                   <div className="bg-light p-3 rounded">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <div className="fw-medium">{orderData.shipping.label}</div>
+                        <div className="fw-medium">{orderData.shipping.name}</div>
                         <div className="text-muted small">
-                          {orderData.shipping.carrier} - {orderData.shipping.deliveryTime}
+                          {orderData.shipping.deliveryTime}
                         </div>
                       </div>
                       <div className="h5 mb-0">
-                        {orderData.shipping.totalCost === 0 ? (
+                        {orderData.shipping.isFree || orderData.shipping.calculatedCost === 0 ? (
                           <span className="text-success">Gratis</span>
                         ) : (
-                          <span>${orderData.shipping.totalCost.toFixed(2)}</span>
+                          <span>${orderData.shipping.calculatedCost.toFixed(2)}</span>
                         )}
                       </div>
                     </div>

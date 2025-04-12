@@ -1,0 +1,196 @@
+/* Estilos para las opciones de envío */
+.shipping-options-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Grupos de opciones */
+.shipping-options-group {
+  margin-bottom: 24px;
+}
+
+.shipping-group-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.shipping-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Opción individual */
+.shipping-option {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.shipping-option:hover {
+  border-color: #999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shipping-option-selected {
+  border-color: #5469d4;
+  box-shadow: 0 2px 8px rgba(84, 105, 212, 0.15);
+}
+
+.shipping-option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.shipping-option-radio {
+  display: flex;
+  align-items: center;
+}
+
+.shipping-option-radio input[type="radio"] {
+  margin-right: 10px;
+  accent-color: #5469d4;
+}
+
+.shipping-option-name {
+  font-weight: 500;
+  font-size: 15px;
+  color: #333;
+}
+
+.shipping-option-price {
+  font-weight: 600;
+  font-size: 15px;
+  color: #111;
+}
+
+.shipping-option-delivery {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.shipping-option-carrier {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+  margin-top: 4px;
+}
+
+.delivery-label, .carrier-label {
+  font-weight: 500;
+  color: #444;
+}
+
+.shipping-option-description {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+/* Estados - tags */
+.shipping-option-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+
+.shipping-free-tag {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* Estados loading y error */
+.shipping-loading {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #f7f7f7;
+}
+
+.shipping-shimmer {
+  height: 20px;
+  margin-bottom: 12px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.shipping-error, .shipping-empty {
+  padding: 24px 16px;
+  text-align: center;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.shipping-error p {
+  color: #e53935;
+  margin-bottom: 16px;
+}
+
+.shipping-empty p {
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.refresh-button {
+  background-color: #5469d4;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.refresh-button:hover {
+  background-color: #4054b4;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .shipping-option {
+    padding: 12px;
+  }
+  
+  .shipping-group-title {
+    font-size: 15px;
+  }
+  
+  .shipping-option-name,
+  .shipping-option-price {
+    font-size: 14px;
+  }
+  
+  .shipping-option-delivery,
+  .shipping-option-description,
+  .shipping-option-carrier {
+    font-size: 13px;
+  }
+} 
