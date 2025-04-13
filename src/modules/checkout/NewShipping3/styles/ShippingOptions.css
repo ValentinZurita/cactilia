@@ -72,6 +72,40 @@
   box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
 }
 
+/* Estilo personalizado para checkbox que coincide con Bootstrap */
+.shipping-option-radio input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  background-color: white;
+}
+
+.shipping-option-radio input[type="checkbox"]:checked {
+  background-color: #4caf50;
+  border-color: #4caf50;
+}
+
+.shipping-option-radio input[type="checkbox"]:checked::before {
+  content: '✓';
+  position: absolute;
+  color: white;
+  font-size: 14px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.shipping-option-radio input[type="checkbox"]:focus {
+  box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+}
+
 .shipping-option-details {
   flex: 1;
 }
@@ -175,4 +209,33 @@
     padding: 20px;
     min-height: 80px;
   }
+}
+
+/* Estilos para resumen de opciones seleccionadas */
+.shipping-selected-summary {
+  margin-bottom: 16px;
+}
+
+.shipping-selected-cost {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #555;
+}
+
+.shipping-selection-info {
+  margin-bottom: 16px;
+}
+
+/* Estilos para badges */
+.shipping-options-container .badge {
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Estilos para las alertas */
+.shipping-options-container .alert {
+  border-radius: 8px;
+  margin-bottom: 16px;
 } 

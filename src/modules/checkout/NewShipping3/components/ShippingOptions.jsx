@@ -16,135 +16,263 @@ import '../styles/ShippingOptions.css';
  * @param {Object} props - Propiedades
  * @param {Object} props.address - Dirección seleccionada para envío
  * @param {Array} props.cartItems - Ítems del carrito
- * @param {Function} props.onShippingCostChange - Callback cuando cambia el costo de envío
- * @param {Function} props.onShippingValidChange - Callback cuando cambia la validez del envío
+ * @param {Function} props.onShippingOptionChange - Callback cuando cambia la opción de envío
+ * @param {Function} props.onShippingValidityChange - Callback cuando cambia la validez del envío
  * @param {number} props.forceUpdateKey - Clave para forzar actualización cuando la dirección cambia
  * @returns {JSX.Element} - Componente de opciones de envío
  */
 export const ShippingOptions = ({
   address,
   cartItems = [],
-  onShippingCostChange = () => {},
-  onShippingValidChange = () => {},
+  onShippingOptionChange = () => {},
+  onShippingValidityChange = () => {},
   forceUpdateKey = 0
 }) => {
-  // Estados del componente
+  // Estado para opciones de envío disponibles
   const [shippingOptions, setShippingOptions] = useState([]);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [loading, setLoading] = useState(false);
+  
+  // Cambiamos de selectedOption a selectedOptions (array)
+  const [selectedOptions, setSelectedOptions] = useState([]);
+  
+  // Estado para productos sin envío disponible
+  const [unavailableInfo, setUnavailableInfo] = useState(null);
+  
+  // Estado para seguimiento de productos cubiertos por las opciones seleccionadas
+  const [coveredProducts, setCoveredProducts] = useState(new Set());
+  
+  // Estado para costo total de envío (suma de todas las opciones seleccionadas)
+  const [totalShippingCost, setTotalShippingCost] = useState(0);
+  
+  // Estado para mostrar/ocultar mensaje de información sobre selección múltiple
+  const [showMultipleSelectionInfo, setShowMultipleSelectionInfo] = useState(false);
+  
+  // Loading state
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   // Obtener reglas de envío para el depurador
   const { rules } = useShippingRules();
 
-  // Obtener opciones de envío
-  const fetchShippingOptions = useCallback(async () => {
-    if (!address || !cartItems.length) {
-      setShippingOptions([]);
-      setSelectedOption(null);
-      onShippingCostChange(0);
-      onShippingValidChange(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Activar el depurador para diagnosticar problemas
-      debugShipping(address, cartItems, rules);
-      
-      const options = await checkoutShippingService.getShippingOptions(address, cartItems);
-      
-      setShippingOptions(options);
-      
-      // Si hay opciones, seleccionar la primera por defecto
-      if (options && options.length > 0) {
-        setSelectedOption(options[0]);
-        onShippingCostChange(options[0].totalCost || 0);
-        onShippingValidChange(true);
-      } else {
-        setSelectedOption(null);
-        onShippingCostChange(0);
-        onShippingValidChange(false);
-      }
-    } catch (err) {
-      console.error('Error al obtener opciones de envío:', err);
-      setError('No pudimos calcular opciones de envío. Por favor, intenta de nuevo.');
-      setShippingOptions([]);
-      setSelectedOption(null);
-      onShippingCostChange(0);
-      onShippingValidChange(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [address, cartItems, onShippingCostChange, onShippingValidChange, rules]);
-
-  // Efecto para cargar opciones de envío cuando cambia la dirección o items del carrito
-  useEffect(() => {
-    fetchShippingOptions();
-  }, [fetchShippingOptions, forceUpdateKey]);
-
-  // Manejar selección de opción de envío
-  const handleSelectOption = (option) => {
-    setSelectedOption(option);
-    onShippingCostChange(option.totalCost || 0);
-    onShippingValidChange(true);
-  };
-
-  /**
-   * Verifica si hay productos que no pueden ser enviados a la dirección seleccionada
-   * @returns {Object|null} Información sobre productos no enviables o null si todos son enviables
-   */
-  const checkUnavailableProducts = () => {
-    if (!shippingOptions || !shippingOptions.length) return null;
+  // Verificar si todos los productos tienen una opción de envío asignada
+  const allProductsCovered = () => {
+    // Obtener todos los IDs de productos en el carrito
+    const allProductIds = cartItems.map(item => (item.product || item).id);
     
-    // Verificar si hay productos que no pueden ser enviados
-    if (shippingOptions.some(option => !option.is_shippable)) {
-      const unavailableProducts = shippingOptions.filter(option => !option.is_shippable).map(option => option.name).join(', ');
-      const unavailableIds = shippingOptions.filter(option => !option.is_shippable).map(option => option.id);
+    // Verificar si todos están en el conjunto de productos cubiertos
+    return allProductIds.every(id => coveredProducts.has(id));
+  };
+  
+  // Calcular el costo total de envío de todas las opciones seleccionadas
+  const calculateTotalShippingCost = (options) => {
+    return options.reduce((total, option) => total + parseFloat(option.totalCost || 0), 0);
+  };
+  
+  // Modificar cómo se manejan las opciones seleccionadas
+  const handleSelectOption = (option) => {
+    setShowMultipleSelectionInfo(false);
+    let newSelectedOptions = [...selectedOptions];
+    
+    // Si la opción ya está seleccionada, la quitamos
+    if (selectedOptions.some(opt => opt.id === option.id)) {
+      console.log(`🚢 Deseleccionando opción de envío: ${option.name}`);
+      newSelectedOptions = selectedOptions.filter(opt => opt.id !== option.id);
+    } else {
+      // Identificar si hay productos duplicados
+      const duplicatedProducts = [];
+      const optionProducts = option.products || [];
+      
+      // Verificar si es una opción de tipo Nacional
+      const isNationalOption = option.zoneType === 'nacional' || 
+                              option.isNational || 
+                              option.name === 'Nacional';
+      
+      // Para opciones nacionales, permitimos seleccionarla sin restricciones
+      if (!isNationalOption) {
+        optionProducts.forEach(productId => {
+          if (coveredProducts.has(productId)) {
+            // Encontrar en qué opción ya seleccionada está este producto
+            const existingOption = selectedOptions.find(opt => 
+              (opt.products || []).includes(productId)
+            );
+            
+            if (existingOption) {
+              duplicatedProducts.push({
+                productId,
+                optionName: existingOption.name
+              });
+            }
+          }
+        });
+      }
+      
+      if (duplicatedProducts.length > 0) {
+        // Hay productos duplicados, mostrar advertencia
+        console.log(`⚠️ Productos duplicados en opción de envío:`, duplicatedProducts);
+        
+        // Si es la primera vez, mostrar aviso informativo
+        if (!showMultipleSelectionInfo) {
+          setShowMultipleSelectionInfo(true);
+        }
+        
+        return; // No seleccionar esta opción
+      }
+      
+      // Si no hay duplicados, añadir la opción
+      console.log(`🚢 Seleccionando opción de envío: ${option.name}`);
+      newSelectedOptions.push(option);
+    }
+    
+    // Actualizar las opciones seleccionadas
+    setSelectedOptions(newSelectedOptions);
+    
+    // Recalcular los productos cubiertos
+    const newCoveredProducts = new Set();
+    newSelectedOptions.forEach(opt => {
+      (opt.products || []).forEach(productId => {
+        newCoveredProducts.add(productId);
+      });
+    });
+    setCoveredProducts(newCoveredProducts);
+    
+    // Calcular el nuevo costo total
+    const newTotalCost = calculateTotalShippingCost(newSelectedOptions);
+    setTotalShippingCost(newTotalCost);
+    
+    // Notificar al padre sobre los cambios
+    // Considerando que ahora tenemos múltiples opciones
+    if (newSelectedOptions.length > 0) {
+      onShippingOptionChange({
+        options: newSelectedOptions,
+        totalCost: newTotalCost,
+        isPartial: !allProductsCovered()
+      });
+      onShippingValidityChange(true);
+    } else {
+      onShippingOptionChange(null);
+      onShippingValidityChange(false);
+    }
+  };
+  
+  // Verificar productos que no tienen envío disponible
+  const checkUnavailableProducts = (options) => {
+    if (!options || !Array.isArray(options) || options.length === 0) {
+      return null;
+    }
+    
+    // Obtener todos los productos que pueden ser enviados por todas las opciones disponibles
+    const shippableProductIds = new Set();
+    options.forEach(option => {
+      (option.products || []).forEach(productId => {
+        shippableProductIds.add(productId);
+      });
+    });
+    
+    // Verificar qué productos no pueden ser enviados
+    const unavailableIds = [];
+    const unavailableNames = [];
+    
+    cartItems.forEach(item => {
+      const product = item.product || item;
+      if (!shippableProductIds.has(product.id)) {
+        unavailableIds.push(product.id);
+        unavailableNames.push(product.name);
+      }
+    });
+    
+    if (unavailableIds.length > 0) {
       return {
-        partial: true,
-        unavailableProducts,
-        unavailableIds
+        unavailableIds,
+        unavailableProducts: unavailableNames.join(', ')
       };
     }
     
     return null;
   };
 
-  // Verificar si hay productos no enviables
-  const unavailableInfo = checkUnavailableProducts();
+  // Efecto para cargar opciones de envío cuando cambia la dirección o el carrito
+  useEffect(() => {
+    let isMounted = true; // Flag para evitar actualizaciones si el componente se desmonta
+    
+    const loadShippingOptions = async () => {
+      setLoading(true);
+      setError(null);
+      setSelectedOptions([]); // Reiniciar selección
+      setCoveredProducts(new Set()); // Reiniciar productos cubiertos
+      setTotalShippingCost(0); // Reiniciar costo total
+      
+      console.log('🔄 Reiniciando selección de opciones de envío');
+      
+      // Notificar al padre que no hay opción seleccionada
+      onShippingOptionChange(null);
+      onShippingValidityChange(false);
+      
+      // Validar parámetros
+      if (!address || !cartItems || cartItems.length === 0) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      
+      try {
+        // Obtener opciones de envío
+        const options = await checkoutShippingService.getShippingOptions(address, cartItems);
+        
+        if (!isMounted) return;
+        
+        console.log(`📦 Opciones de envío cargadas: ${options.length}`, options);
+        options.forEach(option => {
+          console.log(`- Opción "${option.name}" (ID: ${option.id}):`);
+          console.log(`  - Tipo: ${option.zoneType || 'desconocido'}`);
+          console.log(`  - Es Nacional: ${option.isNational ? 'Sí' : 'No'}`);
+          console.log(`  - Productos: ${(option.products || []).length}`);
+          console.log(`  - Costo: ${option.totalCost}`);
+        });
+        
+        setShippingOptions(options);
+        
+        // Verificar productos sin envío disponible
+        const unavailable = checkUnavailableProducts(options);
+        setUnavailableInfo(unavailable);
+        
+        setLoading(false);
+      } catch (err) {
+        if (!isMounted) return;
+        console.error('Error al obtener opciones de envío:', err);
+        setError('No se pudieron cargar las opciones de envío');
+        setLoading(false);
+      }
+    };
+    
+    loadShippingOptions();
+    
+    return () => {
+      isMounted = false; // Limpiar flag cuando el componente se desmonta
+    };
+  }, [address, cartItems]); // Solo re-ejecutar cuando la dirección o los items cambian
 
-  // Si está cargando, mostrar indicador
+  // Mostrar loading state
   if (loading) {
     return (
       <div className="shipping-options-container">
         <div className="shipping-options-loading">
-          <p>Calculando opciones de envío...</p>
+          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <span className="ms-2">Cargando opciones de envío...</span>
         </div>
       </div>
     );
   }
 
-  // Si hay error, mostrar mensaje
+  // Mostrar error si hay
   if (error) {
     return (
       <div className="shipping-options-container">
         <div className="shipping-options-error">
           <p>{error}</p>
-          <button 
-            className="shipping-options-retry-btn"
-            onClick={fetchShippingOptions}
-          >
-            Reintentar
-          </button>
         </div>
       </div>
     );
   }
 
-  // Si no hay opciones de envío disponibles
+  // Mostrar mensaje si no hay opciones disponibles
   if (!shippingOptions || shippingOptions.length === 0) {
     return (
       <div className="shipping-options-container">
@@ -160,6 +288,20 @@ export const ShippingOptions = ({
     <div className="shipping-options-container">
       <h3 className="shipping-options-title">Selecciona un método de envío</h3>
       
+      {/* Mostrar información de selección múltiple */}
+      {showMultipleSelectionInfo && (
+        <div className="shipping-selection-info alert alert-info" role="alert">
+          <div className="d-flex align-items-center">
+            <i className="bi bi-info-circle me-2"></i>
+            <span>
+              No puedes seleccionar esta opción porque contiene productos que ya están cubiertos por otra opción.
+              Para seleccionarla, primero deselecciona la otra opción.
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {/* Mostrar advertencia de productos no enviables */}
       {unavailableInfo && (
         <div className="shipping-unavailable-warning">
           <div className="alert alert-warning" role="alert">
@@ -174,25 +316,52 @@ export const ShippingOptions = ({
         </div>
       )}
       
+      {/* Mostrar resumen de opciones seleccionadas si hay más de una */}
+      {selectedOptions.length > 1 && (
+        <div className="shipping-selected-summary">
+          <div className="alert alert-success" role="alert">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Opciones seleccionadas:</strong> {selectedOptions.length}
+                <div className="shipping-selected-cost">
+                  Costo total de envío: {new Intl.NumberFormat('es-MX', {
+                    style: 'currency',
+                    currency: 'MXN'
+                  }).format(totalShippingCost)}
+                </div>
+              </div>
+              <div>
+                {allProductsCovered() ? (
+                  <span className="badge bg-success">Todos los productos cubiertos</span>
+                ) : (
+                  <span className="badge bg-warning text-dark">Envío parcial</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="shipping-options-list">
         {shippingOptions.map((option) => (
           <div 
             key={option.id} 
-            className={`shipping-option ${selectedOption && selectedOption.id === option.id ? 'selected' : ''}`}
+            className={`shipping-option ${selectedOptions.some(opt => opt.id === option.id) ? 'selected' : ''}`}
             onClick={() => handleSelectOption(option)}
           >
             <div className="shipping-option-radio">
               <input 
-                type="radio" 
-                checked={selectedOption && selectedOption.id === option.id}
+                type="checkbox"
+                checked={selectedOptions.some(opt => opt.id === option.id)}
                 onChange={() => handleSelectOption(option)}
+                className="shipping-option-checkbox"
               />
             </div>
             
             <div className="shipping-option-details">
               <ShippingPackage 
                 packageData={option}
-                selected={selectedOption && selectedOption.id === option.id}
+                selected={selectedOptions.some(opt => opt.id === option.id)}
                 cartItems={cartItems} 
               />
             </div>

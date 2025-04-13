@@ -46,6 +46,21 @@ export const ShippingManagerForCheckout = ({
     }
   }, [selectedAddress, cartItems]);
 
+  // Manejar cambios en la opción de envío (ahora puede ser múltiple)
+  const handleShippingOptionChange = (shippingData) => {
+    if (!shippingData) {
+      // Si no hay datos de envío, establecer costo 0
+      onShippingCostChange(0);
+      return;
+    }
+    
+    // Usar el costo total de todas las opciones seleccionadas
+    onShippingCostChange(shippingData.totalCost || 0);
+    
+    // Opcionalmente, se podría pasar más información al checkout
+    console.log('Datos de envío actualizados:', shippingData);
+  };
+
   // Si no hay una dirección seleccionada, mostrar mensaje
   if (!selectedAddress) {
     return (
@@ -63,8 +78,8 @@ export const ShippingManagerForCheckout = ({
       <ShippingOptions
         address={selectedAddress}
         cartItems={cartItems}
-        onShippingCostChange={onShippingCostChange}
-        onShippingValidChange={onShippingValidChange}
+        onShippingOptionChange={handleShippingOptionChange}
+        onShippingValidityChange={onShippingValidChange}
         forceUpdateKey={forceUpdateRef.current}
       />
     </div>
