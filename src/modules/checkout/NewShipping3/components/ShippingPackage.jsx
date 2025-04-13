@@ -731,107 +731,56 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
           </button>
         </div>
         
-        {/* Lista simple de paquetes con su peso */}
-        {packages.length > 1 && (
-          <div className="package-weight-list">
-            {packages.map((pkg, index) => (
-              <div key={`pkg_summary_${pkg.id}`} className="package-weight-item">
-                <span className="package-weight-name">Paquete {index + 1}</span>
-                <span className="package-weight-value">{pkg.weight.toFixed(2)} kg</span>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {/* Mostramos los productos de cada paquete SOLO cuando se expanden los detalles */}
+        {/* INFORMACIÓN UNIFICADA DE PAQUETES: Versión mejorada y única */}
         {detailsExpanded && (
-          <>
-            <div className="packages-info-list">
-              {packages.map((pkg, index) => {
-                // Formatear el precio individual de este paquete específico
-                const formattedPackagePrice = pkg.price === 0 
-                  ? 'GRATIS' 
-                  : new Intl.NumberFormat('es-MX', {
-                      style: 'currency',
-                      currency: 'MXN',
-                      minimumFractionDigits: 2
-                    }).format(pkg.price);
-                
-                return (
-                  <div key={`pkg_info_${pkg.id}`} className="package-info-item">
-                    <div className="package-info-header">
-                      <div className="package-info-title">Paquete {index + 1}</div>
-                      <div className="package-info-price">{formattedPackagePrice}</div>
+          <div className="packages-info-list">
+            {packages.map((pkg, index) => {
+              // Formatear el precio individual de este paquete específico
+              const formattedPackagePrice = pkg.price === 0 
+                ? 'GRATIS' 
+                : new Intl.NumberFormat('es-MX', {
+                    style: 'currency',
+                    currency: 'MXN',
+                    minimumFractionDigits: 2
+                  }).format(pkg.price);
+              
+              return (
+                <div key={`pkg_info_${pkg.id}`} className="package-info-item">
+                  <div className="package-info-header">
+                    <div className="package-info-title">
+                      Paquete {index + 1} 
+                      <span className="package-weight-badge">
+                        {pkg.weight.toFixed(2)} kg
+                      </span>
                     </div>
-                    
-                    {/* Tiempo de entrega */}
-                    {displayDeliveryTime && (
-                      <div className="package-info-delivery">
-                        <i className="bi bi-clock"></i>
-                        <span>{displayDeliveryTime}</span>
-                      </div>
-                    )}
-                    
-                    {/* Productos del paquete */}
-                    <div className="package-info-products">
-                      {pkg.products && pkg.products.length > 0 ? (
-                        pkg.products.map((product, pidx) => (
-                          <span key={`info_prod_${pkg.id}_${product.id}_${pidx}`} className="package-info-product">
-                            {product.name}{product.quantity > 1 ? ` (${product.quantity})` : ''}
-                            {pidx < pkg.products.length - 1 ? ', ' : ''}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="package-info-empty">No hay productos en este paquete</span>
-                      )}
-                    </div>
+                    <div className="package-info-price">{formattedPackagePrice}</div>
                   </div>
-                );
-              })}
-            </div>
-            
-            <div className="shipping-package-expanded">
-              <div className="products-breakdown">
-                {packages.map((pkg, index) => {
-                  // Formatear el precio individual de este paquete específico
-                  const formattedPackagePrice = pkg.price === 0 
-                    ? 'GRATIS' 
-                    : new Intl.NumberFormat('es-MX', {
-                        style: 'currency',
-                        currency: 'MXN',
-                        minimumFractionDigits: 2
-                      }).format(pkg.price);
                   
-                  return (
-                    <div key={pkg.id} className="package-breakdown">
-                      <div className="package-header-breakdown">
-                        <h5>Paquete {index + 1}</h5>
-                        <span className="package-price">{formattedPackagePrice}</span>
-                      </div>
-                      
-                      {/* Mostrar tiempo de entrega para este paquete específico */}
-                      {displayDeliveryTime && (
-                        <div className="package-delivery-time">
-                          <i className="bi bi-clock"></i>
-                          <span>{displayDeliveryTime}</span>
-                        </div>
-                      )}
-                      
-                      {/* Mostrar productos de este paquete */}
-                      <div className="package-product-names">
-                        {pkg.products.map((product, pidx) => (
-                          <span key={`prod_${pkg.id}_${product.id}_${pidx}`} className="package-product-name">
-                            {product.name}{product.quantity > 1 ? ` (${product.quantity})` : ''}
-                            {pidx < pkg.products.length - 1 ? ', ' : ''}
-                          </span>
-                        ))}
-                      </div>
+                  {/* Tiempo de entrega */}
+                  {displayDeliveryTime && (
+                    <div className="package-info-delivery">
+                      <i className="bi bi-clock"></i>
+                      <span>{displayDeliveryTime}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
+                  )}
+                  
+                  {/* Productos del paquete - FIXED: Ya no muestra peso redundante del producto */}
+                  <div className="package-info-products">
+                    {pkg.products && pkg.products.length > 0 ? (
+                      pkg.products.map((product, pidx) => (
+                        <span key={`info_prod_${pkg.id}_${product.id}_${pidx}`} className="package-info-product">
+                          {product.name}{product.quantity > 1 ? ` (x${product.quantity})` : ''}
+                          {pidx < pkg.products.length - 1 ? ', ' : ''}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="package-info-empty">No hay productos en este paquete</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

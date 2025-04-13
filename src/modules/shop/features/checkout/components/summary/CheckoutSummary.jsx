@@ -100,7 +100,7 @@ export const CheckoutSummary = ({
         <div className="checkout-summary-products-unavailable">
           <div className="unavailable-products-title">
             <i className="bi bi-geo-alt"></i>
-            <span>Productos no disponibles para esta dirección</span>
+            <span>Productos no disponibles o excluidos del envío</span>
           </div>
           <div className="product-list mb-4">
             {unavailableItems.map(item => (
@@ -118,7 +118,6 @@ export const CheckoutSummary = ({
                 </div>
                 <div className="product-details flex-grow-1">
                   <h6 className="product-name mb-0">{item.name}</h6>
-                  <small className="text-muted">No disponible para la dirección seleccionada</small>
                 </div>
               </div>
             ))}
