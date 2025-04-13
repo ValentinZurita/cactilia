@@ -70,23 +70,26 @@ export const CheckoutSummary = ({
             </div>
             <div className="product-details flex-grow-1">
               <h6 className="product-name mb-0">{item.name}</h6>
-              <div className="d-flex justify-content-between">
-                <span className="product-quantity text-muted">
+              <div className="d-flex flex-column">
+                <span className="product-quantity text-muted small mt-1">
                   {item.quantity} x {formatPrice(item.price)}
                 </span>
-                <span className="product-total fw-medium">
-                  {formatPrice(item.price * item.quantity)}
-                </span>
+                <div className="d-flex justify-content-between align-items-center mt-2">
+                  <div>
+                    {item.stock === 0 && (
+                      <span className="badge bg-danger text-white">Sin stock</span>
+                    )}
+                    {item.stock > 0 && item.stock < item.quantity && (
+                      <span className="badge bg-warning text-dark">
+                        Stock disponible: {item.stock}
+                      </span>
+                    )}
+                  </div>
+                  <span className="product-total" style={{ color: '#4CAF50' }}>
+                    {formatPrice(item.price * item.quantity)}
+                  </span>
+                </div>
               </div>
-              
-              {item.stock === 0 && (
-                <span className="badge bg-danger text-white mt-1">Sin stock</span>
-              )}
-              {item.stock > 0 && item.stock < item.quantity && (
-                <span className="badge bg-warning text-dark mt-1">
-                  Stock disponible: {item.stock}
-                </span>
-              )}
             </div>
           </div>
         ))}
@@ -97,7 +100,7 @@ export const CheckoutSummary = ({
         <div className="checkout-summary-products-unavailable">
           <div className="unavailable-products-title">
             <i className="bi bi-geo-alt"></i>
-            <span>Productos no disponibles</span>
+            <span>Productos no disponibles para esta dirección</span>
           </div>
           <div className="product-list mb-4">
             {unavailableItems.map(item => (
@@ -115,6 +118,7 @@ export const CheckoutSummary = ({
                 </div>
                 <div className="product-details flex-grow-1">
                   <h6 className="product-name mb-0">{item.name}</h6>
+                  <small className="text-muted">No disponible para la dirección seleccionada</small>
                 </div>
               </div>
             ))}
@@ -145,7 +149,7 @@ export const CheckoutSummary = ({
         <div className="d-flex justify-content-between mb-2">
           <span>Envío:</span>
           {isFreeShipping ? (
-            <span className="text-success">Gratis</span>
+            <span style={{ color: '#4CAF50' }}>Gratis</span>
           ) : (
             <span>{shipping === 0 ? 'Pendiente' : formatPrice(Number(shipping))}</span>
           )}
@@ -154,9 +158,9 @@ export const CheckoutSummary = ({
         <div className="d-flex justify-content-between">
           <span className="fw-bold">Total:</span>
           {hasUnavailableProducts ? (
-            <span className="fw-bold fs-5 text-green-1">{formatPrice(availableTotal)}</span>
+            <span className="fw-bold fs-5" style={{ color: '#4CAF50' }}>{formatPrice(availableTotal)}</span>
           ) : (
-            <span className="fw-bold fs-5 text-green-1">{formatPrice(Number(total))}</span>
+            <span className="fw-bold fs-5" style={{ color: '#4CAF50' }}>{formatPrice(Number(total))}</span>
           )}
         </div>
 
