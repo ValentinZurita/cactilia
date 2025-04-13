@@ -196,6 +196,20 @@
   font-size: 13px;
 }
 
+.package-delivery-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #666;
+  padding-left: 2px;
+}
+
+.package-delivery-time i {
+  font-size: 10px;
+}
+
 /* Nombre de producto con clase específica para evitar conflictos */
 .shipping-product-name-detail {
   flex: 1;

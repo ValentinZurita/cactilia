@@ -507,6 +507,13 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
                       <h5>Paquete {index + 1}</h5>
                       <span className="package-price">{formattedPackagePrice}</span>
                     </div>
+                    {/* Mostrar tiempo de entrega para este paquete específico */}
+                    {displayDeliveryTime && (
+                      <div className="package-delivery-time">
+                        <i className="bi bi-clock"></i>
+                        <span>{displayDeliveryTime}</span>
+                      </div>
+                    )}
                     <ul className="product-list">
                       {pkg.products.map(product => (
                         <li key={`${pkg.id}_${product.id}`} className="product-item">
@@ -523,45 +530,6 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
                 );
               })}
             </div>
-            
-            {/* Mostrar resumen de costos cuando hay múltiples paquetes con precios distintos */}
-            {packages.length > 1 && (
-              <div className="cost-summary">
-                <h5>Resumen de costos</h5>
-                <ul className="cost-breakdown-list">
-                  {packages.some(pkg => pkg.price !== packages[0].price) ? (
-                    // Si hay paquetes con precios diferentes, mostrar desglose
-                    packages.map((pkg, index) => (
-                      <li key={`cost_${index}`} className="cost-item">
-                        <span>Paquete {index + 1} ({pkg.weight.toFixed(2)} kg):</span>
-                        <span className="cost-value">
-                          {pkg.price === 0 
-                            ? 'GRATIS' 
-                            : new Intl.NumberFormat('es-MX', {
-                                style: 'currency',
-                                currency: 'MXN',
-                                minimumFractionDigits: 2
-                              }).format(pkg.price)}
-                        </span>
-                      </li>
-                    ))
-                  ) : (
-                    // Si todos los paquetes tienen el mismo precio, mostrar precio unitario
-                    <li className="cost-item">
-                      <span>{packages.length} paquetes x {new Intl.NumberFormat('es-MX', {
-                        style: 'currency',
-                        currency: 'MXN',
-                        minimumFractionDigits: 2
-                      }).format(packages[0].price)}</span>
-                    </li>
-                  )}
-                  <li className="cost-item total">
-                    <span><strong>Total:</strong></span>
-                    <span className="cost-value"><strong>{formattedTotalCost}</strong></span>
-                  </li>
-                </ul>
-              </div>
-            )}
           </div>
         )}
       </div>
