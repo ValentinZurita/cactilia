@@ -172,9 +172,19 @@ export const ShippingOptions = ({
     const newTotalCost = calculateTotalShippingCost(newSelectedOptions);
     setTotalShippingCost(newTotalCost);
     
+    console.log(`💵 [ShippingOptions] Nuevo costo total calculado: $${newTotalCost}`);
+    console.log(`🧮 [ShippingOptions] Costos por opción:`, newSelectedOptions.map(opt => ({
+      id: opt.id,
+      name: opt.name,
+      cost: parseFloat(opt.calculatedTotalCost || opt.totalCost || opt.price || 0)
+    })));
+    
     // Notificar al padre sobre los cambios
     // Considerando que ahora tenemos múltiples opciones
     if (newSelectedOptions.length > 0) {
+      const isFreeValue = newTotalCost === 0;
+      console.log(`🔖 [ShippingOptions] Enviando datos al padre, isFree=${isFreeValue}, totalCost=${newTotalCost}`);
+      
       onShippingOptionChange({
         options: newSelectedOptions,
         totalCost: newTotalCost,
@@ -182,7 +192,8 @@ export const ShippingOptions = ({
         coveredProductIds: Array.from(newCoveredProducts), // Enviar los IDs de productos cubiertos
         unavailableProductIds: cartItems
           .map(item => (item.product || item).id)
-          .filter(id => !newCoveredProducts.has(id)) // IDs de productos no cubiertos
+          .filter(id => !newCoveredProducts.has(id)), // IDs de productos no cubiertos
+        isFree: isFreeValue
       });
       onShippingValidityChange(true);
     } else {

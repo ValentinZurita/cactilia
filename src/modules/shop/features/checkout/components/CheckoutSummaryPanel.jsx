@@ -32,6 +32,16 @@ export const CheckoutSummaryPanel = ({
                                        // Paso actual
                                        step
                                      }) => {
+  // Log para debugging
+  console.log('🧾 [CheckoutSummaryPanel] Props recibidas:', {
+    cartShipping,
+    isFreeShipping,
+    selectedShippingOptionId: selectedShippingOption?.id,
+    selectedShippingOptionCost: selectedShippingOption?.totalCost || selectedShippingOption?.calculatedCost || 0,
+    selectedShippingOptionIsFree: selectedShippingOption?.isFree,
+    selectedShippingOptionIsFreeShipping: selectedShippingOption?.isFreeShipping
+  });
+
   // Obtener texto del botón según el método de pago
   const getButtonText = () => {
     if (isProcessing) return "Procesando...";

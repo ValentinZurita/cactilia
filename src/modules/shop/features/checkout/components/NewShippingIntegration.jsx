@@ -32,34 +32,87 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
   
   // Manejar cambios en el costo de envío
   const handleShippingCostChange = useCallback((cost) => {
-    // Comprobar si el costo ya se ha procesado para evitar actualizaciones múltiples
-    if (lastCostRef.current === cost) {
+    // Ensure cost is a valid number, default to 0 if not
+    const validCost = typeof cost === 'number' && !isNaN(cost) ? cost : 0;
+
+    // Avoid redundant updates if cost hasn't changed
+    if (lastCostRef.current === validCost && lastGeneratedOption) {
+      console.log(`💲 [NewShippingIntegration] Costo sin cambios ($${validCost}). No se actualiza.`);
       return;
     }
     
-    // Actualizar la referencia del costo
-    lastCostRef.current = cost;
+    // Update the cost reference
+    lastCostRef.current = validCost;
     
-    console.log(`💲 Costo de envío actualizado: $${cost}`);
-    
-    // Si hay una opción generada, actualizarla con el nuevo costo
-    if (lastGeneratedOption && typeof onShippingSelected === 'function') {
-      const updatedOption = {
-        ...lastGeneratedOption,
-        price: cost,
-        totalCost: cost,
-        calculatedCost: cost,
-        isFree: cost === 0,
-        // Añadir información de cobertura a la opción
+    console.log(`💲 [NewShippingIntegration] Costo de envío actualizado: $${validCost} (tipo: ${typeof validCost})`);
+
+    // Determine if this is the first valid cost received
+    const isFirstCost = !lastGeneratedOption;
+    const isFreeValue = validCost === 0;
+
+    // Create or update the option
+    let updatedOption;
+    if (isFirstCost) {
+      // First time receiving cost: Create the option object now using the real cost
+      // Assuming ShippingManagerForCheckout provides package details eventually...
+      // For now, create a placeholder structure like before but with the correct cost.
+      // Ideally, ShippingManagerForCheckout should provide the package/rule details needed here.
+      console.log('✨ [NewShippingIntegration] Creando opción inicial con el primer costo real.');
+      updatedOption = {
+        id: `shipping_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: 'Envío calculado', // Or get name from rule if available
+        price: validCost,
+        totalCost: validCost,
+        calculatedCost: validCost,
+        isFree: isFreeValue,
+        isFreeShipping: isFreeValue,
+        carrierId: 'calculated',
+        carrierName: '',
+        deliveryTime: '', // Should be updated later if possible
+        description: '',
+        packages: [], // Should be populated if possible
+        allProductsCovered: !coverageInfo.hasPartialCoverage, // Use current coverage info
+        zoneName: 'Envío calculado',
         coveredProductIds: coverageInfo.coveredProductIds,
         unavailableProductIds: coverageInfo.unavailableProductIds,
         hasPartialCoverage: coverageInfo.hasPartialCoverage
       };
-      
-      setLastGeneratedOption(updatedOption);
-      onShippingSelected(updatedOption);
+    } else {
+      // Subsequent cost update: Update the existing option
+      console.log('🔄 [NewShippingIntegration] Actualizando opción existente con nuevo costo.');
+      updatedOption = {
+        ...lastGeneratedOption,
+        price: validCost,
+        totalCost: validCost,
+        calculatedCost: validCost,
+        isFree: isFreeValue,
+        isFreeShipping: isFreeValue,
+        // Ensure coverage info is also up-to-date
+        coveredProductIds: coverageInfo.coveredProductIds,
+        unavailableProductIds: coverageInfo.unavailableProductIds,
+        hasPartialCoverage: coverageInfo.hasPartialCoverage,
+        allProductsCovered: !coverageInfo.hasPartialCoverage
+      };
     }
-  }, [lastGeneratedOption, onShippingSelected, coverageInfo]);
+
+    console.log('📊 [NewShippingIntegration] Opción para enviar a CheckoutContent:', {
+      id: updatedOption.id,
+      cost: updatedOption.totalCost,
+      isFree: updatedOption.isFree,
+      isFreeShipping: updatedOption.isFreeShipping
+    });
+    
+    // Store the updated option locally
+    setLastGeneratedOption(updatedOption);
+    
+    // Call the parent callback ONLY if it's a function
+    if (typeof onShippingSelected === 'function') {
+        onShippingSelected(updatedOption);
+    } else {
+        console.error('❌ [NewShippingIntegration] onShippingSelected no es una función!')
+    }
+
+  }, [onShippingSelected, coverageInfo, lastGeneratedOption]); // Added lastGeneratedOption dependency
   
   // Manejar cambios en la validez del envío
   const handleShippingValidChange = useCallback((isValid) => {
@@ -80,7 +133,8 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
         coveredProductIds: newCoverageInfo.coveredProductIds,
         unavailableProductIds: newCoverageInfo.unavailableProductIds,
         hasPartialCoverage: newCoverageInfo.hasPartialCoverage,
-        allProductsCovered: !newCoverageInfo.hasPartialCoverage
+        allProductsCovered: !newCoverageInfo.hasPartialCoverage,
+        isFreeShipping: lastGeneratedOption.isFree || lastGeneratedOption.price === 0 || lastGeneratedOption.totalCost === 0
       };
       
       setLastGeneratedOption(updatedOption);
@@ -129,47 +183,35 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
   useEffect(() => {
     // Comprobar si la dirección ha cambiado
     if (address && addressRef.current && 
-        addressRef.current.id !== address.id) {
-      console.log('🔄 Dirección cambiada, reiniciando opciones de envío');
-      // Reset del costo para forzar un nuevo cálculo
+        (addressRef.current.id !== address.id || 
+         addressRef.current.zip !== address.zip || 
+         addressRef.current.zipcode !== address.zipcode)) {
+      console.log('🔄 Dirección cambiada, reiniciando estado de envío en NewShippingIntegration');
+      // Reset local state, cost ref, and generated option
       lastCostRef.current = null;
+      setLastGeneratedOption(null); 
+      setCoverageInfo({ coveredProductIds: [], unavailableProductIds: [], hasPartialCoverage: false });
+      firstLoadRef.current = true; // Allow initial load effect to run again if needed for other logic
       
-      // Crear una opción inicial temporal
-      const initialOption = createShippingOption([{ 
-        rule: { nombre: 'Calculando...', id: 'initial' },
-        items: cartItems
-      }], 0);
-      
-      // Actualizar la opción seleccionada
-      if (initialOption && typeof onShippingSelected === 'function') {
-        setLastGeneratedOption(initialOption);
-        onShippingSelected(initialOption);
-      }
+      // DO NOT call onShippingSelected here with a temporary option
+      // console.log('🚫 [NewShippingIntegration] No se llama a onShippingSelected al cambiar dirección.');
     }
     
     // Actualizar la referencia de la dirección
     addressRef.current = address;
-  }, [address, cartItems, createShippingOption, onShippingSelected]);
+  }, [address]); // Removed dependencies that might trigger unnecessarily
   
   // Crear una opción inicial cuando se cargan los datos por primera vez
   useEffect(() => {
-    if (cartItems && cartItems.length > 0 && address && 
-        typeof onShippingSelected === 'function' && 
-        firstLoadRef.current) {
-      
+    // This effect might not be strictly necessary anymore if handleShippingCostChange creates the first option.
+    // Keep it for potential future logic, but ensure it doesn't call onShippingSelected prematurely.
+    if (cartItems && cartItems.length > 0 && address && firstLoadRef.current) {
+      console.log('🚀 [NewShippingIntegration] Carga inicial detectada (Address y CartItems disponibles).');
       firstLoadRef.current = false;
-      
-      const initialOption = createShippingOption([{ 
-        rule: { nombre: 'Calculando...', id: 'initial' },
-        items: cartItems
-      }], 0);
-      
-      if (initialOption) {
-        setLastGeneratedOption(initialOption);
-        onShippingSelected(initialOption);
-      }
+      // DO NOT call onShippingSelected here.
+      // Let handleShippingCostChange handle the first selection.
     }
-  }, [cartItems, address, onShippingSelected, createShippingOption]);
+  }, [cartItems, address]); // Removed dependencies
   
   // Si no hay dirección válida, mostrar mensaje
   if (!address) {

@@ -91,9 +91,9 @@ export const CheckoutContent = () => {
         console.log('🔄 CheckoutContent: Seleccionando automáticamente la opción más económica');
         checkoutInitialLoadRef.current = true;
         
-        // Encontrar la opción más económica
+        // Encontrar la opción más económica usando 'price'
         const cheapestOption = [...shippingOptions].sort((a, b) => 
-          (a.totalCost || 0) - (b.totalCost || 0)
+          (a.price || 0) - (b.price || 0) // Use price field for sorting
         )[0];
         
         if (cheapestOption) {
@@ -115,16 +115,54 @@ export const CheckoutContent = () => {
   // Actualizar el costo de envío cuando cambia la opción seleccionada
   useEffect(() => {
     if (selectedShippingOption && updateShipping) {
-      // Verificar si el costo de envío ya fue actualizado con este valor
-      const shippingCost = parseFloat(selectedShippingOption.totalCost || selectedShippingOption.calculatedCost || 0);
-      
-      // Solo actualizar si el costo cambió realmente
-      if (shippingUpdateRef.current !== shippingCost) {
-        console.log(`💸 Costo de envío actualizado a $${shippingCost.toFixed(2)}`);
+      try {
+        // Extraer el costo de la opción seleccionada
+        let shippingCost = 0;
+        
+        // Intentar obtener el costo de diferentes propiedades (en orden de prioridad)
+        if (typeof selectedShippingOption.totalCost === 'number') {
+          shippingCost = selectedShippingOption.totalCost;
+        } else if (typeof selectedShippingOption.calculatedCost === 'number') {
+          shippingCost = selectedShippingOption.calculatedCost;
+        } else if (typeof selectedShippingOption.price === 'number') {
+          shippingCost = selectedShippingOption.price;
+        } else if (typeof selectedShippingOption.cost === 'number') {
+          shippingCost = selectedShippingOption.cost;
+        }
+        
+        // Asegurar que sea un número
+        shippingCost = parseFloat(shippingCost);
+        
+        // Verificar si es un número válido
+        if (isNaN(shippingCost)) {
+          console.warn('⚠️ Costo de envío no válido:', selectedShippingOption);
+          shippingCost = 0;
+        }
+        
+        console.log(`💸 [CheckoutContent] Actualizando costo de envío a $${shippingCost.toFixed(2)} [ID: ${selectedShippingOption.id}]`);
+        console.log('🔍 [CheckoutContent] Opción seleccionada:', {
+          id: selectedShippingOption.id,
+          name: selectedShippingOption.name,
+          totalCost: selectedShippingOption.totalCost,
+          calculatedCost: selectedShippingOption.calculatedCost,
+          price: selectedShippingOption.price,
+          isFree: selectedShippingOption.isFree,
+          isFreeShipping: selectedShippingOption.isFreeShipping
+        });
+        
+        // Actualizar el costo de envío en el contexto del carrito
+        updateShipping(shippingCost);
+        
+        // Actualizar la referencia
         shippingUpdateRef.current = shippingCost;
-        // Asegurarse de que se pasa un número válido
-        updateShipping(isNaN(shippingCost) ? 0 : shippingCost);
+      } catch (error) {
+        console.error('❌ Error al actualizar costo de envío:', error);
       }
+    } else if (!selectedShippingOption && updateShipping) {
+      // Si no hay opción seleccionada, establecer costo en 0
+      console.log('🚫 No hay opción de envío seleccionada, estableciendo costo a $0');
+      updateShipping(0);
+      shippingUpdateRef.current = 0;
     }
   }, [selectedShippingOption, updateShipping]);
 
@@ -286,6 +324,14 @@ export const CheckoutContent = () => {
   // Historial de opciones seleccionadas por dirección
   const [shippingOptionsHistory, setShippingOptionsHistory] = useState({});
 
+  // Antes de renderizar el CheckoutSummaryPanel, agregar log para verificar las props
+  console.log('📌 [CheckoutContent] Props para CheckoutSummaryPanel:', {
+    cartShipping,
+    isFreeShipping,
+    selectedShippingIsFree: selectedShippingOption?.isFree,
+    passingAsFreeShipping: selectedShippingOption?.isFree || false
+  });
+
   return (
     <div className="container checkout-page my-5">
       {/* The diagnostic panel and debug components have been removed */}
@@ -357,7 +403,7 @@ export const CheckoutContent = () => {
           cartTaxes={cartTaxes}
           cartShipping={cartShipping}
           cartTotal={cartTotal}
-          isFreeShipping={isFreeShipping}
+          isFreeShipping={selectedShippingOption?.isFree || false}
           selectedShippingOption={selectedShippingOption}
 
           isProcessing={checkout.isProcessing}
