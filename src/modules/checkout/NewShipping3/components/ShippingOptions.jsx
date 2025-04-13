@@ -178,7 +178,11 @@ export const ShippingOptions = ({
       onShippingOptionChange({
         options: newSelectedOptions,
         totalCost: newTotalCost,
-        isPartial: !allProductsCovered()
+        isPartial: !allProductsCovered(),
+        coveredProductIds: Array.from(newCoveredProducts), // Enviar los IDs de productos cubiertos
+        unavailableProductIds: cartItems
+          .map(item => (item.product || item).id)
+          .filter(id => !newCoveredProducts.has(id)) // IDs de productos no cubiertos
       });
       onShippingValidityChange(true);
     } else {

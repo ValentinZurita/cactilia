@@ -14,13 +14,15 @@ import '../styles/ShippingManager.css';
  * @param {Object} props.selectedAddress - Dirección seleccionada (proporcionada por el checkout)
  * @param {Function} props.onShippingCostChange - Callback cuando cambia el costo de envío
  * @param {Function} props.onShippingValidChange - Callback cuando cambia la validez del envío
+ * @param {Function} props.onShippingCoverageChange - Callback cuando cambian los productos cubiertos
  * @returns {JSX.Element} - Componente de gestión de envío para checkout
  */
 export const ShippingManagerForCheckout = ({
   cartItems = [],
   selectedAddress,
   onShippingCostChange = () => {},
-  onShippingValidChange = () => {}
+  onShippingValidChange = () => {},
+  onShippingCoverageChange = () => {}
 }) => {
   // Usar refs para detectar cambios
   const addressRef = useRef(null);
@@ -51,11 +53,26 @@ export const ShippingManagerForCheckout = ({
     if (!shippingData) {
       // Si no hay datos de envío, establecer costo 0
       onShippingCostChange(0);
+      // Informar que no hay productos cubiertos
+      onShippingCoverageChange({ 
+        coveredProductIds: [], 
+        unavailableProductIds: cartItems.map(item => (item.product || item).id),
+        hasPartialCoverage: false
+      });
       return;
     }
     
     // Usar el costo total de todas las opciones seleccionadas
     onShippingCostChange(shippingData.totalCost || 0);
+    
+    // Pasar información de cobertura al checkout
+    if (onShippingCoverageChange) {
+      onShippingCoverageChange({
+        coveredProductIds: shippingData.coveredProductIds || [],
+        unavailableProductIds: shippingData.unavailableProductIds || [],
+        hasPartialCoverage: shippingData.isPartial || false
+      });
+    }
     
     // Opcionalmente, se podría pasar más información al checkout
     console.log('Datos de envío actualizados:', shippingData);
@@ -90,5 +107,6 @@ ShippingManagerForCheckout.propTypes = {
   cartItems: PropTypes.array,
   selectedAddress: PropTypes.object,
   onShippingCostChange: PropTypes.func,
-  onShippingValidChange: PropTypes.func
+  onShippingValidChange: PropTypes.func,
+  onShippingCoverageChange: PropTypes.func
 }; 

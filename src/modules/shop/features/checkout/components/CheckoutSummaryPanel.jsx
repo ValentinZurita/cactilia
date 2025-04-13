@@ -1,4 +1,3 @@
-
 import { CheckoutButton } from './CheckoutButton';
 import { CheckoutSummary } from './summary/index.js'
 
@@ -23,6 +22,9 @@ export const CheckoutSummaryPanel = ({
 
                                        // Tipo de pago
                                        selectedPaymentType,
+                                       
+                                       // Información de envío 
+                                       selectedShippingOption,
 
                                        // Manejadores
                                        processOrderWithChecks,
@@ -45,6 +47,10 @@ export const CheckoutSummaryPanel = ({
     return "Completar Compra";
   };
 
+  // Extraer ids de productos no disponibles de la opción de envío seleccionada
+  const unavailableProductIds = selectedShippingOption?.unavailableProductIds || [];
+  const hasPartialCoverage = selectedShippingOption?.hasPartialCoverage || false;
+
   return (
     <div className="col-lg-4">
       <div className="checkout-summary-container">
@@ -57,7 +63,21 @@ export const CheckoutSummaryPanel = ({
           shipping={cartShipping}
           total={cartTotal}
           isFreeShipping={isFreeShipping}
+          unavailableProductIds={unavailableProductIds}
         />
+
+        {/* Mensaje para envío parcial */}
+        {hasPartialCoverage && unavailableProductIds.length > 0 && (
+          <div className="shipping-actions px-3 mb-3">
+            <button 
+              className="btn btn-outline-secondary btn-sm w-100"
+              onClick={() => window.scrollTo(0, 0)} // Scroll hasta arriba para cambiar dirección
+            >
+              <i className="bi bi-geo-alt me-1"></i>
+              Cambiar dirección de envío
+            </button>
+          </div>
+        )}
 
         {/* Botón para procesar la compra */}
         <div className="px-3">

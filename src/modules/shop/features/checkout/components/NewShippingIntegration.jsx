@@ -23,6 +23,13 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
   const addressRef = useRef(null);
   const firstLoadRef = useRef(true);
   
+  // Estado para mantener información sobre productos cubiertos/no cubiertos
+  const [coverageInfo, setCoverageInfo] = useState({
+    coveredProductIds: [],
+    unavailableProductIds: [],
+    hasPartialCoverage: false
+  });
+  
   // Manejar cambios en el costo de envío
   const handleShippingCostChange = useCallback((cost) => {
     // Comprobar si el costo ya se ha procesado para evitar actualizaciones múltiples
@@ -42,18 +49,44 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
         price: cost,
         totalCost: cost,
         calculatedCost: cost,
-        isFree: cost === 0
+        isFree: cost === 0,
+        // Añadir información de cobertura a la opción
+        coveredProductIds: coverageInfo.coveredProductIds,
+        unavailableProductIds: coverageInfo.unavailableProductIds,
+        hasPartialCoverage: coverageInfo.hasPartialCoverage
+      };
+      
+      setLastGeneratedOption(updatedOption);
+      onShippingSelected(updatedOption);
+    }
+  }, [lastGeneratedOption, onShippingSelected, coverageInfo]);
+  
+  // Manejar cambios en la validez del envío
+  const handleShippingValidChange = useCallback((isValid) => {
+    console.log(`🚢 Envío válido: ${isValid ? 'Sí' : 'No'}`);
+  }, []);
+  
+  // Manejar cambios en la cobertura de envío
+  const handleShippingCoverageChange = useCallback((newCoverageInfo) => {
+    console.log(`📦 Cobertura de productos actualizada:`, newCoverageInfo);
+    
+    // Actualizar el estado local con la nueva información de cobertura
+    setCoverageInfo(newCoverageInfo);
+    
+    // Si hay una opción generada, actualizarla con la nueva información de cobertura
+    if (lastGeneratedOption && typeof onShippingSelected === 'function') {
+      const updatedOption = {
+        ...lastGeneratedOption,
+        coveredProductIds: newCoverageInfo.coveredProductIds,
+        unavailableProductIds: newCoverageInfo.unavailableProductIds,
+        hasPartialCoverage: newCoverageInfo.hasPartialCoverage,
+        allProductsCovered: !newCoverageInfo.hasPartialCoverage
       };
       
       setLastGeneratedOption(updatedOption);
       onShippingSelected(updatedOption);
     }
   }, [lastGeneratedOption, onShippingSelected]);
-  
-  // Manejar cambios en la validez del envío
-  const handleShippingValidChange = useCallback((isValid) => {
-    console.log(`🚢 Envío válido: ${isValid ? 'Sí' : 'No'}`);
-  }, []);
   
   /**
    * Transformar un paquete a una opción de envío para que sea compatible con la interfaz esperada por el checkout
@@ -154,6 +187,7 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
         selectedAddress={address}
         onShippingCostChange={handleShippingCostChange}
         onShippingValidChange={handleShippingValidChange}
+        onShippingCoverageChange={handleShippingCoverageChange}
       />
     </div>
   );
