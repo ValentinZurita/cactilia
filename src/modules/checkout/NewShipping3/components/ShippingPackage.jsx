@@ -2,8 +2,6 @@
  * Componente para mostrar un paquete de envío individual
  */
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { formatCurrency } from 'utils/format';
 import '../styles/ShippingPackage.css';
 
 /**
@@ -13,8 +11,9 @@ import '../styles/ShippingPackage.css';
  * @param {boolean} props.selected - Si está seleccionado
  * @param {Array} props.cartItems - Items del carrito para identificar productos incluidos
  */
-export const ShippingPackage = ({ packageData, selected = false, cartItems = [], onSelect }) => {
+export const ShippingPackage = ({ packageData, selected = false, cartItems = [] }) => {
   const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [packagesExpanded, setPackagesExpanded] = useState(false);
   
   if (!packageData) return null;
 
@@ -28,6 +27,7 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
     tiempo_entrega,
     totalCost,
     description,
+    paquetesInfo,
     products = [],  // IDs de productos en este paquete
     maxProductsPerPackage,
     maxWeightPerPackage,
@@ -35,14 +35,12 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
     zoneType,
     packagesCount = 1,
     packagesInfo: externalPackagesInfo = [],
+    costoExtra = 0,
     price = 0
   } = packageData;
 
   // Debug para ver qué nombre recibe el componente
   console.log(`📦 ShippingPackage recibe nombre: "${name}"`);
-
-  // Obtener el tiempo de entrega desde cualquier fuente disponible
-  const displayDeliveryTime = deliveryTime || tiempo_entrega || '';
 
   // Obtener detalles de los productos incluidos en este paquete
   const packProducts = cartItems
@@ -71,14 +69,6 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
     return sum + (parseFloat(product.weight) * product.quantity);
   }, 0).toFixed(2);
   
-  // Determinar el tipo de envío para mostrar el icono correcto
-  const getShippingIcon = () => {
-    if (zoneType === 'express') return <i className="bi bi-truck shipping-express"></i>;
-    if (zoneType === 'local') return <i className="bi bi-truck"></i>;
-    if (zoneType === 'nacional') return <i className="bi bi-truck"></i>;
-    return <i className="bi bi-box"></i>;
-  };
-
   // Distribuir productos en paquetes según restricciones
   const calculatePackages = () => {
     // Si hay restricción de 1 producto por paquete, distribuimos incluyendo cantidades
@@ -92,7 +82,7 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
             id: `pkg_${packages.length + 1}`,
             products: [{...product, quantity: 1}],
             weight: parseFloat(product.weight),
-            price: price || (totalCost / (totalProductUnits || 1))
+            price: price > 0 ? price : totalCost
           });
         }
       });
@@ -110,7 +100,7 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
           id: pkg.id || `pkg_${index + 1}`,
           products: pkgProducts,
           weight,
-          price: price || (totalCost / externalPackagesInfo.length)
+          price: price > 0 ? price : totalCost
         };
       });
     }
@@ -126,11 +116,12 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
   };
   
   const packages = calculatePackages();
+  const actualPackageCount = packages.length;
   
-  // Calcular el costo total como la suma de todos los paquetes
+  // Calcular el costo total real sumando el costo de cada paquete
   const calculatedTotalCost = packages.reduce((sum, pkg) => sum + pkg.price, 0);
   
-  // Formatear costos
+  // Formatear costo total
   const formattedTotalCost = calculatedTotalCost === 0 
     ? 'GRATIS' 
     : new Intl.NumberFormat('es-MX', {
@@ -139,46 +130,37 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
         minimumFractionDigits: 2
       }).format(calculatedTotalCost);
   
-  // Formatear el precio por paquete individual
-  const formatPackagePrice = (price) => {
-    return price === 0 
-      ? 'GRATIS' 
-      : new Intl.NumberFormat('es-MX', {
-          style: 'currency',
-          currency: 'MXN',
-          minimumFractionDigits: 2
-        }).format(price);
+  // Obtener el costo unitario por paquete (ahora es el mismo para todos los paquetes)
+  const costoPorPaquete = packages.length > 0 ? packages[0].price : 0;
+  
+  const formattedUnitCost = costoPorPaquete === 0 
+    ? 'GRATIS' 
+    : new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        minimumFractionDigits: 2
+      }).format(costoPorPaquete);
+  
+  // Obtener el tiempo de entrega desde cualquier fuente disponible
+  const displayDeliveryTime = deliveryTime || estimatedDelivery || tiempo_entrega || '';
+  
+  // Determinar el tipo de envío para mostrar el icono correcto
+  const getShippingIcon = () => {
+    if (zoneType === 'express') return <i className="bi bi-truck shipping-express"></i>;
+    if (zoneType === 'local') return <i className="bi bi-truck"></i>;
+    if (zoneType === 'nacional') return <i className="bi bi-truck"></i>;
+    return <i className="bi bi-box"></i>;
   };
   
   // Manejar la selección de esta opción
   const handleSelect = () => {
-    onSelect && onSelect(packageData.id);
+    // Implementa la lógica para seleccionar este paquete
   };
   
   // Alternar la visualización de detalles
   const toggleDetails = (e) => {
     e.stopPropagation();
     setDetailsExpanded(!detailsExpanded);
-  };
-
-  // Determine delivery time text based on available data
-  const getDeliveryTimeText = () => {
-    // Si hay un texto de tiempo de entrega ya formateado, usarlo directamente
-    if (displayDeliveryTime) {
-      return displayDeliveryTime;
-    }
-    
-    // Si hay datos de estimatedDelivery como objeto, formatearlos
-    if (estimatedDelivery) {
-      if (estimatedDelivery.min === estimatedDelivery.max) {
-        return `${estimatedDelivery.min} ${estimatedDelivery.timeUnit}`;
-      }
-      
-      return `${estimatedDelivery.min} a ${estimatedDelivery.max} ${estimatedDelivery.timeUnit}`;
-    }
-    
-    // Si no hay datos, mostrar mensaje genérico
-    return "Tiempo de entrega no disponible";
   };
 
   return (
@@ -196,16 +178,19 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
             {displayDeliveryTime ? (
               <div className="shipping-delivery-time">
                 <i className="bi bi-clock"></i>
-                <span>{getDeliveryTimeText()}</span>
+                <span>{displayDeliveryTime}</span>
               </div>
             ) : null}
           </div>
         </div>
+        {/* Mostrar costo total real basado en el número de paquetes */}
         <div className="shipping-package-price">
           {calculatedTotalCost === 0 ? (
             <span className="free-shipping">GRATIS</span>
           ) : (
-            <span>{formattedTotalCost}</span>
+            <>
+              <span>{formattedTotalCost}</span>
+            </>
           )}
         </div>
       </div>
@@ -244,21 +229,20 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
         
         {detailsExpanded && (
           <div className="shipping-package-expanded">
-            <h4>Productos incluidos:</h4>
             <div className="products-breakdown">
               {packages.map((pkg, index) => (
                 <div key={pkg.id} className="package-breakdown">
                   {packages.length > 1 && (
                     <div className="package-header-breakdown">
-                      <h5>Paquete {index + 1}:</h5>
-                      <span className="package-price">{formatPackagePrice(pkg.price)}</span>
+                      <h5>Paquete {index + 1}</h5>
+                      <span className="package-price">{formattedUnitCost}</span>
                     </div>
                   )}
                   <ul className="product-list">
                     {pkg.products.map(product => (
                       <li key={`${pkg.id}_${product.id}`} className="product-item">
                         <div className="product-details">
-                          <span className="product-name">{product.name} {product.quantity > 1 ? `(${product.quantity})` : ''}</span>
+                          <span className="shipping-product-name-detail">{product.name} {product.quantity > 1 ? `(${product.quantity})` : ''}</span>
                           {product.weight > 0 && (
                             <span className="product-weight">{(parseFloat(product.weight) * product.quantity).toFixed(2)} kg</span>
                           )}
@@ -269,42 +253,9 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [],
                 </div>
               ))}
             </div>
-            
-            {packages.length > 1 && (
-              <div className="shipping-cost-summary">
-                <span>Total envío:</span>
-                <span className="shipping-total-price">{formattedTotalCost}</span>
-              </div>
-            )}
           </div>
         )}
       </div>
     </div>
   );
-};
-
-ShippingPackage.propTypes = {
-  packageData: PropTypes.shape({
-    id: PropTypes.string,
-    name: PropTypes.string,
-    carrier: PropTypes.string,
-    serviceType: PropTypes.string,
-    estimatedDelivery: PropTypes.shape({
-      min: PropTypes.number,
-      max: PropTypes.number,
-      timeUnit: PropTypes.string
-    }),
-    totalCost: PropTypes.number,
-    products: PropTypes.array,
-    packages: PropTypes.array,
-    zoneType: PropTypes.string
-  }).isRequired,
-  selected: PropTypes.bool,
-  onSelect: PropTypes.func.isRequired
-};
-
-ShippingPackage.defaultProps = {
-  selected: false
-};
-
-export default ShippingPackage; 
+}; 

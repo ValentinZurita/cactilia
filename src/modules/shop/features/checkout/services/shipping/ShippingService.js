@@ -47,7 +47,7 @@ export const getShippingOptions = async (cartItems, addressInfo, customRules = n
       console.log(`📦 Usando ${customRules.length} reglas personalizadas proporcionadas`);
       shippingRules = customRules;
     } else {
-      // Obtener reglas de envío activas desde Firebase
+    // Obtener reglas de envío activas desde Firebase
       shippingRules = await getActiveShippingZones();
     }
     

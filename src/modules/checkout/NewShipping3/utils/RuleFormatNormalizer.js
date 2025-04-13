@@ -77,32 +77,18 @@ export const normalizeShippingRule = (rule, address = null) => {
   
   // CASO 2: Regla por estado (formato estado_XXX)
   if (rule.zipcode && rule.zipcode.startsWith(STATE_PREFIX)) {
-    // Usar tipo nacional si el estado de envío no está especificado o no coincide con el estado de la regla
-    if (address && address.state) {
-      const ruleState = rule.zona ? rule.zona.toLowerCase() : 
-                       rule.zipcode.substring(STATE_PREFIX.length).toLowerCase();
-      
-      if (state && state !== ruleState) {
-        // Si la dirección tiene un estado diferente al de la regla, 
-        // usar cobertura nacional para compatibilidad
-        console.log(`⚠️ Estado de dirección ${state} no coincide con regla de ${ruleState}, usando nacional como fallback`);
-        newRule.coverage_type = 'nacional';
-        newRule.tipo_cobertura = 'nacional';
-        return newRule;
-      }
-    }
-
+    // Extraer el código de estado del zipcode
+    const stateCode = rule.zipcode.substring(STATE_PREFIX.length).toLowerCase(); // Quitar "estado_"
+    
     newRule.coverage_type = 'por_estado';
     newRule.tipo_cobertura = 'por_estado';
     
-    // Si la dirección tiene estado y la regla tiene zona definida, usarla
-    if (state && rule.zona) {
+    // Si la regla tiene zona definida, usarla
+    if (rule.zona) {
       newRule.coverage_values = [rule.zona.toLowerCase()];
       newRule.cobertura_estados = [rule.zona.toLowerCase()];
-    } 
-    // Si no, extraer el código de estado del zipcode
-    else {
-      const stateCode = rule.zipcode.substring(STATE_PREFIX.length).toLowerCase(); // Quitar "estado_"
+    } else {
+      // Si no, usar el código extraído del zipcode
       newRule.coverage_values = [stateCode];
       newRule.cobertura_estados = [stateCode];
     }
@@ -113,20 +99,6 @@ export const normalizeShippingRule = (rule, address = null) => {
   
   // CASO 3: Regla por zona que es un estado
   if (rule.zona && rule.zona !== 'Local' && rule.zona !== 'Nacional') {
-    // Usar tipo nacional si el estado de envío no está especificado o no coincide con el estado de la regla
-    if (address && address.state) {
-      const ruleState = rule.zona.toLowerCase();
-      
-      if (state && state !== ruleState) {
-        // Si la dirección tiene un estado diferente al de la regla, 
-        // usar cobertura nacional para compatibilidad
-        console.log(`⚠️ Estado de dirección ${state} no coincide con regla de ${ruleState}, usando nacional como fallback`);
-        newRule.coverage_type = 'nacional';
-        newRule.tipo_cobertura = 'nacional';
-        return newRule;
-      }
-    }
-
     newRule.coverage_type = 'por_estado';
     newRule.tipo_cobertura = 'por_estado';
     newRule.coverage_values = [rule.zona.toLowerCase()];
