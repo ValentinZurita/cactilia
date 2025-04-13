@@ -89,6 +89,74 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
       
       return packages;
     }
+    // Si hay restricción de peso máximo por paquete
+    else if (maxWeightPerPackage && parseFloat(maxWeightPerPackage) > 0) {
+      const maxWeight = parseFloat(maxWeightPerPackage);
+      let packages = [];
+      let currentPackageProducts = [];
+      let currentPackageWeight = 0;
+      
+      // Primero, desglosamos productos con cantidades mayores a 1
+      let expandedProducts = [];
+      packProducts.forEach(product => {
+        // Si son productos con cantidades altas, pero poco peso, los agrupamos
+        const productWeight = parseFloat(product.weight) || 0;
+        
+        if (product.quantity > 1 && productWeight * product.quantity <= maxWeight) {
+          // Podemos mantener el producto completo
+          expandedProducts.push({...product});
+        } else if (product.quantity > 1) {
+          // Necesitamos dividir este producto en unidades
+          for (let i = 0; i < product.quantity; i++) {
+            expandedProducts.push({
+              ...product,
+              quantity: 1
+            });
+          }
+        } else {
+          // Producto normal con cantidad 1
+          expandedProducts.push({...product});
+        }
+      });
+      
+      // Ahora distribuimos los productos en paquetes según el peso
+      expandedProducts.forEach(product => {
+        const productWeight = (parseFloat(product.weight) || 0) * product.quantity;
+        
+        // Si añadir este producto supera el peso máximo, crear un nuevo paquete
+        if (currentPackageWeight + productWeight > maxWeight) {
+          // Si el paquete actual no está vacío, lo añadimos a la lista
+          if (currentPackageProducts.length > 0) {
+            packages.push({
+              id: `pkg_${packages.length + 1}`,
+              products: [...currentPackageProducts],
+              weight: currentPackageWeight,
+              price: price > 0 ? price : totalCost
+            });
+          }
+          
+          // Iniciar un nuevo paquete con este producto
+          currentPackageProducts = [product];
+          currentPackageWeight = productWeight;
+        } else {
+          // Si cabe, añadimos el producto al paquete actual
+          currentPackageProducts.push(product);
+          currentPackageWeight += productWeight;
+        }
+      });
+      
+      // Añadir el último paquete si tiene productos
+      if (currentPackageProducts.length > 0) {
+        packages.push({
+          id: `pkg_${packages.length + 1}`,
+          products: currentPackageProducts,
+          weight: currentPackageWeight,
+          price: price > 0 ? price : totalCost
+        });
+      }
+      
+      return packages;
+    }
     // Si hay otra restricción diferente o información externa, usar eso
     else if (externalPackagesInfo && externalPackagesInfo.length > 0) {
       return externalPackagesInfo.map((pkg, index) => {
