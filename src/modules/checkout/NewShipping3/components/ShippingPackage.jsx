@@ -122,8 +122,17 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
     }
     // Último recurso: usar totalCost
     else if (totalCost !== undefined && !isNaN(parseFloat(totalCost)) && parseFloat(totalCost) > 0) {
-      basePrice = parseFloat(totalCost) / packagesCount;
-      console.log(`📊 [PRECIO] Precio base calculado desde totalCost dividido por packagesCount: $${basePrice}`);
+      basePrice = parseFloat(totalCost);
+      
+      // Si hay más de un paquete y el service no ha calculado precios individuales,
+      // dividir el costo total entre el número de paquetes solo si no hay configuración de peso extra
+      if (packagesCount > 1 && !packagesWithPrices && 
+          (!config || !config.peso_maximo_paquete || !config.costo_por_kg_extra)) {
+        basePrice = basePrice / packagesCount;
+        console.log(`📊 [PRECIO] Precio base calculado desde totalCost dividido por packagesCount (${packagesCount}): $${basePrice}`);
+      } else {
+        console.log(`📊 [PRECIO] Precio base de totalCost: $${basePrice}`);
+      }
     }
     // Si no se encuentra ningún precio
     else {
@@ -409,6 +418,21 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
     setDetailsExpanded(!detailsExpanded);
   };
 
+  // Debug para valores de costo
+  console.log(`💵 [DEBUG COSTOS] ${name}:`, {
+    totalCost,
+    price,
+    precio_base,
+    calculatedTotalCost,
+    'Suma paquetes (UI)': formattedTotalCost ? formattedTotalCost.replace(/[^\d.-]/g, '') : 'N/A'
+  });
+
+  // Asegurarse de que packageData tenga el costo calculado actualizado
+  if (packageData && typeof packageData === 'object') {
+    // Asignar el costo calculado al objeto packageData para que esté disponible para el componente padre
+    packageData.calculatedTotalCost = calculatedTotalCost;
+  }
+
   return (
     <div 
       className={`shipping-package ${selected ? 'selected' : ''}`}
@@ -435,9 +459,13 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
             <span className="free-shipping">GRATIS</span>
           ) : (
             <>
-              {packages.length > 1 && packages.some(pkg => Math.abs(pkg.price - packages[0].price) > 5) ? (
+              {packages.length > 1 ? (
                 <div className="shipping-total-price">
-                  <span className="shipping-total-cost">Desde</span>
+                  {packages.length > 1 && packages.some(pkg => Math.abs(pkg.price - packages[0].price) > 5) ? (
+                    <span className="shipping-total-cost">Desde</span>
+                  ) : (
+                    <span className="shipping-total-cost">{packages.length} paquetes</span>
+                  )}
                   <span>{formattedTotalCost}</span>
                 </div>
               ) : (

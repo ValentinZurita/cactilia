@@ -64,7 +64,37 @@ export const ShippingOptions = ({
   
   // Calcular el costo total de envío de todas las opciones seleccionadas
   const calculateTotalShippingCost = (options) => {
-    return options.reduce((total, option) => total + parseFloat(option.totalCost || 0), 0);
+    console.log('🧮 Calculando costo total de envío para:', options);
+    
+    let total = 0;
+    options.forEach(option => {
+      // Determinar el costo real de esta opción
+      let optionCost = 0;
+      
+      // Prioridad de costos:
+      // 1. Si la opción tiene un campo calculatedTotalCost (suma real de paquetes), usarlo
+      if (option.calculatedTotalCost !== undefined && !isNaN(parseFloat(option.calculatedTotalCost))) {
+        optionCost = parseFloat(option.calculatedTotalCost);
+      }
+      // 2. Si hay un valor explícito de price, usarlo
+      else if (option.price !== undefined && !isNaN(parseFloat(option.price))) {
+        optionCost = parseFloat(option.price);
+      } 
+      // 3. Si hay un valor de totalCost, usarlo como respaldo
+      else if (option.totalCost !== undefined && !isNaN(parseFloat(option.totalCost))) {
+        optionCost = parseFloat(option.totalCost);
+      }
+      // 4. Si hay un precio base explícito, usarlo como último respaldo
+      else if (option.precio_base !== undefined && !isNaN(parseFloat(option.precio_base))) {
+        optionCost = parseFloat(option.precio_base);
+      }
+      
+      console.log(`   - ${option.name}: $${optionCost}`);
+      total += optionCost;
+    });
+    
+    console.log(`   = Total: $${total}`);
+    return total;
   };
   
   // Modificar cómo se manejan las opciones seleccionadas
@@ -119,6 +149,10 @@ export const ShippingOptions = ({
       
       // Si no hay duplicados, añadir la opción
       console.log(`🚢 Seleccionando opción de envío: ${option.name}`);
+      // Registrar el costo calculado para diagnóstico
+      if (option.calculatedTotalCost !== undefined) {
+        console.log(`📊 Costo calculado de paquetes reales: $${option.calculatedTotalCost}`);
+      }
       newSelectedOptions.push(option);
     }
     
