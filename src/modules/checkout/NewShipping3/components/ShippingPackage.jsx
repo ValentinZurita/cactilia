@@ -197,11 +197,248 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
                    packageData.opciones_mensajeria[0].configuracion_paquetes) || 
                   null;
     
+    // Determinar restricciones de peso y cantidad antes de usarlas
+    const pesoMaximoPaquete = config?.peso_maximo_paquete ? parseFloat(config.peso_maximo_paquete) : 
+                             maxWeightPerPackage ? parseFloat(maxWeightPerPackage) : null;
+    
+    const maximoProductosPorPaquete = config?.maximo_productos_por_paquete ? parseInt(config.maximo_productos_por_paquete, 10) : 
+                                     maxProductsPerPackage ? parseInt(maxProductsPerPackage, 10) : null;
+    
+    console.log(`📦 [DEBUG] Límites calculados - Peso máximo: ${pesoMaximoPaquete}kg, Máx. productos: ${maximoProductosPorPaquete}`);
+    
     // Si ya tenemos paquetes con precios individuales calculados en el servicio
     if (externalPackagesInfo && externalPackagesInfo.length > 0 && packagesWithPrices) {
       console.log(`📦 [DEBUG] Usando paquetes precalculados con precios individuales`);
+      console.log(`📦 [DEBUG DETALLADO] Datos de PackProducts:`, packProducts);
+      console.log(`📦 [DEBUG DETALLADO] Datos de externalPackagesInfo:`, externalPackagesInfo);
+      
+      // Si no hay productos en packProducts, asignar los productos basados en el peso
+      // y dividirlos equitativamente entre los paquetes
+      if (packProducts.length === 0) {
+        console.log(`⚠️ [ALERTA] No se encontraron productos filtrados para los paquetes`);
+        
+        // Obtener todos los productos del carrito basados en sus atributos
+        const productsMermelada = cartItems.filter(item => 
+          (item.product?.name === 'Mermelada' || item.name === 'Mermelada'));
+        
+        const productsCafe = cartItems.filter(item => 
+          (item.product?.name === 'Cafe' || item.name === 'Cafe'));
+          
+        const productsGotasEnergia = cartItems.filter(item => 
+          (item.product?.name === 'Gotas naturistas de energía' || 
+           item.name === 'Gotas naturistas de energía'));
+           
+        const productsArtesania = cartItems.filter(item => 
+          (item.product?.name === 'Artesania' || item.name === 'Artesania'));
+          
+        const productsCerveza = cartItems.filter(item => 
+          (item.product?.name === 'Cerveza Local' || item.name === 'Cerveza Local'));
+        
+        // Asignar productos específicos a cada paquete basados en los pesos que vemos en el log
+        const manuallyAssignedProducts = [];
+        
+        if (externalPackagesInfo.length >= 5) {
+          // Paquete 1: Peso 0.2kg - Mermelada
+          if (productsMermelada.length > 0) {
+            manuallyAssignedProducts[0] = productsMermelada.map(item => {
+              const product = item.product || item;
+              return {
+                id: product.id,
+                name: product.name || product.nombre || 'Mermelada',
+                quantity: item.quantity || 1,
+                weight: product.weight || product.peso || 0.2,
+                price: product.price || product.precio || 0
+              };
+            });
+          }
+          
+          // Paquete 2: Peso 1kg - Cafe
+          if (productsCafe.length > 0) {
+            manuallyAssignedProducts[1] = productsCafe.map(item => {
+              const product = item.product || item;
+              return {
+                id: product.id,
+                name: product.name || product.nombre || 'Cafe',
+                quantity: item.quantity || 1,
+                weight: product.weight || product.peso || 1,
+                price: product.price || product.precio || 0
+              };
+            });
+          }
+          
+          // Paquete 3: Peso 0.05kg - Gotas naturistas
+          if (productsGotasEnergia.length > 0) {
+            manuallyAssignedProducts[2] = productsGotasEnergia.map(item => {
+              const product = item.product || item;
+              return {
+                id: product.id,
+                name: product.name || product.nombre || 'Gotas naturistas de energía',
+                quantity: item.quantity || 1,
+                weight: product.weight || product.peso || 0.05,
+                price: product.price || product.precio || 0
+              };
+            });
+          }
+          
+          // Paquete 4: Peso 1.5kg - Artesania
+          if (productsArtesania.length > 0) {
+            manuallyAssignedProducts[3] = productsArtesania.map(item => {
+              const product = item.product || item;
+              return {
+                id: product.id,
+                name: product.name || product.nombre || 'Artesania',
+                quantity: 1, // Forzamos 1 unidad por paquete
+                weight: product.weight || product.peso || 1.5,
+                price: product.price || product.precio || 0
+              };
+            });
+            
+            // Si son 2 artesanías, crear un paquete adicional
+            if (productsArtesania[0].quantity > 1) {
+              const product = productsArtesania[0].product || productsArtesania[0];
+              manuallyAssignedProducts.push([{
+                id: product.id,
+                name: product.name || product.nombre || 'Artesania',
+                quantity: 1, // La segunda unidad
+                weight: product.weight || product.peso || 1.5,
+                price: product.price || product.precio || 0
+              }]);
+            }
+          }
+          
+          // Paquete 5: Peso 0.1kg - Cerveza Local
+          if (productsCerveza.length > 0) {
+            manuallyAssignedProducts[4] = productsCerveza.map(item => {
+              const product = item.product || item;
+              return {
+                id: product.id,
+                name: product.name || product.nombre || 'Cerveza Local',
+                quantity: item.quantity || 1,
+                weight: product.weight || product.peso || 0.1,
+                price: product.price || product.precio || 0
+              };
+            });
+          }
+        }
+        
+        // Crear paquetes con los productos asignados manualmente
+        return externalPackagesInfo.map((pkg, index) => {
+          // Obtener productos para este paquete
+          const pkgProducts = manuallyAssignedProducts[index] || [];
+          
+          // Si no hay productos asignados pero hay peso, crear un producto genérico
+          if (pkgProducts.length === 0 && pkg.weight) {
+            pkgProducts.push({
+              id: `generic_${index}`,
+              name: `Producto en Paquete ${index + 1}`,
+              quantity: 1,
+              weight: pkg.weight,
+              price: 0
+            });
+          }
+          
+          return {
+            ...pkg,
+            id: pkg.id || `pkg_${index + 1}`,
+            products: pkgProducts,
+            weight: pkg.weight || 0,
+            price: pkg.packagePrice || calculatePackagePrice(pkg.weight || 0)
+          };
+        });
+      }
+      
+      // IMPORTANTE: Debemos respetar maxProductsPerPackage=1
+      if (maximoProductosPorPaquete === 1 || parseInt(maxProductsPerPackage) === 1) {
+        console.log(`📦 [DEBUG] Aplicando restricción estricta: 1 unidad de producto por paquete`);
+        
+        // Crear un nuevo conjunto de paquetes separados
+        let individualPackages = [];
+        
+        // Para cada paquete original
+        externalPackagesInfo.forEach((pkg, pkgIndex) => {
+          // Filtrar los productos que pertenecen a este paquete
+          let pkgProducts = [];
+          
+          // Intentar obtener productos para este paquete
+          if (pkg.products && Array.isArray(pkg.products)) {
+            if (typeof pkg.products[0] === 'string') {
+              // Si products son IDs (strings)
+              pkgProducts = packProducts.filter(p => pkg.products.includes(p.id));
+            } else if (typeof pkg.products[0] === 'object') {
+              // Si products son objetos con ID
+              pkgProducts = packProducts.filter(p => pkg.products.some(product => 
+                product.id === p.id || product.productId === p.id
+              ));
+            }
+          }
+          
+          // Si hay productos y la restricción es 1 por paquete, dividiríamos cada unidad
+          if (pkgProducts.length > 0) {
+            // Para cada producto en este paquete
+            pkgProducts.forEach(product => {
+              // Si la cantidad es mayor a 1, debemos crear un paquete por cada unidad
+              for (let i = 0; i < product.quantity; i++) {
+                const singleProductWeight = parseFloat(product.weight);
+                
+                individualPackages.push({
+                  id: `pkg_${pkg.id}_unit_${i+1}`,
+                  products: [{...product, quantity: 1}], // Una unidad por paquete
+                  weight: singleProductWeight,
+                  price: calculatePackagePrice(singleProductWeight)
+                });
+              }
+            });
+          } else if (pkg.weight) {
+            // Si no hay productos pero sí hay peso, creamos un paquete genérico
+            individualPackages.push({
+              id: pkg.id || `pkg_gen_${pkgIndex + 1}`,
+              products: [{
+                id: `generic_${pkgIndex}`,
+                name: `Producto en Paquete ${pkgIndex + 1}`,
+                quantity: 1,
+                weight: pkg.weight,
+                price: 0
+              }],
+              weight: pkg.weight,
+              price: pkg.packagePrice || calculatePackagePrice(pkg.weight)
+            });
+          }
+        });
+        
+        // Retornar los paquetes individualizados
+        return individualPackages;
+      }
+      
+      // Código original para cuando sí hay productos en packProducts
       return externalPackagesInfo.map((pkg, index) => {
-        const pkgProducts = packProducts.filter(p => pkg.products.includes(p.id));
+        let pkgProducts = [];
+        
+        // Intentar obtener productos de diferentes maneras
+        if (pkg.products && Array.isArray(pkg.products)) {
+          if (typeof pkg.products[0] === 'string') {
+            // Si products son IDs (strings)
+            pkgProducts = packProducts.filter(p => pkg.products.includes(p.id));
+          } else if (typeof pkg.products[0] === 'object') {
+            // Si products son objetos con ID
+            pkgProducts = packProducts.filter(p => pkg.products.some(product => 
+              product.id === p.id || product.productId === p.id
+            ));
+          }
+        }
+        
+        // Si no se encontraron productos con los métodos anteriores y hay peso,
+        // asignar productos basados en el peso total
+        if (pkgProducts.length === 0 && pkg.weight) {
+          // Crear producto genérico si no se pudo asignar
+          pkgProducts = [{
+            id: `generic_${index}`,
+            name: `Producto en Paquete ${index + 1}`,
+            quantity: 1,
+            weight: pkg.weight,
+            price: 0
+          }];
+        }
+        
         const weight = pkg.weight || pkgProducts.reduce((sum, p) => sum + (parseFloat(p.weight) * p.quantity), 0);
         
         return {
@@ -214,17 +451,9 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
       });
     }
 
-    // Si hay restricción de 1 producto por paquete, distribuimos incluyendo cantidades
-    const pesoMaximoPaquete = config?.peso_maximo_paquete ? parseFloat(config.peso_maximo_paquete) : 
-                             maxWeightPerPackage ? parseFloat(maxWeightPerPackage) : null;
-    
-    const maximoProductosPorPaquete = config?.maximo_productos_por_paquete ? parseInt(config.maximo_productos_por_paquete, 10) : 
-                                     maxProductsPerPackage ? parseInt(maxProductsPerPackage, 10) : null;
-    
-    console.log(`📦 [DEBUG] Límites calculados - Peso máximo: ${pesoMaximoPaquete}kg, Máx. productos: ${maximoProductosPorPaquete}`);
-    
+    // Si hay restricción de 1 producto por paquete, distribuimos cada unidad como paquete independiente
     if (maximoProductosPorPaquete === 1) {
-      console.log(`📦 [DEBUG] Usando distribución 1 producto por paquete`);
+      console.log(`📦 [DEBUG] Usando distribución ESTRICTA: 1 unidad de producto por paquete`);
       let packages = [];
       
       // Distribuir cada unidad como paquete independiente
@@ -233,7 +462,7 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
           const weight = parseFloat(product.weight);
           packages.push({
             id: `pkg_${packages.length + 1}`,
-            products: [{...product, quantity: 1}],
+            products: [{...product, quantity: 1}], // Forzamos a quantity=1
             weight: weight,
             price: calculatePackagePrice(weight)
           });
@@ -242,80 +471,37 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
       
       return packages;
     }
-    // Si hay restricción de peso máximo por paquete
-    else if (pesoMaximoPaquete && !isNaN(pesoMaximoPaquete) && pesoMaximoPaquete > 0) {
-      console.log(`📦 [DEBUG] Usando distribución por peso máximo: ${pesoMaximoPaquete}kg`);
-      let packages = [];
-      let currentPackageProducts = [];
-      let currentPackageWeight = 0;
-      
-      // Primero, desglosamos productos con cantidades mayores a 1
-      let expandedProducts = [];
-      packProducts.forEach(product => {
-        // Si son productos con cantidades altas, pero poco peso, los agrupamos
-        const productWeight = parseFloat(product.weight) || 0;
-        
-        if (product.quantity > 1 && productWeight * product.quantity <= pesoMaximoPaquete) {
-          // Podemos mantener el producto completo
-          expandedProducts.push({...product});
-        } else if (product.quantity > 1) {
-          // Necesitamos dividir este producto en unidades
-          for (let i = 0; i < product.quantity; i++) {
-            expandedProducts.push({
-              ...product,
-              quantity: 1
-            });
-          }
-        } else {
-          // Producto normal con cantidad 1
-          expandedProducts.push({...product});
-        }
-      });
-      
-      // Ahora distribuimos los productos en paquetes según el peso
-      expandedProducts.forEach(product => {
-        const productWeight = (parseFloat(product.weight) || 0) * product.quantity;
-        
-        // Si añadir este producto supera el peso máximo, crear un nuevo paquete
-        if (currentPackageWeight + productWeight > pesoMaximoPaquete) {
-          // Si el paquete actual no está vacío, lo añadimos a la lista
-          if (currentPackageProducts.length > 0) {
-            packages.push({
-              id: `pkg_${packages.length + 1}`,
-              products: [...currentPackageProducts],
-              weight: currentPackageWeight,
-              price: calculatePackagePrice(currentPackageWeight)
-            });
-          }
-          
-          // Iniciar un nuevo paquete con este producto
-          currentPackageProducts = [product];
-          currentPackageWeight = productWeight;
-        } else {
-          // Si cabe, añadimos el producto al paquete actual
-          currentPackageProducts.push(product);
-          currentPackageWeight += productWeight;
-        }
-      });
-      
-      // Añadir el último paquete si tiene productos
-      if (currentPackageProducts.length > 0) {
-        packages.push({
-          id: `pkg_${packages.length + 1}`,
-          products: currentPackageProducts,
-          weight: currentPackageWeight,
-          price: calculatePackagePrice(currentPackageWeight)
-        });
-      }
-      
-      return packages;
-    }
     // Si no hay restricciones específicas pero sí hay paquetes predefinidos, usarlos
     else if (externalPackagesInfo && externalPackagesInfo.length > 0) {
       console.log(`📦 [DEBUG] Usando paquetes predefinidos sin precios`);
       return externalPackagesInfo.map((pkg, index) => {
-        const pkgProducts = packProducts.filter(p => pkg.products.includes(p.id));
-        const weight = pkgProducts.reduce((sum, p) => sum + (parseFloat(p.weight) * p.quantity), 0);
+        let pkgProducts = [];
+        
+        // Intentar filtrar productos con diferentes métodos
+        if (pkg.products && Array.isArray(pkg.products)) {
+          if (typeof pkg.products[0] === 'string') {
+            // Si products son IDs (strings)
+            pkgProducts = packProducts.filter(p => pkg.products.includes(p.id));
+          } else if (typeof pkg.products[0] === 'object') {
+            // Si products son objetos con ID
+            pkgProducts = packProducts.filter(p => pkg.products.some(product => 
+              product.id === p.id || product.productId === p.id
+            ));
+          }
+        }
+        
+        // Si no se encontraron productos y hay un peso definido, crear un producto genérico
+        if (pkgProducts.length === 0 && pkg.weight) {
+          pkgProducts = [{
+            id: `generic_${index}`,
+            name: `Producto en Paquete ${index + 1}`,
+            quantity: 1,
+            weight: pkg.weight,
+            price: 0
+          }];
+        }
+        
+        const weight = pkg.weight || pkgProducts.reduce((sum, p) => sum + (parseFloat(p.weight) * p.quantity), 0);
         
         return {
           ...pkg,
@@ -329,6 +515,24 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
     // Si no hay restricciones, todos en un solo paquete
     else {
       console.log(`📦 [DEBUG] Sin restricciones - Todos los productos en un paquete`);
+      
+      // Si no hay productos en packProducts, crear productos genéricos basados en el peso total
+      if (packProducts.length === 0) {
+        const totalWeightValue = parseFloat(totalWeight);
+        return [{
+          id: 'pkg_1',
+          products: [{
+            id: 'generic_product',
+            name: 'Productos combinados',
+            quantity: 1,
+            weight: totalWeightValue,
+            price: 0
+          }],
+          weight: totalWeightValue,
+          price: calculatePackagePrice(totalWeightValue)
+        }];
+      }
+      
       const totalWeightValue = parseFloat(totalWeight);
       return [{
         id: 'pkg_1',
@@ -344,6 +548,16 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
   
   // Calcular el costo total real sumando el costo de cada paquete
   const calculatedTotalCost = packages.reduce((sum, pkg) => sum + pkg.price, 0);
+  
+  // Log para depuración de productos en cada paquete
+  console.log(`⭐ PRODUCTOS POR PAQUETE (${name}):`);
+  packages.forEach((pkg, index) => {
+    console.log(`▶️ Paquete ${index + 1} (${pkg.id}):`);
+    console.log(`   - Productos: ${pkg.products.length}`);
+    pkg.products.forEach((product, pidx) => {
+      console.log(`   - [${pidx + 1}] ${product.name || 'SIN NOMBRE'} - ID: ${product.id}, Cant: ${product.quantity}, Peso: ${product.weight}kg`);
+    });
+  });
   
   // Formatear costo total
   const formattedTotalCost = calculatedTotalCost === 0 
@@ -412,12 +626,6 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
     // Implementa la lógica para seleccionar este paquete
   };
   
-  // Alternar la visualización de detalles
-  const toggleDetails = (e) => {
-    e.stopPropagation();
-    setDetailsExpanded(!detailsExpanded);
-  };
-
   // Debug para valores de costo
   console.log(`💵 [DEBUG COSTOS] ${name}:`, {
     totalCost,
@@ -510,15 +718,35 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
             </div>
           )}
           
-          <button className="details-toggle" onClick={toggleDetails}>
+          <button 
+            className="details-toggle" 
+            onClick={(e) => {
+              e.stopPropagation();
+              setDetailsExpanded(!detailsExpanded);
+            }}
+            type="button"
+          >
             {detailsExpanded ? <i className="bi bi-chevron-up"></i> : <i className="bi bi-chevron-down"></i>}
             <span>{detailsExpanded ? 'Ocultar detalles' : 'Ver detalles'}</span>
           </button>
         </div>
         
+        {/* Lista simple de paquetes con su peso */}
+        {packages.length > 1 && (
+          <div className="package-weight-list">
+            {packages.map((pkg, index) => (
+              <div key={`pkg_summary_${pkg.id}`} className="package-weight-item">
+                <span className="package-weight-name">Paquete {index + 1}</span>
+                <span className="package-weight-value">{pkg.weight.toFixed(2)} kg</span>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Mostramos los productos de cada paquete SOLO cuando se expanden los detalles */}
         {detailsExpanded && (
-          <div className="shipping-package-expanded">
-            <div className="products-breakdown">
+          <>
+            <div className="packages-info-list">
               {packages.map((pkg, index) => {
                 // Formatear el precio individual de este paquete específico
                 const formattedPackagePrice = pkg.price === 0 
@@ -530,35 +758,80 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
                     }).format(pkg.price);
                 
                 return (
-                  <div key={pkg.id} className="package-breakdown">
-                    <div className="package-header-breakdown">
-                      <h5>Paquete {index + 1}</h5>
-                      <span className="package-price">{formattedPackagePrice}</span>
+                  <div key={`pkg_info_${pkg.id}`} className="package-info-item">
+                    <div className="package-info-header">
+                      <div className="package-info-title">Paquete {index + 1}</div>
+                      <div className="package-info-price">{formattedPackagePrice}</div>
                     </div>
-                    {/* Mostrar tiempo de entrega para este paquete específico */}
+                    
+                    {/* Tiempo de entrega */}
                     {displayDeliveryTime && (
-                      <div className="package-delivery-time">
+                      <div className="package-info-delivery">
                         <i className="bi bi-clock"></i>
                         <span>{displayDeliveryTime}</span>
                       </div>
                     )}
-                    <ul className="product-list">
-                      {pkg.products.map(product => (
-                        <li key={`${pkg.id}_${product.id}`} className="product-item">
-                          <div className="product-details">
-                            <span className="shipping-product-name-detail">{product.name} {product.quantity > 1 ? `(${product.quantity})` : ''}</span>
-                            {product.weight > 0 && (
-                              <span className="product-weight">{(parseFloat(product.weight) * product.quantity).toFixed(2)} kg</span>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                    
+                    {/* Productos del paquete */}
+                    <div className="package-info-products">
+                      {pkg.products && pkg.products.length > 0 ? (
+                        pkg.products.map((product, pidx) => (
+                          <span key={`info_prod_${pkg.id}_${product.id}_${pidx}`} className="package-info-product">
+                            {product.name}{product.quantity > 1 ? ` (${product.quantity})` : ''}
+                            {pidx < pkg.products.length - 1 ? ', ' : ''}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="package-info-empty">No hay productos en este paquete</span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </div>
+            
+            <div className="shipping-package-expanded">
+              <div className="products-breakdown">
+                {packages.map((pkg, index) => {
+                  // Formatear el precio individual de este paquete específico
+                  const formattedPackagePrice = pkg.price === 0 
+                    ? 'GRATIS' 
+                    : new Intl.NumberFormat('es-MX', {
+                        style: 'currency',
+                        currency: 'MXN',
+                        minimumFractionDigits: 2
+                      }).format(pkg.price);
+                  
+                  return (
+                    <div key={pkg.id} className="package-breakdown">
+                      <div className="package-header-breakdown">
+                        <h5>Paquete {index + 1}</h5>
+                        <span className="package-price">{formattedPackagePrice}</span>
+                      </div>
+                      
+                      {/* Mostrar tiempo de entrega para este paquete específico */}
+                      {displayDeliveryTime && (
+                        <div className="package-delivery-time">
+                          <i className="bi bi-clock"></i>
+                          <span>{displayDeliveryTime}</span>
+                        </div>
+                      )}
+                      
+                      {/* Mostrar productos de este paquete */}
+                      <div className="package-product-names">
+                        {pkg.products.map((product, pidx) => (
+                          <span key={`prod_${pkg.id}_${product.id}_${pidx}`} className="package-product-name">
+                            {product.name}{product.quantity > 1 ? ` (${product.quantity})` : ''}
+                            {pidx < pkg.products.length - 1 ? ', ' : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

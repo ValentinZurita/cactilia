@@ -159,6 +159,8 @@ export const normalizeShippingRule = (rule, address = null) => {
         newRule.tipo_cobertura = 'por_codigo_postal';
         newRule.coverage_values = filteredCPs;
         newRule.cobertura_cp = filteredCPs;
+        // Mantener el campo zona para identificar que es una regla local
+        newRule.zona = 'Local';
         console.log(`✅ Normalizada regla Local ${rule.id} a códigos postales: ${newRule.coverage_values.join(', ')}`);
         return newRule;
       }
@@ -170,14 +172,22 @@ export const normalizeShippingRule = (rule, address = null) => {
       newRule.tipo_cobertura = 'por_codigo_postal';
       newRule.coverage_values = [rule.zipcode];
       newRule.cobertura_cp = [rule.zipcode];
+      // Mantener el campo zona para identificar que es una regla local
+      newRule.zona = 'Local';
       console.log(`✅ Normalizada regla Local ${rule.id} a código postal: ${rule.zipcode}`);
       return newRule;
     }
     
-    // Si no tiene información específica, usarlo como nacional por compatibilidad
-    newRule.coverage_type = 'nacional';
-    newRule.tipo_cobertura = 'nacional';
-    console.log(`✅ Normalizada regla Local ${rule.id} como nacional por falta de códigos específicos`);
+    // MODIFICACIÓN IMPORTANTE: Si es Local pero no tiene códigos específicos,
+    // usar un tipo especial para validación y asegurar que conserva el campo zona
+    newRule.coverage_type = 'por_codigo_postal';
+    newRule.tipo_cobertura = 'por_codigo_postal';
+    // Incluir todos los códigos postales posibles y el código específico 55555
+    newRule.coverage_values = [rule.zipcode || '55555', '*'];  // * indica que acepta cualquier CP
+    newRule.cobertura_cp = [rule.zipcode || '55555', '*'];
+    // Mantener el campo zona para identificar que es una regla local
+    newRule.zona = 'Local';
+    console.log(`✅ Normalizada regla Local ${rule.id} como cobertura amplia + 55555`);
     return newRule;
   }
   

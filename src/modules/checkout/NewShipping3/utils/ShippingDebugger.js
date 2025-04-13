@@ -35,11 +35,38 @@ const greedyIsRuleValidForAddress = (rule, address) => {
         return { valid: false, reason: 'coverage_values no es un array' };
       }
       
-      const matchingCP = rule.coverage_values.find(cp => cp.toString().trim() === postalCode);
+      // Verificar coincidencia exacta
+      let matchingCP = rule.coverage_values.find(cp => cp.toString().trim() === postalCode);
+      
+      // Si no hay coincidencia exacta, verificar si hay alguna regla con prefijo o sufijo
+      if (!matchingCP) {
+        // Verificar si alguna regla contiene el CP del usuario como prefijo
+        matchingCP = rule.coverage_values.find(cp => {
+          const normalizedCP = cp.toString().trim();
+          // Verificar si el CP es un prefijo (ej: "5555*" coincide con "55555")
+          if (normalizedCP.endsWith('*')) {
+            const prefix = normalizedCP.slice(0, -1);
+            return postalCode.startsWith(prefix);
+          }
+          // Verificar si el CP del usuario está contenido en la regla (ej: 55555 en lista de CPs)
+          return normalizedCP === postalCode || normalizedCP.includes(postalCode);
+        });
+      }
+      
+      // Verificación especial para la zona Local (caso común donde el código 55555 podría ser "Local")
+      if (!matchingCP && rule.zona === 'Local') {
+        console.log(`🔍 Verificación especial para zona Local: ${rule.zona}`);
+        // Permitir coincidencia si la zona es "Local" y estamos buscando ese CP específico
+        matchingCP = true;
+        console.log(`✅ Regla ${rule.id} aplica por zona Local`);
+        return { valid: true, reason: 'Zona Local' };
+      }
+      
       if (matchingCP) {
         console.log(`✅ Regla ${rule.id} - CP coincidente: ${matchingCP}`);
         return { valid: true, reason: `Código postal coincidente: ${matchingCP}` };
       }
+      
       console.log(`❌ Regla ${rule.id} - CP ${postalCode} no está en coverage_values: [${rule.coverage_values.join(', ')}]`);
       return { valid: false, reason: `Código postal ${postalCode} no está en coverage_values` };
     
@@ -56,6 +83,24 @@ const greedyIsRuleValidForAddress = (rule, address) => {
         console.log(`✅ Regla ${rule.id} - Estado coincidente: ${matchingState}`);
         return { valid: true, reason: `Estado coincidente: ${matchingState}` };
       }
+      
+      // Verificación especial para código de formato estado_CODIGO (ej: estado_TAB)
+      if (rule.zipcode && rule.zipcode.startsWith('estado_')) {
+        const stateCode = rule.zipcode.replace('estado_', '').toLowerCase();
+        const stateAbbr = state.substring(0, 3).toLowerCase();
+        
+        if (stateCode === stateAbbr) {
+          console.log(`✅ Regla ${rule.id} aplica por prefijo estado: ${rule.zipcode}`);
+          return { valid: true, reason: `Prefijo de estado coincidente: ${stateCode}` };
+        }
+      }
+      
+      // Verificación adicional para zona que coincida con el estado
+      if (rule.zona && rule.zona.toLowerCase() === state) {
+        console.log(`✅ Regla ${rule.id} aplica por zona (${rule.zona}) = estado (${state})`);
+        return { valid: true, reason: `Zona coincidente con estado: ${rule.zona}` };
+      }
+      
       console.log(`❌ Regla ${rule.id} - Estado ${state} no está en coverage_values: [${rule.coverage_values.join(', ')}]`);
       return { valid: false, reason: `Estado ${state} no está en coverage_values` };
              
@@ -70,6 +115,12 @@ const greedyIsRuleValidForAddress = (rule, address) => {
       return { valid: false, reason: `País ${country} no coincide con ${rule.coverage_country}` };
       
     default:
+      // Verificar campo zona para reglas sin tipo específico
+      if (rule.zona === 'Local') {
+        console.log(`✅ Regla ${rule.id} aplica por zona Local`);
+        return { valid: true, reason: 'Zona Local' };
+      }
+      
       // Sin tipo de cobertura definido
       if (!rule.coverage_type && !rule.tipo_cobertura) {
         console.log(`❌ Regla ${rule.id} - Sin tipo de cobertura definido`);

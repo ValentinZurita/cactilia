@@ -14,9 +14,10 @@ import { ShippingManagerForCheckout } from '../../../../checkout/NewShipping3';
  * @param {Array} props.cartItems - Ítems del carrito
  * @param {Object} props.address - Dirección seleccionada
  * @param {Function} props.onShippingSelected - Callback para manejar la selección de opción de envío
+ * @param {Function} props.onTotalCostChange - Callback para manejar cambios en el costo total de envío
  * @returns {JSX.Element} - Componente de integración
  */
-const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
+const NewShippingIntegration = ({ cartItems, address, onShippingSelected, onTotalCostChange }) => {
   const { user } = useAuth();
   const [lastGeneratedOption, setLastGeneratedOption] = useState(null);
   const lastCostRef = useRef(null);
@@ -30,89 +31,121 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
     hasPartialCoverage: false
   });
   
+  // PARCHE: Nuevo ref para el último costo válido que aún no ha sido procesado
+  const pendingCostRef = useRef(null);
+  // PARCHE: Flag para indicar si se debería esperar a que llegue la información de cobertura antes de notificar
+  const waitingForCoverageRef = useRef(false);
+  
+  // Función para notificar la opción al padre, centralizada para evitar duplicación
+  const notifyOption = useCallback((option) => {
+    if (!option) return;
+    
+    console.log(`🔄 [PARCHE] Notificando opción al padre:`, {
+      id: option.id,
+      hasPartialCoverage: option.hasPartialCoverage,
+      unavailableProductIds: option.unavailableProductIds?.length || 0
+    });
+    
+    setLastGeneratedOption(option);
+    
+    if (typeof onShippingSelected === 'function') {
+      onShippingSelected(option);
+    }
+  }, [onShippingSelected]);
+  
   // Manejar cambios en el costo de envío
   const handleShippingCostChange = useCallback((cost) => {
     // Ensure cost is a valid number, default to 0 if not
     const validCost = typeof cost === 'number' && !isNaN(cost) ? cost : 0;
 
+    // Mostrar advertencia si no hay datos de envío
+    if (cost === null || cost === undefined) {
+      console.log(`⚠️ [PARCHE] handleShippingCostChange: No hay datos de envío, estableciendo costo a 0`);
+      // Notificar solo el cambio de costo total, pero no crear una opción aún
+      if (typeof onTotalCostChange === 'function') {
+        onTotalCostChange(0);
+      }
+      return;
+    }
+    
     // Avoid redundant updates if cost hasn't changed
-    if (lastCostRef.current === validCost && lastGeneratedOption) {
+    if (lastCostRef.current === validCost) {
       console.log(`💲 [NewShippingIntegration] Costo sin cambios ($${validCost}). No se actualiza.`);
       return;
     }
     
     // Update the cost reference
     lastCostRef.current = validCost;
+    pendingCostRef.current = validCost;
     
     console.log(`💲 [NewShippingIntegration] Costo de envío actualizado: $${validCost} (tipo: ${typeof validCost})`);
 
-    // Determine if this is the first valid cost received
-    const isFirstCost = !lastGeneratedOption;
-    const isFreeValue = validCost === 0;
+    // Use the onTotalCostChange callback directly
+    if (typeof onTotalCostChange === 'function') {
+      onTotalCostChange(validCost);
+    }
 
-    // Create or update the option
-    let updatedOption;
-    if (isFirstCost) {
-      // First time receiving cost: Create the option object now using the real cost
-      // Assuming ShippingManagerForCheckout provides package details eventually...
-      // For now, create a placeholder structure like before but with the correct cost.
-      // Ideally, ShippingManagerForCheckout should provide the package/rule details needed here.
-      console.log('✨ [NewShippingIntegration] Creando opción inicial con el primer costo real.');
-      updatedOption = {
-        id: `shipping_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: 'Envío calculado', // Or get name from rule if available
-        price: validCost,
-        totalCost: validCost,
-        calculatedCost: validCost,
-        isFree: isFreeValue,
-        isFreeShipping: isFreeValue,
-        carrierId: 'calculated',
-        carrierName: '',
-        deliveryTime: '', // Should be updated later if possible
-        description: '',
-        packages: [], // Should be populated if possible
-        allProductsCovered: !coverageInfo.hasPartialCoverage, // Use current coverage info
-        zoneName: 'Envío calculado',
-        coveredProductIds: coverageInfo.coveredProductIds,
-        unavailableProductIds: coverageInfo.unavailableProductIds,
-        hasPartialCoverage: coverageInfo.hasPartialCoverage
-      };
-    } else {
-      // Subsequent cost update: Update the existing option
-      console.log('🔄 [NewShippingIntegration] Actualizando opción existente con nuevo costo.');
-      updatedOption = {
+    // PARCHE: Verificar si tenemos información de cobertura válida
+    const hasCoverageInfo = coverageInfo.coveredProductIds.length > 0 || 
+                           coverageInfo.unavailableProductIds.length > 0;
+    
+    // Si no tenemos info de cobertura, marcamos que estamos esperando
+    if (!hasCoverageInfo && cartItems.length > 0) {
+      console.log(`⏳ [PARCHE] Esperando información de cobertura antes de crear la opción...`);
+      waitingForCoverageRef.current = true;
+      return; // Salimos y esperamos a que llegue la cobertura
+    }
+    
+    // Si tenemos una opción previa, actualizarla
+    if (lastGeneratedOption && typeof onShippingSelected === 'function') {
+      // Asegurarse de que se mantiene la información de productos no disponibles
+      const updatedOption = {
         ...lastGeneratedOption,
         price: validCost,
         totalCost: validCost,
         calculatedCost: validCost,
-        isFree: isFreeValue,
-        isFreeShipping: isFreeValue,
-        // Ensure coverage info is also up-to-date
-        coveredProductIds: coverageInfo.coveredProductIds,
-        unavailableProductIds: coverageInfo.unavailableProductIds,
-        hasPartialCoverage: coverageInfo.hasPartialCoverage,
-        allProductsCovered: !coverageInfo.hasPartialCoverage
+        isFree: validCost === 0,
+        isFreeShipping: validCost === 0,
+        coveredProductIds: coverageInfo.coveredProductIds || [],
+        unavailableProductIds: coverageInfo.unavailableProductIds || [],
+        hasPartialCoverage: coverageInfo.hasPartialCoverage || false,
+        allProductsCovered: !(coverageInfo.hasPartialCoverage || false)
       };
+      
+      console.log(`🔄 [PARCHE] Actualizando opción con productos no disponibles:`, {
+        unavailableCount: coverageInfo.unavailableProductIds?.length || 0,
+        hasPartialCoverage: coverageInfo.hasPartialCoverage || false
+      });
+      
+      notifyOption(updatedOption);
+      waitingForCoverageRef.current = false;
+    } else if (typeof onShippingSelected === 'function') {
+      // First time receiving cost: Create a minimal option object with coverage info
+      const newOption = {
+        id: `shipping_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: 'Envío calculado', 
+        price: validCost,
+        totalCost: validCost,
+        calculatedCost: validCost,
+        isFree: validCost === 0,
+        isFreeShipping: validCost === 0,
+        carrierId: 'calculated',
+        coveredProductIds: coverageInfo.coveredProductIds || [],
+        unavailableProductIds: coverageInfo.unavailableProductIds || [],
+        hasPartialCoverage: coverageInfo.hasPartialCoverage || false,
+        allProductsCovered: !(coverageInfo.hasPartialCoverage || false)
+      };
+      
+      console.log(`🔰 [PARCHE] Creando nueva opción con datos de cobertura actuales:`, {
+        unavailableCount: coverageInfo.unavailableProductIds?.length || 0,
+        hasPartialCoverage: coverageInfo.hasPartialCoverage || false,
+        coveredCount: coverageInfo.coveredProductIds?.length || 0
+      });
+      
+      notifyOption(newOption);
+      waitingForCoverageRef.current = false;
     }
-
-    console.log('📊 [NewShippingIntegration] Opción para enviar a CheckoutContent:', {
-      id: updatedOption.id,
-      cost: updatedOption.totalCost,
-      isFree: updatedOption.isFree,
-      isFreeShipping: updatedOption.isFreeShipping
-    });
-    
-    // Store the updated option locally
-    setLastGeneratedOption(updatedOption);
-    
-    // Call the parent callback ONLY if it's a function
-    if (typeof onShippingSelected === 'function') {
-        onShippingSelected(updatedOption);
-    } else {
-        console.error('❌ [NewShippingIntegration] onShippingSelected no es una función!')
-    }
-
-  }, [onShippingSelected, coverageInfo, lastGeneratedOption]); // Added lastGeneratedOption dependency
+  }, [onShippingSelected, onTotalCostChange, coverageInfo, lastGeneratedOption, cartItems.length, notifyOption]);
   
   // Manejar cambios en la validez del envío
   const handleShippingValidChange = useCallback((isValid) => {
@@ -121,63 +154,109 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
   
   // Manejar cambios en la cobertura de envío
   const handleShippingCoverageChange = useCallback((newCoverageInfo) => {
-    console.log(`📦 Cobertura de productos actualizada:`, newCoverageInfo);
+    // Debugging detallado
+    console.log(`🔍 [PARCHE] NewShippingIntegration recibió cobertura:`, {
+      cubiertos: newCoverageInfo.coveredProductIds?.length || 0,
+      noCubiertos: newCoverageInfo.unavailableProductIds?.length || 0,
+      hayCoberturaParcial: newCoverageInfo.hasPartialCoverage
+    });
     
-    // Actualizar el estado local con la nueva información de cobertura
+    // Guardar estado previo para diagnóstico
+    const prevCoverage = { ...coverageInfo };
+    
+    // Actualizar el estado con la nueva información
     setCoverageInfo(newCoverageInfo);
     
-    // Si hay una opción generada, actualizarla con la nueva información de cobertura
-    if (lastGeneratedOption && typeof onShippingSelected === 'function') {
-      const updatedOption = {
-        ...lastGeneratedOption,
-        coveredProductIds: newCoverageInfo.coveredProductIds,
-        unavailableProductIds: newCoverageInfo.unavailableProductIds,
-        hasPartialCoverage: newCoverageInfo.hasPartialCoverage,
-        allProductsCovered: !newCoverageInfo.hasPartialCoverage,
-        isFreeShipping: lastGeneratedOption.isFree || lastGeneratedOption.price === 0 || lastGeneratedOption.totalCost === 0
-      };
+    // Si estamos esperando cobertura para crear/actualizar la opción, procesarla ahora
+    if (waitingForCoverageRef.current && pendingCostRef.current !== null) {
+      console.log(`🔄 [PARCHE] Procesando costo pendiente después de recibir cobertura: $${pendingCostRef.current}`);
       
-      setLastGeneratedOption(updatedOption);
-      onShippingSelected(updatedOption);
+      // Crear la opción con la cobertura recién recibida
+      const validCost = pendingCostRef.current;
+      
+      // Si hay una opción previa, actualizarla
+      if (lastGeneratedOption) {
+        const updatedOption = {
+          ...lastGeneratedOption,
+          price: validCost,
+          totalCost: validCost,
+          calculatedCost: validCost,
+          isFree: validCost === 0,
+          isFreeShipping: validCost === 0,
+          coveredProductIds: newCoverageInfo.coveredProductIds || [],
+          unavailableProductIds: newCoverageInfo.unavailableProductIds || [],
+          hasPartialCoverage: newCoverageInfo.hasPartialCoverage || false,
+          allProductsCovered: !(newCoverageInfo.hasPartialCoverage || false)
+        };
+        
+        // Notificar la opción actualizada
+        setTimeout(() => {
+          console.log(`⏰ [PARCHE] Notificando opción actualizada con cobertura recién recibida:`, {
+            unavailableCount: newCoverageInfo.unavailableProductIds?.length || 0,
+            hasPartialCoverage: newCoverageInfo.hasPartialCoverage || false
+          });
+          notifyOption(updatedOption);
+        }, 0);
+      } else {
+        // Crear una nueva opción
+        const newOption = {
+          id: `shipping_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: 'Envío calculado', 
+          price: validCost,
+          totalCost: validCost,
+          calculatedCost: validCost,
+          isFree: validCost === 0,
+          isFreeShipping: validCost === 0,
+          carrierId: 'calculated',
+          coveredProductIds: newCoverageInfo.coveredProductIds || [],
+          unavailableProductIds: newCoverageInfo.unavailableProductIds || [],
+          hasPartialCoverage: newCoverageInfo.hasPartialCoverage || false,
+          allProductsCovered: !(newCoverageInfo.hasPartialCoverage || false)
+        };
+        
+        // Notificar la nueva opción
+        setTimeout(() => {
+          console.log(`⏰ [PARCHE] Notificando nueva opción con cobertura recién recibida:`, {
+            unavailableCount: newCoverageInfo.unavailableProductIds?.length || 0,
+            hasPartialCoverage: newCoverageInfo.hasPartialCoverage || false
+          });
+          notifyOption(newOption);
+        }, 0);
+      }
+      
+      // Limpiar estado de espera
+      waitingForCoverageRef.current = false;
+      pendingCostRef.current = null;
+    } 
+    // Si ya tenemos una opción, actualizar sus datos de cobertura
+    else if (lastGeneratedOption) {
+      const hasCoverageChanged = 
+        prevCoverage.hasPartialCoverage !== newCoverageInfo.hasPartialCoverage ||
+        prevCoverage.unavailableProductIds?.length !== newCoverageInfo.unavailableProductIds?.length ||
+        prevCoverage.coveredProductIds?.length !== newCoverageInfo.coveredProductIds?.length;
+      
+      if (hasCoverageChanged) {
+        console.log(`🔍 [PARCHE] Detectado cambio en cobertura, actualizando opción:`);
+        
+        const updatedOption = {
+          ...lastGeneratedOption,
+          coveredProductIds: newCoverageInfo.coveredProductIds || [],
+          unavailableProductIds: newCoverageInfo.unavailableProductIds || [],
+          hasPartialCoverage: newCoverageInfo.hasPartialCoverage || false,
+          allProductsCovered: !(newCoverageInfo.hasPartialCoverage || false),
+          isPartial: newCoverageInfo.hasPartialCoverage || false
+        };
+        
+        setTimeout(() => {
+          console.log(`⏰ [PARCHE] Notificando opción con cobertura actualizada:`, {
+            unavailableCount: newCoverageInfo.unavailableProductIds?.length || 0,
+            hasPartialCoverage: newCoverageInfo.hasPartialCoverage || false
+          });
+          notifyOption(updatedOption);
+        }, 0);
+      }
     }
-  }, [lastGeneratedOption, onShippingSelected]);
-  
-  /**
-   * Transformar un paquete a una opción de envío para que sea compatible con la interfaz esperada por el checkout
-   * @param {Array} packages - Paquetes de envío generados por nuestro módulo
-   * @param {number} totalCost - Costo total del envío
-   * @returns {Object} - Opción de envío compatible con el checkout
-   */
-  const createShippingOption = useCallback((packages, totalCost) => {
-    if (!packages || !packages.length) return null;
-    
-    // Generar un ID único basado en las propiedades de los paquetes
-    const uniqueId = `shipping_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Obtener información de la regla principal para los metadatos
-    const mainPackage = packages[0];
-    const rule = mainPackage?.rule || {};
-    
-    const option = {
-      id: uniqueId,
-      name: rule.nombre || 'Envío estándar',
-      price: totalCost,
-      totalCost: totalCost,
-      calculatedCost: totalCost,
-      isFree: totalCost === 0,
-      carrierId: rule.id || uniqueId,
-      carrierName: rule.carrier || '',
-      deliveryTime: rule.minDays && rule.maxDays 
-        ? `${rule.minDays}-${rule.maxDays} días hábiles` 
-        : 'Tiempo de entrega variable',
-      description: rule.descripcion || '',
-      packages: packages,
-      allProductsCovered: true, // Nuestro módulo ya filtra productos no enviables
-      zoneName: rule.zona || 'Envío estándar'
-    };
-    
-    return option;
-  }, []);
+  }, [coverageInfo, lastGeneratedOption, notifyOption]);
   
   // Detectar cambios en la dirección
   useEffect(() => {
@@ -189,29 +268,16 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
       console.log('🔄 Dirección cambiada, reiniciando estado de envío en NewShippingIntegration');
       // Reset local state, cost ref, and generated option
       lastCostRef.current = null;
+      pendingCostRef.current = null;
+      waitingForCoverageRef.current = false;
       setLastGeneratedOption(null); 
       setCoverageInfo({ coveredProductIds: [], unavailableProductIds: [], hasPartialCoverage: false });
       firstLoadRef.current = true; // Allow initial load effect to run again if needed for other logic
-      
-      // DO NOT call onShippingSelected here with a temporary option
-      // console.log('🚫 [NewShippingIntegration] No se llama a onShippingSelected al cambiar dirección.');
     }
     
     // Actualizar la referencia de la dirección
     addressRef.current = address;
-  }, [address]); // Removed dependencies that might trigger unnecessarily
-  
-  // Crear una opción inicial cuando se cargan los datos por primera vez
-  useEffect(() => {
-    // This effect might not be strictly necessary anymore if handleShippingCostChange creates the first option.
-    // Keep it for potential future logic, but ensure it doesn't call onShippingSelected prematurely.
-    if (cartItems && cartItems.length > 0 && address && firstLoadRef.current) {
-      console.log('🚀 [NewShippingIntegration] Carga inicial detectada (Address y CartItems disponibles).');
-      firstLoadRef.current = false;
-      // DO NOT call onShippingSelected here.
-      // Let handleShippingCostChange handle the first selection.
-    }
-  }, [cartItems, address]); // Removed dependencies
+  }, [address]);
   
   // Si no hay dirección válida, mostrar mensaje
   if (!address) {
@@ -238,7 +304,8 @@ const NewShippingIntegration = ({ cartItems, address, onShippingSelected }) => {
 NewShippingIntegration.propTypes = {
   cartItems: PropTypes.array.isRequired,
   address: PropTypes.object,
-  onShippingSelected: PropTypes.func
+  onShippingSelected: PropTypes.func,
+  onTotalCostChange: PropTypes.func
 };
 
 export default NewShippingIntegration; 

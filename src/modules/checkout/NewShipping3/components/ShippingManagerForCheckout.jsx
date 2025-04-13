@@ -50,8 +50,18 @@ export const ShippingManagerForCheckout = ({
 
   // Manejar cambios en la opción de envío (ahora puede ser múltiple)
   const handleShippingOptionChange = (shippingData) => {
+    console.log(`🔍 [SECUENCIA DETALLADA] ShippingManagerForCheckout recibió datos:`, 
+      shippingData ? {
+        totalCost: shippingData.totalCost,
+        optionsCount: shippingData.options?.length || 0,
+        unavailableCount: shippingData.unavailableProductIds?.length || 0,
+        hasPartialCoverage: !!shippingData.hasPartialCoverage,
+        isPartial: !!shippingData.isPartial
+      } : 'null');
+    
     if (!shippingData) {
       // Si no hay datos de envío, establecer costo 0
+      console.log(`🔍 [SECUENCIA DETALLADA] No hay datos de envío, estableciendo costo 0`);
       onShippingCostChange(0);
       // Informar que no hay productos cubiertos
       onShippingCoverageChange({ 
@@ -63,15 +73,30 @@ export const ShippingManagerForCheckout = ({
     }
     
     // Usar el costo total de todas las opciones seleccionadas
+    console.log(`🔍 [SECUENCIA DETALLADA] Pasando costo total: $${shippingData.totalCost || 0}`);
     onShippingCostChange(shippingData.totalCost || 0);
     
     // Pasar información de cobertura al checkout
     if (onShippingCoverageChange) {
-      onShippingCoverageChange({
+      const coverageData = {
         coveredProductIds: shippingData.coveredProductIds || [],
         unavailableProductIds: shippingData.unavailableProductIds || [],
-        hasPartialCoverage: shippingData.isPartial || false
+        hasPartialCoverage: shippingData.isPartial || shippingData.hasPartialCoverage || false
+      };
+      
+      console.log(`🔍 [SECUENCIA DETALLADA] Pasando información de cobertura:`, {
+        cubiertos: coverageData.coveredProductIds.length,
+        noCubiertos: coverageData.unavailableProductIds.length,
+        esCoberturaParcial: coverageData.hasPartialCoverage
       });
+      
+      // Asegurar que la información se pase correctamente
+      setTimeout(() => {
+        onShippingCoverageChange(coverageData);
+        
+        // Registrar que el cambio fue procesado
+        console.log(`🔍 [SECUENCIA DETALLADA] Cambio de cobertura procesado`);
+      }, 0);
     }
     
     // Opcionalmente, se podría pasar más información al checkout

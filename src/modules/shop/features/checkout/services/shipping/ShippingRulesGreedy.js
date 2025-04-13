@@ -388,11 +388,36 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
         
         const product = item.product || item;
         
-        // Ordenar reglas por costo (menor primero)
+        // Ordenar reglas por prioridad y costo:
+        // 1. Primero CP específico, luego estado, luego nacional
+        // 2. Dentro de cada tipo, ordenar por costo (menor primero)
         const sortedRules = [...validRules].sort((a, b) => {
+          // Función para determinar prioridad de tipo de cobertura
+          const getCoveragePriority = (rule) => {
+            const coverageType = rule.coverage_type || rule.tipo_cobertura;
+            // Prioridad máxima a código postal específico
+            if (coverageType === 'por_codigo_postal') return 3;
+            // Segunda prioridad a estado
+            if (coverageType === 'por_estado') return 2;
+            // Tercera prioridad a zona Local
+            if (rule.zona === 'Local') return 1;
+            // Menor prioridad a reglas nacionales
+            if (coverageType === 'nacional') return 0;
+            return -1; // Prioridad por defecto
+          };
+          
+          // Primero comparar por tipo de cobertura
+          const priorityA = getCoveragePriority(a);
+          const priorityB = getCoveragePriority(b);
+          
+          if (priorityA !== priorityB) {
+            return priorityB - priorityA; // Mayor prioridad primero
+          }
+          
+          // Si son del mismo tipo, comparar por precio
           const costA = parseFloat(a.precio_base || a.base_price || 100);
           const costB = parseFloat(b.precio_base || b.base_price || 100);
-          return costA - costB;
+          return costA - costB; // Menor costo primero
         });
         
         // Intentar añadir a un grupo existente
@@ -698,11 +723,36 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
     
     if (validRules.length === 0) return;
     
-    // Ordenar reglas por costo (menor primero)
+    // Ordenar reglas por prioridad y costo:
+    // 1. Primero CP específico, luego estado, luego nacional
+    // 2. Dentro de cada tipo, ordenar por costo (menor primero)
     const sortedRules = [...validRules].sort((a, b) => {
+      // Función para determinar prioridad de tipo de cobertura
+      const getCoveragePriority = (rule) => {
+        const coverageType = rule.coverage_type || rule.tipo_cobertura;
+        // Prioridad máxima a código postal específico
+        if (coverageType === 'por_codigo_postal') return 3;
+        // Segunda prioridad a estado
+        if (coverageType === 'por_estado') return 2;
+        // Tercera prioridad a zona Local
+        if (rule.zona === 'Local') return 1;
+        // Menor prioridad a reglas nacionales
+        if (coverageType === 'nacional') return 0;
+        return -1; // Prioridad por defecto
+      };
+      
+      // Primero comparar por tipo de cobertura
+      const priorityA = getCoveragePriority(a);
+      const priorityB = getCoveragePriority(b);
+      
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA; // Mayor prioridad primero
+      }
+      
+      // Si son del mismo tipo, comparar por precio
       const costA = parseFloat(a.precio_base || a.base_price || 100);
       const costB = parseFloat(b.precio_base || b.base_price || 100);
-      return costA - costB;
+      return costA - costB; // Menor costo primero
     });
     
     // Intentar añadir a un grupo existente

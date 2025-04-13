@@ -102,9 +102,11 @@ export const ShippingOptions = ({
     setShowMultipleSelectionInfo(false);
     let newSelectedOptions = [...selectedOptions];
     
+    console.log(`🔍 [SECUENCIA DETALLADA] Inicio handleSelectOption para: ${option.name}`);
+    
     // Si la opción ya está seleccionada, la quitamos
     if (selectedOptions.some(opt => opt.id === option.id)) {
-      console.log(`🚢 Deseleccionando opción de envío: ${option.name}`);
+      console.log(`🔍 [SECUENCIA DETALLADA] Deseleccionando opción: ${option.name}`);
       newSelectedOptions = selectedOptions.filter(opt => opt.id !== option.id);
     } else {
       // Identificar si hay productos duplicados
@@ -148,7 +150,7 @@ export const ShippingOptions = ({
       }
       
       // Si no hay duplicados, añadir la opción
-      console.log(`🚢 Seleccionando opción de envío: ${option.name}`);
+      console.log(`🔍 [SECUENCIA DETALLADA] Añadiendo opción: ${option.name}`);
       // Registrar el costo calculado para diagnóstico
       if (option.calculatedTotalCost !== undefined) {
         console.log(`📊 Costo calculado de paquetes reales: $${option.calculatedTotalCost}`);
@@ -167,12 +169,13 @@ export const ShippingOptions = ({
       });
     });
     setCoveredProducts(newCoveredProducts);
+    console.log(`🔍 [SECUENCIA DETALLADA] Productos cubiertos actualizados: ${newCoveredProducts.size} productos`);
     
     // Calcular el nuevo costo total
     const newTotalCost = calculateTotalShippingCost(newSelectedOptions);
     setTotalShippingCost(newTotalCost);
     
-    console.log(`💵 [ShippingOptions] Nuevo costo total calculado: $${newTotalCost}`);
+    console.log(`🔍 [SECUENCIA DETALLADA] Costo total actualizado: $${newTotalCost}`);
     console.log(`🧮 [ShippingOptions] Costos por opción:`, newSelectedOptions.map(opt => ({
       id: opt.id,
       name: opt.name,
@@ -183,22 +186,71 @@ export const ShippingOptions = ({
     // Considerando que ahora tenemos múltiples opciones
     if (newSelectedOptions.length > 0) {
       const isFreeValue = newTotalCost === 0;
-      console.log(`🔖 [ShippingOptions] Enviando datos al padre, isFree=${isFreeValue}, totalCost=${newTotalCost}`);
       
-      onShippingOptionChange({
+      // Obtener TODOS los IDs de productos disponibles en el carrito
+      const allProductIds = cartItems.map(item => (item.product || item).id);
+      
+      // Calcular productos NO cubiertos por ninguna opción seleccionada
+      const unavailableProductIds = allProductIds.filter(id => !newCoveredProducts.has(id));
+      
+      // Asegurarnos de pasar explícitamente el estado de cobertura parcial
+      const hasPartialCoverage = unavailableProductIds.length > 0;
+      
+      console.log(`🔍 [SECUENCIA DETALLADA] Preparando datos para enviar al padre:`);
+      console.log(`🔍 [SECUENCIA DETALLADA] - Total productos en carrito: ${allProductIds.length}`);
+      console.log(`🔍 [SECUENCIA DETALLADA] - Productos disponibles: ${newCoveredProducts.size}`);
+      console.log(`🔍 [SECUENCIA DETALLADA] - Productos NO disponibles: ${unavailableProductIds.length}`);
+      console.log(`🔍 [SECUENCIA DETALLADA] - IDs de productos NO disponibles:`, unavailableProductIds);
+      console.log(`🔍 [SECUENCIA DETALLADA] - Cobertura parcial: ${hasPartialCoverage}`);
+      
+      // Incluir detalles sobre productos no disponibles para mejor debug
+      if (unavailableProductIds.length > 0) {
+        const unavailableProducts = cartItems
+          .filter(item => unavailableProductIds.includes((item.product || item).id))
+          .map(item => (item.product || item).name);
+          
+        console.log(`❌ [ShippingOptions] Nombres de productos NO disponibles: ${unavailableProducts.join(', ')}`);
+      }
+      
+      // Crear el objeto de datos para notificar al padre
+      const notificationData = {
         options: newSelectedOptions,
         totalCost: newTotalCost,
-        isPartial: !allProductsCovered(),
-        coveredProductIds: Array.from(newCoveredProducts), // Enviar los IDs de productos cubiertos
-        unavailableProductIds: cartItems
-          .map(item => (item.product || item).id)
-          .filter(id => !newCoveredProducts.has(id)), // IDs de productos no cubiertos
-        isFree: isFreeValue
-      });
+        isPartial: hasPartialCoverage,
+        coveredProductIds: Array.from(newCoveredProducts),
+        unavailableProductIds: unavailableProductIds,
+        isFree: isFreeValue,
+        hasPartialCoverage: hasPartialCoverage  // Explícitamente agregar esta bandera
+      };
+      
+      console.log(`🔍 [SECUENCIA DETALLADA] Enviando datos al padre:`, notificationData);
+      
+      // Notificar al componente padre sobre el cambio en las opciones
+      onShippingOptionChange(notificationData);
+      
+      // Siempre marcar como válido si hay opciones seleccionadas,
+      // incluso si hay productos sin cobertura
       onShippingValidityChange(true);
+      
+      console.log(`🔍 [SECUENCIA DETALLADA] Fin handleSelectOption para: ${option.name}`);
     } else {
-      onShippingOptionChange(null);
+      // Si no hay opciones seleccionadas, marcar como inválido y notificar al padre
+      console.log(`🔍 [SECUENCIA DETALLADA] No hay opciones seleccionadas, enviando datos vacíos`);
+      
+      const emptyData = {
+        options: [],
+        totalCost: 0,
+        isPartial: false,
+        coveredProductIds: [],
+        unavailableProductIds: cartItems.map(item => (item.product || item).id),
+        isFree: false,
+        hasPartialCoverage: false
+      };
+      
+      onShippingOptionChange(emptyData);
       onShippingValidityChange(false);
+      
+      console.log(`🔍 [SECUENCIA DETALLADA] Fin handleSelectOption, sin opciones`);
     }
   };
   

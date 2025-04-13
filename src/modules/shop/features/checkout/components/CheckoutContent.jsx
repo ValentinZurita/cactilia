@@ -41,6 +41,9 @@ export const CheckoutContent = () => {
     updateShipping
   } = useCart();
 
+  // Shipping total state to track the total of all selected shipping options
+  const [shippingTotal, setShippingTotal] = useState(0);
+  
   // Buscar la dirección seleccionada en la lista de direcciones
   const selectedAddress = checkout.addresses && checkout.selectedAddressId 
     ? checkout.addresses.find(addr => addr.id === checkout.selectedAddressId) 
@@ -112,34 +115,25 @@ export const CheckoutContent = () => {
   // Referencia para controlar las actualizaciones del costo de envío
   const shippingUpdateRef = useRef(null);
 
-  // Actualizar el costo de envío cuando cambia la opción seleccionada
+  // Handle shipping total cost change
+  const handleShippingTotalCostChange = useCallback((cost) => {
+    console.log(`💲 [CheckoutContent] Costo total de envío actualizado: $${cost}`);
+    setShippingTotal(cost);
+  }, []);
+
+  // Update shipping cost in cart when shippingTotal changes
+  useEffect(() => {
+    if (updateShipping) {
+      console.log(`💸 [CheckoutContent] Actualizando costo de envío en carrito a $${shippingTotal}`);
+      updateShipping(shippingTotal);
+    }
+  }, [shippingTotal, updateShipping]);
+
+  // Monitorear cambios en la opción seleccionada (mantener para compatibilidad)
   useEffect(() => {
     if (selectedShippingOption && updateShipping) {
       try {
-        // Extraer el costo de la opción seleccionada
-        let shippingCost = 0;
-        
-        // Intentar obtener el costo de diferentes propiedades (en orden de prioridad)
-        if (typeof selectedShippingOption.totalCost === 'number') {
-          shippingCost = selectedShippingOption.totalCost;
-        } else if (typeof selectedShippingOption.calculatedCost === 'number') {
-          shippingCost = selectedShippingOption.calculatedCost;
-        } else if (typeof selectedShippingOption.price === 'number') {
-          shippingCost = selectedShippingOption.price;
-        } else if (typeof selectedShippingOption.cost === 'number') {
-          shippingCost = selectedShippingOption.cost;
-        }
-        
-        // Asegurar que sea un número
-        shippingCost = parseFloat(shippingCost);
-        
-        // Verificar si es un número válido
-        if (isNaN(shippingCost)) {
-          console.warn('⚠️ Costo de envío no válido:', selectedShippingOption);
-          shippingCost = 0;
-        }
-        
-        console.log(`💸 [CheckoutContent] Actualizando costo de envío a $${shippingCost.toFixed(2)} [ID: ${selectedShippingOption.id}]`);
+        // Log de opción seleccionada para diagnóstico
         console.log('🔍 [CheckoutContent] Opción seleccionada:', {
           id: selectedShippingOption.id,
           name: selectedShippingOption.name,
@@ -150,21 +144,13 @@ export const CheckoutContent = () => {
           isFreeShipping: selectedShippingOption.isFreeShipping
         });
         
-        // Actualizar el costo de envío en el contexto del carrito
-        updateShipping(shippingCost);
-        
-        // Actualizar la referencia
-        shippingUpdateRef.current = shippingCost;
+        // No actualizar el costo aquí, ya que se gestiona mediante shippingTotal
+        shippingUpdateRef.current = selectedShippingOption.totalCost || selectedShippingOption.calculatedCost || selectedShippingOption.price || 0;
       } catch (error) {
-        console.error('❌ Error al actualizar costo de envío:', error);
+        console.error('❌ Error al procesar la opción de envío:', error);
       }
-    } else if (!selectedShippingOption && updateShipping) {
-      // Si no hay opción seleccionada, establecer costo en 0
-      console.log('🚫 No hay opción de envío seleccionada, estableciendo costo a $0');
-      updateShipping(0);
-      shippingUpdateRef.current = 0;
     }
-  }, [selectedShippingOption, updateShipping]);
+  }, [selectedShippingOption]);
 
   // Manejo de efectos secundarios cuando cambia alguna dependencia
   useEffect(() => {
@@ -272,7 +258,12 @@ export const CheckoutContent = () => {
       return;
     }
     
-    console.log('🚚 CheckoutContent: Seleccionando opción', option);
+    console.log('🔍 [SECUENCIA FINAL] CheckoutContent recibe opción:', {
+      id: option.id,
+      name: option.name,
+      unavailableProductIds: option.unavailableProductIds?.length || 0,
+      hasPartialCoverage: option.hasPartialCoverage || false
+    });
     
     // Guardar la opción seleccionada previamente para diagnóstico
     const prevOption = selectedShippingOption;
@@ -283,23 +274,54 @@ export const CheckoutContent = () => {
         previa: {
           id: prevOption.id,
           precio: prevOption.totalCost || prevOption.calculatedCost || 0,
-          esGratis: prevOption.isFreeShipping
+          esGratis: prevOption.isFreeShipping,
+          productosNoDisponibles: prevOption.unavailableProductIds?.length || 0
         },
         nueva: {
           id: option.id,
           precio: option.totalCost || option.calculatedCost || option.totalPrice || 0,
-          esGratis: option.isFreeShipping || option.isAllFree
+          esGratis: option.isFreeShipping || option.isAllFree,
+          productosNoDisponibles: option.unavailableProductIds?.length || 0
         }
       });
     }
     
-    // Verificar que la función selectShippingOption esté disponible
-    if (typeof selectShippingOption === 'function') {
-      // Actualizar el costo de envío
-      selectShippingOption(option);
-    } else {
-      console.error('❌ Error: La función selectShippingOption no está disponible');
+    // SOLUCIÓN: Asegurarnos de que la opción tiene todos los campos necesarios
+    // y que se está copiando correctamente la información de productos no disponibles
+    const sanitizedOption = {
+      ...option,
+      hasPartialCoverage: option.hasPartialCoverage || option.isPartial || false,
+      unavailableProductIds: option.unavailableProductIds || [],
+      coveredProductIds: option.coveredProductIds || []
+    };
+    
+    // Asegurarnos de que la información de productos no disponibles esté presente
+    // Este es un paso crítico para que funcione correctamente desde la primera selección
+    if (sanitizedOption.hasPartialCoverage) {
+      console.log('🔍 [SECUENCIA FINAL] Opción con cobertura parcial detectada:', {
+        productosNoDisponibles: sanitizedOption.unavailableProductIds.length,
+        idsNoDisponibles: sanitizedOption.unavailableProductIds
+      });
     }
+    
+    // Mensaje especial para diagnóstico del problema
+    console.log(`🔍 [SECUENCIA FINAL] DIAGNÓSTICO ESPECÍFICO DEL PROBLEMA:`);
+    console.log(`🔍 [SECUENCIA FINAL] - La opción tiene hasPartialCoverage? ${sanitizedOption.hasPartialCoverage}`);
+    console.log(`🔍 [SECUENCIA FINAL] - Cantidad de unavailableProductIds: ${sanitizedOption.unavailableProductIds.length}`);
+    console.log(`🔍 [SECUENCIA FINAL] - Antes del setState, los datos están correctos`);
+    
+    // Actualizar el estado local con la opción sanitizada
+    selectShippingOption(sanitizedOption);
+    
+    // Después de actualizar, verificar que el estado fue actualizado correctamente
+    setTimeout(() => {
+      if (selectedShippingOption) {
+        console.log(`🔍 [SECUENCIA FINAL] Después de setState, verificando:`, {
+          hasPartialCoverage: selectedShippingOption.hasPartialCoverage,
+          unavailableCount: selectedShippingOption.unavailableProductIds?.length || 0
+        });
+      }
+    }, 0);
   };
 
   // Manejador para actualizar las combinaciones de envío calculadas
@@ -329,8 +351,32 @@ export const CheckoutContent = () => {
     cartShipping,
     isFreeShipping,
     selectedShippingIsFree: selectedShippingOption?.isFree,
-    passingAsFreeShipping: selectedShippingOption?.isFree || false
+    passingAsFreeShipping: selectedShippingOption?.isFree || false,
+    shippingTotal,
+    selectedShippingOption: selectedShippingOption ? {
+      id: selectedShippingOption.id,
+      name: selectedShippingOption.name,
+      hasPartialCoverage: selectedShippingOption.hasPartialCoverage || false,
+      unavailableProductIds: selectedShippingOption.unavailableProductIds || [],
+      unavailableCount: selectedShippingOption.unavailableProductIds?.length || 0
+    } : null
   });
+
+  // SOLUCIÓN FINAL: Asegurarnos de que el objeto selectedShippingOption tiene los datos correctos
+  // antes de pasarlo al CheckoutSummaryPanel
+  const enhancedSelectedOption = selectedShippingOption ? {
+    ...selectedShippingOption,
+    // Asegurarnos de que estos campos siempre existan
+    hasPartialCoverage: selectedShippingOption.hasPartialCoverage || selectedShippingOption.isPartial || false,
+    unavailableProductIds: selectedShippingOption.unavailableProductIds || [],
+    allProductsCovered: !(selectedShippingOption.hasPartialCoverage || selectedShippingOption.isPartial || false)
+  } : null;
+  
+  // Si hay productos no disponibles, mostrar un mensaje claro
+  if (enhancedSelectedOption?.hasPartialCoverage) {
+    console.log(`⚠️ [SOLUCIÓN] ATENCIÓN: Hay ${enhancedSelectedOption.unavailableProductIds.length} productos no disponibles.`);
+    console.log(`⚠️ [SOLUCIÓN] IDs: ${JSON.stringify(enhancedSelectedOption.unavailableProductIds)}`);
+  }
 
   return (
     <div className="container checkout-page my-5">
@@ -390,6 +436,7 @@ export const CheckoutContent = () => {
                     checkout.newAddressData
                   }
                   onShippingSelected={handleShippingOptionSelect}
+                  onTotalCostChange={handleShippingTotalCostChange}
                 />
               </div>
             ) : null
@@ -404,7 +451,7 @@ export const CheckoutContent = () => {
           cartShipping={cartShipping}
           cartTotal={cartTotal}
           isFreeShipping={selectedShippingOption?.isFree || false}
-          selectedShippingOption={selectedShippingOption}
+          selectedShippingOption={enhancedSelectedOption}
 
           isProcessing={checkout.isProcessing}
           isButtonDisabled={isButtonDisabled()}
