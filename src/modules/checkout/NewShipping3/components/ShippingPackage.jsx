@@ -115,10 +115,20 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
       basePrice = parseFloat(packageData.opciones_mensajeria[0].precio) || 0;
       console.log(`📊 [PRECIO] Precio base de opción de mensajería: $${basePrice}`);
     }
-    // Si no hay nada, usar el valor estándar que debería ser 350 según los logs
+    // Si hay un price definido
+    else if (packageData.price !== undefined && !isNaN(parseFloat(packageData.price)) && parseFloat(packageData.price) > 0) {
+      basePrice = parseFloat(packageData.price);
+      console.log(`📊 [PRECIO] Precio base de price: $${basePrice}`);
+    }
+    // Último recurso: usar totalCost
+    else if (totalCost !== undefined && !isNaN(parseFloat(totalCost)) && parseFloat(totalCost) > 0) {
+      basePrice = parseFloat(totalCost) / packagesCount;
+      console.log(`📊 [PRECIO] Precio base calculado desde totalCost dividido por packagesCount: $${basePrice}`);
+    }
+    // Si no se encuentra ningún precio
     else {
-      basePrice = 350; // Valor conocido para esta regla de envío
-      console.log(`📊 [PRECIO] Usando precio base predeterminado para Nacional: $${basePrice}`);
+      console.log(`⚠️ [PRECIO] No se encontró un precio base válido - usando 0`);
+      basePrice = 0;
     }
     
     // Debug log
