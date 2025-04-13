@@ -8,6 +8,7 @@ import CheckoutDebugInfo from './CheckoutDebugInfo';
 import { allProductsCovered } from '../services/shipping';
 import Spinner from './common/Spinner';
 import ShippingOptionsList from '../newShipping/components/ShippingOptionsList';
+import NewShippingIntegration from './NewShippingIntegration';
 
 // Lazy loading de componentes pesados de shipping
 const ShippingSelector = lazy(() => import('../components/shipping/ShippingSelector'));
@@ -335,8 +336,8 @@ export const CheckoutContent = () => {
           customShippingComponent={(props) => (
             checkout.selectedAddressType && 
             (checkout.selectedAddressType === 'saved' ? checkout.selectedAddressId : checkout.newAddressData) ? (
-              <div className="shipping-options-new-implementation mb-4">
-                <ShippingOptionsList 
+              <div className="shipping-options-container mb-4">
+                <NewShippingIntegration 
                   cartItems={cartItems}
                   address={checkout.selectedAddressType === 'saved' ? 
                     checkout.addresses.find(addr => addr.id === checkout.selectedAddressId) : 

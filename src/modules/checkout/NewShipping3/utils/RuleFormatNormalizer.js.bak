@@ -1,0 +1,127 @@
+/**
+ * RuleFormatNormalizer.js
+ * 
+ * Convierte reglas de envío al formato esperado por el algoritmo Greedy
+ * Solución permanente para la discrepancia de formatos entre nuestro sistema y el algoritmo
+ */
+import { STATE_PREFIX, NATIONAL_KEYWORD } from '../constants';
+
+/**
+ * Normaliza una regla de envío al formato esperado por el algoritmo Greedy
+ * @param {Object} rule - Regla en formato original
+ * @param {Object} address - Dirección del usuario (opcional, para normalización contextual)
+ * @returns {Object} - Regla normalizada al formato Greedy
+ */
+export const normalizeShippingRule = (rule, address = null) => {
+  if (!rule) return null;
+  
+  // Crear copia para no modificar el original
+  const newRule = { ...rule };
+  
+  // Si ya tiene coverage_type definido, mantenerlo
+  if (newRule.coverage_type || newRule.tipo_cobertura) {
+    return newRule;
+  }
+  
+  // Obtener estado normalizado de la dirección si está disponible
+  const state = address ? (address.state || address.provincia || '').toString().toLowerCase().trim() : '';
+  
+  // Normalizar regla basada en sus propiedades
+  
+  // CASO 1: Regla de cobertura nacional
+  if (rule.zona === 'Nacional' || rule.zipcode === NATIONAL_KEYWORD || (rule.zipcodes && rule.zipcodes.includes(NATIONAL_KEYWORD))) {
+    newRule.coverage_type = 'nacional';
+    newRule.coverage_values = [NATIONAL_KEYWORD];
+    console.log(`✅ Normalizada regla nacional ${rule.id}`);
+    return newRule;
+  }
+  
+  // CASO 2: Regla por estado (formato estado_XXX)
+  if (rule.zipcode && rule.zipcode.startsWith(STATE_PREFIX)) {
+    newRule.coverage_type = 'por_estado';
+    
+    // Si la dirección tiene estado y la regla tiene zona definida, usarla
+    if (state && rule.zona) {
+      newRule.coverage_values = [rule.zona.toLowerCase()];
+      newRule.cobertura_estados = [rule.zona.toLowerCase()];
+    } 
+    // Si no, extraer el código de estado del zipcode
+    else {
+      const stateCode = rule.zipcode.substring(STATE_PREFIX.length).toLowerCase(); // Quitar "estado_"
+      newRule.coverage_values = [stateCode];
+      newRule.cobertura_estados = [stateCode];
+    }
+    
+    console.log(`✅ Normalizada regla por estado ${rule.id} -> ${newRule.coverage_values[0]}`);
+    return newRule;
+  }
+  
+  // CASO 3: Regla por zona que es un estado
+  if (rule.zona && rule.zona !== 'Local' && rule.zona !== 'Nacional') {
+    newRule.coverage_type = 'por_estado';
+    newRule.coverage_values = [rule.zona.toLowerCase()];
+    newRule.cobertura_estados = [rule.zona.toLowerCase()];
+    console.log(`✅ Normalizada regla por zona-estado ${rule.id} -> ${rule.zona}`);
+    return newRule;
+  }
+  
+  // CASO 4: Regla por código postal específico
+  if (rule.zipcode && rule.zipcode !== NATIONAL_KEYWORD && !rule.zipcode.startsWith(STATE_PREFIX)) {
+    newRule.coverage_type = 'por_codigo_postal';
+    newRule.coverage_values = [rule.zipcode];
+    newRule.cobertura_cp = [rule.zipcode];
+    console.log(`✅ Normalizada regla por CP específico ${rule.id} -> ${rule.zipcode}`);
+    return newRule;
+  }
+  
+  // CASO 5: Regla con lista de códigos postales
+  if (rule.zipcodes && Array.isArray(rule.zipcodes) && rule.zipcodes.length > 0) {
+    const filteredZipcodes = rule.zipcodes.filter(cp => 
+      cp !== NATIONAL_KEYWORD && !cp.startsWith(STATE_PREFIX)
+    );
+    
+    if (filteredZipcodes.length > 0) {
+      newRule.coverage_type = 'por_codigo_postal';
+      newRule.coverage_values = filteredZipcodes;
+      newRule.cobertura_cp = filteredZipcodes;
+      console.log(`✅ Normalizada regla por lista CPs ${rule.id} -> ${filteredZipcodes.length} códigos`);
+      return newRule;
+    }
+  }
+  
+  // CASO 6: Regla local (zona = Local)
+  if (rule.zona === 'Local') {
+    // Para "Local" usamos nacional como fallback
+    newRule.coverage_type = 'nacional';
+    newRule.coverage_values = [NATIONAL_KEYWORD];
+    console.log(`✅ Normalizada regla Local ${rule.id} como nacional`);
+    return newRule;
+  }
+  
+  // CASO DEFAULT: Si no se pudo normalizar, marcar como nacional
+  console.warn(`⚠️ No se pudo determinar formato para regla ${rule.id}, usando nacional como fallback`);
+  newRule.coverage_type = 'nacional';
+  newRule.coverage_values = [NATIONAL_KEYWORD];
+  
+  return newRule;
+};
+
+/**
+ * Normaliza un array de reglas de envío
+ * @param {Array} rules - Reglas en formato original
+ * @param {Object} address - Dirección del usuario (opcional)
+ * @returns {Array} - Reglas normalizadas
+ */
+export const normalizeShippingRules = (rules, address = null) => {
+  if (!rules || !Array.isArray(rules)) {
+    return [];
+  }
+  
+  console.log(`🔄 Normalizando ${rules.length} reglas de envío al formato Greedy`);
+  return rules.map(rule => normalizeShippingRule(rule, address));
+};
+
+export default {
+  normalizeShippingRule,
+  normalizeShippingRules
+}; 

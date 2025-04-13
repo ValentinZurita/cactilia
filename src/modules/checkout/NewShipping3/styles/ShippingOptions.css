@@ -1,0 +1,178 @@
+/* Estilos para el componente ShippingOptions */
+
+.shipping-options-container {
+  margin: 0 0 24px;
+  background-color: transparent;
+  padding: 0;
+}
+
+.shipping-options-title {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333333;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.shipping-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.shipping-option {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+}
+
+.shipping-option:hover {
+  background-color: transparent;
+}
+
+.shipping-option.selected {
+  background-color: transparent;
+}
+
+.shipping-option-radio {
+  margin-top: 18px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Estilo personalizado para radio que coincide con Bootstrap */
+.shipping-option-radio input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #aaa;
+  border-radius: 50%;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  background-color: white;
+}
+
+.shipping-option-radio input[type="radio"]:checked {
+  border-color: #4caf50;
+  border-width: 5px;
+}
+
+.shipping-option-radio input[type="radio"]:focus {
+  box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+}
+
+.shipping-option-details {
+  flex: 1;
+}
+
+/* Estados del contenedor */
+.shipping-options-loading,
+.shipping-options-error,
+.shipping-options-empty {
+  padding: 24px;
+  text-align: center;
+  color: #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+}
+
+.shipping-options-loading p {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #666666;
+}
+
+.shipping-options-loading:before {
+  content: '';
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(76, 175, 80, 0.1);
+  border-top-color: #4caf50;
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.shipping-options-error {
+  color: #e53935;
+  background-color: rgba(229, 57, 53, 0.05);
+  border: 1px solid rgba(229, 57, 53, 0.2);
+}
+
+.shipping-options-error p {
+  margin: 0 0 12px;
+}
+
+.shipping-options-retry-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.shipping-options-retry-btn:hover {
+  background-color: #388e3c;
+}
+
+.shipping-unavailable-warning {
+  margin-bottom: 16px;
+}
+
+.shipping-unavailable-warning .alert {
+  padding: 10px 14px;
+  background-color: #fff8e1;
+  border: 1px solid #ffecb3;
+  border-radius: 4px;
+  color: #664d03;
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.shipping-unavailable-warning .alert i {
+  font-size: 15px;
+  margin-right: 6px;
+  color: #ffc107;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .shipping-options-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+  
+  .shipping-option-radio {
+    margin-top: 16px;
+  }
+  
+  .shipping-options-loading,
+  .shipping-options-error,
+  .shipping-options-empty {
+    padding: 20px;
+    min-height: 80px;
+  }
+} 

@@ -1,0 +1,335 @@
+/* Estilos para paquetes de envío */
+.shipping-package {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  padding: 18px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.shipping-package:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  border-color: #d0d0d0;
+}
+
+.shipping-package.selected {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
+  background-color: rgba(var(--accent-color-rgb), 0.03);
+}
+
+/* Cabecera del paquete */
+.shipping-package-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shipping-package-icon {
+  margin-right: 18px;
+  font-size: 28px;
+  color: var(--accent-color);
+  background-color: rgba(var(--accent-color-rgb), 0.08);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shipping-package-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shipping-package-icon i.shipping-express {
+  color: #e74c3c;
+}
+
+.shipping-package-info {
+  flex: 1;
+}
+
+.shipping-package-info h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.shipping-package-details {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.shipping-delivery-time {
+  display: flex;
+  align-items: center;
+  margin-right: 15px;
+  background-color: rgba(var(--accent-color-rgb), 0.05);
+  padding: 4px 10px;
+  border-radius: 30px;
+}
+
+.shipping-delivery-time i {
+  margin-right: 5px;
+  font-size: 14px;
+  color: var(--accent-color);
+}
+
+.shipping-package-price {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 85px;
+  text-align: right;
+}
+
+.shipping-package-price .free-shipping {
+  color: var(--success-color);
+  font-weight: 700;
+}
+
+/* Cuerpo del paquete */
+.shipping-package-body {
+  margin-top: 14px;
+}
+
+/* Resumen de paquete (siempre visible) */
+.shipping-package-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.summary-pill {
+  background-color: var(--bg-light);
+  border-radius: 50px;
+  padding: 5px 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  color: var(--text-medium);
+  transition: background-color 0.2s;
+}
+
+.summary-pill:hover {
+  background-color: #eaeaea;
+}
+
+.summary-pill i {
+  margin-right: 6px;
+  font-size: 14px;
+  color: var(--accent-color);
+}
+
+.details-toggle {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 5px 12px;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  border-radius: 30px;
+  transition: background-color 0.2s;
+}
+
+.details-toggle:hover {
+  background-color: rgba(var(--accent-color-rgb), 0.08);
+}
+
+.details-toggle i {
+  margin-right: 4px;
+}
+
+/* Sección expandida */
+.shipping-package-expanded {
+  margin-top: 15px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 15px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.shipping-package-expanded h4 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+/* Desglose de costos nuevo estilo */
+.shipping-cost-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.shipping-total-price {
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+/* Desglose de paquetes nuevos */
+.products-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.package-breakdown {
+  background-color: var(--bg-light);
+  border-radius: 10px;
+  padding: 14px;
+  transition: background-color 0.2s;
+}
+
+.package-breakdown:hover {
+  background-color: #eaeaea;
+}
+
+.package-header-breakdown {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.package-header-breakdown h5 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.package-price {
+  font-weight: 700;
+  color: var(--accent-color);
+  background-color: rgba(var(--accent-color-rgb), 0.08);
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+/* Lista de productos */
+.product-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.product-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s;
+}
+
+.product-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.product-item:last-child {
+  border-bottom: none;
+}
+
+.product-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-name {
+  font-size: 13px;
+  color: var(--text-medium);
+}
+
+.product-weight {
+  font-size: 13px;
+  color: var(--text-light);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 2px 6px;
+  border-radius: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .shipping-package {
+    padding: 14px;
+  }
+  
+  .shipping-package-header {
+    flex-wrap: wrap;
+  }
+  
+  .shipping-package-icon {
+    font-size: 22px;
+    width: 40px;
+    height: 40px;
+    margin-right: 14px;
+  }
+  
+  .shipping-package-info h3 {
+    font-size: 15px;
+  }
+  
+  .shipping-package-price {
+    font-size: 16px;
+    margin-top: 8px;
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+  
+  .shipping-package-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .summary-pill {
+    width: 100%;
+  }
+  
+  .details-toggle {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+  }
+}
+
+/* Variables CSS predeterminadas */
+:root {
+  --accent-color: #0066cc;
+  --accent-color-rgb: 0, 102, 204;
+  --text-dark: #333333;
+  --text-medium: #666666;
+  --text-light: #888888;
+  --bg-light: #f5f5f5;
+  --border-color: #e0e0e0;
+  --success-color: #2ea44f;
+} 

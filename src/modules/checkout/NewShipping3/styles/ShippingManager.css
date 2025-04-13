@@ -1,0 +1,29 @@
+/* Estilos para el componente ShippingManager */
+
+.shipping-manager-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.shipping-section-title {
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 1.5rem;
+  color: #333;
+  text-align: center;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 15px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .shipping-manager-container {
+    padding: 15px;
+  }
+  
+  .shipping-section-title {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+  }
+} 

@@ -12,9 +12,10 @@ import { findBestShippingOptions } from './ShippingRulesGreedy';
  * Obtiene todas las opciones de envío disponibles para un carrito y una dirección
  * @param {Array} cartItems - Items del carrito con información de productos
  * @param {Object} addressInfo - Información de la dirección del usuario
+ * @param {Array} customRules - Reglas de envío personalizadas (opcional)
  * @returns {Promise<Array>} - Array de opciones de envío
  */
-export const getShippingOptions = async (cartItems, addressInfo) => {
+export const getShippingOptions = async (cartItems, addressInfo, customRules = null) => {
   try {
     // Validaciones básicas
     if (!cartItems?.length) {
@@ -40,8 +41,15 @@ export const getShippingOptions = async (cartItems, addressInfo) => {
       zip: postalCode
     };
 
-    // Obtener reglas de envío activas desde Firebase
-    const shippingRules = await getActiveShippingZones();
+    // Usar reglas personalizadas o obtenerlas desde Firebase
+    let shippingRules;
+    if (customRules && Array.isArray(customRules) && customRules.length > 0) {
+      console.log(`📦 Usando ${customRules.length} reglas personalizadas proporcionadas`);
+      shippingRules = customRules;
+    } else {
+      // Obtener reglas de envío activas desde Firebase
+      shippingRules = await getActiveShippingZones();
+    }
     
     if (!shippingRules || shippingRules.length === 0) {
       console.warn('⚠️ No se encontraron reglas de envío activas');
@@ -91,8 +99,8 @@ export const getShippingOptions = async (cartItems, addressInfo) => {
 
 // Clase ShippingService para mantener compatibilidad con código existente
 class ShippingService {
-  async getShippingOptions(cartItems, addressInfo) {
-    return getShippingOptions(cartItems, addressInfo);
+  async getShippingOptions(cartItems, addressInfo, customRules = null) {
+    return getShippingOptions(cartItems, addressInfo, customRules);
   }
 }
 
