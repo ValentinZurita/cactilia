@@ -104,9 +104,27 @@ class CheckoutShippingService {
         
         // Intentar obtener el tiempo_entrega de las opciones de mensajería
         let tiempo_entrega = '';
+        let configuracion_paquetes = null;
+        
         if (originalRule.opciones_mensajeria && originalRule.opciones_mensajeria.length > 0) {
           tiempo_entrega = originalRule.opciones_mensajeria[0].tiempo_entrega || '';
           console.log(`- tiempo_entrega encontrado en regla original: ${tiempo_entrega}`);
+          
+          // Obtener la configuración de paquetes de la opción de mensajería
+          if (originalRule.opciones_mensajeria[0].configuracion_paquetes) {
+            configuracion_paquetes = originalRule.opciones_mensajeria[0].configuracion_paquetes;
+            console.log(`- Configuración de paquetes encontrada en opción de mensajería`);
+            console.log(`- peso_maximo_paquete: ${configuracion_paquetes.peso_maximo_paquete}`);
+            console.log(`- costo_por_kg_extra: ${configuracion_paquetes.costo_por_kg_extra}`);
+          }
+        }
+        
+        // Si no se encontró configuración en opciones_mensajeria, buscar en la regla directamente
+        if (!configuracion_paquetes && originalRule.configuracion_paquetes) {
+          configuracion_paquetes = originalRule.configuracion_paquetes;
+          console.log(`- Configuración de paquetes encontrada en regla original`);
+          console.log(`- peso_maximo_paquete: ${configuracion_paquetes.peso_maximo_paquete}`);
+          console.log(`- costo_por_kg_extra: ${configuracion_paquetes.costo_por_kg_extra}`);
         }
         
         const formattedOption = {
@@ -117,6 +135,7 @@ class CheckoutShippingService {
           estimatedDelivery: option.deliveryTime || option.estimatedDelivery || '',
           tiempo_entrega: tiempo_entrega,
           totalCost: option.price || option.totalCost || 0,
+          precio_base: originalRule.precio_base || (originalRule.opciones_mensajeria && originalRule.opciones_mensajeria.length > 0 ? originalRule.opciones_mensajeria[0].precio : null),
           is_shippable: true, // Todas estas opciones son enviables
           products: option.products || [],
           // Información adicional para generar descripciones más detalladas
@@ -127,9 +146,20 @@ class CheckoutShippingService {
           zoneType: option.zoneType || 'estándar',
           rule_id: option.rule_id,
           
+          // Pasar la configuración de paquetes completa
+          configuracion_paquetes: configuracion_paquetes,
+          
           // Añadir información de restricciones de paquetes si existe
           maxProductsPerPackage: getPackageLimit(originalRule, 'maximo_productos_por_paquete'),
-          maxWeightPerPackage: getPackageLimit(originalRule, 'peso_maximo_paquete')
+          maxWeightPerPackage: getPackageLimit(originalRule, 'peso_maximo_paquete'),
+          
+          // Información de paquetes
+          packagesCount: option.packagesCount || 1,
+          packagesInfo: option.packagesInfo || [],
+          packagesWithPrices: option.packagesWithPrices || false,
+          
+          // Incluir las opciones de mensajería completas
+          opciones_mensajeria: originalRule.opciones_mensajeria || []
         };
         
         // Log de la opción formateada

@@ -36,7 +36,15 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
     packagesCount = 1,
     packagesInfo: externalPackagesInfo = [],
     costoExtra = 0,
-    price = 0
+    price = 0,
+    precio_base,
+    packagesWithPrices = false, // Indicador de que los paquetes tienen precios individuales calculados
+    // Extraer tiempos de los días mínimos y máximos
+    minDays,
+    maxDays,
+    // Datos de la regla original
+    opciones_mensajeria,
+    configuracion_paquetes
   } = packageData;
 
   // Debug para ver qué nombre recibe el componente
@@ -69,20 +77,146 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
     return sum + (parseFloat(product.weight) * product.quantity);
   }, 0).toFixed(2);
   
+  // Debug más detallado de la configuración
+  console.log(`📦 DEBUG DATOS RECIBIDOS (${name}):`);
+  console.log(`- packageData.totalCost = ${totalCost}`);
+  console.log(`- packageData.price = ${price}`);
+  console.log(`- packageData.rule_id = ${rule_id}`);
+  
+  // Función auxiliar para calcular el precio de un paquete basado en su peso
+  const calculatePackagePrice = (weight) => {
+    // Obtener la configuración del paquete
+    const config = packageData.configuracion_paquetes || 
+                 (packageData.opciones_mensajeria && 
+                  packageData.opciones_mensajeria.length > 0 && 
+                  packageData.opciones_mensajeria[0].configuracion_paquetes) || 
+                 null;
+    
+    // Debug de la configuración
+    console.log(`📦 [DEBUG] Datos de configuración para cálculo de precio:`);
+    if (config) {
+      console.log(`- Configuración encontrada: peso_maximo_paquete=${config.peso_maximo_paquete}, costo_por_kg_extra=${config.costo_por_kg_extra}`);
+    } else {
+      console.log(`- SIN CONFIGURACIÓN DE PAQUETES`);
+    }
+    
+    // Obtener el precio base
+    let basePrice = 0;
+    
+    // Primero intentamos obtener de precio_base explícito
+    if (packageData.precio_base !== undefined && !isNaN(parseFloat(packageData.precio_base))) {
+      basePrice = parseFloat(packageData.precio_base);
+      console.log(`📊 [PRECIO] Precio base explícito: $${basePrice}`);
+    }
+    // Luego de la primera opción de mensajería
+    else if (packageData.opciones_mensajeria && 
+            packageData.opciones_mensajeria.length > 0 && 
+            packageData.opciones_mensajeria[0].precio !== undefined) {
+      basePrice = parseFloat(packageData.opciones_mensajeria[0].precio) || 0;
+      console.log(`📊 [PRECIO] Precio base de opción de mensajería: $${basePrice}`);
+    }
+    // Si no hay nada, usar el valor estándar que debería ser 350 según los logs
+    else {
+      basePrice = 350; // Valor conocido para esta regla de envío
+      console.log(`📊 [PRECIO] Usando precio base predeterminado para Nacional: $${basePrice}`);
+    }
+    
+    // Debug log
+    console.log(`📋 [PRECIO] Cálculo para paquete - Peso: ${weight}kg, Precio base: $${basePrice}`);
+    
+    // Solo aplicar sobrecosto si hay configuración con peso máximo y costo por kg extra
+    if (config && 
+        config.peso_maximo_paquete !== undefined && 
+        !isNaN(parseFloat(config.peso_maximo_paquete)) && 
+        config.costo_por_kg_extra !== undefined && 
+        !isNaN(parseFloat(config.costo_por_kg_extra)) &&
+        parseFloat(config.costo_por_kg_extra) > 0) {
+        
+      const pesoMaximoPaquete = parseFloat(config.peso_maximo_paquete);
+      const costoPorKgExtra = parseFloat(config.costo_por_kg_extra);
+      
+      console.log(`📋 [PRECIO] Peso máximo: ${pesoMaximoPaquete}kg, Costo por kg extra: $${costoPorKgExtra}`);
+      
+      // Solo aplicar sobrecosto si el peso excede el máximo
+      if (weight > pesoMaximoPaquete) {
+        // El peso extra es la diferencia entre el peso actual y el máximo permitido
+        const pesoExtra = weight - pesoMaximoPaquete;
+        // Redondear hacia arriba al kilo siguiente para el cálculo del sobrecosto
+        const kilosExtraRedondeados = Math.ceil(pesoExtra);
+        const costoExtra = kilosExtraRedondeados * costoPorKgExtra;
+        
+        console.log(`📦 [PRECIO] CARGO POR PESO EXTRA - Peso: ${weight}kg, Máximo: ${pesoMaximoPaquete}kg`);
+        console.log(`📦 [PRECIO] Peso extra: ${pesoExtra}kg → ${kilosExtraRedondeados}kg (redondeado)`);
+        console.log(`📦 [PRECIO] Sobrecosto: ${kilosExtraRedondeados} kg x $${costoPorKgExtra} = $${costoExtra}`);
+        console.log(`📦 [PRECIO] Total: $${basePrice} + $${costoExtra} = $${basePrice + costoExtra}`);
+        
+        // Retornar precio base + costo adicional por peso extra
+        return basePrice + costoExtra;
+      } else {
+        console.log(`📦 [PRECIO] SIN CARGO EXTRA - Peso: ${weight}kg está dentro del límite de ${pesoMaximoPaquete}kg`);
+        return basePrice;
+      }
+    } else {
+      console.log(`📦 [PRECIO] SIN CONFIGURACIÓN COMPLETA - Usando solo precio base $${basePrice}`);
+      return basePrice;
+    }
+  };
+  
   // Distribuir productos en paquetes según restricciones
   const calculatePackages = () => {
+    // Imprimimos la configuración de paquetes para debugging
+    console.log(`📦 [DEBUG] Datos para cálculo de paquetes:`);
+    console.log(`- configuracion_paquetes:`, packageData.configuracion_paquetes);
+    console.log(`- opciones_mensajeria:`, packageData.opciones_mensajeria);
+    console.log(`- maxProductsPerPackage:`, maxProductsPerPackage);
+    console.log(`- maxWeightPerPackage:`, maxWeightPerPackage);
+    
+    // Obtenemos configuración desde el origen correcto
+    const config = packageData.configuracion_paquetes || 
+                  (packageData.opciones_mensajeria && 
+                   packageData.opciones_mensajeria.length > 0 && 
+                   packageData.opciones_mensajeria[0].configuracion_paquetes) || 
+                  null;
+    
+    // Si ya tenemos paquetes con precios individuales calculados en el servicio
+    if (externalPackagesInfo && externalPackagesInfo.length > 0 && packagesWithPrices) {
+      console.log(`📦 [DEBUG] Usando paquetes precalculados con precios individuales`);
+      return externalPackagesInfo.map((pkg, index) => {
+        const pkgProducts = packProducts.filter(p => pkg.products.includes(p.id));
+        const weight = pkg.weight || pkgProducts.reduce((sum, p) => sum + (parseFloat(p.weight) * p.quantity), 0);
+        
+        return {
+          ...pkg,
+          id: pkg.id || `pkg_${index + 1}`,
+          products: pkgProducts,
+          weight,
+          price: pkg.packagePrice || calculatePackagePrice(weight)
+        };
+      });
+    }
+
     // Si hay restricción de 1 producto por paquete, distribuimos incluyendo cantidades
-    if (maxProductsPerPackage === 1) {
+    const pesoMaximoPaquete = config?.peso_maximo_paquete ? parseFloat(config.peso_maximo_paquete) : 
+                             maxWeightPerPackage ? parseFloat(maxWeightPerPackage) : null;
+    
+    const maximoProductosPorPaquete = config?.maximo_productos_por_paquete ? parseInt(config.maximo_productos_por_paquete, 10) : 
+                                     maxProductsPerPackage ? parseInt(maxProductsPerPackage, 10) : null;
+    
+    console.log(`📦 [DEBUG] Límites calculados - Peso máximo: ${pesoMaximoPaquete}kg, Máx. productos: ${maximoProductosPorPaquete}`);
+    
+    if (maximoProductosPorPaquete === 1) {
+      console.log(`📦 [DEBUG] Usando distribución 1 producto por paquete`);
       let packages = [];
       
       // Distribuir cada unidad como paquete independiente
       packProducts.forEach(product => {
         for (let i = 0; i < product.quantity; i++) {
+          const weight = parseFloat(product.weight);
           packages.push({
             id: `pkg_${packages.length + 1}`,
             products: [{...product, quantity: 1}],
-            weight: parseFloat(product.weight),
-            price: price > 0 ? price : totalCost
+            weight: weight,
+            price: calculatePackagePrice(weight)
           });
         }
       });
@@ -90,8 +224,8 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
       return packages;
     }
     // Si hay restricción de peso máximo por paquete
-    else if (maxWeightPerPackage && parseFloat(maxWeightPerPackage) > 0) {
-      const maxWeight = parseFloat(maxWeightPerPackage);
+    else if (pesoMaximoPaquete && !isNaN(pesoMaximoPaquete) && pesoMaximoPaquete > 0) {
+      console.log(`📦 [DEBUG] Usando distribución por peso máximo: ${pesoMaximoPaquete}kg`);
       let packages = [];
       let currentPackageProducts = [];
       let currentPackageWeight = 0;
@@ -102,7 +236,7 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
         // Si son productos con cantidades altas, pero poco peso, los agrupamos
         const productWeight = parseFloat(product.weight) || 0;
         
-        if (product.quantity > 1 && productWeight * product.quantity <= maxWeight) {
+        if (product.quantity > 1 && productWeight * product.quantity <= pesoMaximoPaquete) {
           // Podemos mantener el producto completo
           expandedProducts.push({...product});
         } else if (product.quantity > 1) {
@@ -124,14 +258,14 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
         const productWeight = (parseFloat(product.weight) || 0) * product.quantity;
         
         // Si añadir este producto supera el peso máximo, crear un nuevo paquete
-        if (currentPackageWeight + productWeight > maxWeight) {
+        if (currentPackageWeight + productWeight > pesoMaximoPaquete) {
           // Si el paquete actual no está vacío, lo añadimos a la lista
           if (currentPackageProducts.length > 0) {
             packages.push({
               id: `pkg_${packages.length + 1}`,
               products: [...currentPackageProducts],
               weight: currentPackageWeight,
-              price: price > 0 ? price : totalCost
+              price: calculatePackagePrice(currentPackageWeight)
             });
           }
           
@@ -151,14 +285,15 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
           id: `pkg_${packages.length + 1}`,
           products: currentPackageProducts,
           weight: currentPackageWeight,
-          price: price > 0 ? price : totalCost
+          price: calculatePackagePrice(currentPackageWeight)
         });
       }
       
       return packages;
     }
-    // Si hay otra restricción diferente o información externa, usar eso
+    // Si no hay restricciones específicas pero sí hay paquetes predefinidos, usarlos
     else if (externalPackagesInfo && externalPackagesInfo.length > 0) {
+      console.log(`📦 [DEBUG] Usando paquetes predefinidos sin precios`);
       return externalPackagesInfo.map((pkg, index) => {
         const pkgProducts = packProducts.filter(p => pkg.products.includes(p.id));
         const weight = pkgProducts.reduce((sum, p) => sum + (parseFloat(p.weight) * p.quantity), 0);
@@ -168,17 +303,19 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
           id: pkg.id || `pkg_${index + 1}`,
           products: pkgProducts,
           weight,
-          price: price > 0 ? price : totalCost
+          price: calculatePackagePrice(weight)
         };
       });
     }
     // Si no hay restricciones, todos en un solo paquete
     else {
+      console.log(`📦 [DEBUG] Sin restricciones - Todos los productos en un paquete`);
+      const totalWeightValue = parseFloat(totalWeight);
       return [{
         id: 'pkg_1',
         products: packProducts,
-        weight: parseFloat(totalWeight),
-        price: totalCost
+        weight: totalWeightValue,
+        price: calculatePackagePrice(totalWeightValue)
       }];
     }
   };
@@ -198,19 +335,50 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
         minimumFractionDigits: 2
       }).format(calculatedTotalCost);
   
-  // Obtener el costo unitario por paquete (ahora es el mismo para todos los paquetes)
-  const costoPorPaquete = packages.length > 0 ? packages[0].price : 0;
+  // Log para depuración de precios por paquete
+  console.log(`💰 RESUMEN DE PRECIOS POR PAQUETE:`);
+  packages.forEach((pkg, index) => {
+    console.log(`- Paquete ${index + 1}: Peso ${pkg.weight}kg, Precio: $${pkg.price}`);
+  });
+  console.log(`- TOTAL: $${calculatedTotalCost}`);
   
-  const formattedUnitCost = costoPorPaquete === 0 
-    ? 'GRATIS' 
-    : new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN',
-        minimumFractionDigits: 2
-      }).format(costoPorPaquete);
+  // Verificar si hay diferencias significativas entre los precios de los paquetes
+  const precioDiferentes = packages.length > 1 && 
+    packages.some(pkg => Math.abs(pkg.price - packages[0].price) > 5); // 5 pesos de diferencia es significativo
   
-  // Obtener el tiempo de entrega desde cualquier fuente disponible
-  const displayDeliveryTime = deliveryTime || estimatedDelivery || tiempo_entrega || '';
+  if (precioDiferentes) {
+    console.log(`💰 ATENCIÓN: Los paquetes tienen precios diferentes - Debe mostrar desglose`);
+  }
+  
+  // Determinar el tiempo de entrega basado en las diferentes fuentes disponibles
+  let displayDeliveryTime = '';
+  
+  // Orden de prioridad para determinar el tiempo de entrega
+  if (tiempo_entrega && tiempo_entrega.trim().length > 0) {
+    // 1. Usar tiempo_entrega si existe (viene directamente de la regla)
+    displayDeliveryTime = tiempo_entrega;
+    console.log(`📦 Usando tiempo_entrega: "${displayDeliveryTime}"`);
+  } else if (deliveryTime && deliveryTime.trim().length > 0) {
+    // 2. Usar deliveryTime si existe (calculado por el algoritmo greedy)
+    displayDeliveryTime = deliveryTime;
+    console.log(`📦 Usando deliveryTime: "${displayDeliveryTime}"`);
+  } else if (estimatedDelivery && estimatedDelivery.trim().length > 0) {
+    // 3. Usar estimatedDelivery si existe
+    displayDeliveryTime = estimatedDelivery;
+    console.log(`📦 Usando estimatedDelivery: "${displayDeliveryTime}"`);
+  } else if (minDays !== undefined && maxDays !== undefined) {
+    // 4. Construir a partir de minDays y maxDays
+    if (minDays === maxDays) {
+      displayDeliveryTime = `${minDays} días hábiles`;
+    } else {
+      displayDeliveryTime = `${minDays} a ${maxDays} días hábiles`;
+    }
+    console.log(`📦 Construyendo desde minDays=${minDays} y maxDays=${maxDays}: "${displayDeliveryTime}"`);
+  } else {
+    // 5. Valor predeterminado solo si no hay otra información
+    displayDeliveryTime = "Tiempo de entrega variable";
+    console.log(`📦 Usando valor predeterminado: "${displayDeliveryTime}"`);
+  }
   
   // Determinar el tipo de envío para mostrar el icono correcto
   const getShippingIcon = () => {
@@ -257,7 +425,14 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
             <span className="free-shipping">GRATIS</span>
           ) : (
             <>
-              <span>{formattedTotalCost}</span>
+              {packages.length > 1 && packages.some(pkg => Math.abs(pkg.price - packages[0].price) > 5) ? (
+                <div className="shipping-total-price">
+                  <span className="shipping-total-cost">Desde</span>
+                  <span>{formattedTotalCost}</span>
+                </div>
+              ) : (
+                <span>{formattedTotalCost}</span>
+              )}
             </>
           )}
         </div>
@@ -289,6 +464,14 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
             </div>
           )}
           
+          {/* Mostrar cantidad de paquetes si hay más de uno */}
+          {packages.length > 1 && (
+            <div className="summary-pill">
+              <i className="bi bi-archive"></i>
+              <span>{packages.length} paquetes</span>
+            </div>
+          )}
+          
           <button className="details-toggle" onClick={toggleDetails}>
             {detailsExpanded ? <i className="bi bi-chevron-up"></i> : <i className="bi bi-chevron-down"></i>}
             <span>{detailsExpanded ? 'Ocultar detalles' : 'Ver detalles'}</span>
@@ -298,29 +481,77 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
         {detailsExpanded && (
           <div className="shipping-package-expanded">
             <div className="products-breakdown">
-              {packages.map((pkg, index) => (
-                <div key={pkg.id} className="package-breakdown">
-                  {packages.length > 1 && (
+              {packages.map((pkg, index) => {
+                // Formatear el precio individual de este paquete específico
+                const formattedPackagePrice = pkg.price === 0 
+                  ? 'GRATIS' 
+                  : new Intl.NumberFormat('es-MX', {
+                      style: 'currency',
+                      currency: 'MXN',
+                      minimumFractionDigits: 2
+                    }).format(pkg.price);
+                
+                return (
+                  <div key={pkg.id} className="package-breakdown">
                     <div className="package-header-breakdown">
                       <h5>Paquete {index + 1}</h5>
-                      <span className="package-price">{formattedUnitCost}</span>
+                      <span className="package-price">{formattedPackagePrice}</span>
                     </div>
-                  )}
-                  <ul className="product-list">
-                    {pkg.products.map(product => (
-                      <li key={`${pkg.id}_${product.id}`} className="product-item">
-                        <div className="product-details">
-                          <span className="shipping-product-name-detail">{product.name} {product.quantity > 1 ? `(${product.quantity})` : ''}</span>
-                          {product.weight > 0 && (
-                            <span className="product-weight">{(parseFloat(product.weight) * product.quantity).toFixed(2)} kg</span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                    <ul className="product-list">
+                      {pkg.products.map(product => (
+                        <li key={`${pkg.id}_${product.id}`} className="product-item">
+                          <div className="product-details">
+                            <span className="shipping-product-name-detail">{product.name} {product.quantity > 1 ? `(${product.quantity})` : ''}</span>
+                            {product.weight > 0 && (
+                              <span className="product-weight">{(parseFloat(product.weight) * product.quantity).toFixed(2)} kg</span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
+            
+            {/* Mostrar resumen de costos cuando hay múltiples paquetes con precios distintos */}
+            {packages.length > 1 && (
+              <div className="cost-summary">
+                <h5>Resumen de costos</h5>
+                <ul className="cost-breakdown-list">
+                  {packages.some(pkg => pkg.price !== packages[0].price) ? (
+                    // Si hay paquetes con precios diferentes, mostrar desglose
+                    packages.map((pkg, index) => (
+                      <li key={`cost_${index}`} className="cost-item">
+                        <span>Paquete {index + 1} ({pkg.weight.toFixed(2)} kg):</span>
+                        <span className="cost-value">
+                          {pkg.price === 0 
+                            ? 'GRATIS' 
+                            : new Intl.NumberFormat('es-MX', {
+                                style: 'currency',
+                                currency: 'MXN',
+                                minimumFractionDigits: 2
+                              }).format(pkg.price)}
+                        </span>
+                      </li>
+                    ))
+                  ) : (
+                    // Si todos los paquetes tienen el mismo precio, mostrar precio unitario
+                    <li className="cost-item">
+                      <span>{packages.length} paquetes x {new Intl.NumberFormat('es-MX', {
+                        style: 'currency',
+                        currency: 'MXN',
+                        minimumFractionDigits: 2
+                      }).format(packages[0].price)}</span>
+                    </li>
+                  )}
+                  <li className="cost-item total">
+                    <span><strong>Total:</strong></span>
+                    <span className="cost-value"><strong>{formattedTotalCost}</strong></span>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>

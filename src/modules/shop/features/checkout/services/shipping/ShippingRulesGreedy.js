@@ -499,6 +499,50 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
           }
         }
         
+        // Calcular precio individual para cada paquete según su peso
+        if (packagesInfo.length > 0 && group.rule.configuracion_paquetes) {
+          const config = group.rule.configuracion_paquetes;
+          const pesoMaximoPaquete = parseFloat(config.peso_maximo_paquete || 0);
+          const costoPorKgExtra = parseFloat(config.costo_por_kg_extra || 0);
+          const precioBase = parseFloat(group.rule.precio_base || 0);
+          
+          console.log(`💰 [FIX] Calculando costos individuales por paquete:`);
+          console.log(`💰 [FIX] Precio base: ${precioBase}, Peso máximo: ${pesoMaximoPaquete}kg, Costo por kg extra: ${costoPorKgExtra}`);
+          
+          // Variable para acumular el costo total de todos los paquetes
+          let costoTotalPaquetes = 0;
+          
+          // Calcular precio para cada paquete individualmente
+          packagesInfo.forEach(pkg => {
+            if (pkg.weight === undefined) {
+              // Si no tiene peso definido, asignamos precio base
+              pkg.packagePrice = precioBase;
+              console.log(`💰 [FIX] Paquete ${pkg.id}: sin peso definido - precio base ${precioBase}`);
+            } else if (pkg.weight <= pesoMaximoPaquete || !costoPorKgExtra) {
+              // Si está dentro del peso límite, solo asignar precio base
+              pkg.packagePrice = precioBase;
+              console.log(`💰 [FIX] Paquete ${pkg.id}: ${pkg.weight}kg (dentro del límite) - precio ${precioBase}`);
+            } else {
+              // Calcular sobrecosto por peso extra
+              const pesoExtra = pkg.weight - pesoMaximoPaquete;
+              // Redondear hacia arriba al kilo siguiente
+              const kilosExtraRedondeados = Math.ceil(pesoExtra);
+              const costoExtra = kilosExtraRedondeados * costoPorKgExtra;
+              pkg.packagePrice = precioBase + costoExtra;
+              console.log(`💰 [FIX] Paquete ${pkg.id}: ${pkg.weight}kg - peso extra ${pesoExtra}kg → ${kilosExtraRedondeados}kg - precio ${pkg.packagePrice}`);
+            }
+            
+            // Acumular al costo total
+            costoTotalPaquetes += pkg.packagePrice;
+          });
+          
+          // Si se calcularon precios individuales, actualizar el costo total
+          if (costoTotalPaquetes > 0) {
+            cost = costoTotalPaquetes;
+            console.log(`💰 [FIX] Costo total actualizado: ${cost} (suma de paquetes individuales)`);
+          }
+        }
+        
         // Generar texto de tiempo de entrega solo si hay datos disponibles
         let deliveryTimeText = '';
 
@@ -537,12 +581,19 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
           isNational: (group.rule.coverage_type === 'nacional' || group.rule.tipo === 'nacional'),
           zoneType: group.rule.coverage_type || group.rule.tipo || 'standard',
           deliveryTime: deliveryTimeText,
-          
+          // Añadir precio base explícito
+          precio_base: parseFloat(group.rule.precio_base || (group.rule.opciones_mensajeria && group.rule.opciones_mensajeria.length > 0 ? group.rule.opciones_mensajeria[0].precio : 0)),
+          // Añadir configuración completa de paquetes
+          configuracion_paquetes: group.rule.configuracion_paquetes,
+          // Añadir opciones de mensajería
+          opciones_mensajeria: group.rule.opciones_mensajeria,
           // Añadir información de restricciones y paquetes
           maxProductsPerPackage: group.rule.configuracion_paquetes?.maximo_productos_por_paquete,
           maxWeightPerPackage: group.rule.configuracion_paquetes?.peso_maximo_paquete,
           packagesCount,
-          packagesInfo: packagesInfo.length > 0 ? packagesInfo : undefined
+          packagesInfo: packagesInfo.length > 0 ? packagesInfo : undefined,
+          // Marcar que tiene precios individuales calculados si corresponde
+          packagesWithPrices: packagesInfo.length > 0 && packagesInfo.some(p => p.packagePrice !== undefined)
         };
         
         // Generar descripción detallada
@@ -692,6 +743,50 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
       }
     }
     
+    // Calcular precio individual para cada paquete según su peso
+    if (packagesInfo.length > 0 && group.rule.configuracion_paquetes) {
+      const config = group.rule.configuracion_paquetes;
+      const pesoMaximoPaquete = parseFloat(config.peso_maximo_paquete || 0);
+      const costoPorKgExtra = parseFloat(config.costo_por_kg_extra || 0);
+      const precioBase = parseFloat(group.rule.precio_base || 0);
+      
+      console.log(`💰 [FIX] Calculando costos individuales por paquete:`);
+      console.log(`💰 [FIX] Precio base: ${precioBase}, Peso máximo: ${pesoMaximoPaquete}kg, Costo por kg extra: ${costoPorKgExtra}`);
+      
+      // Variable para acumular el costo total de todos los paquetes
+      let costoTotalPaquetes = 0;
+      
+      // Calcular precio para cada paquete individualmente
+      packagesInfo.forEach(pkg => {
+        if (pkg.weight === undefined) {
+          // Si no tiene peso definido, asignamos precio base
+          pkg.packagePrice = precioBase;
+          console.log(`💰 [FIX] Paquete ${pkg.id}: sin peso definido - precio base ${precioBase}`);
+        } else if (pkg.weight <= pesoMaximoPaquete || !costoPorKgExtra) {
+          // Si está dentro del peso límite, solo asignar precio base
+          pkg.packagePrice = precioBase;
+          console.log(`💰 [FIX] Paquete ${pkg.id}: ${pkg.weight}kg (dentro del límite) - precio ${precioBase}`);
+        } else {
+          // Calcular sobrecosto por peso extra
+          const pesoExtra = pkg.weight - pesoMaximoPaquete;
+          // Redondear hacia arriba al kilo siguiente
+          const kilosExtraRedondeados = Math.ceil(pesoExtra);
+          const costoExtra = kilosExtraRedondeados * costoPorKgExtra;
+          pkg.packagePrice = precioBase + costoExtra;
+          console.log(`💰 [FIX] Paquete ${pkg.id}: ${pkg.weight}kg - peso extra ${pesoExtra}kg → ${kilosExtraRedondeados}kg - precio ${pkg.packagePrice}`);
+        }
+        
+        // Acumular al costo total
+        costoTotalPaquetes += pkg.packagePrice;
+      });
+      
+      // Si se calcularon precios individuales, actualizar el costo total
+      if (costoTotalPaquetes > 0) {
+        cost = costoTotalPaquetes;
+        console.log(`💰 [FIX] Costo total actualizado: ${cost} (suma de paquetes individuales)`);
+      }
+    }
+    
     // Generar texto de tiempo de entrega solo si hay datos disponibles
     let deliveryTimeText = '';
 
@@ -730,12 +825,19 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
       isNational: (group.rule.coverage_type === 'nacional' || group.rule.tipo === 'nacional'),
       zoneType: group.rule.coverage_type || group.rule.tipo || 'standard',
       deliveryTime: deliveryTimeText,
-      
+      // Añadir precio base explícito
+      precio_base: parseFloat(group.rule.precio_base || (group.rule.opciones_mensajeria && group.rule.opciones_mensajeria.length > 0 ? group.rule.opciones_mensajeria[0].precio : 0)),
+      // Añadir configuración completa de paquetes
+      configuracion_paquetes: group.rule.configuracion_paquetes,
+      // Añadir opciones de mensajería
+      opciones_mensajeria: group.rule.opciones_mensajeria,
       // Añadir información de restricciones y paquetes
       maxProductsPerPackage: group.rule.configuracion_paquetes?.maximo_productos_por_paquete,
       maxWeightPerPackage: group.rule.configuracion_paquetes?.peso_maximo_paquete,
       packagesCount,
-      packagesInfo: packagesInfo.length > 0 ? packagesInfo : undefined
+      packagesInfo: packagesInfo.length > 0 ? packagesInfo : undefined,
+      // Marcar que tiene precios individuales calculados si corresponde
+      packagesWithPrices: packagesInfo.length > 0 && packagesInfo.some(p => p.packagePrice !== undefined)
     };
     
     // Generar descripción detallada
