@@ -1,5 +1,6 @@
 import { Logo } from '../../../../shared/components/logo/Logo.jsx'
 import { AdminLoginForm } from './AdminLoginForm.jsx'
+import { Link } from 'react-router-dom'
 
 
 /*
@@ -20,6 +21,13 @@ export const AdminLoginCard = () => {
 
       {/* Form */}
       <AdminLoginForm />
+      
+      {/* Enlace para recuperación de contraseña */}
+      <div className="mt-3 text-center">
+        <Link to="/admin/forgot-password" className="text-primary text-decoration-none fw-light">
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </div>
 
     </div>
   );

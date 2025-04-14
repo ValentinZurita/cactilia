@@ -14,6 +14,7 @@ const lazyLoadNamed = (importFn, componentName) => {
 // Lazy loading de páginas de autenticación
 const LoginPage = lazyLoadNamed(() => import('../pages/LoginPage'), "LoginPage");
 const SignUpPage = lazyLoadNamed(() => import('../pages/SignUpPage'), "SignUpPage");
+const ForgotPasswordPage = lazyLoadNamed(() => import('../pages/ForgotPasswordPage'), "ForgotPasswordPage");
 
 // Fallback para cuando se está cargando un componente
 const SuspenseFallback = () => <Spinner />
@@ -35,6 +36,11 @@ const AuthRoutes = () => {
       <Route path="register" element={
         <Suspense fallback={<SuspenseFallback />}>
           <SignUpPage />
+        </Suspense>
+      } />
+      <Route path="forgot-password" element={
+        <Suspense fallback={<SuspenseFallback />}>
+          <ForgotPasswordPage />
         </Suspense>
       } />
       <Route path="*" element={<Navigate to="/auth/login" replace />} />

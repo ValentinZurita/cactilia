@@ -35,6 +35,7 @@ const lazyLoadNamed = (importFn, componentName) => {
 // Lazy loading de páginas administrativas
 const AdminHomePage = lazyLoadNamed(() => import("../pages/AdminHomePage"), "AdminHomePage");
 const AdminLoginPage = lazyLoadNamed(() => import("../pages/AdminLoginPage"), "AdminLoginPage");
+const AdminForgotPasswordPage = lazy(() => import("../pages/AdminForgotPasswordPage"));
 const CategoryManagementPage = lazyLoadNamed(() => import("../pages/CategoryManagementPage"), "CategoryManagementPage");
 const ProductManagementPage = lazyLoadNamed(() => import("../pages/ProductManagementPage"), "ProductManagementPage");
 const UserManagementPage = lazyLoadNamed(() => import("../pages/UserManagementPage"), "UserManagementPage");
@@ -58,6 +59,13 @@ const AdminRoutes = () => {
       <Route path="login" element={
         <Suspense fallback={<SuspenseFallback />}>
           <AdminLoginPage />
+        </Suspense>
+      } />
+
+      {/* Ruta de recuperación de contraseña */}
+      <Route path="forgot-password" element={
+        <Suspense fallback={<SuspenseFallback />}>
+          <AdminForgotPasswordPage />
         </Suspense>
       } />
 
