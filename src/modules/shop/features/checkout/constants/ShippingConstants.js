@@ -37,4 +37,15 @@ export const LOCAL_TERMS = ['local', 'ciudad', 'pickup', 'recogida'];
 /**
  * Terms that identify national shipping
  */
-export const NATIONAL_TERMS = ['nacional', 'estándar', 'normal']; 
+export const NATIONAL_TERMS = ['nacional', 'estándar', 'normal'];
+
+/**
+ * Icons for different shipping types
+ */
+export const SHIPPING_ICONS = {
+  [SHIPPING_TYPES.EXPRESS]: 'bi-lightning-charge-fill',
+  [SHIPPING_TYPES.LOCAL]: 'bi-geo-alt-fill',
+  [SHIPPING_TYPES.NATIONAL]: 'bi-truck',
+  [SHIPPING_TYPES.INTERNATIONAL]: 'bi-globe',
+  [SHIPPING_TYPES.STANDARD]: 'bi-box'
+}; 

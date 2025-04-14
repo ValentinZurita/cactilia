@@ -33,15 +33,18 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
   // Función para cargar usuarios
   const loadUsers = async () => {
     setLoading(true);
+    console.log('Cargando usuarios con roles:', roleFilter);
 
     try {
       const { ok, data, error } = await getUsersByRole(roleFilter);
+      console.log('Respuesta de getUsersByRole:', { ok, data: data?.length, error });
 
       if (!ok) {
         throw new Error(error || "Error desconocido");
       }
 
-      setUsers(data);
+      console.log('Usuarios cargados:', data);
+      setUsers(data || []);
     } catch (error) {
       console.error("Error obteniendo usuarios por rol:", error);
       alert(`Error cargando usuarios: ${error.message}`);

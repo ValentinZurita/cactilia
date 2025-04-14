@@ -39,7 +39,7 @@ export const TableView = ({ data, columns, loading, tableClass = '', theadClass 
         <thead className={theadClass}>
         <tr>
           {columns.map((col) => (
-            <th key={col.accessor} className="py-3 px-2">
+            <th key={col.key || col.accessor} className="py-3 px-2">
               {col.header}
             </th>
           ))}
@@ -51,8 +51,8 @@ export const TableView = ({ data, columns, loading, tableClass = '', theadClass 
         {data.map((item) => (
           <tr key={item.id}>
             {columns.map((col) => (
-              <td key={col.accessor} className="align-middle">
-                {col.cell ? col.cell(item) : item[col.accessor]}
+              <td key={`${item.id}-${col.key || col.accessor}`} className="align-middle">
+                {col.renderCell ? col.renderCell(item) : item[col.key || col.accessor]}
               </td>
             ))}
           </tr>
