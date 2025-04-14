@@ -57,7 +57,7 @@ export const ContactForm = () => {
       };
       
       // Usar el email configurado en la empresa o el email fijo
-      const recipientEmail = companyInfo?.contactInfo?.email || ADMIN_EMAIL;
+      const recipientEmail = companyInfo?.contact?.email || ADMIN_EMAIL;
       console.log("📧 Enviando email a:", recipientEmail, "usando Firebase real (PRODUCCIÓN)");
       
       // Mostrar información de depuración
@@ -152,7 +152,7 @@ export const ContactForm = () => {
             <strong>Modo depuración:</strong> 
           </div>
           <div>
-            <small>Email destino: {companyInfo?.contactInfo?.email || ADMIN_EMAIL}</small>
+            <small>Email destino: {companyInfo?.contact?.email || ADMIN_EMAIL}</small>
             <br/>
             <small>Estado: {loading ? 'Enviando...' : debugInfo?.status || 'Esperando envío'}</small>
           </div>
