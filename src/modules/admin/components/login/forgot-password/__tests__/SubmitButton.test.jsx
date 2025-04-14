@@ -28,7 +28,7 @@ describe('SubmitButton (Admin)', () => {
     expect(button).toBeDisabled();
     
     // Verificar que el spinner se muestra
-    const spinner = screen.getByRole('status');
+    const spinner = screen.getByText('', { selector: '.spinner-border' });
     expect(spinner).toBeInTheDocument();
   });
 
@@ -39,6 +39,6 @@ describe('SubmitButton (Admin)', () => {
     expect(button).not.toBeDisabled();
     
     // No debería haber spinner cuando loading=false
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByText('', { selector: '.spinner-border' })).not.toBeInTheDocument();
   });
 }); 

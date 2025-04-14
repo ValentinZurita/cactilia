@@ -1,17 +1,10 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { EmailField } from '../EmailField';
+import { jest } from '@jest/globals';
 
-// Mock de InputField para simplificar la prueba
-jest.mock('../../../../../shared/components', () => ({
-  InputField: ({ label, type, placeholder, errors, ...props }) => (
-    <div data-testid="input-field-mock">
-      <label>{label}</label>
-      <input type={type} placeholder={placeholder} data-testid="email-input" {...props} />
-      {errors && <span data-testid="error-message">{errors.message}</span>}
-    </div>
-  )
-}));
+// El mock de InputField se configura en __mocks__/shared-components.js
+// a través del moduleNameMapper en jest.config.mjs
 
 describe('EmailField (Admin)', () => {
   // Mock de register y errors
@@ -49,17 +42,20 @@ describe('EmailField (Admin)', () => {
   });
 
   test('muestra mensaje de error cuando hay errores', () => {
+    // Simulamos que errors.email existe con un mensaje
     render(
       <EmailField 
         register={mockRegister} 
-        errors={mockErrors.email} 
+        errors={{ email: { message: 'Error de prueba' } }} 
       />
     );
     
-    // Verificar que se muestra el mensaje de error
-    const errorMessage = screen.getByTestId('error-message');
+    // Imprimir el HTML renderizado para depuración
+    console.log(screen.getByTestId('input-field-mock').outerHTML);
+    
+    // Buscar por texto en lugar de por testid
+    const errorMessage = screen.getByText('Error de prueba');
     expect(errorMessage).toBeInTheDocument();
-    expect(errorMessage).toHaveTextContent('Error de prueba');
   });
 
   test('pasa las reglas de validación correctas al register', () => {
