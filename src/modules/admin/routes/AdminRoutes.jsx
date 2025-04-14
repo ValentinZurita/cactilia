@@ -7,8 +7,28 @@ import { Spinner } from "../../../shared/components/spinner/Spinner.jsx";
 // Función de ayuda para importar componentes con exportaciones nombradas
 const lazyLoadNamed = (importFn, componentName) => {
   return lazy(async () => {
-    const module = await importFn();
-    return { default: module[componentName] };
+    try {
+      const module = await importFn();
+      if (!module[componentName]) {
+        console.error(`Component ${componentName} not found in module`);
+        return { default: () => (
+          <div className="alert alert-danger m-4 p-4">
+            <h4>Error de carga</h4>
+            <p>No se pudo cargar el componente: {componentName}</p>
+          </div>
+        )};
+      }
+      return { default: module[componentName] };
+    } catch (error) {
+      console.error(`Error loading component ${componentName}:`, error);
+      return { default: () => (
+        <div className="alert alert-danger m-4 p-4">
+          <h4>Error de carga</h4>
+          <p>Ocurrió un error al cargar el componente: {componentName}</p>
+          <small>{error.message}</small>
+        </div>
+      )};
+    }
   });
 };
 
@@ -26,7 +46,7 @@ const ContactPageManagementPage = lazyLoadNamed(() => import("../components/cont
 const OrderManagementPage = lazyLoadNamed(() => import('../components/orders/OrderManagementPage.jsx'), "OrderManagementPage");
 const ShippingManagementPage = lazyLoadNamed(() => import('../components/shipping/pages/ShippingManagementPage.jsx'), "ShippingManagementPage");
 const ShippingDebugTool = lazyLoadNamed(() => import('../components/dashboard/ShippingDebugTool.jsx'), "ShippingDebugTool");
-const CompanyInfoPage = lazyLoadNamed(() => import('../companyInfo/pages/CompanyInfoPage'), "CompanyInfoPage");
+const CompanyInfoPage = lazy(() => import('../companyInfo/pages/CompanyInfoPage'));
 
 // Fallback para cuando se está cargando un componente
 const SuspenseFallback = () => <Spinner />;
