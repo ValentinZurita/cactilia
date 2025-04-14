@@ -1,0 +1,180 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+🧩 Project Development Guidelines
+This document outlines the coding principles for this project. The goal is to maintain clean, modular, scalable code — built like LEGO blocks: small, reusable, easy-to-understand components that together create something great.
+📁 Folder Structure
+
+⚠️ If any folder gets too big, break it into smaller logical subfolders.
+
+🧼 Clean Code Principles
+
+Components should be small and focused. One component = one responsibility.
+Max file length: 100–120 lines.
+No logic in the return statement. Extract it to hooks, functions, or constants.
+Use clear, descriptive names (ProductCard, useAuth, CartList).
+Add meaningful comments when necessary — but don't overdo it.
+Dead code, unused variables, and unused styles must be removed (only after confirming they're safe to delete).
+
+🎨 Styling Rules
+
+Use a dedicated styles/ folder for global styles.
+Local component styles go in the same folder (Component/styles.css).
+❌ No inline styles allowed (except minor exceptions).
+⚠️ In the Admin/ folder:
+
+Use pure Bootstrap only — no CSS files or inline styles.
+This section follows strict Bootstrap usage.
+
+⚛️ React Best Practices
+
+pages/ are abstract views — composed of multiple child components.
+
+Pages must not contain logic — only layout and structure.
+
+Component structure follows visual logic:
+
+e.g., Hero, Slider, Carousel, FeaturedProducts.
+Pages act like blueprints or high-order containers.
+
+All logic should live outside the return statement.
+
+🔄 Lazy Loading
+
+Use React.lazy() for code splitting based on routes.
+Implement lazy loading for:
+
+Route-level components
+Heavy components that aren't immediately visible (below the fold)
+Admin sections and other rarely accessed features
+
+Always provide a Suspense fallback:
+jsxconst LazyComponent = React.lazy(() => import('./Component'));
+
+return (
+  <Suspense fallback={`<LoadingSkeleton />`}>
+    `<LazyComponent />`
+  `</Suspense>`
+);
+
+Consider using Intersection Observer for lazy loading images and content.
+
+🔁 Custom Hooks
+
+Each hook gets its own file.
+Hooks must be modular and named clearly (useCart, useProductStock).
+If the hooks/ folder grows too large, split by feature/domain.
+
+🔥 Firebase Best Practices
+
+All Firebase logic lives in services/firebase/.
+Do not call Firebase directly inside components — use clean service functions.
+Separate files for auth, Firestore, Storage, etc.
+Follow async/await practices and keep functions well-documented.
+
+📦 Redux & State Management
+
+Use Redux for shared or complex state.
+Use Context for light state or when Redux is overkill.
+Keep Redux slices organized in redux/slices/.
+
+❌ Error Handling
+
+Implement consistent error boundaries at appropriate levels.
+Create reusable error components for different scenarios (network errors, authentication errors, etc.).
+Use try/catch for async operations with proper error reporting.
+Include user-friendly error messages and recovery options.
+Log errors to monitoring service in production environments.
+
+🧪 Testing
+
+Unit Tests: Minimum 70% coverage for utilities and hooks.
+Component Tests: Essential user flows must be covered using React Testing Library.
+Integration Tests: Key user journeys must have integration tests.
+Test folder structure should mirror the src structure.
+Tests must be written for new features before merging.
+Use mock services for external dependencies (Firebase, APIs).
+
+📝 Typing
+
+Use TypeScript for all new components and files.
+Define interfaces for props, state, and API responses.
+Avoid using any type unless absolutely necessary.
+Export types and interfaces for reuse.
+Use strict typing mode for enhanced type safety.
+
+⚡ Performance
+
+Implement React.memo() for components that render often but rarely change.
+Use useMemo() for expensive calculations.
+Apply useCallback() for functions passed to child components.
+Keep re-renders to a minimum by avoiding state changes in parent components.
+Use performance monitoring tools (Lighthouse, React Profiler).
+
+♿ Accessibility
+
+All interactive elements must be keyboard accessible.
+Use semantic HTML elements (button, nav, article, etc.).
+Include proper ARIA attributes when needed.
+Maintain color contrast ratios (WCAG AA compliance minimum).
+Test with screen readers periodically.
+
+📚 Dependency Management
+
+New dependencies require team approval.
+Check bundle size impact before adding new libraries.
+Prefer smaller, focused libraries over large frameworks.
+Schedule monthly dependency updates for security patches.
+Document why each significant dependency was chosen.
+
+🔐 Environment Variables
+
+Store configuration in .env files (not committed to repository).
+Provide .env.example with required variables (no actual values).
+Separate configurations for development, testing, and production.
+Only expose variables needed by the frontend with REACT_APP_ prefix.
+
+🚀 CI/CD
+
+All PRs must pass linting, type checking, and tests.
+Staging deployments for all feature branches.
+Production deployments only from the main branch.
+Implement feature flags for gradual rollouts.
+Automate version bumping based on commit types.
+
+✅ Data Validation
+
+Validate all user inputs on both client and server.
+Use a consistent validation library (Yup, Zod, Joi).
+Create reusable validation schemas for common data structures.
+Display clear validation feedback to users.
+
+🏷️ Versioning
+
+Follow Semantic Versioning (MAJOR.MINOR.PATCH).
+Use Conventional Commits format:
+
+feat: for new features (MINOR)
+fix: for bug fixes (PATCH)
+BREAKING CHANGE: for breaking changes (MAJOR)
+
+Generate changelogs automatically from commit messages.
+
+🚮 Cleaning Up
+
+Run periodic cleanup sessions:
+
+Remove unused hooks, styles, components, images, or files.
+
+Use ESLint, Prettier, and naming conventions.
+Before deleting anything: make sure it is truly unused.
+
+🧠 Philosophy
+
+Code like someone else will take over tomorrow.
+Prioritize readability and separation of concerns.
+Think modular — each piece should work independently.
+Documentation, naming, and structure are not optional — they are core features.
