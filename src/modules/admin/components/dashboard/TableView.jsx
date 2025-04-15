@@ -52,7 +52,7 @@ export const TableView = ({ data, columns, loading, tableClass = '', theadClass 
           <tr key={item.id}>
             {columns.map((col) => (
               <td key={`${item.id}-${col.key || col.accessor}`} className="align-middle">
-                {col.renderCell ? col.renderCell(item) : item[col.key || col.accessor]}
+                {col.cell ? col.cell(item) : col.renderCell ? col.renderCell(item) : item[col.key || col.accessor]}
               </td>
             ))}
           </tr>
