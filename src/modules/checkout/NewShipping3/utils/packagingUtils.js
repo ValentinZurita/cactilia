@@ -200,40 +200,43 @@ export const calculatePackageCost = (packageData, rule) => {
 };
 
 /**
- * Calcula el costo total de envío para múltiples paquetes
- * @param {Array} packages - Array de paquetes
- * @returns {Object} - Detalle de costos totales
+ * Calcula el costo total de envío para todos los paquetes
+ * @param {Array} packages - Paquetes de envío
+ * @returns {Object} - Información de costo total y por paquete
  */
 export const calculateTotalShippingCost = (packages) => {
   if (!packages || !Array.isArray(packages) || packages.length === 0) {
-    return { totalCost: 0, freePackages: 0, paidPackages: 0 };
+    return { totalCost: 0, packageCosts: [], allFree: true };
   }
   
   let totalCost = 0;
-  let freePackages = 0;
-  let paidPackages = 0;
+  let allFree = true;
   
-  // Calcular costos para cada paquete
-  const packageCosts = packages.map(packageData => {
-    const cost = calculatePackageCost(packageData, packageData.rule);
+  // Calcular costo para cada paquete
+  const packageCosts = packages.map(pkg => {
+    // Obtener costo del paquete
+    const cost = typeof pkg.cost === 'number' ? pkg.cost : 
+                (typeof pkg.price === 'number' ? pkg.price : 0);
     
-    if (cost.isFree) {
-      freePackages++;
-    } else {
-      paidPackages++;
-      totalCost += cost.totalCost;
+    // Sumar al total
+    totalCost += cost;
+    
+    // Verificar si es gratuito
+    if (cost > 0) {
+      allFree = false;
     }
     
+    // Retornar paquete con costo
     return {
-      ...packageData,
-      cost
+      ...pkg,
+      cost,
+      isFree: cost === 0
     };
   });
   
-  return {
+  return { 
+    totalCost, 
     packageCosts,
-    totalCost,
-    freePackages,
-    paidPackages
+    allFree
   };
 }; 

@@ -56,7 +56,8 @@ export const ShippingManagerForCheckout = ({
         optionsCount: shippingData.options?.length || 0,
         unavailableCount: shippingData.unavailableProductIds?.length || 0,
         hasPartialCoverage: !!shippingData.hasPartialCoverage,
-        isPartial: !!shippingData.isPartial
+        isPartial: !!shippingData.isPartial,
+        isFree: !!shippingData.isFree
       } : 'null');
     
     if (!shippingData) {
@@ -72,22 +73,27 @@ export const ShippingManagerForCheckout = ({
       return;
     }
     
+    // Verificar explícitamente si el envío debe ser gratuito
+    const shippingCost = shippingData.isFree ? 0 : (shippingData.totalCost || 0);
+    
     // Usar el costo total de todas las opciones seleccionadas
-    console.log(`🔍 [SECUENCIA DETALLADA] Pasando costo total: $${shippingData.totalCost || 0}`);
-    onShippingCostChange(shippingData.totalCost || 0);
+    console.log(`🔍 [SECUENCIA DETALLADA] Pasando costo total: $${shippingCost} (marcado como gratuito: ${!!shippingData.isFree})`);
+    onShippingCostChange(shippingCost);
     
     // Pasar información de cobertura al checkout
     if (onShippingCoverageChange) {
       const coverageData = {
         coveredProductIds: shippingData.coveredProductIds || [],
         unavailableProductIds: shippingData.unavailableProductIds || [],
-        hasPartialCoverage: shippingData.isPartial || shippingData.hasPartialCoverage || false
+        hasPartialCoverage: shippingData.isPartial || shippingData.hasPartialCoverage || false,
+        isFreeShipping: !!shippingData.isFree
       };
       
       console.log(`🔍 [SECUENCIA DETALLADA] Pasando información de cobertura:`, {
         cubiertos: coverageData.coveredProductIds.length,
         noCubiertos: coverageData.unavailableProductIds.length,
-        esCoberturaParcial: coverageData.hasPartialCoverage
+        esCoberturaParcial: coverageData.hasPartialCoverage,
+        esEnvioGratis: coverageData.isFreeShipping
       });
       
       // Asegurar que la información se pase correctamente
@@ -100,7 +106,11 @@ export const ShippingManagerForCheckout = ({
     }
     
     // Opcionalmente, se podría pasar más información al checkout
-    console.log('Datos de envío actualizados:', shippingData);
+    console.log('Datos de envío actualizados:', {
+      costo: shippingCost,
+      esGratis: !!shippingData.isFree,
+      opciones: shippingData.options?.length || 0
+    });
   };
 
   // Si no hay una dirección seleccionada, mostrar mensaje
@@ -110,6 +120,25 @@ export const ShippingManagerForCheckout = ({
         <div className="shipping-no-address">
           <h3>Selecciona una dirección de envío</h3>
           <p>No se puede calcular envío sin una dirección seleccionada</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Verificar si la dirección tiene código postal
+  const hasPostalCode = selectedAddress.zip || selectedAddress.zipcode || selectedAddress.postalCode || selectedAddress.cp;
+  if (!hasPostalCode) {
+    return (
+      <div className="shipping-manager shipping-manager-checkout">
+        <div className="shipping-no-address">
+          <h3>Dirección incompleta</h3>
+          <p>Es necesario un código postal para calcular opciones de envío.</p>
+          <button 
+            className="btn btn-outline-primary mt-2"
+            onClick={() => window.scrollTo(0, 0)}
+          >
+            Completar dirección
+          </button>
         </div>
       </div>
     );

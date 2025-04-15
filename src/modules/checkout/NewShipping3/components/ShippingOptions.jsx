@@ -67,6 +67,8 @@ export const ShippingOptions = ({
     console.log('🧮 Calculando costo total de envío para:', options);
     
     let total = 0;
+    let allOptionsFree = true;
+    
     options.forEach(option => {
       // Determinar el costo real de esta opción
       let optionCost = 0;
@@ -89,12 +91,17 @@ export const ShippingOptions = ({
         optionCost = parseFloat(option.precio_base);
       }
       
-      console.log(`   - ${option.name}: $${optionCost}`);
+      // Verificar si esta opción es gratuita
+      if (optionCost > 0) {
+        allOptionsFree = false;
+      }
+      
+      console.log(`   - ${option.name}: $${optionCost} (gratuito: ${optionCost === 0})`);
       total += optionCost;
     });
     
-    console.log(`   = Total: $${total}`);
-    return total;
+    console.log(`   = Total: $${total} (todas gratis: ${allOptionsFree})`);
+    return { total, allOptionsFree };
   };
   
   // Modificar cómo se manejan las opciones seleccionadas
@@ -172,10 +179,10 @@ export const ShippingOptions = ({
     console.log(`🔍 [SECUENCIA DETALLADA] Productos cubiertos actualizados: ${newCoveredProducts.size} productos`);
     
     // Calcular el nuevo costo total
-    const newTotalCost = calculateTotalShippingCost(newSelectedOptions);
+    const { total: newTotalCost, allOptionsFree } = calculateTotalShippingCost(newSelectedOptions);
     setTotalShippingCost(newTotalCost);
     
-    console.log(`🔍 [SECUENCIA DETALLADA] Costo total actualizado: $${newTotalCost}`);
+    console.log(`🔍 [SECUENCIA DETALLADA] Costo total actualizado: $${newTotalCost} (Todas gratis: ${allOptionsFree})`);
     console.log(`🧮 [ShippingOptions] Costos por opción:`, newSelectedOptions.map(opt => ({
       id: opt.id,
       name: opt.name,
@@ -185,7 +192,8 @@ export const ShippingOptions = ({
     // Notificar al padre sobre los cambios
     // Considerando que ahora tenemos múltiples opciones
     if (newSelectedOptions.length > 0) {
-      const isFreeValue = newTotalCost === 0;
+      // Determinar si el envío es gratuito solo si TODAS las opciones son gratuitas
+      const isFreeValue = allOptionsFree;
       
       // Obtener TODOS los IDs de productos disponibles en el carrito
       const allProductIds = cartItems.map(item => (item.product || item).id);
@@ -202,6 +210,7 @@ export const ShippingOptions = ({
       console.log(`🔍 [SECUENCIA DETALLADA] - Productos NO disponibles: ${unavailableProductIds.length}`);
       console.log(`🔍 [SECUENCIA DETALLADA] - IDs de productos NO disponibles:`, unavailableProductIds);
       console.log(`🔍 [SECUENCIA DETALLADA] - Cobertura parcial: ${hasPartialCoverage}`);
+      console.log(`🔍 [SECUENCIA DETALLADA] - Envío gratuito: ${isFreeValue}`);
       
       // Incluir detalles sobre productos no disponibles para mejor debug
       if (unavailableProductIds.length > 0) {
@@ -307,9 +316,30 @@ export const ShippingOptions = ({
       onShippingOptionChange(null);
       onShippingValidityChange(false);
       
-      // Validar parámetros
-      if (!address || !cartItems || cartItems.length === 0) {
-        if (isMounted) setLoading(false);
+      // Validar dirección
+      if (!address) {
+        if (isMounted) {
+          setError('No se proporcionó una dirección para calcular envío');
+          setLoading(false);
+        }
+        return;
+      }
+      
+      // Verificar si la dirección tiene código postal
+      if (!address.zip && !address.zipcode && !address.postalCode && !address.cp) {
+        if (isMounted) {
+          setError('No se puede calcular el envío sin un código postal. Por favor, completa tu dirección.');
+          setLoading(false);
+        }
+        return;
+      }
+      
+      // Validar productos
+      if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+        if (isMounted) {
+          setError('No hay productos en el carrito');
+          setLoading(false);
+        }
         return;
       }
       
@@ -338,7 +368,7 @@ export const ShippingOptions = ({
       } catch (err) {
         if (!isMounted) return;
         console.error('Error al obtener opciones de envío:', err);
-        setError('No se pudieron cargar las opciones de envío');
+        setError(`No se pudieron cargar las opciones de envío: ${err.message || 'Error desconocido'}`);
         setLoading(false);
       }
     };

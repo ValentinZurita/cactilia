@@ -48,12 +48,19 @@ class CheckoutShippingService {
       // Validar los parámetros
       if (!address) {
         console.error('No se proporcionó una dirección para calcular envío');
-        return [];
+        throw new Error('Se requiere una dirección para calcular opciones de envío');
+      }
+      
+      // Verificar código postal
+      const hasPostalCode = address.zip || address.zipcode || address.postalCode || address.cp;
+      if (!hasPostalCode) {
+        console.error('La dirección no tiene código postal:', address);
+        throw new Error('Se requiere un código postal para calcular opciones de envío');
       }
       
       if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
         console.error('No se proporcionaron productos en el carrito');
-        return [];
+        throw new Error('Se requieren productos en el carrito para calcular envío');
       }
       
       console.log(`🚚 Obteniendo opciones de envío para ${cartItems.length} productos`);

@@ -450,7 +450,7 @@ export const CheckoutContent = () => {
           cartTaxes={cartTaxes}
           cartShipping={cartShipping}
           cartTotal={cartTotal}
-          isFreeShipping={selectedShippingOption?.isFree || false}
+          isFreeShipping={shippingTotal <= 0 && (selectedShippingOption?.isFree || false)}
           selectedShippingOption={enhancedSelectedOption}
 
           isProcessing={checkout.isProcessing}
