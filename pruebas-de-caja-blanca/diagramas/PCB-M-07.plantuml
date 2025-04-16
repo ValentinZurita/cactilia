@@ -1,0 +1,87 @@
+@startuml
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowFontSize 11
+
+title Función updateInventory - Gestión de inventario administrativo
+
+start
+
+' 1
+:1. Crear batch para actualización;
+
+' 2
+:2. Iniciar iteración por cada producto;
+
+while (¿Quedan productos?) is (Sí)
+  ' 3
+  :3. Obtener referencia del producto;
+  ' 4
+  :4. Consultar snapshot del producto;
+  
+  ' 5 - Decisión 1
+  if (¿Producto existe?) then (Sí)
+    ' 6
+    :6. Obtener datos del producto;
+    ' 7
+    :7. Calcular nuevo stock;
+    note right: Math.max(0, stock - cantidad)
+    
+    ' 8 - Decisión 2
+    if (¿stock > 0 && newStock <= threshold?) then (Sí)
+      ' 9
+      :9. Marcar para alerta de stock bajo;
+    else (No)
+      ' 10
+      :10. No requiere alerta;
+    endif
+    
+    ' 11
+    :11. Preparar actualización de stock en batch;
+    
+    ' 12 - Decisión 3
+    if (¿Requiere alerta?) then (Sí)
+      ' 13
+      :13. Crear alerta en batch;
+      
+      ' 14
+      :14. Intentar enviar notificación;
+      
+      ' 15 - Decisión 4
+      if (¿Error en notificación?) then (Sí)
+        ' 16
+        :16. Registrar error pero continuar;
+      else (No)
+        ' 17
+        :17. Notificación enviada correctamente;
+      endif
+    else (No)
+      ' 18
+      :18. Continuar sin crear alerta;
+    endif
+    
+  else (No)
+    ' 19
+    :19. Ignorar producto no existente;
+  endif
+endwhile
+
+' 20
+:20. Ejecutar todas las actualizaciones;
+
+' 21 - Decisión 5
+if (¿Error en batch.commit?) then (Sí)
+  ' 22
+  :22. Registrar error y retornar fallo;
+  note right: { success: false, error: mensaje }
+else (No)
+  ' 23
+  :23. Retornar éxito;
+  note right: { success: true }
+endif
+
+stop
+
+@enduml 

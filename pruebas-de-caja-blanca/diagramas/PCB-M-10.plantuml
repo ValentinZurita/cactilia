@@ -1,0 +1,97 @@
+@startuml
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowFontSize 11
+
+title Función updateOrderStatus - Actualización de estados de pedido
+
+start
+
+partition "Bloque Try" {
+  ' 1 - Decisión 1
+  if (¿Parámetros completos?) then (No)
+    ' 2
+    :2. Retornar error por datos faltantes;
+    note right: { ok: false, error: "Faltan datos requeridos" }
+    stop
+  else (Sí)
+  endif
+  
+  ' 3
+  :3. Obtener pedido actual;
+  
+  ' 4 - Decisión 2
+  if (¿Pedido encontrado?) then (No)
+    ' 5
+    :5. Retornar error de pedido no encontrado;
+    note right: { ok: false, error: "..." }
+    stop
+  else (Sí)
+  endif
+  
+  ' 6
+  :6. Extraer estado actual del pedido;
+  
+  ' 7
+  :7. Validar transición de estado;
+  
+  ' 8 - Decisión 3
+  if (¿Transición válida?) then (No)
+    ' 9
+    :9. Retornar error de transición no válida;
+    note right: { ok: false, error: "Transición no válida..." }
+    stop
+  else (Sí)
+  endif
+  
+  ' 10
+  :10. Crear registro histórico del cambio;
+  
+  ' 11
+  :11. Actualizar documento en Firestore;
+  
+  ' 12 - Decisión 4
+  if (¿Nuevo estado es "shipped"?) then (Sí)
+    ' 13 - Decisión 5
+    if (¿Tiene información de envío?) then (No)
+      ' 14
+      :14. Registrar advertencia;
+      note right: Sin detener flujo principal
+    else (Sí)
+    endif
+  else (No)
+  endif
+  
+  ' 15 - Decisión 6
+  if (¿Estado es "completed" o "cancelled"?) then (Sí)
+    ' 16
+    :16. Intentar enviar notificación al cliente;
+    
+    ' 17 - Decisión 7
+    if (¿Error en notificación?) then (Sí)
+      ' 18
+      :18. Registrar error pero continuar;
+    else (No)
+    endif
+  else (No)
+  endif
+  
+  ' 19
+  :19. Retornar éxito;
+  note right: { ok: true, error: null }
+}
+
+partition "Bloque Catch" {
+  ' 20
+  :20. Registrar error;
+  
+  ' 21
+  :21. Retornar error;
+  note right: { ok: false, error: error.message }
+}
+
+stop
+
+@enduml 

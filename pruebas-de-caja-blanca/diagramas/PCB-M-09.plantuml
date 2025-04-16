@@ -1,0 +1,89 @@
+@startuml
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowFontSize 11
+
+title Función searchProducts - Búsqueda avanzada de productos
+
+start
+
+partition "Bloque Try" {
+  ' 1
+  :1. Extraer y normalizar parámetros de búsqueda;
+  note right: Valores predeterminados si no se especifican
+  
+  ' 2
+  :2. Crear referencia a colección "products";
+  
+  ' 3
+  :3. Inicializar array de restricciones;
+  
+  ' 4 - Decisión 1
+  if (¿onlyActive?) then (Sí)
+    ' 5
+    :5. Añadir restricción de productos activos;
+  else (No)
+  endif
+  
+  ' 6 - Decisión 2
+  if (¿onlyFeatured?) then (Sí)
+    ' 7
+    :7. Añadir restricción de productos destacados;
+  else (No)
+  endif
+  
+  ' 8 - Decisión 3
+  if (¿category especificada?) then (Sí)
+    ' 9
+    :9. Añadir restricción por categoría;
+  else (No)
+  endif
+  
+  ' 10 - Decisión 4
+  if (¿shippingRuleId especificado?) then (Sí)
+    ' 11
+    :11. Añadir restricción por regla de envío;
+  else (No)
+  endif
+  
+  ' 12
+  :12. Construir consulta con restricciones y límite;
+  
+  ' 13
+  :13. Ejecutar consulta contra Firestore;
+  
+  ' 14
+  :14. Inicializar array de resultados;
+  
+  ' 15
+  :15. Procesar documentos del snapshot;
+  note right: Mapear docs a objetos con id y datos
+  
+  ' 16 - Decisión 5
+  if (¿query de texto especificada?) then (Sí)
+    ' 17
+    :17. Normalizar query a minúsculas;
+    
+    ' 18
+    :18. Filtrar por coincidencia en nombre o descripción;
+    note right: Filtro en memoria por inclusión de texto
+  else (No)
+  endif
+  
+  ' 19
+  :19. Retornar resultados;
+}
+
+partition "Bloque Catch" {
+  ' 20
+  :20. Registrar error;
+  
+  ' 21
+  :21. Retornar array vacío;
+}
+
+stop
+
+@enduml 

@@ -1,0 +1,60 @@
+@startuml
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowFontSize 11
+
+title Función filteredProducts - Filtrado de productos por precio
+
+start
+
+' 1 - Decisión 1: Loading o error
+if (¿loading || error?) then (Sí)
+  ' 2
+  :2. Retornar array vacío;
+  stop
+else (No)
+endif
+
+' 3
+:3. Clonar array de productos;
+note right: result = [...originalProducts]
+
+' 4 - Decisión 2: Filtrar por término de búsqueda
+if (¿searchTerm no vacío?) then (Sí)
+  ' 5
+  :5. Normalizar término de búsqueda;
+  ' 6
+  :6. Filtrar productos por nombre o categoría;
+else (No)
+endif
+
+' 7 - Decisión 3: Filtrar por categoría
+if (¿selectedCategory definido?) then (Sí)
+  ' 8
+  :8. Filtrar productos por categoría;
+else (No)
+endif
+
+' 9 - Decisión 4: Switch priceOrder
+switch (priceOrder)
+  case (Menor a Mayor)
+    ' 10
+    :10. Ordenar ascendente por precio;
+  case (Mayor a Menor)
+    ' 11
+    :11. Ordenar descendente por precio;
+  case (Destacados)
+    ' 12
+    :12. Filtrar productos destacados;
+  case (default)
+    ' 13
+    :13. No aplicar ordenamiento;
+endswitch
+
+' 14
+:14. Devolver productos filtrados;
+stop
+
+@enduml 

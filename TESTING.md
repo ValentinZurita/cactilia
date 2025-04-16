@@ -202,8 +202,38 @@ Componentes que usan Context pueden fallar en pruebas aisladas.
 6. **Prioriza la cobertura de casos críticos**
    - Identifica y prueba las funcionalidades más importantes
 
+## Pruebas de Caja Blanca Manuales
+
+| N° | Nombre de la Prueba | Descripción | Fecha | Responsable | Historia Relacionada |
+|---|---|---|---|---|---|
+| PCB-M-01 | Validación de campos en registro de usuario | Verifica caminos lógicos en la validación de datos del formulario de registro | 13/04/2025 | Valentin Alejandro Perez Zurita | HU-A01: Registro de usuario |
+| PCB-M-02 | Autenticación de usuario | Verifica caminos en el proceso de autenticación con credenciales | 13/04/2025 | [Tu nombre] | HU-A02: Login de usuario |
+| PCB-M-03 | Cálculo de costo de envío | Prueba los caminos en el algoritmo que calcula costos de envío basado en ubicación y peso | 13/04/2025 | [Tu nombre] | HU-C03: Cálculo de envío |
+| PCB-M-04 | Proceso de autorización basado en roles | Evalúa la lógica de control de acceso a áreas administrativas según rol del usuario | 13/04/2025 | [Tu nombre] | HU-A05: Gestión de sesiones |
+| PCB-M-05 | Gestión de cantidades en carrito | Prueba la lógica de incremento/decremento en el carrito y actualización de totales | 13/04/2025 | [Tu nombre] | HU-S06: Gestión de cantidades |
+| PCB-M-06 | Filtrado de productos por precio | Verifica el algoritmo de filtrado de productos según rangos de precio y otras características | 13/04/2025 | [Tu nombre] | HU-S03: Filtros de precio |
+| PCB-M-07 | Gestión de inventario administrativo | Evalúa la lógica de actualización de stock y funcionamiento de alertas de inventario bajo | 13/04/2025 | [Tu nombre] | HU-AD03: Gestión de inventario |
+| PCB-M-08 | Procesamiento de confirmación de pago | Prueba los caminos lógicos del sistema al detectar y procesar confirmaciones de pago | 13/04/2025 | [Tu nombre] | HU-C08: Confirmación de pago |
+| PCB-M-09 | Búsqueda avanzada de productos | Analiza el algoritmo de búsqueda por palabras clave, relevancia y filtros combinados | 13/04/2025 | [Tu nombre] | HU-P03: Búsqueda de productos |
+| PCB-M-10 | Actualización de estados de pedido | Verifica la lógica del flujo de estados de pedido y el envío de notificaciones correspondientes | 13/04/2025 | [Tu nombre] | HU-AD05: Actualización de estado de pedidos |
+
+## Pruebas de Caja Blanca Automatizadas
+
+| N° | Nombre de la Prueba | Descripción | Fecha | Responsable | Herramienta | Historia Relacionada |
+|---|---|---|---|---|---|---|
+| PCB-A-01 | Validación de email | Prueba automatizada para validar formatos de email en registro | 13/04/2025 | [Tu nombre] | Jest | HU-A01: Registro de usuario |
+| PCB-A-02 | Validación de contraseña | Verifica requisitos de seguridad para contraseñas | 13/04/2025 | [Tu nombre] | Jest | HU-A01: Registro de usuario |
+| PCB-A-03 | Verificación de email | Prueba el proceso de envío y validación de verificación de email | 13/04/2025 | [Tu nombre] | Jest | HU-A04: Verificación de email |
+| PCB-A-04 | Cálculo de subtotales | Verifica cálculos de precios y cantidades en el carrito | 13/04/2025 | [Tu nombre] | Jest | HU-S07: Resumen de carrito |
+| PCB-A-05 | Integración con Stripe | Evalúa la lógica de comunicación con la pasarela de pago | 13/04/2025 | [Tu nombre] | Jest | HU-C05: Integración Stripe |
+| PCB-A-06 | Validación de direcciones | Prueba la validación de campos en formulario de direcciones | 13/04/2025 | [Tu nombre] | Jest | HU-U01: Múltiples direcciones |
+| PCB-A-07 | Gestión de categorías | Analiza la lógica de creación y modificación de categorías | 13/04/2025 | [Tu nombre] | Jest | HU-AD02: Gestión de categorías |
+| PCB-A-08 | Gestión de historial de pedidos | Prueba la recuperación y visualización de pedidos del usuario | 13/04/2025 | [Tu nombre] | Jest | HU-U03: Historial de pedidos |
+| PCB-A-09 | Detalle de producto | Verifica la lógica de carga y presentación de información de producto | 13/04/2025 | [Tu nombre] | Jest | HU-S02: Detalles de producto |
+| PCB-A-10 | Generación de confirmación de pedido | Analiza la lógica que genera el resumen final antes de pagar | 13/04/2025 | [Tu nombre] | Jest | HU-C01: Revisión de compra |
+
 ## Recursos adicionales
 
 - [Jest Cheat Sheet](https://github.com/sapegin/jest-cheat-sheet)
 - [Testing Library Cheat Sheet](https://testing-library.com/docs/react-testing-library/cheatsheet)
-- [Kent C. Dodds - Common Mistakes with React Testing Library](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library) 
+- [Kent C. Dodds - Common Mistakes with React Testing Library](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)

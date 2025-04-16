@@ -1,0 +1,98 @@
+@startuml
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowFontSize 11
+skinparam activityShape roundBox
+skinparam defaultTextAlignment center
+skinparam nodesep 60
+skinparam ranksep 30
+
+start
+note right: Función calculateShippingDetails\nCalcula el costo de envío según regla y productos
+
+' Inicio y primer bloque
+if (¿rule y products válidos?) then (No)
+  :2. Retornar valores por defecto;
+  note right: { cost: 0, minDays: null,\nmaxDays: null, isFree: false }
+  stop
+else (Sí)
+  :3. Calcular subtotal de productos;
+  note right: subtotal = suma de (precio * cantidad)\nde cada producto
+endif
+
+' Preparación inicial - panel izquierdo
+split
+  :4. Inicializar cost y isFree;
+  note right: cost = precio_base de la regla\nisFree = envío gratuito configurado
+  :5. Calcular peso total de productos;
+  
+  ' Lógica de paquetes - panel izquierdo
+  if (¿Existe configuración\nde paquetes?) then (Sí)
+    fork
+      if (¿Hay peso máximo y\ncosto por kg extra?) then (Sí)
+        if (¿Peso total > peso máximo?) then (Sí)
+          :9. Calcular costo extra por peso;
+          :10. Añadir costo extra al costo base;
+        endif
+      endif
+    fork again
+      if (¿Hay máximo de productos y\ncosto por producto extra?) then (Sí)
+        if (¿Cantidad de productos > máximo?) then (Sí)
+          :13. Calcular costo extra por productos;
+          :14. Añadir costo extra al costo base;
+        endif
+      endif
+    end fork
+  endif
+
+split again
+  ' Lógica de opciones de mensajería - panel derecho
+  :15. Obtener tiempos de entrega de la regla;
+
+  if (¿Existen opciones de mensajería?) then (Sí)
+    :17. Ordenar opciones por precio;
+    :18. Seleccionar opción más económica;
+    :19. Actualizar cost con precio de la opción;
+    
+    if (¿Opción tiene configuración\nde paquetes?) then (Sí)
+      fork
+        if (¿Hay peso máximo y\ncosto por kg extra?) then (Sí)
+          if (¿Peso total > peso máximo?) then (Sí)
+            :23. Calcular costo extra por peso;
+            :24. Añadir costo extra al costo base;
+          endif
+        endif
+      fork again
+        if (¿Hay máximo de productos y\ncosto por producto extra?) then (Sí)
+          if (¿Cantidad de productos > máximo?) then (Sí)
+            :27. Calcular costo extra por productos;
+            :28. Añadir costo extra al costo base;
+          endif
+        endif
+      end fork
+    endif
+    
+    :29. Actualizar tiempos de entrega\ncon valores de la opción;
+  endif
+end split
+
+' Bloque final compartido
+:Verificar envío gratuito;
+
+if (¿Aplica envío gratis por monto mínimo?) then (Sí)
+  if (¿subtotal >= monto mínimo?) then (Sí)
+    :32. Establecer isFree = true;
+  endif
+endif
+
+if (¿isFree es true?) then (Sí)
+  :34. Establecer cost = 0;
+endif
+
+:35. Normalizar valores de tiempos de entrega;
+:36. Retornar { cost, minDays, maxDays, isFree };
+
+stop
+@enduml

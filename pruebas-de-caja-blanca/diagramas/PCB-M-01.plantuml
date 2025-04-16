@@ -1,0 +1,75 @@
+@startuml
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowFontSize 11
+
+title Función registerUser - Registro de usuario
+
+start
+
+partition "Bloque Try" {
+  ' 1 - Decisión 1
+  if (¿Campos requeridos completos?) then (No)
+    ' 2
+    :2. Retornar error por campos faltantes;
+    note right: { ok: false, errorMessage: 'Todos los campos son obligatorios' }
+    stop
+  else (Sí)
+  endif
+  
+  ' 3 - Decisión 2
+  if (¿Formato de email válido?) then (No)
+    ' 4
+    :4. Retornar error por formato de email;
+    note right: { ok: false, errorMessage: 'El formato del email es inválido' }
+    stop
+  else (Sí)
+  endif
+  
+  ' 5 - Decisión 3
+  if (¿Contraseña cumple requisitos?) then (No)
+    ' 6
+    :6. Retornar error por contraseña débil;
+    note right: { ok: false, errorMessage: 'La contraseña debe tener al menos 8 caracteres' }
+    stop
+  else (Sí)
+  endif
+  
+  ' 7
+  :7. Crear usuario en Firebase Authentication;
+  
+  ' 8
+  :8. Actualizar perfil con displayName y photoURL;
+  
+  ' 9
+  :9. Enviar email de verificación;
+  
+  ' 10
+  :10. Crear documento de usuario en Firestore;
+  
+  ' 11
+  :11. Cerrar sesión para forzar verificación;
+  
+  ' 12
+  :12. Retornar éxito;
+  note right: { ok: true, message: 'Usuario registrado correctamente...' }
+}
+
+partition "Bloque Catch" {
+  ' 13 - Decisión 4
+  if (¿Error de email ya registrado?) then (Sí)
+    ' 14
+    :14. Retornar error específico;
+    note right: { ok: false, errorMessage: 'El correo electrónico ya está registrado' }
+  else (No)
+    ' 15
+    :15. Retornar error genérico;
+    note right: { ok: false, errorMessage: 'Error al registrar usuario...' }
+  endif
+}
+
+stop
+
+@enduml 

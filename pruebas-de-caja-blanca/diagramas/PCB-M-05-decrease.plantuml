@@ -1,0 +1,66 @@
+@startuml
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowFontSize 11
+
+title Diagrama de flujo - Gestión de cantidades en carrito (decreaseQuantity)
+
+start
+
+' 1 - Validación inicial de ID
+if (¿productId válido?) then (No)
+  :1. Retornar error;
+  note right: { success: false }
+  stop
+else (Sí)
+endif
+
+' 2 - Verificación de bloqueo
+:2. Verificar bloqueo operaciones;
+note right: Previene múltiples operaciones rápidas
+
+' 3 - Buscar producto en carrito
+:3. Buscar item en carrito;
+
+' 4 - Verificar si existe y tiene cantidad > 1
+if (¿Item encontrado y quantity > 1?) then (No)
+  :4. Retornar error;
+  note right: { success: false }
+  stop
+else (Sí)
+endif
+
+' 5 - Actualización optimista
+:5. Actualizar UI inmediatamente;
+note right: dispatch(updateQuantity({ quantity: item.quantity - 1 }))
+
+' 6 - Marcar como bloqueado
+:6. Activar bloqueo temporal;
+
+' 7 - Iniciar proceso asíncrono
+:7. Iniciar setTimeout;
+
+partition "Proceso asíncrono (setTimeout)" {
+  ' 8 - Decisión usuario autenticado
+  if (¿Usuario autenticado?) then (Sí)
+    ' 9 - Sincronizar carrito
+    :9. Sincronizar con servidor;
+    note right: syncCartWithServer()
+  else (No)
+    ' 10 - No sincronizar
+    :10. Solo local;
+  endif
+  
+  ' 11 - Liberar bloqueo
+  :11. Liberar bloqueo;
+}
+
+' 12 - Retornar éxito inmediato
+:12. Retornar éxito;
+note right: { success: true }
+
+stop
+
+@enduml
