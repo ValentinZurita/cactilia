@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowFontSize 11
+
+title Función calculateShippingDetails (Refactorizada)
+
+start
+
+' 1 - Decisión 1
+if (¿rule y products válidos?) then (No)
+  ' 2
+  :2. Retornar { cost: null, isAvailable: false };
+  note right: Indica que el envío no está disponible
+  stop
+else (Sí)
+endif
+
+' 3
+:3. calculateSubtotal(products);
+note right: Calcula el subtotal de productos
+
+' 4
+:4. calculateTotalWeight(products);
+note right: Calcula el peso total de productos
+
+' 5
+:5. Obtener valores iniciales;
+note right
+  cost = extractCost(rule)
+  isFree = isShippingFree(rule, subtotal)
+  { minDays, maxDays } = extractDeliveryTimes(rule)
+end note
+
+' 6
+:6. applyPackageRules(cost, rule, products, totalWeight);
+note right: Aplica reglas de paquete de la regla principal
+
+' 7 - Decisión 2
+if (¿hasShippingOptions(rule)?) then (Sí)
+  ' 8
+  :8. bestOption = selectBestShippingOption(rule);
+  
+  ' 9
+  :9. cost = extractCost(bestOption);
+  
+  ' 10
+  :10. cost = applyPackageRules(cost, bestOption, products, totalWeight);
+  
+  ' 11
+  :11. Actualizar tiempos de entrega;
+  note right: Usar valores de la opción si existen
+else (No)
+endif
+
+' 12 - Decisión 3
+if (¿isFree es true?) then (Sí)
+  ' 13
+  :13. cost = 0;
+endif
+
+' 14
+:14. Normalizar tiempos de entrega;
+note right: Asegurar que maxDays >= minDays
+
+' 15
+:15. Retornar { cost, minDays, maxDays, isFree, isAvailable: true };
+
+stop
+
+@enduml 

@@ -5,7 +5,7 @@ skinparam shadowing false
 skinparam defaultFontName Arial
 skinparam ArrowFontSize 11
 
-title Diagrama de flujo - Gestión de cantidades en carrito (increaseQuantity)
+title Gestión de cantidades en carrito (increaseQuantity)
 
 start
 
