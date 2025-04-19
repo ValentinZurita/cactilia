@@ -1,0 +1,54 @@
+@startuml PCB-A-09
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontColor black
+skinparam arrowColor black
+skinparam shadowing false
+
+title Detalle de Producto
+
+start
+:1. Inicio getProductDetails;
+
+if (2. ¿productId válido?) then (No)
+  :3. Lanzar error: "Se requiere el ID del producto";
+  stop
+else (Sí)
+  partition "try {" {
+    :4. Obtener documento del producto;
+    
+    if (5. ¿Existe el producto?) then (No)
+      :6. Retornar null;
+      stop
+    else (Sí)
+      :7. Extraer datos base del producto;
+      
+      :8. Cargar colección de imágenes;
+      
+      if (9. ¿El producto tiene variantes?) then (Sí)
+        :10. Cargar y agregar variantes;
+      else (No)
+      endif
+      
+      if (11. ¿Incluir productos relacionados?) then (Sí)
+        if (12. ¿Existen relatedIds?) then (Sí)
+          :13. Obtener y procesar
+          productos relacionados;
+        else (No)
+        endif
+      else (No)
+      endif
+      
+      :14. Retornar objeto de detalles completo;
+      stop
+    endif
+  }
+  
+  partition "} catch {" {
+    :15. Registrar error y lanzar excepción;
+    stop
+  }
+endif
+
+@enduml 

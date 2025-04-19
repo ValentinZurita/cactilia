@@ -1,0 +1,59 @@
+@startuml PCB-A-03
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontColor black
+skinparam arrowColor black
+skinparam shadowing false
+
+title Verificación de Email
+
+start
+' 1
+:1. checkingCredentials();
+note right: Inicia proceso de autenticación
+
+partition "Bloque Try" {
+  ' 2
+  :2. signInWithEmailAndPassword();
+  
+  ' 3 - Decisión 1
+  if (¿Credenciales válidas?) then (sí)
+    ' 4 - Decisión 2
+    if (¿Email verificado?) then (sí)
+      ' 5
+      :5. dispatch(login());
+      note right: Almacena datos del usuario
+      ' 6
+      :6. Retorna { ok: true };
+    else (no)
+      ' 7
+      :7. sendEmailVerification();
+      note right: Envía nuevo email de verificación
+      ' 8
+      :8. FirebaseAuth.signOut();
+      note right: Cierra sesión en Firebase
+      ' 9
+      :9. dispatch(logout());
+      note right: Con mensaje: "Verifica tu correo"
+      ' 10
+      :10. Retorna { ok: false, errorMessage };
+    endif
+  else (no)
+    ' 11
+    :11. Error en inicio de sesión;
+  endif
+}
+
+partition "Bloque Catch" {
+  ' 12 - Decisión 3
+  :12. Manejo de error;
+  ' 13
+  :13. dispatch(logout());
+  note right: Con mensaje de error genérico
+  ' 14
+  :14. Retorna { ok: false, errorMessage };
+}
+
+stop
+@enduml

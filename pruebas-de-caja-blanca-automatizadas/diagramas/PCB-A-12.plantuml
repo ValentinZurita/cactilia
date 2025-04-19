@@ -1,0 +1,61 @@
+@startuml PCB-A-12
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontColor black
+skinparam arrowColor black
+skinparam shadowing false
+
+title Validación de Reglas de Envío
+
+start
+:1. Inicio isRuleValidForAddress;
+
+if (2. ¿rule y address son válidos?) then (No)
+  :3. Retornar false;
+  stop
+else (Sí)
+  :4. Obtener zipCode de address;
+  
+  if (5. ¿zipCode existe?) then (No)
+    :6. Retornar false;
+    stop
+  else (Sí)
+    if (7. ¿rule.zipcodes está vacío?) then (Sí)
+      :8. Retornar true;
+      note right: Regla nacional por defecto
+      stop
+    else (No)
+      if (9. ¿rule.zipcodes incluye "nacional"?) then (Sí)
+        :10. Retornar true;
+        note right: Regla con cobertura nacional
+        stop
+      else (No)
+        if (11. ¿rule.zipcodes incluye zipCode exacto?) then (Sí)
+          :12. Retornar true;
+          stop
+        else (No)
+          :13. Obtener stateCode de address;
+          
+          if (14. ¿Existe regla por estado?) then (Sí)
+            :15. Retornar true;
+            stop
+          else (No)
+            :16. Verificar rangos de código postal;
+            
+            if (17. ¿zipCode está en algún rango?) then (Sí)
+              :18. Retornar true;
+              stop
+            else (No)
+              :19. Retornar false;
+              stop
+            endif
+          endif
+        endif
+      endif
+    endif
+  endif
+endif
+
+stop
+@enduml 

@@ -1,0 +1,45 @@
+@startuml PCB-A-06
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontColor black
+skinparam arrowColor black
+skinparam shadowing false
+
+title Diagrama de Flujo - Filtrado de productos por precio (PCB-A-06)
+start
+
+if (¿loading || error?) then (Sí)
+  :Retornar array vacío;
+  stop
+else (No)
+endif
+
+:Clonar array de productos;
+note right: result = [...originalProducts]
+
+if (¿searchTerm no vacío?) then (Sí)
+  :Normalizar término de búsqueda;
+  :Filtrar productos por nombre o categoría;
+else (No)
+endif
+
+if (¿selectedCategory definido?) then (Sí)
+  :Filtrar productos por categoría;
+else (No)
+endif
+
+switch (priceOrder)
+  case (Menor a Mayor)
+    :Ordenar ascendente por precio;
+  case (Mayor a Menor)
+    :Ordenar descendente por precio;
+  case (Destacados)
+    :Filtrar productos destacados;
+  case (default)
+    :No aplicar ordenamiento;
+endswitch
+
+:Devolver productos filtrados;
+stop
+@enduml

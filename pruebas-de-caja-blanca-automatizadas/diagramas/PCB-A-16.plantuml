@@ -1,0 +1,63 @@
+@startuml PCB-A-16
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontColor black
+skinparam arrowColor black
+skinparam shadowing false
+
+title Actualización de Cantidades en Carrito
+
+start
+:1. Inicio updateItemQuantity;
+
+if (2. ¿cartItems es válido y es un array?) then (No)
+  :3. Retornar array vacío [];
+  stop
+else (Sí)
+endif
+
+if (4. ¿productId existe?) then (No)
+  :5. Retornar carrito sin cambios;
+  stop
+else (Sí)
+endif
+
+if (6. ¿newQuantity es válida?) then (No)
+  :7. Retornar carrito sin cambios;
+  stop
+else (Sí)
+endif
+
+if (8. ¿variantId existe?) then (Sí)
+  :9. Buscar índice de producto con productId y variantId;
+else (No)
+  :10. Buscar índice de producto solo con productId;
+endif
+
+:11. Evaluar si se encontró el producto;
+
+if (12. ¿Se encontró el producto?) then (No)
+  :13. Retornar carrito sin cambios;
+  stop
+else (Sí)
+endif
+
+if (14. ¿newQuantity es 0?) then (Sí)
+  :15. Eliminar producto del carrito;
+  :16. Retornar carrito actualizado;
+  stop
+else (No)
+endif
+
+if (17. ¿maxStock existe?) then (Sí)
+  :18. Limitar quantity = min(newQuantity, maxStock);
+else (No)
+  :18. Asignar quantity = newQuantity;
+endif
+
+:19. Actualizar producto con nueva cantidad
+y retornar carrito actualizado;
+stop
+
+@enduml 

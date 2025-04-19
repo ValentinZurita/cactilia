@@ -231,6 +231,11 @@ Componentes que usan Context pueden fallar en pruebas aisladas.
 | PCB-A-08 | Gestión de historial de pedidos | Prueba la recuperación y visualización de pedidos del usuario | 13/04/2025 | [Tu nombre] | Jest | HU-U03: Historial de pedidos |
 | PCB-A-09 | Detalle de producto | Verifica la lógica de carga y presentación de información de producto | 13/04/2025 | [Tu nombre] | Jest | HU-S02: Detalles de producto |
 | PCB-A-10 | Generación de confirmación de pedido | Analiza la lógica que genera el resumen final antes de pagar | 13/04/2025 | [Tu nombre] | Jest | HU-C01: Revisión de compra |
+| PCB-A-11 | Validación de formulario de contacto | Prueba la lógica de validación de los campos del formulario de contacto | 17/04/2025 | Valentin Alejandro Perez Zurita | Jest | HU-P05: Formulario de contacto |
+| PCB-A-12 | Validación de reglas de envío | Prueba la lógica que determina si una regla de envío aplica para una dirección específica | 17/04/2025 | Valentin Alejandro Perez Zurita | Jest | HU-C03: Cálculo de envío |
+| PCB-A-13 | Validación de códigos de referencia | Prueba la lógica que valida si un código de referencia cumple con todas las reglas establecidas | 17/04/2025 | Valentin Alejandro Perez Zurita | Jest | PCN-D-04 |
+| PCB-A-14 | Verificación de disponibilidad de stock | Prueba la lógica que determina si un producto está disponible para compra según su stock | 17/04/2025 | Valentin Alejandro Perez Zurita | Jest | HU-S04: Indicador de stock |
+| PCB-A-15 | Cálculo de descuento para carrito | Prueba la lógica que calcula los descuentos aplicables al carrito según el monto total | 17/04/2025 | Valentin Alejandro Perez Zurita | Jest | HU-S07: Resumen de carrito |
 
 ## Recursos adicionales
 

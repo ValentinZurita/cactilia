@@ -1,0 +1,51 @@
+@startuml
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontColor black
+skinparam arrowColor black
+skinparam shadowing false
+
+title Integración con Stripe
+
+start
+:1. Inicio createPaymentIntent;
+
+if (2. ¿Usuario autenticado?) then (No)
+  :3. Lanzar error de autenticación;
+  stop
+else (Sí)
+  :4. Extraer datos de la solicitud;
+  
+  if (5. ¿amount válido?) then (No)
+    :6. Lanzar error de argumento inválido;
+    stop
+  else (Sí)
+    if (7. ¿paymentMethodId válido?) then (No)
+      :8. Lanzar error de argumento inválido;
+      stop
+    else (Sí)
+      partition "Bloque Try" {
+        :9. Inicializar Stripe con credenciales;
+        
+        :10. Obtener o crear cliente en Stripe;
+        
+        :11. Crear Payment Intent en Stripe;
+        
+        :12. Registrar intento de pago en Firestore;
+        
+        :13. Retornar clientSecret y paymentIntentId;
+      }
+      
+      partition "Bloque Catch" {
+        :14. Registrar error en consola;
+        
+        :15. Lanzar error HTTP interno;
+        note right: Se ejecuta solo en caso de error
+      }
+    endif
+  endif
+endif
+
+stop
+@enduml 

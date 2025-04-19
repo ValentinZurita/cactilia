@@ -1,0 +1,24 @@
+@startuml PCB-A-02
+!theme plain
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontColor black
+skinparam arrowColor black
+skinparam shadowing false
+
+title Validación de Contraseña
+
+start
+if (¿password existe?) then (no)
+  :Retornar error "La contraseña es obligatoria";
+  stop
+else (sí)
+  if (¿cumple patrón /^(?=.*[A-Za-z])(?=.*\d).{6,}$/ ?) then (no)
+    :Retornar error "Mínimo 6 carácteres, con al menos 1 letra y 1 número";
+    stop
+  else (sí)
+    :Contraseña válida, continuar registro;
+    stop
+  endif
+endif
+@enduml

@@ -1,4 +1,3 @@
-
 /**
  * Formatear precio como moneda
  * @param {number} price - Precio a formatear
@@ -76,4 +75,65 @@ export const calculateCartTotals = (
     finalTotal,
     isFreeShipping
   };
+};
+
+/**
+ * Actualiza la cantidad de un producto en el carrito
+ * @param {Array} cartItems - Array de productos en el carrito
+ * @param {string} productId - ID del producto a actualizar
+ * @param {string} variantId - ID de la variante (opcional)
+ * @param {number} newQuantity - Nueva cantidad a establecer
+ * @param {number} maxStock - Stock máximo disponible
+ * @returns {Array} - Nuevo array de productos del carrito
+ */
+export const updateItemQuantity = (cartItems, productId, variantId, newQuantity, maxStock) => {
+  // Validación de parámetros
+  if (!cartItems || !Array.isArray(cartItems)) {
+    return [];
+  }
+  
+  if (!productId) {
+    return cartItems;
+  }
+  
+  // Validación de nueva cantidad
+  if (typeof newQuantity !== 'number' || newQuantity < 0) {
+    return cartItems;
+  }
+  
+  // Buscar índice del producto en el carrito
+  const itemIndex = cartItems.findIndex(item => {
+    // Si existe variantId, verificar tanto producto como variante
+    if (variantId) {
+      return item.productId === productId && item.variantId === variantId;
+    }
+    // Si no hay variantId, solo verificar el producto
+    return item.productId === productId && !item.variantId;
+  });
+  
+  // Si no se encuentra el producto, devolver el carrito sin cambios
+  if (itemIndex === -1) {
+    return cartItems;
+  }
+  
+  // Si la cantidad es 0, eliminar el producto del carrito
+  if (newQuantity === 0) {
+    return [
+      ...cartItems.slice(0, itemIndex),
+      ...cartItems.slice(itemIndex + 1)
+    ];
+  }
+  
+  // Si hay stock máximo definido, limitar la cantidad
+  const quantity = maxStock ? Math.min(newQuantity, maxStock) : newQuantity;
+  
+  // Actualizar la cantidad del producto
+  return [
+    ...cartItems.slice(0, itemIndex),
+    {
+      ...cartItems[itemIndex],
+      quantity
+    },
+    ...cartItems.slice(itemIndex + 1)
+  ];
 };
