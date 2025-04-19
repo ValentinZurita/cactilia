@@ -220,6 +220,21 @@ export const useOrderProcessing = ({
       fiscalData: form.requiresInvoice ? form.fiscalData : null,
     };
 
+    // Calcular el costo de envío real
+    const shippingCost = cart.isFreeShipping ? 0 : cart.shipping;
+    
+    // Calcular el total correcto (subtotal ya incluye impuestos + envío)
+    const calculatedTotal = cart.subtotal + shippingCost;
+
+    // Para diagnóstico
+    console.log('🧮 [ORDEN] Cálculo de totales:', {
+      subtotal: cart.subtotal, // Ya incluye impuestos
+      taxes: cart.taxes, // Solo informativo, ya incluido en subtotal
+      shipping: shippingCost,
+      calculatedTotal,
+      cartFinalTotal: cart.finalTotal
+    });
+
     // Objeto principal de la orden
     return {
       userId: auth.uid,
@@ -236,10 +251,10 @@ export const useOrderProcessing = ({
       billing: billingInfo,
       totals: {
         subtotal: cart.subtotal,
-        tax: cart.taxes,
-        shipping: cart.isFreeShipping ? 0 : cart.shipping,
+        tax: cart.taxes, // Solo informativo, ya incluido en subtotal
+        shipping: shippingCost,
         discount: 0,
-        total: cart.finalTotal
+        total: calculatedTotal // Subtotal + envío (subtotal ya incluye impuestos)
       },
       notes: form.orderNotes,
       status: 'pending',

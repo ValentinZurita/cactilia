@@ -1,50 +1,18 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { formatPrice } from '../../../utils/index.js';
+import { useCart } from '../hooks/useCart.js';
 
 /**
  * Muestra el resumen de totales del carrito
  *
- * @param {Object} props - Propiedades del componente
- * @param {Array} props.items - Elementos del carrito
+ * @param {Object} props - Propiedades del componente (items ya no se usa para calcular)
+ * @param {Array} props.items - Elementos del carrito (obtenido via useCart ahora)
  * @returns {JSX.Element}
  */
-export const CartTotal = ({ items = [] }) => {
+export const CartTotal = () => {
 
-  // Cálculos memoizados para evitar recálculos innecesarios
-  const calculatedValues = useMemo(() => {
-    // Validar que items sea un array
-    if (!Array.isArray(items) || items.length === 0) {
-      return {
-        subtotal: 0,
-        taxes: 0,
-        total: 0
-      };
-    }
-
-    // Calcular subtotal (con validación de datos)
-    const subtotal = items.reduce((sum, item) => {
-      const price = Number(item.price) || 0;
-      const quantity = Number(item.quantity) || 0;
-      return sum + (price * quantity);
-    }, 0);
-
-    // Constantes para cálculos
-    const taxRate = 0.16; // 16%
-
-    // Calcular impuestos (IVA incluido en el precio en México)
-    const taxes = subtotal * taxRate / (1 + taxRate);
-
-    // Calcular total final
-    const total = subtotal;
-
-    return {
-      subtotal,
-      taxes,
-      total
-    };
-  }, [items]);
-
-  const { subtotal, taxes, total } = calculatedValues;
+  // Obtener totales calculados desde el hook centralizado useCart
+  const { subtotal, taxes, total } = useCart();
 
   return (
     <div className="cart-total">

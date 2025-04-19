@@ -53,11 +53,10 @@ export const calculateCartTotals = (
     return sum + (price * quantity);
   }, 0);
 
-  // Calcular el impuesto (ya incluido en el precio)
-  // Fórmula: impuesto = total - (total / (1 + tasaImpuesto))
-  const taxes = +(total - (total / (1 + taxRate))).toFixed(2);
+  // Calcular el impuesto como 16% del total (que ya incluye IVA)
+  const taxes = +(total * taxRate).toFixed(2);
 
-  // Calcular subtotal (precio sin impuesto)
+  // Calcular subtotal (precio sin impuesto) restando el impuesto calculado
   const subtotal = +(total - taxes).toFixed(2);
 
   // Determinar si el envío es gratuito

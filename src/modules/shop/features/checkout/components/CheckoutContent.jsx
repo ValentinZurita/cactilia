@@ -216,7 +216,9 @@ export const CheckoutContent = () => {
     // Verificar si hay opción de envío seleccionada
     if (!selectedShippingOption) return true;
     
-    // Verificar que la opción de envío cubra todos los productos
+    // COMENTADO: Ya no verificamos si todos los productos están cubiertos
+    // Esto permite completar la compra incluso con envíos parciales
+    /*
     if (selectedShippingOption && 
         (selectedShippingOption.allProductsCovered === false || 
          (selectedShippingOption.selections && 
@@ -225,6 +227,7 @@ export const CheckoutContent = () => {
       console.log('⚠️ Botón deshabilitado: La opción de envío no cubre todos los productos');
       return true;
     }
+    */
 
     // Verificar según el tipo de pago
     switch (checkout.selectedPaymentType) {
