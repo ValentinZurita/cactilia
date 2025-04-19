@@ -7,11 +7,18 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "emulators": "firebase emulators:start --only functions,firestore",
     "dev:emulators": "firebase emulators:start --only functions,firestore",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config=jest.config.mjs",
-    "test:forgot-password": "cross-env NODE_OPTIONS=--experimental-vm-modules jest src/modules/admin/components/login/forgot-password/__tests__ --config=jest.config.mjs"
+    "test:forgot-password": "cross-env NODE_OPTIONS=--experimental-vm-modules jest src/modules/admin/components/login/forgot-password/__tests__ --config=jest.config.mjs",
+    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config=jest.config.mjs --watch",
+    "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config=jest.config.mjs --coverage",
+    "clean": "rm -rf dist && rm -rf node_modules/.vite",
+    "deploy": "yarn build && firebase deploy",
+    "deploy:functions": "firebase deploy --only functions",
+    "dedupe": "yarn dedupe"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.5.1",

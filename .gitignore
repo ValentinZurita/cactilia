@@ -6,15 +6,30 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+firestore-debug.log*
+ui-debug.log*
 
+# Directorios de construcción y dependencias
 node_modules
 dist
 dist-ssr
 *.local
+functions/node_modules/
+
+# Archivos de entorno y configuración local
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+serviceAccountKey.json
+functions/serviceAccountKey.json
+functions/proyecto-terminal-74824-firebase-adminsdk-8hrfa-fa8eb6620c.json
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo
@@ -23,38 +38,16 @@ dist-ssr
 *.sln
 *.sw?
 
+# Firebase local config
+.firebase/
+firebase-debug.log
+*.cache
+*-debug.log
 
-// firebase
-firebase.json
-.firebaserc
-.env
+# Directorios temporales y de desarrollo
+temp/
+.cache/
+coverage/
 
-# Dependencias de Node.js
-node_modules/
-functions/node_modules/
-
-# Claves privadas de Firebase Admin SDK
-functions/proyecto-terminal-74824-firebase-adminsdk-8hrfa-fa8eb6620c.json
-
-# Archivos de entorno
-.env
-.env.local
-.env.development
-.env.production
-.env.test
-
-# Directorios de compilación
-build/
-dist/
-
-# Archivos de registro
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Archivos de macOS
-.DS_Store
-
-serviceAccountKey.json
-
+# Archivos específicos a ignorar
 GUIDELINES.md
