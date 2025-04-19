@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
 import { useSelector } from 'react-redux';
 import { useCart } from '../features/cart/hooks/useCart';
@@ -33,7 +33,7 @@ export const CheckoutProvider = ({ children }) => {
   const paymentManager = usePaymentManager(uid);
   const billingManager = useBillingManager();
 
-  // Hook para procesamiento de órdenes (se pasa lo necesario como dependencias)
+  // Hook para procesamiento de órdenes
   const orderProcessor = useOrderProcessor({
     stripe,
     elements,
@@ -53,6 +53,12 @@ export const CheckoutProvider = ({ children }) => {
   const handleNotesChange = (e) => {
     setOrderNotes(e.target.value);
   };
+
+  // Crear la función handleProcessOrder que acepta solo selectedOption
+  const handleProcessOrder = useCallback(async (selectedOption) => {
+    // Llamar a la función del hook con el argumento recibido
+    return orderProcessor.processOrder(selectedOption);
+  }, [orderProcessor]); // Dependencia del procesador
 
   // Construir el estado completo del contexto
   const checkoutState = {
@@ -78,8 +84,8 @@ export const CheckoutProvider = ({ children }) => {
     // Datos y métodos de facturación
     ...billingManager,
 
-    // Métodos de procesamiento de orden
-    handleProcessOrder: orderProcessor.processOrder
+    // Método de procesamiento de orden actualizado
+    handleProcessOrder // Exponer la nueva función
   };
 
   return (

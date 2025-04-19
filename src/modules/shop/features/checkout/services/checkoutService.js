@@ -247,13 +247,13 @@ export const processPayment = async (
     }
 
     // Validar que hay totales definidos
-    if (!orderData.totals || typeof orderData.totals.total !== 'number' || orderData.totals.total <= 0) {
+    if (!orderData.totals || typeof orderData.totals.finalTotal !== 'number' || orderData.totals.finalTotal <= 0) {
       return { ok: false, error: 'Total de la orden inválido' };
     }
 
     console.log('Procesando pago con datos:', {
       items: orderData.items.length,
-      total: orderData.totals.total,
+      total: orderData.totals.finalTotal,
       paymentType,
       paymentMethodId: paymentMethodId ? '***' : null
     });
@@ -268,6 +268,11 @@ export const processPayment = async (
       };
     }
 
+    // === INICIO LOG ===
+    // Loggear el objeto orderData COMPLETO justo antes de crearlo en Firestore
+    console.log('📦 [processPayment] Datos FINALES de la orden ANTES de createOrder:', JSON.stringify(orderData, null, 2));
+    // === FIN LOG ===
+
     // 2. Crear la orden
     const orderResult = await createOrder(orderData);
 
@@ -278,10 +283,10 @@ export const processPayment = async (
     const orderId = orderResult.id;
 
     // 3. Crear el Payment Intent
-    // Convertir el total a centavos para Stripe (multiplicar por 100)
-    const amount = Math.round(orderData.totals.total * 100);
+    // Convertir el total FINAL a centavos para Stripe
+    const amount = Math.round(orderData.totals.finalTotal * 100);
 
-    console.log(`Creando Payment Intent por $${orderData.totals.total} (${amount} centavos)`);
+    console.log(`Creando Payment Intent por $${orderData.totals.finalTotal} (${amount} centavos)`);
 
     // Si es un pago OXXO y no hay email proporcionado, intentar obtenerlo del objeto orderData
     let emailForOxxo = customerEmail;

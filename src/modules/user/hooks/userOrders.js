@@ -206,12 +206,19 @@ export const useOrders = () => {
    * @returns {Array} - Lista de órdenes con campos formateados.
    */
   const getFormattedOrders = useCallback(() => {
-    return getFilteredOrders().map((order) => ({
+    // Asegurarse de que getFilteredOrders() devuelve un array
+    const filtered = getFilteredOrders() || [];
+    
+    return filtered.map((order) => ({
       id: order.id,
       date: formatOrderDate(order.createdAt),
       status: mapOrderStatusToDisplay(order.status),
-      items: order.items.reduce((total, item) => total + item.quantity, 0),
-      total: order.totals.total
+      // Calcular items de forma segura
+      items: order.items?.reduce((total, item) => total + (item.quantity || 0), 0) ?? 0,
+      // === INICIO CAMBIO ===
+      // Asignar el finalTotal al campo 'total' del objeto formateado
+      total: order.totals?.finalTotal ?? 0
+      // === FIN CAMBIO ===
     }));
   }, [getFilteredOrders]);
 

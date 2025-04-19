@@ -150,7 +150,7 @@ export const CheckoutSummary = ({
           {isFreeShipping ? (
             <span style={{ color: '#4CAF50' }}>Gratis</span>
           ) : (
-            <span>{Number(shipping) <= 0 ? 'Pendiente' : formatPrice(Number(shipping))}</span>
+            <span>{formatPrice(Number(shipping))}</span>
           )}
         </div>
 
@@ -158,7 +158,7 @@ export const CheckoutSummary = ({
         {console.log('🚢 [CheckoutSummary] Datos de envío:', {
           shipping,
           isFreeShipping,
-          shippingDisplay: isFreeShipping ? 'Gratis' : (Number(shipping) <= 0 ? 'Pendiente' : formatPrice(Number(shipping)))
+          shippingDisplay: isFreeShipping ? 'Gratis' : formatPrice(Number(shipping))
         })}
 
         <div className="d-flex justify-content-between">

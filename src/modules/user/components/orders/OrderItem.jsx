@@ -27,10 +27,10 @@ export const OrderItem = ({ order }) => {
   const productLabel = order.items === 1 ? 'producto' : 'productos';
 
   /**
-   * Formatea el total del pedido a dos decimales con un prefijo de moneda.
-   * Ejemplo: 123.456 -> "$123.46"
+   * Formatea el total del pedido.
+   * El hook useOrders ahora pone el finalTotal en order.total.
    */
-  const formattedTotal = `$${order.total.toFixed(2)}`;
+  const formattedTotal = `$${(order.total ?? 0).toFixed(2)}`;
 
   // --------------------------------------------------
   // 2. Renderizado (manteniendo misma estructura y clases)

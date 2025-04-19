@@ -1,6 +1,6 @@
 import { CheckoutButton } from './CheckoutButton';
 import { CheckoutSummary } from './summary/index.js'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 /**
  * Panel de resumen y pago para checkout
@@ -179,6 +179,18 @@ export const CheckoutSummaryPanel = ({
     }
   }, [cartItems, cartSubtotal, cartTaxes, cartShipping, shippingData, shippingOptions, isFreeShipping, unavailableProductIds]);
 
+  // Wrapper para llamar a processOrderWithChecks
+  const handleCheckoutClick = useCallback(() => {
+    if (!selectedShippingOption) {
+      console.error("[CheckoutSummaryPanel] Intento de procesar sin opción de envío seleccionada.");
+      return;
+    }
+    // === INICIO CAMBIO ===
+    // Pasar solo la opción seleccionada
+    processOrderWithChecks(selectedShippingOption);
+    // === FIN CAMBIO ===
+  }, [processOrderWithChecks, selectedShippingOption]); // Ya no depende de cartShipping
+
   return (
     <div className="col-lg-4">
       <div className="checkout-summary-container">
@@ -210,7 +222,7 @@ export const CheckoutSummaryPanel = ({
         {/* Botón para procesar la compra */}
         <div className="px-3">
           <CheckoutButton
-            onCheckout={processOrderWithChecks}
+            onCheckout={handleCheckoutClick}
             isProcessing={isProcessing}
             disabled={isButtonDisabled}
             buttonText={getButtonText()}

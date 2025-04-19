@@ -46,25 +46,25 @@ export const OrderItemsTable = ({ order, formatPrice }) => (
     <div className="totals-section border-top pt-3 mt-3">
       <div className="row mb-2">
         <div className="col text-end text-secondary small">Subtotal:</div>
-        <div className="col-auto text-secondary">{formatPrice(order.totals.subtotal)}</div>
+        <div className="col-auto text-secondary">{formatPrice(order.totals?.subtotal || 0)}</div>
       </div>
 
       <div className="row mb-2">
         <div className="col text-end text-secondary small">Impuestos:</div>
-        <div className="col-auto text-secondary">{formatPrice(order.totals.tax)}</div>
+        <div className="col-auto text-secondary">{formatPrice(order.totals?.taxes || 0)}</div>
       </div>
 
       <div className="row mb-2">
         <div className="col text-end text-secondary small">Envío:</div>
         <div className="col-auto">
-          {order.totals.shipping > 0
+          {(order.totals?.shipping || 0) > 0
             ? <span className="text-secondary">{formatPrice(order.totals.shipping)}</span>
             : <span className="text-success small">Gratis</span>
           }
         </div>
       </div>
 
-      {order.totals.discount > 0 && (
+      {(order.totals?.discount || 0) > 0 && (
         <div className="row mb-2">
           <div className="col text-end text-secondary small">Descuento:</div>
           <div className="col-auto text-success">-{formatPrice(order.totals.discount)}</div>
@@ -73,7 +73,7 @@ export const OrderItemsTable = ({ order, formatPrice }) => (
 
       <div className="row fw-medium">
         <div className="col text-end text-secondary">Total:</div>
-        <div className="col-auto text-secondary">{formatPrice(order.totals.total)}</div>
+        <div className="col-auto text-secondary">{formatPrice(order.totals?.finalTotal || 0)}</div>
       </div>
     </div>
   </div>

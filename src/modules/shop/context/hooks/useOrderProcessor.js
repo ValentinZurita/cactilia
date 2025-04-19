@@ -35,9 +35,10 @@ export const useOrderProcessor = ({
   const dispatch = useDispatch();
 
   /**
-   * Procesa la orden completa: validación, pago y redirección
+   * Procesa la orden completa.
+   * Acepta la opción de envío seleccionada.
    */
-  const processOrder = useCallback(async () => {
+  const processOrder = useCallback(async (selectedOption) => {
 
     // Verificar que Stripe y Elements estén disponibles
     if (!stripe || !elements) {
@@ -61,8 +62,8 @@ export const useOrderProcessor = ({
       // 3. Cambiar al paso de procesamiento
       setStep(2);
 
-      // 4. Preparar datos de la orden
-      const orderData = prepareOrderData();
+      // 4. Preparar datos de la orden (pasando solo la opción seleccionada)
+      const orderData = prepareOrderData(selectedOption);
 
       // 5. Procesar el pago
       const result = await createAndProcessOrder(orderData);
@@ -195,9 +196,11 @@ export const useOrderProcessor = ({
 
   /**
    * Prepara los datos de la orden para enviar al servidor
+   * Acepta la opción de envío seleccionada.
+   * Usa cart.shipping para el costo.
    * @returns {Object} Datos de la orden listos para procesar
    */
-  const prepareOrderData = () => {
+  const prepareOrderData = (selectedOption) => {
     // Obtener dirección según tipo
     let shippingAddress;
     if (addressManager.selectedAddressType === 'saved') {
@@ -213,11 +216,33 @@ export const useOrderProcessor = ({
                     ? addressManager.addresses[0].email  // Usar el email de dirección
                     : null;
 
+    // Validar que haya una opción de envío recibida
+    if (!selectedOption) {
+      console.error('prepareOrderData: No se recibió selectedOption. Usando defaults.');
+      // Lanzar error podría ser más seguro
+      // throw new Error('No se ha seleccionado un método de envío válido al preparar la orden');
+    }
+
+    // Extraer el costo DIRECTAMENTE de la opción seleccionada
+    // Probar varios campos comunes que podrían contener el costo
+    const shippingCostFromOption = Number(
+      selectedOption?.totalCost ?? 
+      selectedOption?.calculatedCost ?? 
+      selectedOption?.price ?? 
+      0 // Default a 0 si no se encuentra
+    );
+    console.log(`[prepareOrderData] Costo extraído de selectedOption: ${shippingCostFromOption}`); // Log para verificar
+
+    const shippingDetails = {
+      id: selectedOption?.id || 'unknown',
+      name: selectedOption?.name || selectedOption?.label || 'Envío Estándar',
+      cost: shippingCostFromOption // <-- Usar el costo de la opción
+    };
+
     // Preparar datos de la orden
     return {
       userId: uid,
       customer: {
-        // Usar el email de datos fiscales, dirección o email del usuario autenticado
         email: billingManager.fiscalData.email || shippingAddress.email || userEmail || ''
       },
       items: cart.items.map(item => ({
@@ -230,7 +255,9 @@ export const useOrderProcessor = ({
         stock: item.stock || 0
       })),
       shipping: {
-        method: 'standard',
+        methodId: shippingDetails.id,
+        methodName: shippingDetails.name,
+        cost: shippingDetails.cost, // <-- Usar el costo de la opción
         address: shippingAddress,
         addressType: addressManager.selectedAddressType,
         saveForFuture: addressManager.selectedAddressType === 'new' &&
@@ -250,9 +277,11 @@ export const useOrderProcessor = ({
       notes: orderNotes,
       totals: {
         subtotal: cart.subtotal,
-        tax: cart.taxes,
-        shipping: cart.shipping,
-        total: cart.finalTotal // Total incluyendo envío
+        taxes: cart.taxes,
+        shipping: shippingDetails.cost, // <-- Usar el costo de la opción
+        total: cart.total, // Este sigue siendo (subtotal + taxes)
+        // Recalcular finalTotal explícitamente con el costo extraído
+        finalTotal: Number((cart.subtotal + cart.taxes + shippingDetails.cost).toFixed(2))
       },
       status: 'pending',
       createdAt: new Date()

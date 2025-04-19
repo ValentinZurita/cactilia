@@ -7,33 +7,36 @@ import { formatPrice } from '../../../utils/index.js'
  * @returns {JSX.Element}
  */
 export const OrderTotals = ({ totals }) => {
+  // Asegurarse de tener un objeto totals válido
+  const safeTotals = totals || { subtotal: 0, taxes: 0, shipping: 0, discount: 0, finalTotal: 0 };
+
   return (
     <div className="order-summary-totals">
       <div className="totals-row">
         <span>Subtotal:</span>
-        <span>{formatPrice(totals.subtotal)}</span>
+        <span>{formatPrice(safeTotals.subtotal)}</span>
       </div>
       <div className="totals-row">
         <span>IVA (16%):</span>
-        <span>{formatPrice(totals.tax)}</span>
+        <span>{formatPrice(safeTotals.taxes)}</span>
       </div>
       <div className="totals-row">
         <span>Envío:</span>
         <span>
-          {totals.shipping > 0
-            ? formatPrice(totals.shipping)
+          {safeTotals.shipping > 0
+            ? formatPrice(safeTotals.shipping)
             : <span className="free-shipping">Gratis</span>}
         </span>
       </div>
-      {totals.discount > 0 && (
+      {safeTotals.discount > 0 && (
         <div className="totals-row">
           <span>Descuento:</span>
-          <span className="text-success">-{formatPrice(totals.discount)}</span>
+          <span className="text-success">-{formatPrice(safeTotals.discount)}</span>
         </div>
       )}
       <div className="totals-row total">
         <span>Total:</span>
-        <span className="total-amount">{formatPrice(totals.total)}</span>
+        <span className="total-amount">{formatPrice(safeTotals.finalTotal)}</span>
       </div>
     </div>
   );
