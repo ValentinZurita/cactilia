@@ -54,10 +54,10 @@ export const CheckoutProvider = ({ children }) => {
     setOrderNotes(e.target.value);
   };
 
-  // Crear la función handleProcessOrder que acepta solo selectedOption
-  const handleProcessOrder = useCallback(async (selectedOption) => {
-    // Llamar a la función del hook con el argumento recibido
-    return orderProcessor.processOrder(selectedOption);
+  // Crear la función handleProcessOrder que acepta ambos argumentos
+  const handleProcessOrder = useCallback(async (selectedOption, shippingCost) => {
+    // Llamar a la función del hook con los argumentos recibidos
+    return orderProcessor.processOrder(selectedOption, shippingCost);
   }, [orderProcessor]); // Dependencia del procesador
 
   // Construir el estado completo del contexto
@@ -85,7 +85,7 @@ export const CheckoutProvider = ({ children }) => {
     ...billingManager,
 
     // Método de procesamiento de orden actualizado
-    handleProcessOrder // Exponer la nueva función
+    handleProcessOrder // Exponer la nueva función que acepta argumentos
   };
 
   return (

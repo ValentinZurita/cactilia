@@ -26,6 +26,7 @@ export const CheckoutSummaryPanel = ({
                                        
                                        // Información de envío 
                                        selectedShippingOption,
+                                       shippingTotal,
 
                                        // Manejadores
                                        processOrderWithChecks,
@@ -186,10 +187,16 @@ export const CheckoutSummaryPanel = ({
       return;
     }
     // === INICIO CAMBIO ===
-    // Pasar solo la opción seleccionada
-    processOrderWithChecks(selectedShippingOption);
+    // Pasar la opción seleccionada y el costo total recibido como prop
+    console.log(`🅿️ [CheckoutSummaryPanel] handleCheckoutClick - Pasando a processOrder:`, {
+      optionId: selectedShippingOption?.id,
+      optionName: selectedShippingOption?.name,
+      optionInternalCost: selectedShippingOption?.price ?? selectedShippingOption?.totalCost ?? selectedShippingOption?.calculatedCost,
+      shippingTotalProp: shippingTotal // Loggear el costo recibido
+    });
+    processOrderWithChecks(selectedShippingOption, shippingTotal);
     // === FIN CAMBIO ===
-  }, [processOrderWithChecks, selectedShippingOption]); // Ya no depende de cartShipping
+  }, [processOrderWithChecks, selectedShippingOption, shippingTotal]); // <-- Añadir shippingTotal a dependencias
 
   return (
     <div className="col-lg-4">

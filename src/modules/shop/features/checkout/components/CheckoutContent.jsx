@@ -99,8 +99,9 @@ export const CheckoutContent = () => {
   const shippingUpdateRef = useRef(null);
 
   const handleShippingTotalCostChange = useCallback((cost) => {
-    console.log(`💲 [CheckoutContent] Costo total de envío actualizado LOCALMENTE: $${cost}`);
+    console.log(`💲 [CheckoutContent] handleShippingTotalCostChange RECIBIÓ costo: ${cost} (tipo: ${typeof cost})`);
     const numericCost = Number(cost) || 0;
+    console.log(`💲 [CheckoutContent] handleShippingTotalCostChange ESTABLECIENDO shippingTotal a: ${numericCost}`);
     setShippingTotal(numericCost);
   }, []);
 
@@ -362,6 +363,7 @@ export const CheckoutContent = () => {
           cartTotal={cartTotal}
           isFreeShipping={cartShipping <= 0 && (selectedShippingOption?.isFree || false)}
           selectedShippingOption={enhancedSelectedOption}
+          shippingTotal={shippingTotal}
 
           isProcessing={checkout.isProcessing}
           isButtonDisabled={isButtonDisabled()}
