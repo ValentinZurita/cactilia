@@ -22,7 +22,7 @@ export const HomeCarousel = ({ images }) => {
     <div className="container px-0">
       <div
         id="farmCarousel"
-        className="carousel slide mx-auto"
+        className="carousel slide carousel-fade mx-auto"
         data-bs-ride="carousel"
       >
         {/* Carousel Indicators */}
@@ -53,22 +53,10 @@ export const HomeCarousel = ({ images }) => {
                   overflow: 'hidden',
                   borderRadius: '0.5rem'
                 }}>
-                  {/* <img
+                  <img
                     src={image.src}
                     className="position-absolute"
                     alt={image.alt || `Imagen ${index + 1}`}
-                    style={{
-                      top: '0',
-                      left: '0',
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  /> */}
-                  <ImageComponent
-                    src={image.src}
-                    alt={image.alt || `Imagen ${index + 1}`}
-                    className="position-absolute"
                     style={{
                       top: '0',
                       left: '0',
