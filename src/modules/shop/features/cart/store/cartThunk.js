@@ -34,7 +34,6 @@ export const loadCartFromFirestore = createAsyncThunk(
       } else {
         // Si no existe un carrito en Firestore, simplemente notificarlo
         // NO inicializar con el carrito actual para evitar duplicación
-        console.log('No se encontró carrito en Firestore para el usuario');
         dispatch(setLastSync(new Date().toISOString()));
         // Mantener el carrito actual sin modificar
         return null;

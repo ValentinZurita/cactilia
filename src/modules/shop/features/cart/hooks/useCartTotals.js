@@ -18,7 +18,6 @@ export const useCartTotals = (items) => {
   // Validar que items sea un array
   if (!Array.isArray(items) || items.length === 0) {
     const isEmpty = !Array.isArray(items) || items.length === 0;
-    console.log(`📦 [useCartTotals] Carrito vacío: ${isEmpty}, shipping: ${manualShippingCost}, isFreeShipping: ${manualShippingCost === 0}`);
     
     return {
       subtotal: 0,
@@ -50,9 +49,6 @@ export const useCartTotals = (items) => {
   
   // Determinar si el envío es gratuito basado únicamente en el costo, no en mínimos
   const isFreeShipping = shipping === 0;
-  
-  // Actualizar log para claridad
-  console.log(`💰 [useCartTotals] Total(inc VAT): ${totalPriceWithVAT.toFixed(2)}, Subtotal(base): ${subtotal.toFixed(2)}, Taxes: ${taxes.toFixed(2)}, Shipping: ${shipping.toFixed(2)}, isFreeShipping: ${isFreeShipping}`);
   
   // Total final incluyendo envío (usar el total con IVA)
   const finalTotal = +(totalPriceWithVAT + shipping).toFixed(2);

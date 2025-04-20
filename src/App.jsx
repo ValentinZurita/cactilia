@@ -23,7 +23,6 @@ export const App = () => {
   useEffect(() => {
     // Si el usuario está autenticado, cargar su carrito desde Firestore
     if (status === 'authenticated' && auth.uid) {
-      console.log('Usuario autenticado, cargando carrito desde Firestore');
       // Cargar directamente el carrito del usuario desde Firestore
       // Sin fusionar para evitar duplicaciones
       dispatch(loadCartFromFirestore());
