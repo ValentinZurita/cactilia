@@ -18,8 +18,5 @@ export default defineConfig({
       '@config': path.resolve(__dirname, './src/config'),
       '@contexts': path.resolve(__dirname, './src/contexts')
     }
-  },
-  build: {
-    sourcemap: true, // Habilitar source maps para producción
   }
 })

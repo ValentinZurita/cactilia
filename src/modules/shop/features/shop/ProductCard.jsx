@@ -1,4 +1,4 @@
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../../../../styles/pages/shop.css';
 import '../cart/styles/ProductCartd.css';
 import { CartButton } from '../cart/components/index.js';
@@ -7,7 +7,7 @@ import { getProductCurrentStock, validateAndNormalizeProduct } from '../../servi
 import { ensureShippingProperties } from '../../services/productServices.js';
 import { ImageComponent } from '../../../../shared/components/images/ImageComponent.jsx';
 
-export const ProductCard = memo(({ product, onProductClick }) => {
+export const ProductCard = ({ product, onProductClick }) => {
   // Asegurar que el producto tiene propiedades de envío y datos válidos
   const [processedProduct, setProcessedProduct] = useState(product);
   
@@ -119,4 +119,4 @@ export const ProductCard = memo(({ product, onProductClick }) => {
       </div>
     </div>
   );
-});
+};

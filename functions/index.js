@@ -35,6 +35,9 @@ const { saveAddress } = require('./address/saveAddress');
 // Import contact functions
 const contactFunctions = require('./contact/contactFunctions');
 
+// Import storage related functions
+const storageFunctions = require('./storage/updateMediaMetadata');
+
 // Export all functions
 exports.createPaymentIntent = paymentFunctions.createPaymentIntent;
 exports.confirmOrderPayment = paymentFunctions.confirmOrderPayment;
@@ -65,6 +68,9 @@ exports.saveAddress = saveAddress;
 
 // Export contact functions
 exports.sendContactEmail = contactFunctions.sendContactEmail;
+
+// Export storage functions
+exports.updateFirestoreWithThumbnails = storageFunctions.updateFirestoreWithThumbnails;
 
 // Configurar las variables de entorno con:
 // firebase functions:config:set email.user="tu-correo@gmail.com" email.password="tu-contraseña"

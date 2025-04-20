@@ -152,10 +152,18 @@ export const getCollectionImages = async (collectionId) => {
 
       const mediaItems = [];
       querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        // *** DEVOLVER DATOS MÁS COMPLETOS ***
+        // Devolvemos el objeto con id, alt, url original y el mapa de resizedUrls
+        // HomePage se encargará de seleccionar la URL adecuada.
         mediaItems.push({
           id: doc.id,
-          ...doc.data()
+          alt: data.alt || '',
+          url: data.url || null, // URL original
+          resizedUrls: data.resizedUrls || null // Mapa con URLs de thumbnails
         });
+        // Ya no seleccionamos una única URL aquí.
+        // La lógica de selección se mueve a HomePage.jsx
       });
 
       return {
@@ -179,6 +187,7 @@ export const getCollectionImages = async (collectionId) => {
     console.error(`Error obteniendo imágenes de colección ${collectionId}:`, error);
     return {
       ok: false,
+      data: [], // Devolver array vacío en caso de error general
       error: error.message
     };
   }

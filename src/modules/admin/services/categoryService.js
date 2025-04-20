@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, limit } from "firebase/firestore";
 import { FirebaseDB } from "../../../config/firebase/firebaseConfig";
 
 
@@ -213,3 +213,47 @@ export const deleteCategory = async (categoryId) => {
     return { ok: false, error };
   }
 };
+
+// --- NUEVA FUNCIÓN OPTIMIZADA ---
+/**
+ * Obtiene categorías activas y destacadas para la HomePage, seleccionando campos mínimos.
+ * @param {number} [count=6] - Número máximo de categorías a obtener.
+ * @returns {Promise<{ok: boolean, data: any[], error: null|string}>}
+ */
+export const getFeaturedCategoriesForHome = async (count = 6) => {
+  try {
+    const categoriesRef = collection(FirebaseDB, 'categories');
+    // Consulta optimizada
+    const q = query(
+      categoriesRef,
+      where('active', '==', true),     // Asumiendo que tienes un campo 'active' en categorías
+      where('featured', '==', true), // Asumiendo que tienes un campo 'featured' en categorías
+      limit(count)
+      // Aquí sí podemos seleccionar campos mínimos más fácilmente
+      // select('name', 'mainImage') 
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    const categoriesData = [];
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
+      // Formatear directamente para ProductCarousel
+      categoriesData.push({
+        id: docSnapshot.id,
+        name: data.name || 'Categoría sin nombre',
+        image: data.mainImage || '/public/images/placeholder.jpg', // Para ProductCarousel
+        mainImage: data.mainImage // Mantenemos por consistencia con productos
+        // No necesitamos description, etc.
+      });
+    });
+
+    return { ok: true, data: categoriesData, error: null };
+
+  } catch (error) { 
+    console.error('Error obteniendo categorías destacadas para Home:', error);
+    // Devolvemos error, HomePage ya no hace fallback interno con sampleCategories si esto falla.
+    return { ok: false, data: [], error: error.message };
+  }
+};
+// --- FIN NUEVA FUNCIÓN ---

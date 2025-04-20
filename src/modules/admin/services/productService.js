@@ -346,3 +346,54 @@ export const searchProducts = async (searchTerm, maxResults = 10) => {
     return { ok: false, data: [], error: error.message };
   }
 };
+
+// --- NUEVA FUNCIÓN OPTIMIZADA ---
+/**
+ * Obtiene productos activos y destacados para la HomePage, seleccionando campos mínimos.
+ * @param {number} [count=6] - Número máximo de productos a obtener.
+ * @returns {Promise<{ok: boolean, data: any[], error: null|string}>}
+ */
+export const getFeaturedProductsForHome = async (count = 6) => {
+  try {
+    const productsRef = collection(FirebaseDB, 'products');
+    // Consulta optimizada
+    const q = query(
+      productsRef,
+      where('active', '==', true),
+      where('featured', '==', true),
+      limit(count)
+      // No seleccionamos campos aquí porque parece que necesitas varios
+      // para formatear el objeto en HomePage (price, category, stock)
+      // Si pudieras simplificar lo que necesita ProductCard, podríamos añadir .select()
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    const productsData = [];
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
+      // Formatear directamente aquí si es posible, o devolver los datos crudos
+      // necesarios para que HomePage los formatee.
+      productsData.push({
+        id: docSnapshot.id,
+        name: data.name || 'Producto sin nombre',
+        image: data.mainImage || '/public/images/placeholder.jpg', // Para ProductCarousel
+        mainImage: data.mainImage, // Para ProductCard fallback
+        price: data.price || 0,
+        category: data.category || 'Sin categoría', // ¿Se usa este campo?
+        stock: data.stock || 0, // ¿Se usa este campo en Home?
+        // No necesitamos traer description, images array, etc.
+      });
+    });
+
+    return { ok: true, data: productsData, error: null };
+
+  } catch (error) {
+    // Manejo de errores (incluyendo posible error de permisos)
+    console.error('Error obteniendo productos destacados para Home:', error);
+    // Considera devolver datos de muestra si falla, similar a getProducts
+    // Por ahora, devolvemos error.
+    return { ok: false, data: [], error: error.message };
+  }
+};
+// --- FIN NUEVA FUNCIÓN ---

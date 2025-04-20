@@ -138,6 +138,26 @@ export const ShopBannerEditor = ({ data = {}, onUpdate }) => {
           </div>
         </div>
 
+        {/* Selector de Tamaño de Imagen */}
+        <div className="mb-3">
+          <label htmlFor="bannerImageSize" className="form-label">Tamaño de Imagen</label>
+          <select
+            className="form-select"
+            id="bannerImageSize"
+            value={data.imageSize || 'large'}
+            onChange={(e) => handleChange('imageSize', e.target.value)}
+          >
+            <option value="original">Original</option>
+            <option value="large">Grande (1200px)</option>
+            <option value="medium">Mediano (600px)</option>
+            <option value="small">Pequeño (200px)</option>
+          </select>
+          <div className="form-text text-muted small">
+            <i className="bi bi-info-circle me-1"></i>
+            Selecciona el tamaño predeterminado para mostrar la imagen del banner. Afecta principalmente si se usa una colección.
+          </div>
+        </div>
+
         {/* Contenido condicional según el modo seleccionado */}
         {data.useCollection ? (
           /* Selector de colección */

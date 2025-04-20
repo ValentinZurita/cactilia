@@ -15,7 +15,6 @@
     "test:forgot-password": "cross-env NODE_OPTIONS=--experimental-vm-modules jest src/modules/admin/components/login/forgot-password/__tests__ --config=jest.config.mjs",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config=jest.config.mjs --watch",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config=jest.config.mjs --coverage",
-    "analyze": "yarn build && source-map-explorer 'dist/assets/*.js'",
     "clean": "rm -rf dist && rm -rf node_modules/.vite",
     "deploy": "yarn build && firebase deploy",
     "deploy:functions": "firebase deploy --only functions",

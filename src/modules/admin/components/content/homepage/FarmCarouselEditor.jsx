@@ -159,6 +159,29 @@ export const FarmCarouselEditor = ({ data = {}, onUpdate }) => {
                   </span>
                   <span className="fw-bold">{data.collectionName || 'Colección seleccionada'}</span>
                 </div>
+
+                {/* <<< Selector para el tamaño de imagen de la colección >>> */}
+                {data.useCollection && data.collectionId && ( // Mostrar solo si se usa colección y hay una seleccionada
+                  <div className="mt-3 mb-3"> {/* Añadir un poco de espacio */}
+                    <label htmlFor="farmImageSize" className="form-label">Tamaño de Imagen a Usar</label>
+                    <select
+                      className="form-select form-select-sm" // Usar select pequeño
+                      id="farmImageSize"
+                      value={data.imageSize || 'medium'} // Leer el valor actual, default a 'medium' para carruseles
+                      onChange={(e) => handleChange('imageSize', e.target.value)} // Llamar a onUpdate
+                    >
+                      {/* <option value="original">Original (No recomendado para carruseles)</option> */}
+                      <option value="large">Grande (1200px aprox.)</option>
+                      <option value="medium">Mediano (600px aprox.)</option>
+                      <option value="small">Pequeño (200px aprox.)</option>
+                    </select>
+                    <div className="form-text text-muted small">
+                      Selecciona qué versión de las imágenes de la colección mostrar. 'Mediano' es generalmente bueno para carruseles.
+                    </div>
+                  </div>
+                )}
+                {/* <<< Fin Selector >>> */}
+
               </div>
             ) : (
               <div className="text-muted border rounded p-3 text-center bg-white">

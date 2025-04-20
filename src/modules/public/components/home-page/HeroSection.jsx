@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Logo } from '../../../../shared/components/logo/Logo.jsx';
-import { heroImages } from '../../../../shared/constants/images.js';
-import { getCollectionImages } from '../../../admin/services/collectionsService.js';
+// Ya no necesita getCollectionImages ni heroImages (vendrán de props)
+// import { heroImages } from '../../../../shared/constants/images.js';
+// import { getCollectionImages } from '../../../admin/services/collectionsService.js';
 import '../../../../styles/global.css';
 import './../../styles/homepage.css';
 
@@ -10,7 +11,7 @@ import './../../styles/homepage.css';
  * Implementa un slider con transiciones fluidas usando CSS puro
  *
  * @param {Object} props
- * @param {string|Array} props.images - Imágenes a mostrar (string o array)
+ * @param {string|Array} props.images - Imágenes a mostrar (string o array de URLs ya procesadas)
  * @param {string} props.title - Título principal
  * @param {string} props.subtitle - Subtítulo
  * @param {boolean} props.showLogo - Si se muestra el logo
@@ -21,8 +22,6 @@ import './../../styles/homepage.css';
  * @param {string} props.height - Altura del hero
  * @param {boolean} props.autoRotate - Si las imágenes rotan automáticamente
  * @param {number} props.interval - Intervalo de rotación en ms
- * @param {string} props.collectionId - ID de la colección de imágenes (opcional)
- * @param {boolean} props.useCollection - Si se debe usar una colección de imágenes
  * @returns {JSX.Element}
  */
 export const HeroSection = ({
@@ -37,58 +36,36 @@ export const HeroSection = ({
                               height = "100vh",
                               autoRotate = false,
                               interval = 5000,
-                              collectionId,
-                              useCollection = false,
+                              // Eliminar collectionId y useCollection de las props
+                              // collectionId, 
+                              // useCollection = false,
                             }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [collectionImages, setCollectionImages] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // Eliminar estados collectionImages y loading
+  // const [collectionImages, setCollectionImages] = useState([]);
+  // const [loading, setLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const imagesContainerRef = useRef(null);
   const preloadedImages = useRef(new Set());
   const intervalRef = useRef(null);
 
-  // Cargar imágenes de la colección si se especifica
+  // Eliminar useEffect que cargaba colecciones
+  /*
   useEffect(() => {
     const loadCollectionImages = async () => {
       if (useCollection && collectionId) {
-        setLoading(true);
-        try {
-          const result = await getCollectionImages(collectionId);
-          if (result.ok && Array.isArray(result.data)) {
-            const imageUrls = result.data.map(item => item.url);
-            setCollectionImages(imageUrls);
-            // Precargar imágenes
-            preloadImages(imageUrls);
-          } else {
-            console.error('Error cargando imágenes de colección:', result.error);
-            setCollectionImages([]);
-          }
-        } catch (error) {
-          console.error('Error cargando imágenes de colección:', error);
-          setCollectionImages([]);
-        } finally {
-          setLoading(false);
-        }
+        // ... código eliminado ...
       }
     };
-
     loadCollectionImages();
   }, [useCollection, collectionId]);
+  */
 
-  // Determinar qué imágenes usar
+  // Simplificar useMemo para usar siempre la prop 'images'
   const imageArray = useMemo(() => {
-    if (loading) {
-      return [heroImages[0]]; // Imagen de respaldo durante la carga
-    }
-
-    if (useCollection && collectionImages.length > 0) {
-      return collectionImages;
-    }
-
-    // Normalizar las imágenes a un array
-    return Array.isArray(images) ? images : [images];
-  }, [images, loading, useCollection, collectionImages]);
+    // Asegurar que siempre sea un array, incluso si viene null/undefined o un string
+    return Array.isArray(images) ? images : (images ? [images] : []);
+  }, [images]); // Solo depende de la prop 'images'
 
   // Función para precargar imágenes
   const preloadImages = (imagesToPreload) => {
@@ -109,29 +86,27 @@ export const HeroSection = ({
     preloadImages(imageArray);
 
     if (autoRotate && imageArray.length > 1) {
-      // Limpiar intervalo existente
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-
-      // Iniciar nuevo intervalo
       intervalRef.current = setInterval(() => {
         if (!isTransitioning) {
           setIsTransitioning(true);
           setTimeout(() => {
             setCurrentIndex((prevIndex) => (prevIndex + 1) % imageArray.length);
             setIsTransitioning(false);
-          }, 500); // Duración de la transición
+          }, 500); // Duración de la transición (ej. 0.5s)
         }
       }, interval);
     }
 
+    // Limpiar intervalo al desmontar o si cambia la configuración
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [autoRotate, imageArray, interval, isTransitioning]);
+  }, [autoRotate, imageArray, interval, isTransitioning]); // Dependencias correctas
 
   // Crear estilos CSS para cada imagen
   const createImageStyles = (index) => {
@@ -145,7 +120,8 @@ export const HeroSection = ({
       backgroundImage: `url(${imageArray[index]})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      transition: 'opacity 1s ease-in-out',
+      // Transición más rápida para el fade
+      transition: 'opacity 0.5s ease-in-out', 
       zIndex: index === currentIndex ? 1 : 0
     };
   };
