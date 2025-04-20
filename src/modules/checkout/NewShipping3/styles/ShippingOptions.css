@@ -1,129 +1,132 @@
 /* Estilos para el componente ShippingOptions */
 
+/* Contenedor general (si es necesario, si no, se puede quitar) */
 .shipping-options-container {
   margin: 0 0 24px;
   background-color: transparent;
   padding: 0;
 }
 
-.shipping-options-title {
-  margin-top: 0;
-  margin-bottom: 16px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333333;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e0e0e0;
-}
+/* Título de la sección (manejado ahora por CheckoutSection) */
+/* .shipping-options-title { ... } */
 
+/* Lista de opciones */
 .shipping-options-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 16px;
+  /* margin-bottom: 16px; <-- Quitado, el margen está en .shipping-option */
 }
 
-.shipping-option {
-  display: flex;
+/* === Estilos Finales para cada Opción (Replicando AddressOption) === */
+
+/* Contenedor Principal de cada opción */
+.shipping-option { 
+  display: flex; 
   align-items: flex-start;
-  padding: 16px;
-  border: 1px solid #eaeaea;
-  border-radius: 10px;
-  margin-bottom: 15px;
-  position: relative;
+  padding: 16px; 
+  border: 1px solid #eaeaea; 
+  border-radius: 10px; 
+  margin-bottom: 15px; 
+  position: relative; 
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease; 
   background-color: #fff;
-  overflow: visible !important;
+  overflow: visible !important; /* MANTENER: Solución al corte del input */
 }
 
 .shipping-option:hover {
-  border-color: #d0d0d0;
-  background-color: #fafafa;
+    border-color: #d0d0d0;
+    background-color: #fafafa;
 }
 
-.shipping-option.active-shipping-option {
-  border-color: var(--green-3);
-  background-color: rgba(52, 199, 73, 0.05);
-  box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+/* Estado Activo */
+.shipping-option.active-shipping-option { 
+    border-color: var(--green-3); 
+    background-color: rgba(52, 199, 73, 0.05); 
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1); 
 }
 
-.shipping-option-radio {
-  margin-top: 18px;
-  margin-right: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* Input Checkbox (estilizado como radio) */
+.shipping-option .form-check-input[type="checkbox"] {
+  /* Posicionamiento en flujo normal */
+  margin-right: 15px; 
+  margin-top: 0.3rem; 
 
-/* === INICIO ELIMINACIÓN === */
-/* Estilos personalizados para radio/checkbox que ya no necesitamos 
-   porque estamos usando la estructura form-check de Bootstrap */
-
-/* Comentado o eliminado:
-.shipping-option-radio input[type="radio"] {
+  /* Estilos visuales circulares */
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 1px solid #aaa;
+  width: 20px; 
+  height: 20px; 
+  border: 2px solid #c8c8c8; 
+  border-radius: 50%; 
+  display: inline-block; 
+  vertical-align: middle; 
+  position: relative; 
+  cursor: pointer;
+  flex-shrink: 0; 
+  background-color: #fff; 
+  transition: all 0.2s ease; 
+}
+
+/* Estado Checkeado */
+.shipping-option .form-check-input[type="checkbox"]:checked {
+  background-color: white !important; 
+  border-color: var(--green-3) !important; 
+  background-image: none; 
+  box-shadow: none !important; 
+}
+
+/* Punto interior */
+.shipping-option .form-check-input[type="checkbox"]:checked::before {
+  content: "";
+  display: block;
+  width: 10px; 
+  height: 10px; 
   border-radius: 50%;
-  outline: none;
-  cursor: pointer;
-  position: relative;
-  background-color: white;
-}
-
-.shipping-option-radio input[type="radio"]:checked {
-  border-color: #4caf50;
-  border-width: 5px;
-}
-
-.shipping-option-radio input[type="radio"]:focus {
-  box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
-}
-
-.shipping-option-radio input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 1px solid #aaa;
-  border-radius: 3px;
-  outline: none;
-  cursor: pointer;
-  position: relative;
-  background-color: white;
-}
-
-.shipping-option-radio input[type="checkbox"]:checked {
-  background-color: #4caf50;
-  border-color: #4caf50;
-}
-
-.shipping-option-radio input[type="checkbox"]:checked::before {
-  content: '✓';
+  background-color: var(--green-3); 
   position: absolute;
-  color: white;
-  font-size: 14px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
 
-.shipping-option-radio input[type="checkbox"]:focus {
-  box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+/* Foco */
+.shipping-option .form-check-input[type="checkbox"]:focus {
+  border-color: var(--green-3); 
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(52, 199, 73, 0.2); 
 }
+
+/* Wrapper form-check */
+.shipping-option .form-check {
+   padding-left: 0; /* Resetear padding */
+   /* Asegurar que ocupe todo el ancho si es necesario */
+   /* width: 100%; */
+   /* display: flex; align-items: flex-start; <-- Ya está en .shipping-option */
+}
+
+/* === FIN Estilos Finales === */
+
+/* --- Inicio Limpieza de Estilos Viejos/Redundantes --- */
+
+/* .shipping-option-container { ... } */
+/* .shipping-option-container.selected { ... } */
+/* .shipping-option-input-area { ... } */
+/* .shipping-option-content-area { ... } */
+
+/* Comentado o eliminado:
+.shipping-option-radio input[type="radio"] { ... }
+.shipping-option-radio input[type="radio"]:checked { ... }
+.shipping-option-radio input[type="radio"]:focus { ... }
+.shipping-option-radio input[type="checkbox"] { ... }
+.shipping-option-radio input[type="checkbox"]:checked { ... }
+.shipping-option-radio input[type="checkbox"]:checked::before { ... }
+.shipping-option-radio input[type="checkbox"]:focus { ... }
 */
-/* === FIN ELIMINACIÓN === */
 
-.shipping-option-details {
-  flex: 1;
-}
-
-/* Estados del contenedor */
+/* Estilos de loading/error/empty (mantener si se usan fuera de CheckoutSection) */
 .shipping-options-loading,
 .shipping-options-error,
 .shipping-options-empty {
@@ -210,10 +213,6 @@
     font-size: 16px;
     margin-bottom: 12px;
     padding-bottom: 8px;
-  }
-  
-  .shipping-option-radio {
-    margin-top: 16px;
   }
   
   .shipping-options-loading,

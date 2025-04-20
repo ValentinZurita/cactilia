@@ -182,12 +182,16 @@ export const CheckoutSummaryPanel = ({
 
   // Wrapper para llamar a processOrderWithChecks
   const handleCheckoutClick = useCallback(() => {
-    if (!selectedShippingOption) {
-      console.error("[CheckoutSummaryPanel] Intento de procesar sin opción de envío seleccionada.");
+    // Guarda más robusta
+    if (!selectedShippingOption || typeof shippingTotal !== 'number' || isNaN(shippingTotal)) {
+      console.error("[CheckoutSummaryPanel] Intento de procesar sin opción de envío seleccionada o sin costo de envío válido.", {
+        hasOption: !!selectedShippingOption,
+        shippingTotalType: typeof shippingTotal,
+        shippingTotalValue: shippingTotal
+      });
       return;
     }
-    // === INICIO CAMBIO ===
-    // Pasar la opción seleccionada y el costo total recibido como prop
+
     console.log(`🅿️ [CheckoutSummaryPanel] handleCheckoutClick - Pasando a processOrder:`, {
       optionId: selectedShippingOption?.id,
       optionName: selectedShippingOption?.name,
@@ -195,8 +199,8 @@ export const CheckoutSummaryPanel = ({
       shippingTotalProp: shippingTotal // Loggear el costo recibido
     });
     processOrderWithChecks(selectedShippingOption, shippingTotal);
-    // === FIN CAMBIO ===
-  }, [processOrderWithChecks, selectedShippingOption, shippingTotal]); // <-- Añadir shippingTotal a dependencias
+
+  }, [processOrderWithChecks, selectedShippingOption, shippingTotal]); 
 
   return (
     <div className="col-lg-4">

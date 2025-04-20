@@ -9,6 +9,7 @@ import { allProductsCovered } from '../services/shipping';
 import Spinner from './common/Spinner';
 import ShippingOptionsList from '../newShipping/components/ShippingOptionsList';
 import NewShippingIntegration from './NewShippingIntegration';
+import { CheckoutSection } from './sections/CheckoutSection';
 
 // Lazy loading de componentes pesados de shipping
 const ShippingSelector = lazy(() => import('../components/shipping/ShippingSelector'));
@@ -340,7 +341,7 @@ export const CheckoutContent = () => {
           customShippingComponent={(props) => (
             checkout.selectedAddressType && 
             (checkout.selectedAddressType === 'saved' ? checkout.selectedAddressId : checkout.newAddressData) ? (
-              <div className="shipping-options-container mb-4">
+              <CheckoutSection title="Selecciona un método de envío" stepNumber={2}>
                 <NewShippingIntegration 
                   cartItems={cartItems}
                   address={checkout.selectedAddressType === 'saved' ? 
@@ -349,9 +350,17 @@ export const CheckoutContent = () => {
                   }
                   onShippingSelected={handleShippingOptionSelect}
                   onTotalCostChange={handleShippingTotalCostChange}
+                  loading={props.loading}
+                  error={props.error}
                 />
-              </div>
-            ) : null
+              </CheckoutSection>
+            ) : (
+              <CheckoutSection title="Selecciona un método de envío" stepNumber={2}>
+                <div className="alert alert-info">
+                  Por favor, selecciona o ingresa una dirección de envío para ver las opciones.
+                </div>
+              </CheckoutSection>
+            )
           )}
         />
 

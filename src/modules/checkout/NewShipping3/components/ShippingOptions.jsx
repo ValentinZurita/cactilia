@@ -381,43 +381,43 @@ export const ShippingOptions = ({
     };
   }, [address, cartItems]); // Solo re-ejecutar cuando la dirección o los items cambian
 
-  // Mostrar loading state
+  // Mostrar loading state (envuelto en section-content)
   if (loading) {
     return (
-      <CheckoutSection title="Selecciona un método de envío" stepNumber={1.5} isLoading={true}>
+      <div className="section-content">
         <div className="shipping-options-loading">
           <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           <span className="ms-2">Cargando opciones de envío...</span>
         </div>
-      </CheckoutSection>
+      </div>
     );
   }
 
-  // Mostrar error si hay
+  // Mostrar error si hay (envuelto en section-content)
   if (error) {
     return (
-      <CheckoutSection title="Selecciona un método de envío" stepNumber={1.5}>
+      <div className="section-content">
         <div className="shipping-options-error">
           <p>{error}</p>
         </div>
-      </CheckoutSection>
+      </div>
     );
   }
 
-  // Mostrar mensaje si no hay opciones disponibles
+  // Mostrar mensaje si no hay opciones disponibles (envuelto en section-content)
   if (!shippingOptions || shippingOptions.length === 0) {
     return (
-      <CheckoutSection title="Selecciona un método de envío" stepNumber={1.5}>
+      <div className="section-content">
         <div className="shipping-options-empty">
           <p>No hay opciones de envío disponibles para esta dirección.</p>
           <p>Por favor, verifica tu dirección o los productos en tu carrito.</p>
         </div>
-      </CheckoutSection>
+      </div>
     );
   }
 
   return (
-    <CheckoutSection title="Selecciona un método de envío" stepNumber={1.5}>
+    <div className="section-content">
       {/* Mostrar información de selección múltiple */}
       {showMultipleSelectionInfo && (
         <div className="shipping-selection-info alert alert-info" role="alert">
@@ -472,6 +472,7 @@ export const ShippingOptions = ({
         </div>
       )}
       
+      {/* Lista de opciones de envío */}
       <div className="shipping-options-list">
         {shippingOptions.map((option) => (
           <ShippingPackage 
@@ -483,6 +484,6 @@ export const ShippingOptions = ({
           />
         ))}
       </div>
-    </CheckoutSection>
+    </div>
   );
 }; 

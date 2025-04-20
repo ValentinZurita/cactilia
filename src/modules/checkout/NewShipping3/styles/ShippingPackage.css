@@ -1,25 +1,6 @@
 /* Estilos para paquetes de envío */
-.shipping-package {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  transition: all 0.2s ease;
-  background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-}
-
-.shipping-package:hover {
-  border-color: #3da35a;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.shipping-package.selected {
-  border-color: #2a9d47;
-  box-shadow: 0 4px 12px rgba(42, 157, 71, 0.2);
-}
+/* Eliminado: .shipping-package, .shipping-package:hover, .shipping-package.selected */
+/* Estas reglas ahora son manejadas por .shipping-option en ShippingOptions.css */
 
 /* Cabecera del paquete */
 .shipping-package-header {
