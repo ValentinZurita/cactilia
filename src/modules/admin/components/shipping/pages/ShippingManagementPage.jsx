@@ -1,8 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShippingTable } from '../table/ShippingTable';
-import { ShippingForm } from '../form/ShippingForm';
 import { useShippingRules } from '../hooks/useShippingRules';
+import { Spinner } from '@components/spinner/Spinner.jsx';
+
+// Lazy load ShippingTable and ShippingForm
+const ShippingTable = lazy(() => 
+  import('../table/ShippingTable').then(module => ({ default: module.ShippingTable }))
+);
+const ShippingForm = lazy(() =>
+  import('../form/ShippingForm').then(module => ({ default: module.ShippingForm }))
+);
 
 /**
  * Página principal para la gestión de reglas de envío.
@@ -123,70 +130,76 @@ export const ShippingManagementPage = () => {
 
   // Renderizar vista según el modo
   const renderContent = () => {
-    switch (mode) {
-      case 'create':
-        return (
-          <ShippingForm
-            initialData={{}}
-            onSubmit={handleSaveRule}
-            onCancel={handleBackToList}
-          />
-        );
-      case 'edit':
-        // Adaptar los datos existentes al formato del nuevo formulario
-        const adaptedInitialData = selectedRule ? {
-          name: selectedRule.zona || '',
-          zipcodes: selectedRule.zipcodes || [selectedRule.zipcode].filter(Boolean),
-          activo: selectedRule.activo !== undefined ? selectedRule.activo : true,
-          status: selectedRule.activo !== undefined ? selectedRule.activo : true,
-          
-          // Reglas
-          freeShipping: selectedRule.envio_gratis || false,
-          freeShippingThreshold: selectedRule.envio_variable?.aplica || false,
-          minOrderAmount: selectedRule.envio_variable?.envio_gratis_monto_minimo || 0,
-          
-          // Métodos de envío
-          shippingTypes: selectedRule.opciones_mensajeria
-            ? selectedRule.opciones_mensajeria.map((option, index) => ({
-                id: `${index + 1}`,
-                carrier: option.nombre || '',
-                label: option.label || option.nombre || '',
-                price: option.precio || 0,
-                weight: option.peso_maximo || 0,
-                minDays: option.minDays || 1,
-                maxDays: option.maxDays || 3,
-                // Agregar nuevos campos de rangos de peso
-                usaRangosPeso: option.usaRangosPeso || false,
-                rangosPeso: option.rangosPeso || [],
-                // Configuración de paquetes específica para cada opción
-                maxPackageWeight: option.configuracion_paquetes?.peso_maximo_paquete || 20,
-                extraWeightCost: option.configuracion_paquetes?.costo_por_kg_extra || 10,
-                maxProductsPerPackage: option.configuracion_paquetes?.maximo_productos_por_paquete || 10
-              }))
-            : []
-        } : {};
-        
-        return (
-          <ShippingForm
-            initialData={adaptedInitialData}
-            onSubmit={handleSaveRule}
-            onCancel={handleBackToList}
-          />
-        );
-      default:
-        return (
-          <ShippingTable
-            rules={shippingRules}
-            loading={loading}
-            error={error}
-            onEdit={handleEditRule}
-            onDelete={deleteShippingRule}
-            onSearch={handleSearch}
-            searchTerm={searchTerm}
-            onCreateNew={handleCreateNew}
-          />
-        );
-    }
+    return (
+      <Suspense fallback={<div className="text-center p-5"><Spinner /></div>}>
+        {(() => {
+          switch (mode) {
+            case 'create':
+              return (
+                <ShippingForm
+                  initialData={{}}
+                  onSubmit={handleSaveRule}
+                  onCancel={handleBackToList}
+                />
+              );
+            case 'edit':
+              // Adaptar los datos existentes al formato del nuevo formulario
+              const adaptedInitialData = selectedRule ? {
+                name: selectedRule.zona || '',
+                zipcodes: selectedRule.zipcodes || [selectedRule.zipcode].filter(Boolean),
+                activo: selectedRule.activo !== undefined ? selectedRule.activo : true,
+                status: selectedRule.activo !== undefined ? selectedRule.activo : true,
+                
+                // Reglas
+                freeShipping: selectedRule.envio_gratis || false,
+                freeShippingThreshold: selectedRule.envio_variable?.aplica || false,
+                minOrderAmount: selectedRule.envio_variable?.envio_gratis_monto_minimo || 0,
+                
+                // Métodos de envío
+                shippingTypes: selectedRule.opciones_mensajeria
+                  ? selectedRule.opciones_mensajeria.map((option, index) => ({
+                      id: `${index + 1}`,
+                      carrier: option.nombre || '',
+                      label: option.label || option.nombre || '',
+                      price: option.precio || 0,
+                      weight: option.peso_maximo || 0,
+                      minDays: option.minDays || 1,
+                      maxDays: option.maxDays || 3,
+                      // Agregar nuevos campos de rangos de peso
+                      usaRangosPeso: option.usaRangosPeso || false,
+                      rangosPeso: option.rangosPeso || [],
+                      // Configuración de paquetes específica para cada opción
+                      maxPackageWeight: option.configuracion_paquetes?.peso_maximo_paquete || 20,
+                      extraWeightCost: option.configuracion_paquetes?.costo_por_kg_extra || 10,
+                      maxProductsPerPackage: option.configuracion_paquetes?.maximo_productos_por_paquete || 10
+                    }))
+                  : []
+              } : {};
+              
+              return (
+                <ShippingForm
+                  initialData={adaptedInitialData}
+                  onSubmit={handleSaveRule}
+                  onCancel={handleBackToList}
+                />
+              );
+            default:
+              return (
+                <ShippingTable
+                  rules={shippingRules}
+                  loading={loading}
+                  error={error}
+                  onEdit={handleEditRule}
+                  onDelete={deleteShippingRule}
+                  onSearch={handleSearch}
+                  searchTerm={searchTerm}
+                  onCreateNew={handleCreateNew}
+                />
+              );
+          }
+        })()}
+      </Suspense>
+    );
   };
 
   return (

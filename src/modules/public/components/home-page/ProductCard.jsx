@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ImageComponent } from '../../../../shared/components/images/ImageComponent.jsx';
 
 /**
  * ProductCard Component
@@ -32,10 +33,16 @@ export const ProductCard = ({ name, image, id, isCategory = false }) => {
           className="rounded overflow-hidden mx-auto d-flex justify-content-center align-items-center position-relative"
           style={{ width: '100%', maxWidth: '220px', aspectRatio: '1 / 1' }}
         >
-          <img
+          {/* <img
             src={image}
             className="img-fluid object-fit-cover w-100 h-100 rounded-3 transition-all"
             alt={name}
+            style={{ transition: 'transform 0.3s ease' }}
+          /> */}
+          <ImageComponent
+            src={image}
+            alt={name}
+            className="img-fluid object-fit-cover w-100 h-100 rounded-3 transition-all"
             style={{ transition: 'transform 0.3s ease' }}
           />
 

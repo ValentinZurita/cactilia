@@ -3,6 +3,7 @@ import { useCart } from '../cart/hooks/useCart';
 import { ProductImageCarousel } from './ProductModalCarousel';
 import { validateItemsStock } from '../../services/productServices.js';
 import '../../../shop/styles/productModal.css';
+import { ImageComponent } from '../../../../shared/components/images/ImageComponent.jsx';
 
 // -------------------------------------------
 // HOOK: Controla visibilidad del modal
@@ -198,7 +199,7 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
         <div className="prod-modal__inner-container">
           {/* Imagen */}
           <div className="prod-modal__image-wrap">
-            <img
+            <ImageComponent
               src={currentImage || product.mainImage}
               alt={product.name}
               className="prod-modal__image"

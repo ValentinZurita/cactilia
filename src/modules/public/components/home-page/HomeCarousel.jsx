@@ -1,3 +1,5 @@
+import { ImageComponent } from "../../../../shared/components/images/ImageComponent.jsx";
+
 /**
  * HomeCarousel Component
  *
@@ -51,10 +53,22 @@ export const HomeCarousel = ({ images }) => {
                   overflow: 'hidden',
                   borderRadius: '0.5rem'
                 }}>
-                  <img
+                  {/* <img
                     src={image.src}
                     className="position-absolute"
                     alt={image.alt || `Imagen ${index + 1}`}
+                    style={{
+                      top: '0',
+                      left: '0',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  /> */}
+                  <ImageComponent
+                    src={image.src}
+                    alt={image.alt || `Imagen ${index + 1}`}
+                    className="position-absolute"
                     style={{
                       top: '0',
                       left: '0',

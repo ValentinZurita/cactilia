@@ -12,6 +12,8 @@
  * @param {Array} images - List of image URLs to be displayed in the carousel.
  */
 
+import { ImageComponent } from "../../../../shared/components/images/ImageComponent.jsx";
+
 export const Carousel = ({ images }) => {
   return (
     <div id="farmCarousel" className="carousel slide" data-bs-ride="carousel">
@@ -21,7 +23,11 @@ export const Carousel = ({ images }) => {
         {images.map((image, index) => (
           <div key={index} className={`carousel-item ${index === 0 ? 'active' : ''}`}>
             {/* Carousel Image */}
-            <img src={image} className="d-block w-100" alt={`Slide ${index + 1}`} />
+            <ImageComponent 
+              src={image} 
+              alt={`Slide ${index + 1}`} 
+              className="d-block w-100" 
+            />
           </div>
         ))}
       </div>

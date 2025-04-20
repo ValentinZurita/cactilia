@@ -1,11 +1,17 @@
 import { Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { CheckoutProvider } from '../context/CheckoutContext';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useCart } from '../features/cart/hooks/useCart';
 import { useStripeLoader } from '../hooks/useStripeLoader';
-import { CheckoutContent } from '../features/checkout/components/CheckoutContent';
 import '../features/checkout/styles/checkout.css';
+
+// Lazy load CheckoutContent
+const CheckoutContent = lazy(() => 
+  import('../features/checkout/components/CheckoutContent')
+    .then(module => ({ default: module.CheckoutContent }))
+);
 
 /**
  * Página principal de checkout
@@ -66,7 +72,9 @@ const AuthenticatedCheckout = () => {
   return (
     <Elements stripe={stripePromise}>
       <CheckoutProvider>
-        <CheckoutContent />
+        <Suspense fallback={<CheckoutLoadingState message="Cargando checkout..." />}>
+          <CheckoutContent />
+        </Suspense>
       </CheckoutProvider>
     </Elements>
   );

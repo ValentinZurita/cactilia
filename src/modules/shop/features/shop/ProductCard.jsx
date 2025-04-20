@@ -5,6 +5,7 @@ import { CartButton } from '../cart/components/index.js';
 import { useAsync } from '../../hooks/useAsync';
 import { getProductCurrentStock, validateAndNormalizeProduct } from '../../services/productServices.js';
 import { ensureShippingProperties } from '../../services/productServices.js';
+import { ImageComponent } from '../../../../shared/components/images/ImageComponent.jsx';
 
 export const ProductCard = ({ product, onProductClick }) => {
   // Asegurar que el producto tiene propiedades de envío y datos válidos
@@ -70,10 +71,10 @@ export const ProductCard = ({ product, onProductClick }) => {
     >
       {/* Contenedor de imagen con efecto de elevación */}
       <div className="product-image-container">
-        <img
+        <ImageComponent
           src={mainImage}
-          className="card-img-top"
           alt={name}
+          className="card-img-top"
         />
 
         {/* Badge de disponibilidad */}

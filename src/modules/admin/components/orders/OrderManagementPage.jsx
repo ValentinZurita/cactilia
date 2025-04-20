@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux';
-import { OrderList } from './list/OrderList.jsx';
-import { OrderDetail } from './details/OrderDetail.jsx';
 import { OrderFiltersSidebar } from './filters/OrderFiltersSidebar.jsx';
 import { OrderDetailSkeleton } from './details/OrderDetailSkeleton.jsx';
+import { Spinner } from '../../../../shared/components/spinner/Spinner.jsx';
 import { addMessage } from '../../../../store/messages/messageSlice.js';
 
 // Importar acciones y selectores de Redux
@@ -31,6 +30,15 @@ import {
 // Utilidades para formateo
 import { formatOrderDate, formatPrice } from './utils/formatUtils.js';
 
+// Lazy load OrderList and OrderDetail
+const OrderList = lazy(() => 
+  import('./list/OrderList.jsx')
+    .then(module => ({ default: module.OrderList }))
+);
+const OrderDetail = lazy(() =>
+  import('./details/OrderDetail.jsx')
+    .then(module => ({ default: module.OrderDetail }))
+);
 
 /**
  * Página principal para la gestión de pedidos en el panel de administración
@@ -170,21 +178,21 @@ export const OrderManagementPage = () => {
 
   // Renderizar vista detallada de un pedido
   const renderDetailView = () => {
-    if (selectedOrderLoading) {
-      return <OrderDetailSkeleton />;
-    }
-
+    // Nota: La lógica de carga para selectedOrder ya existe, 
+    // pero envolvemos en Suspense por si el componente OrderDetail tarda en cargarse
     return (
-      <OrderDetail
-        order={selectedOrder}
-        onBack={handleBackToList}
-        onChangeStatus={handleChangeStatus}
-        onAddNote={handleAddNote}
-        onOrderUpdate={handleOrderUpdate}
-        formatPrice={formatPrice}
-        formatDate={formatOrderDate}
-        isProcessing={isProcessing}
-      />
+      <Suspense fallback={<OrderDetailSkeleton />}>
+        <OrderDetail
+          order={selectedOrder}
+          onBack={handleBackToList}
+          onChangeStatus={handleChangeStatus}
+          onAddNote={handleAddNote}
+          onOrderUpdate={handleOrderUpdate}
+          formatPrice={formatPrice}
+          formatDate={formatOrderDate}
+          isProcessing={isProcessing}
+        />
+      </Suspense>
     );
   };
 
@@ -198,9 +206,13 @@ export const OrderManagementPage = () => {
           <div className="col-lg-3">
             <div className="sticky-lg-top" style={{ top: '1rem', zIndex: 100 }}>
               <OrderFiltersSidebar
-                activeFilter={filters.status}
+                stats={statistics}
+                statsLoading={statsLoading}
+                currentFilter={filters.status || 'all'}
                 onFilterChange={handleFilterChange}
                 onSearch={handleSearch}
+                onAdvancedSearch={handleAdvancedSearch}
+                formatPrice={formatPrice}
                 searchTerm={filters.searchTerm}
                 counts={statistics ? {
                   all: statistics.totalOrders,
@@ -210,26 +222,25 @@ export const OrderManagementPage = () => {
                   delivered: statistics.deliveredOrders,
                   cancelled: statistics.cancelledOrders
                 } : {}}
-                statistics={statistics}
                 loading={statsLoading}
-                formatPrice={formatPrice}
-                onAdvancedSearch={handleAdvancedSearch}
                 advancedFilters={advancedFilters}
               />
             </div>
           </div>
 
-          {/* Columna principal con la lista de pedidos */}
+          {/* Contenido principal - Lista de pedidos */}
           <div className="col-lg-9">
-            <OrderList
-              orders={orders}
-              loading={loading}
-              onViewDetail={handleViewDetail}
-              formatPrice={formatPrice}
-              formatDate={formatOrderDate}
-              hasMore={hasMore}
-              onLoadMore={loadMoreOrders}
-            />
+            <Suspense fallback={<div className="text-center p-5"><Spinner /></div>}> 
+              <OrderList
+                orders={orders}
+                loading={loading}
+                hasMore={hasMore}
+                loadMore={loadMoreOrders}
+                onViewDetail={handleViewDetail}
+                formatDate={formatOrderDate}
+                formatPrice={formatPrice}
+              />
+            </Suspense>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import '../../../shop/styles/productModalCarousel.css';
+import { ImageComponent } from '../../../../shared/components/images/ImageComponent.jsx';
 
 /**
  * ProductImageCarousel Component - Versión optimizada
@@ -27,7 +28,7 @@ export const ProductImageCarousel = ({ images, onSelectImage }) => {
           className="prod-carousel__image-wrapper"
           onClick={() => onSelectImage(images[0])}
         >
-          <img
+          <ImageComponent
             src={images[0]}
             alt="Imagen del producto"
             className="prod-carousel__image"
@@ -68,7 +69,7 @@ export const ProductImageCarousel = ({ images, onSelectImage }) => {
               className="prod-carousel__image-wrapper"
               onClick={() => onSelectImage(img)}
             >
-              <img
+              <ImageComponent
                 src={img}
                 alt={`Imagen ${index + 1}`}
                 className="prod-carousel__image"
