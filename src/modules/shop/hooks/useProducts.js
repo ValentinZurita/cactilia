@@ -145,10 +145,11 @@ export const useProducts = () => {
                   // Verificar si la imagen ya está en caché
                   const cacheMatch = await cache.match(product.mainImage);
                   if (!cacheMatch) {
-                    const response = await fetch(product.mainImage, { mode: 'cors' });
-                    if (response.ok) {
-                      await cache.put(product.mainImage, response);
-                    }
+                    // Usar 'no-cors' para evitar errores CORS
+                    const response = await fetch(product.mainImage, { mode: 'no-cors' });
+                    // Con mode:'no-cors' la respuesta es "opaque", pero aún podemos cachearla
+                    await cache.put(product.mainImage, response);
+                    console.debug(`✅ Imagen cacheada (modo no-cors): ${product.name}`);
                   }
                 } catch (error) {
                   console.warn(`⚠️ Error al cachear imagen:`, error);
