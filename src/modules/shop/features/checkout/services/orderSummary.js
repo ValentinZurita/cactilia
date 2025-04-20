@@ -1,7 +1,6 @@
-import firebase from 'firebase/app';
-import 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc } from 'firebase/firestore';
 
-const db = firebase.firestore();
+const db = getFirestore();
 
 /**
  * Genera un resumen completo del pedido antes de finalizar la compra
@@ -49,9 +48,10 @@ export const generateOrderSummary = async (
   try {
     // Verificar disponibilidad y obtener datos actualizados de productos
     const productPromises = cart.items.map(async (item) => {
-      const productDoc = await db.collection("products").doc(item.productId).get();
+      const productRef = doc(db, "products", item.productId);
+      const productDoc = await getDoc(productRef);
       
-      if (!productDoc.exists) {
+      if (!productDoc.exists()) {
         return {
           ...item,
           available: false,

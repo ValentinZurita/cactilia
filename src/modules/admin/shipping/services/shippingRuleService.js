@@ -1,5 +1,6 @@
-import firebase from 'firebase/app';
-import 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, query, where, limit } from 'firebase/firestore';
+
+const db = getFirestore(); // Obtener la instancia de Firestore
 
 /**
  * Obtiene todas las reglas de envío desde Firestore
@@ -8,16 +9,19 @@ import 'firebase/firestore';
 export const getAllShippingRules = async () => {
   try {
     try {
-      const rulesSnapshot = await firebase.firestore()
-        .collection('shipping_rules')
-        .where('activo', '==', true)
-        .get();
-      
+      // Crear la consulta con query() y where()
+      const rulesQuery = query(
+        collection(db, 'shipping_rules'),
+        where('activo', '==', true)
+      );
+      // Ejecutar la consulta con getDocs()
+      const rulesSnapshot = await getDocs(rulesQuery);
+
       const rules = rulesSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      
+
       return { ok: true, data: rules };
     } catch (permissionError) {
       console.warn('Error de permisos al obtener reglas de envío:', permissionError);
@@ -64,12 +68,12 @@ export const getAllShippingRules = async () => {
  */
 export const getShippingRuleById = async (ruleId) => {
   try {
-    const ruleDoc = await firebase.firestore()
-      .collection('shipping_rules')
-      .doc(ruleId)
-      .get();
-    
-    if (!ruleDoc.exists) {
+    // Obtener la referencia al documento con doc()
+    const ruleRef = doc(db, 'shipping_rules', ruleId);
+    // Obtener el documento con getDoc()
+    const ruleDoc = await getDoc(ruleRef);
+
+    if (!ruleDoc.exists()) { // Usar el método exists() del snapshot
       return { ok: false, error: 'Regla no encontrada' };
     }
     
@@ -101,12 +105,15 @@ export const getNationalShippingRule = async () => {
     }
     
     // Si no encontramos por ID, buscamos por zona "Nacional"
-    const rulesSnapshot = await firebase.firestore()
-      .collection('shipping_rules')
-      .where('zona', '==', 'Nacional')
-      .where('activo', '==', true)
-      .limit(1)
-      .get();
+    // Crear la consulta con query(), where() y limit()
+    const nationalRuleQuery = query(
+      collection(db, 'shipping_rules'),
+      where('zona', '==', 'Nacional'),
+      where('activo', '==', true),
+      limit(1)
+    );
+    // Ejecutar la consulta con getDocs()
+    const rulesSnapshot = await getDocs(nationalRuleQuery);
     
     if (rulesSnapshot.empty) {
       // Si no hay regla nacional, retornar una regla por defecto
