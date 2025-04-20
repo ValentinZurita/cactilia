@@ -10,6 +10,7 @@ import { checkoutShippingService } from '../services/checkoutShippingService';
 import debugShipping from '../utils/ShippingDebugger';
 import { useShippingRules } from '../hooks/useShippingRules';
 import '../styles/ShippingOptions.css';
+import { CheckoutSection } from '../../../shop/features/checkout/components/sections/CheckoutSection';
 
 /**
  * Componente principal para mostrar opciones de envío en el checkout
@@ -383,42 +384,40 @@ export const ShippingOptions = ({
   // Mostrar loading state
   if (loading) {
     return (
-      <div className="shipping-options-container">
+      <CheckoutSection title="Selecciona un método de envío" stepNumber={1.5} isLoading={true}>
         <div className="shipping-options-loading">
           <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           <span className="ms-2">Cargando opciones de envío...</span>
         </div>
-      </div>
+      </CheckoutSection>
     );
   }
 
   // Mostrar error si hay
   if (error) {
     return (
-      <div className="shipping-options-container">
+      <CheckoutSection title="Selecciona un método de envío" stepNumber={1.5}>
         <div className="shipping-options-error">
           <p>{error}</p>
         </div>
-      </div>
+      </CheckoutSection>
     );
   }
 
   // Mostrar mensaje si no hay opciones disponibles
   if (!shippingOptions || shippingOptions.length === 0) {
     return (
-      <div className="shipping-options-container">
+      <CheckoutSection title="Selecciona un método de envío" stepNumber={1.5}>
         <div className="shipping-options-empty">
           <p>No hay opciones de envío disponibles para esta dirección.</p>
           <p>Por favor, verifica tu dirección o los productos en tu carrito.</p>
         </div>
-      </div>
+      </CheckoutSection>
     );
   }
 
   return (
-    <div className="shipping-options-container">
-      <h3 className="shipping-options-title">Selecciona un método de envío</h3>
-      
+    <CheckoutSection title="Selecciona un método de envío" stepNumber={1.5}>
       {/* Mostrar información de selección múltiple */}
       {showMultipleSelectionInfo && (
         <div className="shipping-selection-info alert alert-info" role="alert">
@@ -475,30 +474,15 @@ export const ShippingOptions = ({
       
       <div className="shipping-options-list">
         {shippingOptions.map((option) => (
-          <div 
-            key={option.id} 
-            className={`shipping-option ${selectedOptions.some(opt => opt.id === option.id) ? 'selected' : ''}`}
-            onClick={() => handleSelectOption(option)}
-          >
-            <div className="shipping-option-radio">
-              <input 
-                type="checkbox"
-                checked={selectedOptions.some(opt => opt.id === option.id)}
-                onChange={() => handleSelectOption(option)}
-                className="shipping-option-checkbox"
-              />
-            </div>
-            
-            <div className="shipping-option-details">
-              <ShippingPackage 
-                packageData={option}
-                selected={selectedOptions.some(opt => opt.id === option.id)}
-                cartItems={cartItems} 
-              />
-            </div>
-          </div>
+          <ShippingPackage 
+            key={option.id}
+            packageData={option}
+            selected={selectedOptions.some(opt => opt.id === option.id)}
+            cartItems={cartItems} 
+            onSelect={handleSelectOption}
+          />
         ))}
       </div>
-    </div>
+    </CheckoutSection>
   );
 }; 

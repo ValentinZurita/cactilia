@@ -2,7 +2,7 @@
  * Componente para mostrar un paquete de envío individual
  */
 import React, { useState } from 'react';
-import '../styles/ShippingPackage.css';
+import '../styles/ShippingPackage.css'; // <-- Restaurar la importación
 
 /**
  * Componente que muestra un paquete de envío
@@ -10,8 +10,9 @@ import '../styles/ShippingPackage.css';
  * @param {Object} props.packageData - Datos del paquete
  * @param {boolean} props.selected - Si está seleccionado
  * @param {Array} props.cartItems - Items del carrito para identificar productos incluidos
+ * @param {Function} props.onSelect - Función para manejar la selección del paquete
  */
-export const ShippingPackage = ({ packageData, selected = false, cartItems = [] }) => {
+export const ShippingPackage = ({ packageData, selected = false, cartItems = [], onSelect = () => {} }) => {
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [packagesExpanded, setPackagesExpanded] = useState(false);
   
@@ -621,11 +622,13 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
     return <i className="bi bi-box"></i>;
   };
   
-  // Manejar la selección de esta opción
+  // Manejar la selección (pasada desde el padre)
   const handleSelect = () => {
-    // Implementa la lógica para seleccionar este paquete
+    if (onSelect) {
+      onSelect(packageData);
+    }
   };
-  
+
   // Debug para valores de costo
   console.log(`💵 [DEBUG COSTOS] ${name}:`, {
     totalCost,
@@ -641,147 +644,157 @@ export const ShippingPackage = ({ packageData, selected = false, cartItems = [] 
     packageData.calculatedTotalCost = calculatedTotalCost;
   }
 
+  // Generar un ID único para el input
+  const optionId = `shipping-pkg-${packageData?.id || Math.random().toString(36).substring(7)}`;
+
   return (
     <div 
-      className={`shipping-package ${selected ? 'selected' : ''}`}
-      onClick={handleSelect}
+      className={`shipping-option ${selected ? 'active-shipping-option' : ''}`}
     >
-      <div className="shipping-package-header">
-        <div className="shipping-package-icon">
-          {getShippingIcon()}
-        </div>
-        <div className="shipping-package-info">
-          <h3>{name} {carrier && `- ${carrier}`}</h3>
-          <div className="shipping-package-details">
-            {displayDeliveryTime ? (
-              <div className="shipping-delivery-time">
-                <i className="bi bi-clock"></i>
-                <span>{displayDeliveryTime}</span>
+      <div className="form-check w-100">
+        <input 
+          className="form-check-input"
+          type="checkbox"
+          id={optionId}
+          checked={selected}
+          onChange={handleSelect}
+          aria-label={`Seleccionar opción de envío: ${name}`}
+        />
+        <label
+          className="form-check-label d-block"
+          htmlFor={optionId}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="shipping-package-header d-flex align-items-center">
+            <span className="me-2">{getShippingIcon()}</span>
+            <div className="shipping-package-info flex-grow-1">
+              <h3>{name} {carrier && `- ${carrier}`}</h3>
+              <div className="shipping-package-details">
+                {displayDeliveryTime ? (
+                  <div className="shipping-delivery-time">
+                    <i className="bi bi-clock"></i>
+                    <span>{displayDeliveryTime}</span>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-        </div>
-        {/* Mostrar costo total real basado en el número de paquetes */}
-        <div className="shipping-package-price">
-          {calculatedTotalCost === 0 ? (
-            <span className="free-shipping">GRATIS</span>
-          ) : (
-            <>
-              {packages.length > 1 ? (
-                <div className="shipping-total-price">
-                  {packages.length > 1 && packages.some(pkg => Math.abs(pkg.price - packages[0].price) > 5) ? (
-                    <span className="shipping-total-cost">Desde</span>
-                  ) : (
-                    <span className="shipping-total-cost">{packages.length} paquetes</span>
-                  )}
-                  <span>{formattedTotalCost}</span>
-                </div>
+            </div>
+            <div className="shipping-package-price ms-auto">
+              {calculatedTotalCost === 0 ? (
+                <span className="free-shipping">GRATIS</span>
               ) : (
-                <span>{formattedTotalCost}</span>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-      
-      <div className="shipping-package-body">
-        <div className="shipping-package-summary">
-          <div className="summary-pill">
-            <i className="bi bi-boxes"></i>
-            <span>{totalProductUnits} producto{totalProductUnits !== 1 ? 's' : ''}</span>
-          </div>
-          
-          <div className="summary-pill">
-            <i className="bi bi-weight"></i>
-            <span>{totalWeight} kg</span>
-          </div>
-          
-          {maxProductsPerPackage && (
-            <div className="summary-pill">
-              <i className="bi bi-box"></i>
-              <span>Máx. {maxProductsPerPackage} producto{maxProductsPerPackage !== 1 ? 's' : ''}/paquete</span>
-            </div>
-          )}
-          
-          {maxWeightPerPackage && (
-            <div className="summary-pill">
-              <i className="bi bi-weight"></i>
-              <span>Máx. {maxWeightPerPackage} kg/paquete</span>
-            </div>
-          )}
-          
-          {/* Mostrar cantidad de paquetes si hay más de uno */}
-          {packages.length > 1 && (
-            <div className="summary-pill">
-              <i className="bi bi-archive"></i>
-              <span>{packages.length} paquetes</span>
-            </div>
-          )}
-          
-          <button 
-            className="details-toggle" 
-            onClick={(e) => {
-              e.stopPropagation();
-              setDetailsExpanded(!detailsExpanded);
-            }}
-            type="button"
-          >
-            {detailsExpanded ? <i className="bi bi-chevron-up"></i> : <i className="bi bi-chevron-down"></i>}
-            <span>{detailsExpanded ? 'Ocultar detalles' : 'Ver detalles'}</span>
-          </button>
-        </div>
-        
-        {/* INFORMACIÓN UNIFICADA DE PAQUETES: Versión mejorada y única */}
-        {detailsExpanded && (
-          <div className="packages-info-list">
-            {packages.map((pkg, index) => {
-              // Formatear el precio individual de este paquete específico
-              const formattedPackagePrice = pkg.price === 0 
-                ? 'GRATIS' 
-                : new Intl.NumberFormat('es-MX', {
-                    style: 'currency',
-                    currency: 'MXN',
-                    minimumFractionDigits: 2
-                  }).format(pkg.price);
-              
-              return (
-                <div key={`pkg_info_${pkg.id}`} className="package-info-item">
-                  <div className="package-info-header">
-                    <div className="package-info-title">
-                      Paquete {index + 1} 
-                      <span className="package-weight-badge">
-                        {pkg.weight.toFixed(2)} kg
-                      </span>
+                <>
+                  {packages.length > 1 ? (
+                    <div className="shipping-total-price">
+                      {packages.length > 1 && packages.some(pkg => Math.abs(pkg.price - packages[0].price) > 5) ? (
+                        <span className="shipping-total-cost">Desde</span>
+                      ) : (
+                        <span className="shipping-total-cost">{packages.length} paquetes</span>
+                      )}
+                      <span>{formattedTotalCost}</span>
                     </div>
-                    <div className="package-info-price">{formattedPackagePrice}</div>
-                  </div>
-                  
-                  {/* Tiempo de entrega */}
-                  {displayDeliveryTime && (
-                    <div className="package-info-delivery">
-                      <i className="bi bi-clock"></i>
-                      <span>{displayDeliveryTime}</span>
-                    </div>
+                  ) : (
+                    <span>{formattedTotalCost}</span>
                   )}
-                  
-                  {/* Productos del paquete - FIXED: Ya no muestra peso redundante del producto */}
-                  <div className="package-info-products">
-                    {pkg.products && pkg.products.length > 0 ? (
-                      pkg.products.map((product, pidx) => (
-                        <span key={`info_prod_${pkg.id}_${product.id}_${pidx}`} className="package-info-product">
-                          {product.name}{product.quantity > 1 ? ` (x${product.quantity})` : ''}
-                          {pidx < pkg.products.length - 1 ? ', ' : ''}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="package-info-empty">No hay productos en este paquete</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                </>
+              )}
+            </div>
           </div>
-        )}
+          
+          <div className="shipping-package-body">
+            <div className="shipping-package-summary">
+              <div className="summary-pill">
+                <i className="bi bi-boxes"></i>
+                <span>{totalProductUnits} producto{totalProductUnits !== 1 ? 's' : ''}</span>
+              </div>
+              
+              <div className="summary-pill">
+                <i className="bi bi-weight"></i>
+                <span>{totalWeight} kg</span>
+              </div>
+              
+              {maxProductsPerPackage && (
+                <div className="summary-pill">
+                  <i className="bi bi-box"></i>
+                  <span>Máx. {maxProductsPerPackage} producto{maxProductsPerPackage !== 1 ? 's' : ''}/paquete</span>
+                </div>
+              )}
+              
+              {maxWeightPerPackage && (
+                <div className="summary-pill">
+                  <i className="bi bi-weight"></i>
+                  <span>Máx. {maxWeightPerPackage} kg/paquete</span>
+                </div>
+              )}
+              
+              {packages.length > 1 && (
+                <div className="summary-pill">
+                  <i className="bi bi-archive"></i>
+                  <span>{packages.length} paquetes</span>
+                </div>
+              )}
+              
+              <button 
+                className="details-toggle" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDetailsExpanded(!detailsExpanded);
+                }}
+                type="button"
+              >
+                {detailsExpanded ? <i className="bi bi-chevron-up"></i> : <i className="bi bi-chevron-down"></i>}
+                <span>{detailsExpanded ? 'Ocultar detalles' : 'Ver detalles'}</span>
+              </button>
+            </div>
+            
+            {detailsExpanded && (
+              <div className="packages-info-list">
+                {packages.map((pkg, index) => {
+                  const formattedPackagePrice = pkg.price === 0 
+                    ? 'GRATIS' 
+                    : new Intl.NumberFormat('es-MX', {
+                        style: 'currency',
+                        currency: 'MXN',
+                        minimumFractionDigits: 2
+                      }).format(pkg.price);
+                  
+                  return (
+                    <div key={`pkg_info_${pkg.id}`} className="package-info-item">
+                      <div className="package-info-header">
+                        <div className="package-info-title">
+                          Paquete {index + 1} 
+                          <span className="package-weight-badge">
+                            {pkg.weight.toFixed(2)} kg
+                          </span>
+                        </div>
+                        <div className="package-info-price">{formattedPackagePrice}</div>
+                      </div>
+                      
+                      {displayDeliveryTime && (
+                        <div className="package-info-delivery">
+                          <i className="bi bi-clock"></i>
+                          <span>{displayDeliveryTime}</span>
+                        </div>
+                      )}
+                      
+                      <div className="package-info-products">
+                        {pkg.products && pkg.products.length > 0 ? (
+                          pkg.products.map((product, pidx) => (
+                            <span key={`info_prod_${pkg.id}_${product.id}_${pidx}`} className="package-info-product">
+                              {product.name}{product.quantity > 1 ? ` (x${product.quantity})` : ''}
+                              {pidx < pkg.products.length - 1 ? ', ' : ''}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="package-info-empty">No hay productos en este paquete</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </label>
       </div>
     </div>
   );
