@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { HeroSection, HomeCarousel, HomeSection, ProductCarousel } from '../components/home-page/index.js'
+import { SkeletonHero, SkeletonCarousel } from '../components/skeletons/index.js'
 import '../../../styles/global.css'
 import './../../public/styles/homepage.css'
+import './../../public/styles/skeletons.css'
 import { heroImages } from '../../../shared/constants/images.js'
 import { getCollectionImages } from '../../admin/services/collectionsService.js'
 import { ContentService } from '../../admin/services/contentService.js'
@@ -67,88 +69,81 @@ export const HomePage = () => {
   useEffect(() => {
     const loadPageData = async () => {
       try {
-        setLoading(true)
+        // setLoading(true) ya no es necesario aquí si el estado inicial es true
 
         // 1. Cargar datos principales en paralelo
-
-        // Definir la promesa de carga de contenido con su propio catch
         const contentServicePromise = ContentService.getPageContent('home', 'published')
           .catch((err) => {
             console.error('Error cargando contenido de la página:', err)
-            return { ok: false, error: err, data: null } // Objeto de error consistente
+            return { ok: false, error: err, data: null }
           })
 
-        // Ejecutar todas las promesas y obtener los resultados
-        const results = await Promise.all([
-          // Llamar directamente a las funciones optimizadas
-          getFeaturedProductsForHome().then(result => {
-            if (result.ok) setFeaturedProducts(result.data)
-            else console.error('Error cargando productos destacados:', result.error)
-          }),
-          getFeaturedCategoriesForHome().then(result => {
-            if (result.ok) setFeaturedCategories(result.data)
-            else console.error('Error cargando categorías destacadas:', result.error)
-          }),
-          contentServicePromise,         // Usar la promesa ya definida
+        const results = await Promise.allSettled([ // Usar allSettled para manejar errores individuales
+          getFeaturedProductsForHome().catch(err => ({ ok: false, error: err, data: [] })),
+          getFeaturedCategoriesForHome().catch(err => ({ ok: false, error: err, data: [] })),
+          contentServicePromise,
         ])
 
-        // Extraer el resultado del contenido de la página (tercer elemento)
-        const contentResult = results[2]
+        // Procesar resultados individuales
+        const productsResult = results[0];
+        const categoriesResult = results[1];
+        const contentResult = results[2];
 
-        // 2. Procesar resultado del contenido
-        let pageContentData = null
-        if (contentResult?.ok && contentResult?.data) {
-          pageContentData = contentResult.data
-          setPageData(pageContentData) // Actualizar estado de pageData
-
-          // Una vez que tenemos la estructura principal, consideramos la carga inicial completa.
-          // Las secciones internas manejarán la carga de sus propios datos (ej. colecciones).
-          setLoading(false)
-
-          // 3. Cargar imágenes de colecciones (si es necesario y tenemos datos)
-          const heroSection = pageContentData.sections?.hero
-          const farmCarouselSection = pageContentData.sections?.farmCarousel
-
-          const collectionPromises = []
-          if (heroSection?.useCollection && heroSection?.collectionId) {
-            // Solo añadir la promesa si la colección no está ya cargada o en proceso
-            if (!collectionImages[heroSection.collectionId]) {
-              collectionPromises.push(loadCollectionImages(heroSection.collectionId))
-            }
-          }
-          if (farmCarouselSection?.useCollection && farmCarouselSection?.collectionId) {
-            // Solo añadir la promesa si la colección no está ya cargada o en proceso
-            if (!collectionImages[farmCarouselSection.collectionId]) {
-              collectionPromises.push(loadCollectionImages(farmCarouselSection.collectionId))
-            }
-          }
-          // Esperar a que las colecciones necesarias se carguen (si las hay)
-          if (collectionPromises.length > 0) {
-            // Usamos Promise.allSettled para no detenernos si una colección falla
-            await Promise.allSettled(collectionPromises)
-          }
-
+        if (productsResult.status === 'fulfilled' && productsResult.value.ok) {
+          setFeaturedProducts(productsResult.value.data);
         } else {
-          if (contentResult?.error) {
-            console.warn('No se pudo cargar el contenido de la página debido a un error previo.')
-          } else {
-            console.warn('No se encontró contenido publicado para la página home o ContentService no está disponible.')
+          console.error('Error cargando productos destacados:', productsResult.reason || productsResult.value?.error);
+        }
+
+        if (categoriesResult.status === 'fulfilled' && categoriesResult.value.ok) {
+          setFeaturedCategories(categoriesResult.value.data);
+        } else {
+          console.error('Error cargando categorías destacadas:', categoriesResult.reason || categoriesResult.value?.error);
+        }
+
+        let pageContentData = null;
+        if (contentResult.status === 'fulfilled' && contentResult.value?.ok && contentResult.value?.data) {
+          pageContentData = contentResult.value.data;
+          setPageData(pageContentData);
+
+          // 3. Cargar imágenes de colecciones (si es necesario)
+          const heroSection = pageContentData.sections?.hero;
+          const farmCarouselSection = pageContentData.sections?.farmCarousel;
+          const collectionPromises = [];
+
+          if (heroSection?.useCollection && heroSection?.collectionId && !collectionImages[heroSection.collectionId]) {
+            collectionPromises.push(loadCollectionImages(heroSection.collectionId));
           }
-          setPageData(null) // Asegurarse de que pageData sea null si falla la carga
-          setLoading(false) // También desactivar loading si la carga principal falla
+          if (farmCarouselSection?.useCollection && farmCarouselSection?.collectionId && !collectionImages[farmCarouselSection.collectionId]) {
+            collectionPromises.push(loadCollectionImages(farmCarouselSection.collectionId));
+          }
+
+          if (collectionPromises.length > 0) {
+            await Promise.allSettled(collectionPromises);
+          }
+        } else {
+          if (contentResult.status === 'rejected' || contentResult.value?.error) {
+            console.warn('No se pudo cargar el contenido de la página:', contentResult.reason || contentResult.value?.error);
+          } else {
+            console.warn('No se encontró contenido publicado para la página home.');
+          }
+          setPageData(null);
         }
 
       } catch (error) {
-        // Este catch atraparía errores inesperados no manejados en los .catch individuales
-        console.error('Error inesperado durante la carga de datos de la página:', error)
-        setPageData(null) // Resetear pageData en caso de error no previsto
-        setLoading(false) // Asegurarse de desactivar loading en caso de error general
+        console.error('Error inesperado durante la carga de datos de la página:', error);
+        setPageData(null);
+        setFeaturedProducts([]); // Asegurar reseteo en error general
+        setFeaturedCategories([]);
+      } finally {
+        // Importante: Poner setLoading(false) en el finally
+        // para asegurar que se oculte el skeleton incluso si hay errores.
+        setLoading(false);
       }
     }
 
     loadPageData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Dependencias vacías para que se ejecute solo una vez
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------- HELPERS ----------------------
   /**
@@ -257,22 +252,13 @@ export const HomePage = () => {
   // ---------------------- RENDER ----------------------
   // Si estamos cargando los datos iniciales (contenido de la página)
   if (loading) {
-    // Renderizar un layout base con Skeletons.
-    // **RECOMENDACIÓN:** Reemplaza estos divs con tus componentes Skeleton reales.
     return (
-      <div className="home-section-loading">
-        {/* Skeleton para Hero Section */}
-        <div style={{
-          height: '100vh',
-          background: '#e0e0e0', // Gris claro para simular skeleton
-          marginBottom: '2rem',
-        }} />
-        {/* Skeleton para una sección de contenido (ej. carrusel) */}
-        <div style={{
-          minHeight: '400px',
-          background: '#f5f5f5', // Gris más claro
-        }} />
-      </div>
+      <>
+        <SkeletonHero />
+        {/* Mostrar dos carruseles skeleton como ejemplo */}
+        <SkeletonCarousel count={4} />
+        <SkeletonCarousel count={4} />
+      </>
     )
   }
 
