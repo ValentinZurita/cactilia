@@ -94,6 +94,8 @@
     width: 50%;
     background-color: #f9f9f9;
     position: relative;
+    aspect-ratio: 1 / 1; /* Mantener proporción cuadrada */
+    overflow: hidden;   /* Prevenir desbordamiento */
 }
 
 .prod-modal__image {
