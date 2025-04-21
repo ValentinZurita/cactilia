@@ -74,7 +74,7 @@ export const ProfileSidebar = ({ displayName, email, photoURL }) => {
           className="rounded-circle mb-2 user-avatar"
         />
         <h5 className="mb-0 fs-6">{displayName || 'Usuario'}</h5>
-        <p className="text-muted small mb-0">{email}</p>
+        <p className="text-muted small mb-0 profile-email">{email}</p>
       </div>
 
       {/* Menú de navegación */}

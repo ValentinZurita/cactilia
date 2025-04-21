@@ -1175,3 +1175,12 @@
         font-size: 0.7rem;
     }
 }
+
+/* Asegurar que el email en el sidebar se ajuste en pantallas pequeñas */
+.profile-email {
+    overflow-wrap: break-word; /* Permite romper palabras largas si es necesario */
+    word-wrap: break-word; /* Soporte alternativo */
+    word-break: break-all; /* Considerar si break-word no es suficiente */
+    hyphens: auto; /* Ayuda con la división silábica si el navegador lo soporta */
+    white-space: normal; /* Asegurar que no esté como nowrap */
+}
