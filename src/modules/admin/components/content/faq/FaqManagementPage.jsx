@@ -1,6 +1,7 @@
 import React from 'react'; // Quitar useState, useEffect
 import { FaqEditor } from './FaqEditor';
 import { useFaqManagement } from './useFaqManagement'; // Importar el nuevo hook
+import { AlertMessage } from '../shared/AlertMessage'; // Importar AlertMessage
 // Importar Spinner si se usa
 // import { Spinner } from '../../../../shared/components/spinner/Spinner.jsx';
 
@@ -13,17 +14,19 @@ export const FaqManagementPage = () => {
     initialData,
     currentData,
     status,
-    error,
+    // error, // Ya no se usa directamente para mostrar, se usa alertInfo
+    alertInfo, // Obtener el estado de la alerta
     saveDraft,
     publishChanges,
-    setCurrentData // Necesario para que FaqEditor actualice el estado del hook
+    setCurrentData,
+    clearAlert // Obtener la función para limpiar la alerta
   } = useFaqManagement();
 
   // Mapeo de status a isLoading para los componentes hijos
   const isLoading = status === 'saving' || status === 'publishing' || status === 'loading';
 
   // Renderizado condicional basado en el estado
-  if (status === 'loading') {
+  if (status === 'loading' && !alertInfo.show) { // No mostrar loading si ya hay una alerta de error de carga
     return <div className="container mt-4 text-center"><p>Cargando...</p></div>; // O <Spinner />
   }
 
@@ -34,10 +37,18 @@ export const FaqManagementPage = () => {
 
   return (
     <div className="container-fluid mt-3">
+      {/* Renderizar la alerta */}
+      <AlertMessage 
+        show={alertInfo.show}
+        type={alertInfo.type}
+        message={alertInfo.message}
+        onClose={clearAlert} 
+      />
+      
       <h2 className="mb-4">Gestionar Preguntas Frecuentes (FAQ)</h2>
 
       {/* Renderizar el editor solo si hay datos iniciales (o un estado idle después de cargar) */}
-      {(initialData || status === 'idle') && (
+      {(initialData || status !== 'loading') && ( // Renderizar editor si no está cargando (incluso si hubo error de carga)
         <FaqEditor
           initialData={initialData} // Pasa los datos iniciales/actualizados
           // FaqEditor necesita actualizar currentData en el hook
@@ -54,7 +65,8 @@ export const FaqManagementPage = () => {
              // Aquí podrías añadir feedback de éxito (toast)
           }}
           isLoading={isLoading}
-          error={status === 'error' ? error : null} // Pasar el error solo si el status es 'error'
+          // Pasar el error directamente aquí es opcional, ya que se muestra arriba
+          // error={status === 'error' ? error : null} 
         />
       )}
     </div>
