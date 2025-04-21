@@ -14,6 +14,8 @@ import { getOrderById, getUserOrders } from '../../shop/features/order/services/
 
 import { ORDER_STATUS_MAP } from '../constants/orderConstants.js';
 
+const ORDERS_PER_PAGE = 10; // Número de órdenes a cargar por página
+
 /**
  * Convierte el estado interno de un pedido a un estado de visualización.
  *
@@ -62,40 +64,32 @@ const formatOrderDate = (timestamp) => {
  * @returns {Object} - Estados y funciones para gestionar órdenes.
  */
 export const useOrders = () => {
-  // Acceso a Redux
   const dispatch = useDispatch();
   const { uid, status } = useSelector(state => state.auth);
 
-  // Estados para el listado de órdenes
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Estado de carga general
   const [error, setError] = useState(null);
-
-  // Estados para filtrar órdenes
   const [filter, setFilter] = useState('all');
-
-  // Estados para detalle de una orden específica
   const [order, setOrder] = useState(null);
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState(null);
 
-  /**
-   * Cambia el filtro de estado de las órdenes (all, processing, delivered, cancelled...).
-   *
-   * @param {string} newFilter - Nuevo filtro seleccionado.
-   */
+  // Estados para paginación
+  const [lastVisible, setLastVisible] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false); // Estado de carga para páginas siguientes
+
   const changeFilter = useCallback((newFilter) => {
     setFilter(newFilter);
+    // TODO: Resetear paginación y volver a cargar si el filtro cambia?
+    // Por ahora, el filtro solo aplica a las órdenes ya cargadas.
+    // Para filtrar en backend, la lógica de fetch tendría que incluir el filtro.
   }, []);
 
-  /**
-   * Retorna la lista de órdenes filtradas según el estado (filter).
-   *
-   * @returns {Array} - Lista de órdenes filtradas.
-   */
   const getFilteredOrders = useCallback(() => {
+    // Esta función ahora filtra las órdenes ya cargadas en el frontend.
     if (filter === 'all') return orders;
-
     return orders.filter((order) => {
       const displayStatus = mapOrderStatusToDisplay(order.status);
       return displayStatus === filter;
@@ -103,26 +97,40 @@ export const useOrders = () => {
   }, [filter, orders]);
 
   /**
-   * Realiza la consulta para obtener todas las órdenes del usuario actual.
-   * Maneja los mensajes de error y actualiza los estados de carga.
+   * Obtiene órdenes (primera página o siguientes).
+   *
+   * @param {boolean} loadMore - Indica si se están cargando más órdenes o es la carga inicial.
    */
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (loadMore = false) => {
     if (status !== 'authenticated' || !uid) {
-      setLoading(false);
+      if (!loadMore) setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true); // Carga inicial
+      setOrders([]); // Limpiar órdenes antes de la carga inicial
+      setLastVisible(null);
+      setHasMore(true);
+    }
     setError(null);
 
     try {
-      const result = await getUserOrders(uid);
+      // Llamar a getUserOrders con parámetros de paginación
+      const result = await getUserOrders(
+        uid,
+        ORDERS_PER_PAGE,
+        loadMore ? lastVisible : null // Usar lastVisible si se carga más
+      );
 
       if (result.ok) {
-        setOrders(result.data);
+        setOrders(prevOrders => loadMore ? [...prevOrders, ...result.data] : result.data);
+        setLastVisible(result.lastVisible); // Guardar el último documento visible
+        setHasMore(result.hasMore); // Actualizar si hay más páginas
       } else {
         setError(result.error);
-
         dispatch(addMessage({
           type: 'error',
           text: 'Error al cargar tus pedidos. Por favor, intenta de nuevo.',
@@ -132,16 +140,28 @@ export const useOrders = () => {
     } catch (err) {
       console.error('Error obteniendo órdenes:', err);
       setError(err.message || 'Error al cargar pedidos');
-
       dispatch(addMessage({
         type: 'error',
         text: 'Error al cargar tus pedidos',
         autoHide: true
       }));
     } finally {
-      setLoading(false);
+      if (loadMore) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, [uid, status, dispatch]);
+  }, [uid, status, dispatch, lastVisible]); // <-- Incluir lastVisible en dependencias
+
+  /**
+   * Carga la siguiente página de órdenes.
+   */
+  const fetchNextPage = useCallback(() => {
+    if (hasMore && !loading && !loadingMore) {
+      fetchOrders(true); // Llama a fetchOrders indicando que es para cargar más
+    }
+  }, [hasMore, loading, loadingMore, fetchOrders]);
 
   /**
    * Realiza la consulta para obtener el detalle de una orden específica por su ID.
@@ -193,11 +213,11 @@ export const useOrders = () => {
   }, [dispatch]);
 
   /**
-   * Cargar las órdenes al montar el componente o cuando cambie el usuario.
+   * Cargar la primera página de órdenes al montar o cuando cambie el usuario.
    */
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    fetchOrders(false); // Carga inicial
+  }, [uid, status]); // Depender solo de uid y status para la carga inicial
 
   /**
    * Devuelve la lista de órdenes con campos formateados (fecha, estado, etc.).
@@ -222,27 +242,21 @@ export const useOrders = () => {
     }));
   }, [getFilteredOrders]);
 
-  // Retorno de estados y métodos que se usarán en los componentes
+  // Retornar los estados y funciones necesarios, incluyendo los de paginación
   return {
-    // Estados generales
-    loading,
+    orders, // Las órdenes actuales (ya filtradas si se usa getFilteredOrders)
+    loading: loading, // Carga inicial
+    loadingMore, // Carga de páginas siguientes
     error,
-    orders,
     filter,
-
-    // Estados para la orden específica
-    order,
+    changeFilter,
+    getFilteredOrders, // Función para filtrar en frontend
+    order, // Detalle de orden
     orderLoading,
     orderError,
-
-    // Funciones
-    fetchOrders,
     fetchOrderById,
-    changeFilter,
-    mapOrderStatusToDisplay,
-    formatOrderDate,
-
-    // Órdenes filtradas y formateadas
-    filteredOrders: getFormattedOrders()
+    fetchNextPage, // Función para cargar la siguiente página
+    hasMore, // Booleano que indica si hay más páginas
+    getFormattedOrders
   };
 };

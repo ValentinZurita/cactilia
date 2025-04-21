@@ -22,25 +22,33 @@ export const getOrderById = async (orderId) => {
 };
 
 /**
- * Obtiene todas las órdenes de un usuario
+ * Obtiene las órdenes de un usuario con paginación opcional
  *
  * @param {string} userId - ID del usuario
- * @returns {Promise<Object>} - Resultado de la operación
+ * @param {number} [pageSize] - Número de órdenes por página
+ * @param {DocumentSnapshot} [startAfterDoc] - Documento después del cual empezar
+ * @returns {Promise<Object>} - Resultado de la operación { ok, data, lastVisible, hasMore, error }
  */
-export const getUserOrders = async (userId) => {
+export const getUserOrders = async (userId, pageSize = null, startAfterDoc = null) => {
   if (!userId) {
     return { ok: false, error: 'ID de usuario no proporcionado' };
   }
 
   try {
+    const sortBy = ['createdAt', 'desc'];
+    const filters = [['userId', '==', userId]];
+
     return await apiService.getDocuments(
       ORDERS_COLLECTION,
-      [['userId', '==', userId]],
-      ['createdAt', 'desc']
+      filters,
+      sortBy,
+      '',
+      pageSize,
+      startAfterDoc
     );
   } catch (error) {
     console.error('Error al obtener las órdenes del usuario:', error);
-    return { ok: false, error: error.message };
+    return { ok: false, data: [], lastVisible: null, hasMore: false, error: error.message };
   }
 };
 

@@ -1,7 +1,7 @@
 import {
   doc, collection, getDoc, getDocs, query,
   where, orderBy, addDoc, updateDoc, deleteDoc,
-  serverTimestamp, writeBatch, setDoc,
+  serverTimestamp, writeBatch, setDoc, limit, startAfter
 } from 'firebase/firestore'
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js'
@@ -43,45 +43,73 @@ export const apiService = {
   },
 
   /**
-   * Obtiene una lista de documentos con filtros
+   * Obtiene una lista de documentos con filtros, ordenamiento y paginación
    *
    * @param {string} collectionName - Nombre de la colección
    * @param {Array} filters - Array de condiciones [campo, operador, valor]
    * @param {Array} sortBy - Array de ordenamiento [campo, dirección]
    * @param {string} path - Ruta adicional (opcional)
-   * @returns {Promise<Object>} - Resultado de la operación
+   * @param {number} pageSize - Número de documentos por página (opcional)
+   * @param {DocumentSnapshot} startAfterDoc - Documento después del cual empezar (opcional)
+   * @returns {Promise<Object>} - Resultado: { ok, data, lastVisible, hasMore, error }
    */
-  async getDocuments(collectionName, filters = [], sortBy = null, path = '') {
+  async getDocuments(collectionName, filters = [], sortBy = null, path = '', pageSize = null, startAfterDoc = null) {
     try {
       let collRef = path
         ? collection(FirebaseDB, path, collectionName)
         : collection(FirebaseDB, collectionName);
 
+      // Construir la query con filtros, ordenamiento, paginación
+      let queryConstraints = [];
+
       // Aplicar filtros
-      let queryRef = collRef;
       if (filters.length > 0) {
-        const queryFilters = filters.map(([field, operator, value]) =>
-          where(field, operator, value)
-        );
-        queryRef = query(collRef, ...queryFilters);
+        filters.forEach(([field, operator, value]) => {
+          queryConstraints.push(where(field, operator, value));
+        });
       }
 
-      // Aplicar ordenamiento
+      // Aplicar ordenamiento (NECESARIO para paginación consistente)
       if (sortBy) {
         const [field, direction = 'asc'] = Array.isArray(sortBy) ? sortBy : [sortBy, 'asc'];
-        queryRef = query(queryRef, orderBy(field, direction));
+        queryConstraints.push(orderBy(field, direction));
+      } else if (pageSize) {
+         // Si hay paginación, DEBE haber un orderBy para que startAfter funcione correctamente.
+         // Usar un campo común como 'createdAt' o el ID del documento si no se especifica sortBy.
+         // ¡¡IMPORTANTE!! Ajustar 'createdAt' si el campo de timestamp es diferente o no existe.
+         // Si no hay un campo común fiable, la paginación puede ser inconsistente.
+         console.warn(`Paginación sin orden explícito en ${collectionName}. Usando 'createdAt' descendente por defecto. Asegúrate de que este campo exista y esté indexado.`);
+         queryConstraints.push(orderBy('createdAt', 'desc')); // <-- Orden por defecto para paginación
       }
 
-      const snapshot = await getDocs(queryRef);
+
+      // Aplicar paginación (startAfter)
+      if (startAfterDoc) {
+        queryConstraints.push(startAfter(startAfterDoc));
+      }
+
+      // Aplicar paginación (limit)
+      if (pageSize) {
+        queryConstraints.push(limit(pageSize));
+      }
+
+      const finalQuery = query(collRef, ...queryConstraints); // Aplicar todas las restricciones
+
+
+      const snapshot = await getDocs(finalQuery); // Usar finalQuery
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
 
-      return { ok: true, data: docs, error: null };
+      const lastVisible = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+      const hasMore = pageSize ? docs.length === pageSize : false; // Hay más si obtuvimos una página completa
+
+      return { ok: true, data: docs, lastVisible, hasMore, error: null }; // <-- Devolver lastVisible y hasMore
     } catch (error) {
       console.error(`Error al obtener documentos ${collectionName}:`, error);
-      return { ok: false, error: error.message };
+      // Asegúrate de devolver la estructura esperada incluso en caso de error para consistencia
+      return { ok: false, data: [], lastVisible: null, hasMore: false, error: error.message };
     }
   },
 
