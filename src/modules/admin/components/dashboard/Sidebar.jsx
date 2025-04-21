@@ -38,7 +38,8 @@ export const Sidebar = ({ onLinkClick }) => {
     users: false,
     orders: false,
     media: false,
-    companyInfo: false
+    companyInfo: false,
+    content: false
   });
   const [userRole, setUserRole] = useState("admin");
   const dispatch = useDispatch();
@@ -199,9 +200,14 @@ export const Sidebar = ({ onLinkClick }) => {
             to="/admin/shoppage"
             label="Editor de Página de Tienda"
             onClick={handleNavClick}
-            icon="bi-shop-window"
+            icon="bi-shop"
           />
-
+          <SidebarItem
+            to="/admin/content/faq"
+            label="Gestionar FAQ"
+            onClick={handleNavClick}
+            icon="bi-patch-question"
+          />
           <SidebarItem
             to="/admin/contactpage"
             label="Editor de Página de Contacto"

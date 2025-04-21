@@ -44,6 +44,7 @@ const MediaUploadPage = lazyLoadNamed(() => import("../pages/MediaUploadPage"), 
 const HomePageManagementPage = lazyLoadNamed(() => import("../components/content/homepage/HomePageManagementPage"), "HomePageManagementPage");
 const ShopPageManagementPage = lazyLoadNamed(() => import("../components/content/shop/ShopPageManagementPage"), "ShopPageManagementPage");
 const ContactPageManagementPage = lazyLoadNamed(() => import("../components/content/contact/ContactPageManagementPage"), "ContactPageManagementPage");
+const FaqManagementPage = lazyLoadNamed(() => import("../components/content/faq/FaqManagementPage"), "FaqManagementPage");
 const OrderManagementPage = lazyLoadNamed(() => import('../components/orders/OrderManagementPage.jsx'), "OrderManagementPage");
 const ShippingManagementPage = lazyLoadNamed(() => import('../components/shipping/pages/ShippingManagementPage.jsx'), "ShippingManagementPage");
 const ShippingDebugTool = lazyLoadNamed(() => import('../components/dashboard/ShippingDebugTool.jsx'), "ShippingDebugTool");
@@ -122,6 +123,11 @@ const AdminRoutes = () => {
           <Route path="contactpage" element={
             <Suspense fallback={<SuspenseFallback />}>
               <ContactPageManagementPage />
+            </Suspense>
+          } />
+          <Route path="content/faq" element={
+            <Suspense fallback={<SuspenseFallback />}>
+              <FaqManagementPage />
             </Suspense>
           } />
 

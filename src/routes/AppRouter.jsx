@@ -23,6 +23,7 @@ const lazyLoadNamed = (importFn, componentName) => {
 // Lazy loading de páginas con exportaciones nombradas
 const HomePage = lazyLoadNamed(() => import("../modules/public/pages/HomePage.jsx"), "HomePage");
 const ContactPage = lazyLoadNamed(() => import("../modules/public/pages/ContactPage.jsx"), "ContactPage");
+const FaqPage = lazyLoadNamed(() => import("../modules/faq/pages/FaqPage.jsx"), "FaqPage");
 const CartPage = lazyLoadNamed(() => import("../modules/shop/pages/CartPage.jsx"), "CartPage");
 const CheckoutPage = lazyLoadNamed(() => import('../modules/shop/pages/CheckoutPage.jsx'), "CheckoutPage");
 
@@ -66,6 +67,13 @@ export const AppRouter = () => {
         <Route path="contacto" element={
           <Suspense fallback={<SuspenseFallback />}>
             <ContactPage />
+          </Suspense>
+        } />
+
+        {/** Nueva ruta: /faq */}
+        <Route path="faq" element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <FaqPage />
           </Suspense>
         } />
 
