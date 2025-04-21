@@ -26,12 +26,18 @@ export const UserManagementPage = () => {
   // Obtener el rol del usuario actual (admin/superadmin)
   useEffect(() => {
     const checkCurrentUserRole = async () => {
-      const role = await getUserRole();
-      setCurrentUserRole(role);
-      setLoading(false);
+      try { // Added try-catch for safety
+        const role = await getUserRole();
+        setCurrentUserRole(role || "user"); // Default to 'user' if role is null/undefined
+      } catch (error) {
+        console.error("Error getting user role:", error);
+        setCurrentUserRole("user"); // Default on error
+      } finally {
+        setLoading(false);
+      }
     };
 
-    checkCurrentUserRole().then(r => r);
+    checkCurrentUserRole();
   }, []);
 
   // Función auxiliar para navegar
@@ -56,9 +62,9 @@ export const UserManagementPage = () => {
   return (
     <div className="container-fluid px-0">
       <h2 className="mb-4">
-        {type === "admins" ? "Gestión de Administradores" : "Gestión de Clientes"}
-        {mode === "view" && " - Detalles"}
-      </h2>
+          {type === "admins" ? "Gestión de Administradores" : "Gestión de Clientes"}
+          {mode === "view" && " - Detalles"}
+        </h2>
 
       {/* Renderizado condicional basado en el modo */}
       {mode === "view" ? (

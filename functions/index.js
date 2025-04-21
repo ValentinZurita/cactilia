@@ -21,6 +21,8 @@ const invoiceEmails = require('./notifications/invoiceEmails');
 
 // Import auth functions
 const authFunctions = require("./auth/setCustomClaims");
+// const verificationFunction = require("./auth/markEmailVerified"); // No longer needed
+const setupDemoFunction = require("./auth/setupDemoUsers"); // Import the new setup function
 
 // Import test function
 const { basicTest } = require("./payment/test-function");
@@ -49,6 +51,8 @@ exports.detachPaymentMethod = paymentMethodFunctions.detachPaymentMethod;
 exports.setCustomClaims = authFunctions.setCustomClaims;
 exports.deleteUser = authFunctions.deleteUser;
 exports.getUsersDetail = authFunctions.getUsersDetail;
+// exports.markDemoEmailVerified = verificationFunction.markDemoEmailVerified; // Remove or comment out
+exports.setupDemoUsers = setupDemoFunction.setupDemoUsers; // Export the new setup function
 
 // Export test function
 exports.basicTest = basicTest;
