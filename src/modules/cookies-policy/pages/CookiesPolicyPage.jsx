@@ -41,9 +41,10 @@ export const CookiesPolicyPage = () => {
 
   return (
     <div className="container py-5">
-      {!isPreview && (
+      {/* 7. Helmet: Renderizar solo si NO está cargando y NO es preview */}
+      {!loading && !isPreview && (
         <Helmet>
-          <title>{`${pageTitle} - Cactilia`}</title>
+          <title>{`${pageTitle} - Cactilia` /* Ajusta "Cactilia" */}</title>
           <meta name="description" content={pageDescription} />
         </Helmet>
       )}
