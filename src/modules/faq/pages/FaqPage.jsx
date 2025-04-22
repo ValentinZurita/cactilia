@@ -42,13 +42,14 @@ export const FaqPage = () => {
 
   return (
     <div className="container py-5">
-      {/* 6. Añadir Helmet para SEO (Comentado temporalmente para depuración) */}
-      {/* 
-      <Helmet>
-        <title>FAQ - Cactilia (Debug)</title>
-        <meta name="description" content="Descripción estática para depurar Helmet." />
-      </Helmet>
-      */}
+      {/* 6. Añadir Helmet para SEO (Condicionalmente, si no es preview) */}
+      {!isPreview && (
+        <Helmet>
+          <title>{`${pageTitle} - Cactilia` /* Ajusta "Cactilia" al nombre de tu sitio */}</title>
+          <meta name="description" content={pageDescription} />
+          {/* Puedes añadir más meta tags aquí si es necesario */} 
+        </Helmet>
+      )}
 
       <div className="text-center mb-5">
         <Logo />
