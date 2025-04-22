@@ -13,6 +13,7 @@ export const ShippingManagementPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [submissionError, setSubmissionError] = useState(null);
+  const [editingLoading, setEditingLoading] = useState(false);
 
   const {
     shippingRules,
@@ -28,8 +29,21 @@ export const ShippingManagementPage = () => {
 
   // Cargar la regla para editar si estamos en modo 'edit'
   useEffect(() => {
+    setSubmissionError(null);
+
     if (mode === 'edit' && id) {
-      getShippingRuleById(id);
+      setEditingLoading(true);
+
+      const promise = getShippingRuleById(id);
+      if (promise && typeof promise.finally === 'function') {
+        promise.finally(() => {
+          setEditingLoading(false);
+        });
+      } else {
+        setEditingLoading(false);
+      }
+    } else {
+      setEditingLoading(false);
     }
   }, [mode, id, getShippingRuleById]);
 
@@ -133,8 +147,20 @@ export const ShippingManagementPage = () => {
           />
         );
       case 'edit':
-        // Adaptar los datos existentes al formato del nuevo formulario
-        const adaptedInitialData = selectedRule ? {
+        if (editingLoading) {
+          return <p>Cargando datos de la regla...</p>;
+        }
+        
+        if (!selectedRule || selectedRule.id !== id) {
+          console.warn('Selected rule ID does not match URL ID or rule not loaded yet.', { ruleIdFromUrl: id, selectedRuleId: selectedRule?.id });
+          if (!editingLoading) {
+            return <p>Error: No se pudieron cargar los datos correctos para la regla con ID {id}.</p>;
+          }
+          return <p>Cargando datos de la regla...</p>;
+        }
+
+        const adaptedInitialData = {
+          id: selectedRule.id,
           name: selectedRule.zona || '',
           zipcodes: selectedRule.zipcodes || [selectedRule.zipcode].filter(Boolean),
           activo: selectedRule.activo !== undefined ? selectedRule.activo : true,
@@ -164,7 +190,7 @@ export const ShippingManagementPage = () => {
                 maxProductsPerPackage: option.configuracion_paquetes?.maximo_productos_por_paquete || 10
               }))
             : []
-        } : {};
+        };
         
         return (
           <ShippingForm
