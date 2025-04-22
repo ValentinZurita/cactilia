@@ -1,5 +1,5 @@
-import React from 'react';
-import { CONTACT_INFO } from '../../../../shared/constants/index.js'
+import React from 'react'
+import { CONTACT_INFO } from '../../../../../shared/constants/index.js'
 
 
 /**
@@ -21,8 +21,8 @@ const renderContactInfoItem = (iconClassName, title, text) => {
         <p className="info-text">{text}</p>
       </div>
     </div>
-  );
-};
+  )
+}
 
 
 /**
@@ -35,10 +35,10 @@ const renderContactInfoItem = (iconClassName, title, text) => {
 export const ContactInfo = () => {
   return (
     <div className="contact-details">
-      {renderContactInfoItem("bi bi-telephone-fill", "Teléfono", CONTACT_INFO.phone)}
-      {renderContactInfoItem("bi bi-envelope-fill", "Email", CONTACT_INFO.email)}
-      {renderContactInfoItem("bi bi-geo-alt-fill", "Dirección", CONTACT_INFO.address)}
-      {renderContactInfoItem("bi bi-clock-fill", "Horario", "Lunes a Viernes: 9am - 6pm")}
+      {renderContactInfoItem('bi bi-telephone-fill', 'Teléfono', CONTACT_INFO.phone)}
+      {renderContactInfoItem('bi bi-envelope-fill', 'Email', CONTACT_INFO.email)}
+      {renderContactInfoItem('bi bi-geo-alt-fill', 'Dirección', CONTACT_INFO.address)}
+      {renderContactInfoItem('bi bi-clock-fill', 'Horario', 'Lunes a Viernes: 9am - 6pm')}
     </div>
-  );
-};
+  )
+}

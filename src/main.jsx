@@ -6,7 +6,6 @@ import { Provider } from 'react-redux'
 import { store, persistor } from './store/store.js'
 import { PersistGate } from 'redux-persist/integration/react'
 import { HelmetProvider } from 'react-helmet-async'
-// Importamos el script de la scrollbar
 import './scripts/scrollbarEffect.js'
 
 createRoot(document.getElementById('root')).render(

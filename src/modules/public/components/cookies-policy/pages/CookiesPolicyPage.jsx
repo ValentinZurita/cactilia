@@ -1,16 +1,16 @@
-import React, { useMemo } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { usePageContent } from '../../../hooks/usePageContent';
-import { Logo } from '../../../shared/components/logo/Logo';
-import DOMPurify from 'dompurify';
-import { Spinner } from '../../../shared/components/spinner/Spinner';
+import React, { useMemo } from 'react'
+import { Helmet } from 'react-helmet-async'
+import { usePageContent } from '../../../../../hooks/usePageContent.js'
+import { Logo } from '@components/logo/Logo.jsx'
+import DOMPurify from 'dompurify'
+import { Spinner } from '@components/spinner/Spinner.jsx'
 
-const COOKIES_PAGE_ID = 'cookies-policy';
+const COOKIES_PAGE_ID = 'cookies-policy'
 const DEFAULT_COOKIES_CONTENT = {
   pageTitle: 'Política de Cookies',
   pageDescription: 'Información sobre el uso de cookies en nuestro sitio web.',
   mainContent: '',
-};
+}
 
 /**
  * Página pública que muestra la Política de Cookies.
@@ -19,25 +19,25 @@ const DEFAULT_COOKIES_CONTENT = {
 export const CookiesPolicyPage = () => {
   const { pageData, loading, error, isPreview } = usePageContent(
     COOKIES_PAGE_ID,
-    DEFAULT_COOKIES_CONTENT
-  );
+    DEFAULT_COOKIES_CONTENT,
+  )
 
   const sanitizedMainContent = useMemo(() => {
     if (pageData?.mainContent) {
-      return DOMPurify.sanitize(pageData.mainContent);
+      return DOMPurify.sanitize(pageData.mainContent)
     }
-    return '';
-  }, [pageData?.mainContent]);
+    return ''
+  }, [pageData?.mainContent])
 
   if (loading) {
     return (
       <div className="container text-center py-5">
         <Spinner />
       </div>
-    );
+    )
   }
 
-  const { pageTitle, pageDescription } = pageData;
+  const { pageTitle, pageDescription } = pageData
 
   return (
     <div className="container py-5">
@@ -63,8 +63,9 @@ export const CookiesPolicyPage = () => {
       {sanitizedMainContent ? (
         <div dangerouslySetInnerHTML={{ __html: sanitizedMainContent }} />
       ) : (
-        !error && <p className="text-center text-muted">El contenido de la política de cookies aún no ha sido definido.</p>
+        !error &&
+        <p className="text-center text-muted">El contenido de la política de cookies aún no ha sido definido.</p>
       )}
     </div>
-  );
-}; 
+  )
+}

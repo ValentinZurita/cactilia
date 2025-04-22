@@ -1,42 +1,42 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { lazy, Suspense } from "react";
-import { PublicLayout } from "../layout/PublicLayout";
-import { RequireAuth } from "../modules/auth/components/RequireAuth";
-import { ProfileLayout } from '../modules/user/components/profile/index.js';
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { PublicLayout } from '../layout/PublicLayout'
+import { RequireAuth } from '../modules/auth/components/RequireAuth'
+import { ProfileLayout } from '../modules/user/components/profile/index.js'
 
 // Componente de carga
-import { Spinner } from "../shared/components/spinner/Spinner.jsx";
+import { Spinner } from '../shared/components/spinner/Spinner.jsx'
 
 // Importaciones estándar para AuthRoutes y AdminRoutes (que tienen export default)
-const AuthRoutes = lazy(() => import("../modules/auth/router/AuthRoutes"));
-const AdminRoutes = lazy(() => import("../modules/admin/routes/AdminRoutes"));
-const ShopRoutes = lazy(() => import("../modules/shop/router/ShopRoutes"));
+const AuthRoutes = lazy(() => import('../modules/auth/router/AuthRoutes'))
+const AdminRoutes = lazy(() => import('../modules/admin/routes/AdminRoutes'))
+const ShopRoutes = lazy(() => import('../modules/shop/router/ShopRoutes'))
 
 // Función de ayuda para importar componentes con exportaciones nombradas
 const lazyLoadNamed = (importFn, componentName) => {
   return lazy(async () => {
-    const module = await importFn();
-    return { default: module[componentName] };
-  });
-};
+    const module = await importFn()
+    return { default: module[componentName] }
+  })
+}
 
 // Lazy loading de páginas con exportaciones nombradas
-const HomePage = lazyLoadNamed(() => import("../modules/public/pages/HomePage.jsx"), "HomePage");
-const ContactPage = lazyLoadNamed(() => import("../modules/public/pages/ContactPage.jsx"), "ContactPage");
-const FaqPage = lazyLoadNamed(() => import("../modules/faq/pages/FaqPage.jsx"), "FaqPage");
-const CookiesPolicyPage = lazyLoadNamed(() => import("../modules/cookies-policy/pages/CookiesPolicyPage.jsx"), "CookiesPolicyPage");
-const CartPage = lazyLoadNamed(() => import("../modules/shop/pages/CartPage.jsx"), "CartPage");
-const CheckoutPage = lazyLoadNamed(() => import('../modules/shop/pages/CheckoutPage.jsx'), "CheckoutPage");
+const HomePage = lazyLoadNamed(() => import('../modules/public/pages/HomePage.jsx'), 'HomePage')
+const ContactPage = lazyLoadNamed(() => import('../modules/public/pages/ContactPage.jsx'), 'ContactPage')
+const FaqPage = lazyLoadNamed(() => import('@modules/public/components/faq/pages/FaqPage.jsx'), 'FaqPage')
+const CookiesPolicyPage = lazyLoadNamed(() => import('@modules/public/components/cookies-policy/pages/CookiesPolicyPage.jsx'), 'CookiesPolicyPage')
+const CartPage = lazyLoadNamed(() => import('../modules/shop/pages/CartPage.jsx'), 'CartPage')
+const CheckoutPage = lazyLoadNamed(() => import('../modules/shop/pages/CheckoutPage.jsx'), 'CheckoutPage')
 
 // Lazy loading de páginas de perfil con exportaciones nombradas
-const OrdersPage = lazyLoadNamed(() => import("../modules/user/pages/OrdersPage.jsx"), "OrdersPage");
-const OrderDetailPage = lazyLoadNamed(() => import("../modules/user/pages/OrderDetailPage.jsx"), "OrderDetailPage");
-const AddressesPage = lazy(() => import("../modules/user/pages/AdressesPage.jsx"));
-const PaymentsPage = lazyLoadNamed(() => import("../modules/user/pages/PaymentsPage.jsx"), "PaymentsPage");
-const SettingsPage = lazyLoadNamed(() => import("../modules/user/pages/SettingsPage.jsx"), "SettingsPage");
+const OrdersPage = lazyLoadNamed(() => import('../modules/user/pages/OrdersPage.jsx'), 'OrdersPage')
+const OrderDetailPage = lazyLoadNamed(() => import('../modules/user/pages/OrderDetailPage.jsx'), 'OrderDetailPage')
+const AddressesPage = lazy(() => import('../modules/user/pages/AdressesPage.jsx'))
+const PaymentsPage = lazyLoadNamed(() => import('../modules/user/pages/PaymentsPage.jsx'), 'PaymentsPage')
+const SettingsPage = lazyLoadNamed(() => import('../modules/user/pages/SettingsPage.jsx'), 'SettingsPage')
 
 // Fallback para cuando se está cargando un componente
-const SuspenseFallback = () => <Spinner />;
+const SuspenseFallback = () => <Spinner />
 
 export const AppRouter = () => {
   return (
@@ -159,5 +159,5 @@ export const AppRouter = () => {
       </Route> {/* Fin de <Route path="/" element={<PublicLayout />}> */}
 
     </Routes>
-  );
-};
+  )
+}

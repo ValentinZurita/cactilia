@@ -1,8 +1,8 @@
 // src/modules/public/pages/ContactPage.jsx
-import { useContactPageContent } from '../hooks/useContactPageContent';
-import { Logo } from '../../../shared/components/logo/Logo.jsx';
-import '../styles/contact.css';
-import { ContactForm } from '../components/contact/index.js';
+import { useContactPageContent } from '../components/contact/hooks/useContactPageContent.js'
+import { Logo } from '../../../shared/components/logo/Logo.jsx'
+import '../styles/contact.css'
+import { ContactForm } from '../components/contact/components/index.js'
 import { CONTACT_INFO, SOCIAL_MEDIA_LINKS } from '../../../shared/constants/index.js'
 
 /**
@@ -13,14 +13,14 @@ import { CONTACT_INFO, SOCIAL_MEDIA_LINKS } from '../../../shared/constants/inde
  */
 export const ContactPage = () => {
   // Load customized content for the page
-  const { pageContent, loading, getSection } = useContactPageContent();
+  const { pageContent, loading, getSection } = useContactPageContent()
 
   // Get configuration for each section
-  const headerConfig = getSection('header');
-  const contactInfoConfig = getSection('contactInfo');
-  const formConfig = getSection('form');
-  const mapConfig = getSection('map');
-  const socialMediaConfig = getSection('socialMedia');
+  const headerConfig = getSection('header')
+  const contactInfoConfig = getSection('contactInfo')
+  const formConfig = getSection('form')
+  const mapConfig = getSection('map')
+  const socialMediaConfig = getSection('socialMedia')
 
   // Get contact information (default or custom)
   const getContactDetails = () => {
@@ -29,29 +29,29 @@ export const ContactPage = () => {
         phone: CONTACT_INFO.phone,
         email: CONTACT_INFO.email,
         address: CONTACT_INFO.address,
-        hours: 'Lunes a Viernes: 9am - 6pm'
-      };
+        hours: 'Lunes a Viernes: 9am - 6pm',
+      }
     }
     return {
       phone: contactInfoConfig.customPhone || CONTACT_INFO.phone,
       email: contactInfoConfig.customEmail || CONTACT_INFO.email,
       address: contactInfoConfig.customAddress || CONTACT_INFO.address,
-      hours: contactInfoConfig.customHours || 'Lunes a Viernes: 9am - 6pm'
-    };
-  };
+      hours: contactInfoConfig.customHours || 'Lunes a Viernes: 9am - 6pm',
+    }
+  }
 
   // Get visible social media items
   const getVisibleSocialMedia = () => {
     if (socialMediaConfig?.items && Array.isArray(socialMediaConfig.items)) {
-      return socialMediaConfig.items.filter(item => item.visible !== false);
+      return socialMediaConfig.items.filter(item => item.visible !== false)
     }
 
     // If no custom configuration, use defaults from constants
-    return SOCIAL_MEDIA_LINKS;
-  };
+    return SOCIAL_MEDIA_LINKS
+  }
 
-  const contactDetails = getContactDetails();
-  const visibleSocialMedia = getVisibleSocialMedia();
+  const contactDetails = getContactDetails()
+  const visibleSocialMedia = getVisibleSocialMedia()
 
   /**
    * Renders the heading section (title and subtitle)
@@ -65,7 +65,7 @@ export const ContactPage = () => {
         </p>
       </div>
     </div>
-  );
+  )
 
   /**
    * Renders the contact information card with social media links
@@ -146,7 +146,7 @@ export const ContactPage = () => {
         <div className="decoration-circle"></div>
       </div>
     </div>
-  );
+  )
 
   /**
    * Renders the contact form card
@@ -167,13 +167,13 @@ export const ContactPage = () => {
         subjectOptions={formConfig.subjectOptions}
       />
     </div>
-  );
+  )
 
   /**
    * Renders the Google Maps iframe
    */
   const renderMap = () => {
-    if (!mapConfig.embedUrl) return null;
+    if (!mapConfig.embedUrl) return null
 
     return (
       <div className="container-fluid px-0 mt-5">
@@ -190,8 +190,8 @@ export const ContactPage = () => {
           ></iframe>
         </div>
       </div>
-    );
-  };
+    )
+  }
 
   // Show loading spinner while content is being fetched
   if (loading) {
@@ -201,7 +201,7 @@ export const ContactPage = () => {
           <span className="visually-hidden">Cargando...</span>
         </div>
       </div>
-    );
+    )
   }
 
   /**
@@ -234,5 +234,5 @@ export const ContactPage = () => {
       {/* Map section */}
       {mapConfig.showMap !== false && renderMap()}
     </div>
-  );
-};
+  )
+}
