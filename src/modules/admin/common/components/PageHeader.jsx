@@ -13,12 +13,14 @@ import { BackButton } from './BackButton';
  */
 export const PageHeader = ({ title, showBackButton = false, onBackClick }) => {
   return (
-    <div className="d-flex justify-content-between align-items-center mb-4">
-      <PageTitle title={title} />
-      
+    <div className="d-flex align-items-center mb-4">
       {showBackButton && onBackClick && (
-        <BackButton onClick={onBackClick} />
+        <div className="me-3">
+          <BackButton onClick={onBackClick} />
+        </div>
       )}
+      
+      <PageTitle title={title} />
     </div>
   );
 }; 
