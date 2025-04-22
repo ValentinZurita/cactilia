@@ -10,11 +10,9 @@ export { default as FormSelect } from './FormSelect';
 export { default as ServiceBasicInfo } from './ServiceBasicInfo';
 export { default as DeliveryDetails } from './DeliveryDetails';
 export { default as PackageConfiguration } from './PackageConfiguration';
-export { default as ShippingTypesList } from './ShippingTypesList';
-
-export { default as ZipCodeSection } from './ZipCodeSection';
-export { default as ShippingConfigSection } from './ShippingConfigSection';
 export { default as ZoneField } from './ZoneField';
 export { default as StatusField } from './StatusField';
+export { default as ShippingConfigSection } from './ShippingConfigSection';
+export { default as ZipCodeSection } from './ZipCodeSection';
 export { default as NavigationTabs } from './NavigationTabs';
 export { default as DeliveryServicesSelector } from './DeliveryServicesSelector'; 

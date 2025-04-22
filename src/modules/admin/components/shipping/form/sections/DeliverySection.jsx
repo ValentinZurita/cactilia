@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Controller } from 'react-hook-form';
+import { v4 as uuidv4 } from 'uuid';
 import { 
   ServiceBasicInfo, 
   DeliveryDetails, 
-  PackageConfiguration, 
-  ShippingTypesList 
+  PackageConfiguration 
 } from '../components';
+import { DataTable } from '../../../../common/components/DataTable';
+import { ActionButtonsContainer } from '../../../../common/components/ActionButtonsContainer';
+import { ActionButton } from '../../../../common/components/ActionButton';
 
 /**
  * Componente para la entrada de datos con validación y mensajes de error
@@ -212,7 +214,7 @@ const DeliverySection = ({ control, errors: formErrors, watch, setValue }) => {
     
     // Convertir valores de texto a números
     const newType = {
-      id: Date.now().toString(), // ID único
+      id: uuidv4(),
       carrier: newShippingType.carrier,
       name: code,
       label: newShippingType.label,
@@ -244,86 +246,136 @@ const DeliverySection = ({ control, errors: formErrors, watch, setValue }) => {
     setValidationErrors({});
   };
   
-  // Elimina un tipo de envío
-  const handleRemoveShippingType = (id) => {
-    const updatedTypes = shippingTypes.filter(type => type.id !== id);
-    setValue('shippingTypes', updatedTypes);
-  };
-  
+  // Elimina un tipo de envío (usar useCallback)
+  const handleRemoveShippingType = useCallback((id) => {
+    const currentTypes = watch('shippingTypes') || [];
+    const updatedTypes = currentTypes.filter(type => type.id !== id);
+    setValue('shippingTypes', updatedTypes, { shouldValidate: true }); // Opcional: validar si la eliminación afecta algo
+  }, [setValue, watch]); // Dependencias para useCallback
+
+  // --- Configuración de Columnas para DataTable (usar useMemo) --- 
+  const columns = useMemo(() => [
+    {
+      key: 'carrier',
+      header: 'Servicio',
+      renderCell: (type) => type.carrier || 'N/A'
+    },
+    {
+      key: 'label',
+      header: 'Nombre',
+      renderCell: (type) => <span className="fw-medium">{type.label || 'N/A'}</span>
+    },
+    {
+      key: 'price',
+      header: 'Precio',
+      headerClassName: 'text-end',
+      cellClassName: 'text-end',
+      renderCell: (type) => type.price != null ? `$${parseFloat(type.price).toFixed(2)}` : 'N/A'
+    },
+    {
+      key: 'deliveryDays',
+      header: 'Entrega',
+      headerClassName: 'text-center',
+      cellClassName: 'text-center',
+      renderCell: (type) => `${type.minDays || '-'}-${type.maxDays || '-'} días`
+    },
+    {
+      key: 'packageConfig',
+      header: 'Config. paquete',
+      headerClassName: 'text-center',
+      cellClassName: 'text-center',
+      renderCell: (type) => (
+        <span className="badge bg-light text-dark border">
+          <i className="bi bi-box me-1"></i>
+          {type.maxPackageWeight || '-'} kg / {type.maxProductsPerPackage || '-'} u.
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: '', // Sin título para acciones
+      cellClassName: 'text-end',
+      renderCell: (type) => (
+        <ActionButtonsContainer size="sm">
+          <ActionButton
+            iconClass="bi bi-trash"
+            title="Eliminar método"
+            onClick={() => handleRemoveShippingType(type.id)}
+            variant="light"
+            textColor="secondary"
+            hoverTextColor="danger"
+            isLast={true}
+          />
+        </ActionButtonsContainer>
+      )
+    }
+  ], [handleRemoveShippingType]); // Dependencia para que el botón use la última versión del callback
+
   return (
-    <div className="py-3">
-      {/* Métodos de envío */}
-      <div className="mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h6 className="text-dark mb-0">Opciones de envío disponibles</h6>
-          <button 
-            type="button" 
-            className="btn btn-outline-dark px-3"
-            onClick={() => setShowAddForm(!showAddForm)}
-          >
-            <i className={`bi bi-${showAddForm ? 'x' : 'plus'}`}></i>
-            {showAddForm ? ' Cancelar' : ' Añadir opción'}
-          </button>
-        </div>
-        
-        {/* Formulario para añadir un tipo de envío */}
-        {showAddForm && (
-          <div className="card bg-light mb-4">
-            <div className="card-body">
-              {/* Componentes modularizados para cada sección */}
-              <ServiceBasicInfo 
-                shippingType={newShippingType}
-                onShippingTypeChange={handleNewTypeChange}
-                availableCarriers={availableCarriers}
-                errors={validationErrors}
-              />
-              
-              <DeliveryDetails 
-                shippingType={newShippingType}
-                onShippingTypeChange={handleNewTypeChange}
-                errors={validationErrors}
-              />
-              
-              <PackageConfiguration 
-                shippingType={newShippingType}
-                onShippingTypeChange={handleNewTypeChange}
-                errors={validationErrors}
-              />
-              
-              <div className="d-flex justify-content-end">
-                <button 
-                  type="button" 
-                  className="btn btn-dark px-4"
-                  onClick={handleAddShippingType}
-                >
-                  Añadir
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Lista de tipos de envío */}
-        <Controller
-          name="shippingTypes"
-          control={control}
-          defaultValue={[]}
-          render={({ field }) => (
-            <ShippingTypesList 
-              shippingTypes={shippingTypes}
-              onRemoveShippingType={handleRemoveShippingType}
-            />
-          )}
-        />
-        
-        {/* Mensajes de error */}
-        {formErrors?.shippingTypes && (
-          <div className="alert alert-danger mt-3 mb-0">
-            <i className="bi bi-exclamation-triangle-fill me-2"></i>
-            {formErrors.shippingTypes.message}
-          </div>
-        )}
+    <div className="py-3"> 
+
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h6 className="text-dark mb-0">Opciones de envío disponibles</h6>
+        <button 
+          type="button" 
+          className={`btn btn-sm ${showAddForm ? 'btn-outline-secondary' : 'btn-outline-dark'}`} 
+          onClick={() => {
+            setShowAddForm(!showAddForm);
+            if (showAddForm) setValidationErrors({});
+          }}
+        >
+          <i className={`bi bi-${showAddForm ? 'x-lg' : 'plus-lg'}`}></i>
+          {showAddForm ? ' Cancelar' : ' Añadir opción'}
+        </button>
       </div>
+      
+      {showAddForm && (
+        <div className="border rounded p-3 mb-4 bg-light">
+          <h6 className="mb-3">Nuevo Método de Envío</h6>
+          <ServiceBasicInfo 
+            shippingType={newShippingType}
+            onShippingTypeChange={handleNewTypeChange}
+            availableCarriers={availableCarriers}
+            errors={validationErrors}
+          />
+          <DeliveryDetails 
+            shippingType={newShippingType}
+            onShippingTypeChange={handleNewTypeChange}
+            errors={validationErrors}
+          />
+          <PackageConfiguration 
+            shippingType={newShippingType}
+            onShippingTypeChange={handleNewTypeChange}
+            errors={validationErrors}
+          />
+          <div className="d-flex justify-content-end mt-3">
+            <button 
+              type="button" 
+              className="btn btn-primary" 
+              onClick={handleAddShippingType}
+            >
+              Guardar Método
+            </button>
+          </div>
+        </div>
+      )}
+      
+      <div className="mb-4">
+        <DataTable
+          data={shippingTypes}
+          columns={columns}
+          keyExtractor={(type) => type.id}
+          emptyStateTitle="No hay opciones de envío configuradas"
+          emptyStateMessage="Añade tu primera opción de envío usando el botón de arriba."
+        />
+      </div>
+
+      {formErrors?.shippingTypes && (
+        <div className="alert alert-danger mt-3 mb-0">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {formErrors.shippingTypes.message}
+        </div>
+      )}
     </div>
   );
 };
