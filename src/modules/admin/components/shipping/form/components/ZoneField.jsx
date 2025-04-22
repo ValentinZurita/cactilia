@@ -9,7 +9,7 @@ const ZoneField = ({ control, errors }) => {
     <div className="mb-3">
       <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="form-label fw-medium mb-0">
-          Nombre de la zona
+          Nombre
         </label>
         {errors?.name && (
           <span className="badge text-bg-danger rounded-pill">
@@ -35,7 +35,7 @@ const ZoneField = ({ control, errors }) => {
       
       {errors?.name && (
         <div className="invalid-feedback">
-          El nombre de la zona es obligatorio
+          El nombre es obligatorio
         </div>
       )}
     </div>

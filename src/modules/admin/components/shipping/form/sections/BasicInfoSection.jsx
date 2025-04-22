@@ -9,32 +9,41 @@ import ZipCodeSection from '../components/ZipCodeSection';
  */
 const BasicInfoSection = ({ zipCodes, setZipCodes, control, errors, setValue, watch, register }) => {
   return (
-    <div className="py-3">
-      {/* Información de jerarquía */}
-      <ShippingConfigSection />
-      
-      {/* Información de la Zona */}
-      <h6 className="text-dark mb-4">Identificación de la regla</h6>
-      <div className="mb-4">
-        <ZoneField 
-          control={control}
-          errors={errors}
-        />
-        <StatusField 
-          register={register}
-          errors={errors}
-          setValue={setValue}
-          watch={watch}
-        />
+    <div>
+      {/* Sección de Identificación en una Card - SIN TÍTULO */}
+      <div className="card mb-4">
+        <div className="card-body p-4">
+          <div className="mb-3">
+            <ZoneField 
+              control={control}
+              errors={errors}
+            />
+          </div>
+          <div className="mb-3">
+            <StatusField 
+              register={register}
+              errors={errors}
+              setValue={setValue}
+              watch={watch}
+            />
+          </div>
+        </div>
       </div>
       
-      {/* Configuración de Cobertura */}
-      <h6 className="text-dark mb-4">Cobertura geográfica</h6>
-      <ZipCodeSection 
-        zipCodes={zipCodes}
-        setZipCodes={setZipCodes}
-        setValue={setValue}
-      />
+      {/* Sección de Cobertura Geográfica en otra Card */}
+      <div className="card mb-4">
+        <div className="card-body p-4">
+          <h6 className="card-title mb-4">Cobertura geográfica</h6>
+          <div className="mb-4">
+            <ShippingConfigSection />
+          </div>
+          <ZipCodeSection 
+            zipCodes={zipCodes}
+            setZipCodes={setZipCodes}
+            setValue={setValue}
+          />
+        </div>
+      </div>
     </div>
   );
 };
