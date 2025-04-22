@@ -122,7 +122,6 @@ export const useCookiesPolicyManagement = () => {
     alertInfo,
     saveDraft,
     publishChanges,
-    setPageData, // Permite al editor actualizar el estado del hook
     clearAlert
   };
 }; 

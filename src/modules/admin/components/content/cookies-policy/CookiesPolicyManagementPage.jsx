@@ -14,7 +14,6 @@ export const CookiesPolicyManagementPage = () => {
     alertInfo,
     saveDraft,
     publishChanges,
-    setPageData,
     clearAlert
   } = useCookiesPolicyManagement();
 
@@ -43,7 +42,6 @@ export const CookiesPolicyManagementPage = () => {
           onSave={saveDraft}
           onPublish={publishChanges}
           isLoading={isLoading}
-          onDataChange={setPageData}
         />
       )}
     </div>

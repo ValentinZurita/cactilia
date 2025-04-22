@@ -43,7 +43,7 @@ const MediaLibraryPage = lazyLoadNamed(() => import("../pages/MediaLibraryPage")
 const MediaUploadPage = lazyLoadNamed(() => import("../pages/MediaUploadPage"), "MediaUploadPage");
 const HomePageManagementPage = lazyLoadNamed(() => import("../components/content/homepage/HomePageManagementPage"), "HomePageManagementPage");
 const ShopPageManagementPage = lazyLoadNamed(() => import("../components/content/shop/ShopPageManagementPage"), "ShopPageManagementPage");
-const ContactPageManagementPage = lazyLoadNamed(() => import("../components/content/contact/ContactPageManagementPage"), "ContactPageManagementPage");
+const ContactPageManagementPage = lazy(() => import("../components/content/contact/ContactPageManagementPage"));
 const FaqManagementPage = lazyLoadNamed(() => import("../components/content/faq/FaqManagementPage"), "FaqManagementPage");
 const CookiesPolicyManagementPage = lazyLoadNamed(() => import("../components/content/cookies-policy/CookiesPolicyManagementPage"), "CookiesPolicyManagementPage");
 const OrderManagementPage = lazyLoadNamed(() => import('../components/orders/OrderManagementPage.jsx'), "OrderManagementPage");

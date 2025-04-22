@@ -11,14 +11,12 @@ import { PageMetadataEditor } from '../shared/PageMetadataEditor';
  * @param {function} props.onSave - Callback para guardar borrador.
  * @param {function} props.onPublish - Callback para publicar.
  * @param {boolean} props.isLoading - Indica si hay operación en curso.
- * @param {function} props.onDataChange - Callback para notificar cambios al padre (ManagementPage).
  */
 export const CookiesPolicyEditor = memo(({
   initialData,
   onSave,
   onPublish,
   isLoading,
-  onDataChange
 }) => {
   // Estado local para los datos del editor
   const [localData, setLocalData] = useState(initialData || {
@@ -29,6 +27,7 @@ export const CookiesPolicyEditor = memo(({
   // Estado para detectar si hay cambios
   const [isDirty, setIsDirty] = useState(false);
 
+  /* // ELIMINADO: useEffect de sincronización problemático
   // Sincronizar con initialData si cambia desde fuera (p.ej., después de guardar)
   useEffect(() => {
     if (initialData) {
@@ -39,7 +38,8 @@ export const CookiesPolicyEditor = memo(({
             setLocalData(JSON.parse(initialJson)); // Usar deep copy
         }
     }
-  }, [initialData, isDirty]); // Añadir isDirty a las dependencias
+  }, [initialData, isDirty]);
+  */
 
   // Detectar cambios comparando con initialData
   useEffect(() => {
@@ -57,13 +57,9 @@ export const CookiesPolicyEditor = memo(({
     const { name, value } = event.target;
     setLocalData(prevData => {
         const updatedData = { ...prevData, [name]: value };
-        // Notificar al padre (hook) del cambio para que tenga el estado más reciente
-        if (onDataChange) {
-            onDataChange(updatedData);
-        }
         return updatedData;
     });
-  }, [onDataChange]);
+  }, []);
 
   const previewUrl = `/cookies-policy?preview=true&t=${Date.now()}`;
   const hasSavedContent = useMemo(() => !!initialData?.createdAt, [initialData]); // Determinar si existe contenido previo
