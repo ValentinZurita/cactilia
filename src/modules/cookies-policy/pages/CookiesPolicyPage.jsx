@@ -1,67 +1,68 @@
 import React, { useMemo } from 'react';
-import { useCookiesPolicyPageData } from '../hooks/useCookiesPolicyPageData';
+import { Helmet } from 'react-helmet-async';
+import { usePageContent } from '../../../hooks/usePageContent';
 import { Logo } from '../../../shared/components/logo/Logo';
-import DOMPurify from 'dompurify'; // Importar para sanitizar HTML
-// import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import DOMPurify from 'dompurify';
+import { Spinner } from '../../../shared/components/spinner/Spinner';
+
+const COOKIES_PAGE_ID = 'cookies-policy';
+const DEFAULT_COOKIES_CONTENT = {
+  pageTitle: 'Política de Cookies',
+  pageDescription: 'Información sobre el uso de cookies en nuestro sitio web.',
+  mainContent: '',
+};
 
 /**
  * Página pública que muestra la Política de Cookies.
+ * Carga contenido dinámico, gestiona SEO y sanitiza HTML.
  */
 export const CookiesPolicyPage = () => {
-  const { pageData, status, error, isPreview } = useCookiesPolicyPageData();
+  const { pageData, loading, error, isPreview } = usePageContent(
+    COOKIES_PAGE_ID,
+    DEFAULT_COOKIES_CONTENT
+  );
 
-  // Sanitizar el contenido principal una vez que los datos carguen
   const sanitizedMainContent = useMemo(() => {
-    // Asegurarse de que pageData y mainContent existan
     if (pageData?.mainContent) {
-        // Configurar DOMPurify (opcional, puedes ajustar según necesidades)
-        // Por defecto, es bastante seguro
       return DOMPurify.sanitize(pageData.mainContent);
     }
-    return ''; // Devolver string vacío si no hay contenido
+    return '';
   }, [pageData?.mainContent]);
 
-  // Estado de carga
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="container text-center py-5">
-        {/* <LoadingSpinner /> */}
-        <p>Cargando...</p>
+        <Spinner />
       </div>
     );
   }
 
-  // Estado de error
-  if (status === 'error') {
-    return (
-      <div className="container text-center py-5">
-        <div className="mb-4"><Logo /></div>
-        <h1 className="h3 mb-3">Política de Cookies</h1>
-        {isPreview && <p className="text-warning small mb-3">(Modo Previsualización)</p>}
-        <div className="alert alert-warning d-inline-block">{error || 'Ocurrió un error inesperado.'}</div>
-      </div>
-    );
-  }
+  const { pageTitle, pageDescription } = pageData;
 
-  // Estado éxito (incluso si pageData es null o no tiene contenido, 
-  // se mostrará un estado "vacío" controlado abajo)
   return (
     <div className="container py-5">
+      {!isPreview && (
+        <Helmet>
+          <title>{`${pageTitle} - Cactilia`}</title>
+          <meta name="description" content={pageDescription} />
+        </Helmet>
+      )}
+
       <div className="text-center mb-5">
         <Logo />
       </div>
 
       <div className="text-center mb-5">
-        <h1 className="h2 mb-3">{pageData?.pageTitle || 'Política de Cookies'}</h1>
-        {isPreview && <p className="text-warning small mb-3">(Modo Previsualización)</p>}
-        {pageData?.pageDescription && <p className="lead text-muted">{pageData.pageDescription}</p>}
+        <h1 className="h2 mb-3">{pageTitle}</h1>
+        {isPreview && <p className="text-warning small mb-3 fw-bold">(Modo Previsualización)</p>}
+        {pageDescription && <p className="lead text-muted">{pageDescription}</p>}
+        {error && <div className="alert alert-warning mt-3 d-inline-block">Error: {error}</div>}
       </div>
 
-      {/* Contenido principal sanitizado */}
       {sanitizedMainContent ? (
         <div dangerouslySetInnerHTML={{ __html: sanitizedMainContent }} />
       ) : (
-        status === 'success' && <p className="text-center text-muted">El contenido de la política de cookies aún no ha sido definido.</p>
+        !error && <p className="text-center text-muted">El contenido de la política de cookies aún no ha sido definido.</p>
       )}
     </div>
   );
