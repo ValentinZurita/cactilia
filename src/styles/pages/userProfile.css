@@ -94,7 +94,9 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
-}/* Estilos para la sección de métodos de pago */
+}
+
+/* Estilos para la sección de métodos de pago */
 .payment-list {
     list-style: none;
     padding: 0;
@@ -241,7 +243,9 @@
     align-items: center;
     margin-top: 20px;
     margin-bottom: 30px;
-}/* Estilos para la sección de pedidos */
+}
+
+/* Estilos para la sección de pedidos */
 .order-filter-bar {
     display: flex;
     gap: 8px;
@@ -399,7 +403,9 @@
 
 .view-order-btn i {
     font-size: 0.8rem;
-}/* Estilos para la sección de direcciones */
+}
+
+/* Estilos para la sección de direcciones */
 .address-list {
     list-style: none;
     padding: 0;
@@ -526,7 +532,9 @@
     align-items: center;
     margin-top: 20px;
     margin-bottom: 30px;
-}/*
+}
+
+/*
    User Profile Panel CSS - Mobile-First y Minimalista
    Optimizado para dispositivos móviles con paleta de colores reducida
 */
@@ -931,11 +939,11 @@
 }
 
 /* Switch de bootstrap personalizado */
-.form-check-input {
+/*.form-check-input {
     width: 3em !important;
     height: 1.5em !important;
     cursor: pointer;
-}
+}*/
 
 .form-check-input:checked {
     background-color: var(--green-3) !important;

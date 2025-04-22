@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ShippingTableContainer } from '../containers/ShippingTableContainer';
 import { ShippingFormContainer } from '../containers/ShippingFormContainer';
 // Actualizar ruta de importación
-import { PageHeader } from '../../common/components/PageHeader';
+import { PageHeader } from '../../../common/components/PageHeader';
 // Eliminar importaciones no usadas: useState, useEffect, ShippingTable, ShippingForm, useShippingRules
 
 /**

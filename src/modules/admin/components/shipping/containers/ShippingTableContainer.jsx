@@ -3,11 +3,13 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 // import { ShippingTable } from '../table/ShippingTable'; 
 import { useShippingRules } from '../hooks/useShippingRules';
 // Imports de Common Components
-import { SearchBar } from '../../common/components/SearchBar';
-import { CreateButton } from '../../common/components/CreateButton';
-import { DataTable } from '../../common/components/DataTable'; // Importar DataTable
-import { ActionButtonsContainer } from '../../common/components/ActionButtonsContainer';
-import { ActionButton } from '../../common/components/ActionButton';
+import { SearchBar } from '../../../common/components/SearchBar';
+import { CreateButton } from '../../../common/components/CreateButton';
+import { DataTable } from '../../../common/components/DataTable'; // Importar DataTable
+import { ActionButtonsContainer } from '../../../common/components/ActionButtonsContainer';
+import { ActionButton } from '../../../common/components/ActionButton';
+import { LoadingIndicator } from '../../../common/components/LoadingIndicator';
+import { EmptyState } from '../../../common/components/EmptyState';
 // Imports de Shipping Components (para renderCell)
 import { RuleStatusBadge } from '../components/RuleStatusBadge';
 import { ShippingMethodsSummary } from '../components/ShippingMethodsSummary';
