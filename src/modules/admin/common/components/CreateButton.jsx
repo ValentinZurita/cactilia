@@ -68,6 +68,7 @@ export const CreateButton = ({
 
   return (
     <button
+      type="button"
       className={buttonClasses}
       onClick={onClick}
       title={buttonTitle} // Añadir title para FABs (solo icono)

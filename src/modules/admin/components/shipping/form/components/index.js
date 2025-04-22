@@ -15,4 +15,5 @@ export { default as StatusField } from './StatusField';
 export { default as ShippingConfigSection } from './ShippingConfigSection';
 export { default as ZipCodeSection } from './ZipCodeSection';
 export { default as NavigationTabs } from './NavigationTabs';
-export { default as DeliveryServicesSelector } from './DeliveryServicesSelector'; 
+export { default as DeliveryServicesSelector } from './DeliveryServicesSelector';
+export { default as AddShippingMethodManualModal } from './AddShippingMethodManualModal'; 
