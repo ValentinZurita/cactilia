@@ -2,10 +2,11 @@ import React from 'react';
 import { RuleStatusBadge } from '../components/RuleStatusBadge';
 import { ActionButtonsContainer } from '../components/ActionButtonsContainer';
 import { ActionButton } from '../components/ActionButton';
+import { ShippingMethodsSummary } from '../components/ShippingMethodsSummary';
 
 /**
  * Componente para renderizar una fila (<tr>) de la tabla de reglas de envío.
- * Utiliza ActionButtonsContainer y ActionButton para las acciones.
+ * Utiliza componentes dedicados para Estado, Acciones y Resumen de Métodos.
  * @param {{ 
  *   rule: object, 
  *   onEdit: (id: string) => void, 
@@ -30,34 +31,14 @@ export const RuleTableRow = ({ rule, onEdit, onDelete }) => {
 
   return (
     <tr className="shipping-rule-row align-middle">
-      {/* Tipo de Cobertura */}
-      <td className="px-3 py-3">{coverageType}</td>
-      
-      {/* Nombre de la Zona */}
+      {/* Nombre */}
       <td className="px-3 py-3 fw-medium">{rule.zona}</td>
+      {/* Tipo */}
+      <td className="px-3 py-3">{coverageType}</td>
       
       {/* Métodos de Envío (resumen) */}
       <td className="px-3 py-3">
-        {rule.opciones_mensajeria?.length > 0 ? (
-          <div className="d-flex flex-wrap gap-1">
-            {rule.opciones_mensajeria.slice(0, 2).map((opcion, idx) => (
-              <span
-                key={idx}
-                className="badge bg-light text-dark border"
-                title={`${opcion.tiempo_entrega || 'N/A'} - $${opcion.precio || 0} MXN`}
-              >
-                {opcion.nombre || 'Sin nombre'}
-              </span>
-            ))}
-            {rule.opciones_mensajeria.length > 2 && (
-              <span className="badge bg-light text-dark border">
-                +{rule.opciones_mensajeria.length - 2}
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="text-muted small">No disponible</span>
-        )}
+        <ShippingMethodsSummary methods={rule.opciones_mensajeria} />
       </td>
       
       {/* Estado (Activo/Inactivo) */}

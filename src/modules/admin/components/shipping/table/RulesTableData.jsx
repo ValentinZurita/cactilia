@@ -24,8 +24,8 @@ export const RulesTableData = ({ rules, onEdit, onDelete }) => {
           {/* Encabezado de la tabla: usar clase table-dark de Bootstrap */}
           <thead className="table-dark">
             <tr>
+              <th scope="col" className="px-3 py-3 border-0">Nombre</th>
               <th scope="col" className="px-3 py-3 border-0">Tipo</th>
-              <th scope="col" className="px-3 py-3 border-0">Zona</th>
               <th scope="col" className="px-3 py-3 border-0">Métodos</th>
               <th scope="col" className="px-3 py-3 border-0">Estado</th>
               <th scope="col" className="px-3 py-3 border-0 text-end">Acciones</th>

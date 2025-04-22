@@ -46,7 +46,7 @@ export const ShippingManagementPage = () => {
     switch (mode) {
       case 'create': return 'Nueva Regla de Envío';
       case 'edit': return 'Editar Regla de Envío';
-      default: return 'Gestión de Envíos'; // Título para la vista de tabla
+      default: return 'Reglas de Envío'; // Título para la vista de tabla
     }
   };
 
