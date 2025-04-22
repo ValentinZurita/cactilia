@@ -1,248 +1,93 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShippingTable } from '../table/ShippingTable';
-import { ShippingForm } from '../form/ShippingForm';
-import { useShippingRules } from '../hooks/useShippingRules';
+// Importar los nuevos contenedores
+import { ShippingTableContainer } from '../containers/ShippingTableContainer';
+import { ShippingFormContainer } from '../containers/ShippingFormContainer';
+// Importar el nuevo componente de encabezado
+import { PageHeader } from '../components/PageHeader';
+// Eliminar importaciones no usadas: useState, useEffect, ShippingTable, ShippingForm, useShippingRules
 
 /**
- * Página principal para la gestión de reglas de envío.
- * Versión renovada con estilo similar al módulo de Orders
+ * @component ShippingManagementPage
+ * @description Página principal para la gestión de reglas de envío.
+ * Funciona como un componente de enrutamiento y diseño de alto nivel.
+ * Utiliza un componente PageHeader dedicado y renderiza condicionalmente
+ * el contenedor de Tabla o Formulario directamente en su JSX.
+ *
+ * @example
+ * // Rutas típicas manejadas:
+ * // /admin/shipping -> Muestra Título + ShippingTableContainer
+ * // /admin/shipping/create -> Muestra Título + Botón Volver + ShippingFormContainer
+ * // /admin/shipping/edit/:id -> Muestra Título + Botón Volver + ShippingFormContainer
  */
 export const ShippingManagementPage = () => {
+  // Obtiene los parámetros de la URL (modo: 'create'/'edit', id: ID de la regla)
   const { mode, id } = useParams();
+  // Hook para la navegación programática
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [submissionError, setSubmissionError] = useState(null);
-  const [editingLoading, setEditingLoading] = useState(false);
 
-  const {
-    shippingRules,
-    loading,
-    error,
-    selectedRule,
-    createShippingRule,
-    updateShippingRule,
-    deleteShippingRule,
-    getShippingRuleById,
-    filterShippingRules
-  } = useShippingRules();
+  // --- Callbacks de Navegación --- 
+  // Estas funciones se pasan como props a los contenedores hijos.
 
-  // Cargar la regla para editar si estamos en modo 'edit'
-  useEffect(() => {
-    setSubmissionError(null);
-
-    if (mode === 'edit' && id) {
-      setEditingLoading(true);
-
-      const promise = getShippingRuleById(id);
-      if (promise && typeof promise.finally === 'function') {
-        promise.finally(() => {
-          setEditingLoading(false);
-        });
-      } else {
-        setEditingLoading(false);
-      }
-    } else {
-      setEditingLoading(false);
-    }
-  }, [mode, id, getShippingRuleById]);
-
-  // Manejar cambio en la búsqueda
-  const handleSearch = (term) => {
-    setSearchTerm(term);
-    filterShippingRules(term);
-  };
-
-  // Manejar navegación
+  /** Navega de vuelta a la vista de lista principal */
   const handleBackToList = () => navigate('/admin/shipping');
+
+  /** Navega a la vista de creación de una nueva regla */
   const handleCreateNew = () => navigate('/admin/shipping/create');
+
+  /** Navega a la vista de edición para una regla específica */
   const handleEditRule = (ruleId) => navigate(`/admin/shipping/edit/${ruleId}`);
 
-  // Función para manejar el guardado de una regla
-  const handleSaveRule = async (data) => {
-    setSubmissionError(null);
-    
-    // Adaptar el formato de los datos para el backend
-    const adaptedData = {
-      // Datos básicos
-      zipcode: data.zipcodes && data.zipcodes.length > 0 ? data.zipcodes[0] : '',
-      zipcodes: data.zipcodes || [],
-      zona: data.name || '',
-      activo: data.activo !== undefined ? data.activo : true,
-      
-      // Métodos de envío
-      opciones_mensajeria: data.shippingTypes
-        ? data.shippingTypes.map(type => ({
-            nombre: type.carrier,
-            label: type.label,
-            precio: type.price,
-            peso_maximo: type.weight || 0,
-            tiempo_entrega: `${type.minDays}-${type.maxDays} días`,
-            minDays: type.minDays,
-            maxDays: type.maxDays,
-            // Incluir campos de rangos de peso
-            usaRangosPeso: type.usaRangosPeso || false,
-            rangosPeso: type.rangosPeso || [],
-            // Configuración de paquetes específica para cada opción
-            configuracion_paquetes: {
-              peso_maximo_paquete: type.maxPackageWeight || 20,
-              costo_por_kg_extra: type.extraWeightCost || 10,
-              maximo_productos_por_paquete: type.maxProductsPerPackage || 10
-            }
-          }))
-        : [],
-      
-      // Reglas de precio
-      envio_gratis: data.freeShipping || false,
-      precio_base: 0, // Este campo es para compatibilidad
-      
-      // Otras propiedades
-      envio_variable: {
-        aplica: !!data.freeShippingThreshold,
-        envio_gratis_monto_minimo: data.minOrderAmount || 0,
-        costo_por_producto_extra: 0 // Por ahora no se usa
-      }
-    };
-    
-    try {
-      let result;
-      
-      if (mode === 'edit' && id) {
-        result = await updateShippingRule(id, adaptedData);
-      } else {
-        result = await createShippingRule(null, adaptedData);
-      }
-      
-      if (result.ok) {
-        handleBackToList();
-      } else {
-        setSubmissionError(result.error || 'Error al guardar la regla');
-        alert(result.error || 'Error al guardar la regla');
-      }
-    } catch (err) {
-      console.error('Error al guardar la regla:', err);
-      setSubmissionError(err.message || 'Error inesperado al guardar la regla');
-      alert(err.message || 'Error inesperado al guardar la regla');
-    }
-  };
-
-  // Título dinámico según el modo
+  /**
+   * Determina el título de la página según el modo actual ('create', 'edit', o default).
+   * @returns {string} Título de la página.
+   */
   const getPageTitle = () => {
     switch (mode) {
       case 'create': return 'Nueva Regla de Envío';
       case 'edit': return 'Editar Regla de Envío';
-      default: return 'Gestión de Envíos';
+      default: return 'Gestión de Envíos'; // Título para la vista de tabla
     }
   };
 
-  // Renderizar vista según el modo
-  const renderContent = () => {
-    switch (mode) {
-      case 'create':
-        return (
-          <ShippingForm
-            initialData={{}}
-            onSubmit={handleSaveRule}
-            onCancel={handleBackToList}
-          />
-        );
-      case 'edit':
-        if (editingLoading) {
-          return <p>Cargando datos de la regla...</p>;
-        }
-        
-        if (!selectedRule || selectedRule.id !== id) {
-          console.warn('Selected rule ID does not match URL ID or rule not loaded yet.', { ruleIdFromUrl: id, selectedRuleId: selectedRule?.id });
-          if (!editingLoading) {
-            return <p>Error: No se pudieron cargar los datos correctos para la regla con ID {id}.</p>;
-          }
-          return <p>Cargando datos de la regla...</p>;
-        }
-
-        const adaptedInitialData = {
-          id: selectedRule.id,
-          name: selectedRule.zona || '',
-          zipcodes: selectedRule.zipcodes || [selectedRule.zipcode].filter(Boolean),
-          activo: selectedRule.activo !== undefined ? selectedRule.activo : true,
-          status: selectedRule.activo !== undefined ? selectedRule.activo : true,
-          
-          // Reglas
-          freeShipping: selectedRule.envio_gratis || false,
-          freeShippingThreshold: selectedRule.envio_variable?.aplica || false,
-          minOrderAmount: selectedRule.envio_variable?.envio_gratis_monto_minimo || 0,
-          
-          // Métodos de envío
-          shippingTypes: selectedRule.opciones_mensajeria
-            ? selectedRule.opciones_mensajeria.map((option, index) => ({
-                id: `${index + 1}`,
-                carrier: option.nombre || '',
-                label: option.label || option.nombre || '',
-                price: option.precio || 0,
-                weight: option.peso_maximo || 0,
-                minDays: option.minDays || 1,
-                maxDays: option.maxDays || 3,
-                // Agregar nuevos campos de rangos de peso
-                usaRangosPeso: option.usaRangosPeso || false,
-                rangosPeso: option.rangosPeso || [],
-                // Configuración de paquetes específica para cada opción
-                maxPackageWeight: option.configuracion_paquetes?.peso_maximo_paquete || 20,
-                extraWeightCost: option.configuracion_paquetes?.costo_por_kg_extra || 10,
-                maxProductsPerPackage: option.configuracion_paquetes?.maximo_productos_por_paquete || 10
-              }))
-            : []
-        };
-        
-        return (
-          <ShippingForm
-            initialData={adaptedInitialData}
-            onSubmit={handleSaveRule}
-            onCancel={handleBackToList}
-          />
-        );
-      default:
-        return (
-          <ShippingTable
-            rules={shippingRules}
-            loading={loading}
-            error={error}
-            onEdit={handleEditRule}
-            onDelete={deleteShippingRule}
-            onSearch={handleSearch}
-            searchTerm={searchTerm}
-            onCreateNew={handleCreateNew}
-          />
-        );
-    }
-  };
-
+  // --- Renderizado del Componente --- 
   return (
     <div className="order-management-page">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="page-title fw-medium mb-0">
-          {getPageTitle()}
-        </h3>
-
-        {/* Botón para volver en vistas de detalle/creación/edición */}
-        {(mode === 'create' || mode === 'edit') && (
-          <button
-            className="btn btn-outline-secondary rounded-3"
-            onClick={handleBackToList}
-          >
-            <i className="bi bi-arrow-left me-2"></i>
-            Volver
-          </button>
-        )}
-      </div>
-
-      {/* Mostrar error global si existe */}
-      {(error || submissionError) && !['create', 'edit'].includes(mode) && (
-        <div className="alert alert-danger py-2 mb-4">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          {error || submissionError}
-        </div>
+      {/* Componente dedicado para toda la cabecera */}
+      <PageHeader 
+        title={getPageTitle()} 
+        showBackButton={mode === 'create' || mode === 'edit'} 
+        onBackClick={handleBackToList} 
+      />
+      
+      {/* Contenido principal: Renderizado condicionalmente */}
+      
+      {/* Modo Creación */} 
+      {mode === 'create' && (
+        <ShippingFormContainer
+          mode="create"
+          onCancel={handleBackToList} 
+          onSuccess={handleBackToList}
+        />
       )}
 
-      {renderContent()}
+      {/* Modo Edición */} 
+      {mode === 'edit' && (
+        <ShippingFormContainer
+          mode="edit"
+          ruleId={id}
+          onCancel={handleBackToList}
+          onSuccess={handleBackToList}
+        />
+      )}
+
+      {/* Modo por Defecto (Lista) */} 
+      {(!mode || (mode !== 'create' && mode !== 'edit')) && (
+        <ShippingTableContainer
+          onEdit={handleEditRule}
+          onCreateNew={handleCreateNew}
+        />
+      )}
     </div>
   );
 };
