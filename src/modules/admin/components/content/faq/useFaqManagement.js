@@ -10,7 +10,6 @@ import ContentService from '../shared/ContentService';
  *  - initialData: Los datos cargados inicialmente o después del último guardado.
  *  - currentData: Los datos actuales en el editor (puede diferir de initialData).
  *  - status: Estado actual ('idle', 'loading', 'saving', 'publishing', 'error').
- *  - error: Mensaje de error si status es 'error' (obsoleto, usar alertInfo).
  *  - alertInfo: Objeto con { show, type, message } para mostrar alertas.
  *  - saveDraft: Función asíncrona para guardar el borrador.
  *  - publishChanges: Función asíncrona para guardar y publicar.
@@ -21,10 +20,10 @@ export const useFaqManagement = () => {
   const [initialData, setInitialData] = useState(null);
   const [currentData, setCurrentData] = useState(null);
   const [status, setStatus] = useState('loading');
-  const [error, setError] = useState(null); // Mantener por si acaso, pero preferir alertInfo
+  const [error, setError] = useState(null); // Mantenido por si se usa internamente, pero alertInfo es preferible para UI
   const [alertInfo, setAlertInfo] = useState({ show: false, type: '', message: '' });
 
-  // Carga inicial
+  // Carga inicial de datos
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
@@ -34,8 +33,10 @@ export const useFaqManagement = () => {
       try {
         const data = await getFaqContent();
         if (isMounted) {
-          setInitialData(data);
-          setCurrentData(JSON.parse(JSON.stringify(data)));
+          // Copia profunda para evitar mutación directa de initialData
+          const dataCopy = data ? JSON.parse(JSON.stringify(data)) : null;
+          setInitialData(dataCopy);
+          setCurrentData(dataCopy);
           setStatus('idle');
         }
       } catch (err) {
@@ -49,10 +50,10 @@ export const useFaqManagement = () => {
       }
     };
     loadData();
-    return () => { isMounted = false };
+    return () => { isMounted = false }; // Limpieza al desmontar
   }, []);
 
-  // Limpiar alerta
+  // Limpiar la información de la alerta
   const clearAlert = useCallback(() => {
     setAlertInfo({ show: false, type: '', message: '' });
   }, []);
@@ -64,8 +65,10 @@ export const useFaqManagement = () => {
     setAlertInfo({ show: false });
     try {
       await saveFaqContent(dataToSave);
-      setInitialData(dataToSave);
-      setCurrentData(JSON.parse(JSON.stringify(dataToSave)));
+      // Copia profunda antes de actualizar estado
+      const savedDataCopy = JSON.parse(JSON.stringify(dataToSave)); 
+      setInitialData(savedDataCopy);
+      setCurrentData(savedDataCopy);
       setStatus('idle');
       setAlertInfo({ show: true, type: 'success', message: 'Borrador guardado correctamente.' });
     } catch (err) {
@@ -77,7 +80,7 @@ export const useFaqManagement = () => {
     }
   }, []);
 
-  // Guardar y Publicar
+  // Guardar y Publicar cambios
   const publishChanges = useCallback(async (dataToPublish) => {
     setStatus('saving');
     setError(null);
@@ -85,8 +88,10 @@ export const useFaqManagement = () => {
     let savedOk = false;
     try {
       await saveFaqContent(dataToPublish);
-      setInitialData(dataToPublish);
-      setCurrentData(JSON.parse(JSON.stringify(dataToPublish)));
+      // Copia profunda antes de actualizar estado
+      const publishedDataCopy = JSON.parse(JSON.stringify(dataToPublish));
+      setInitialData(publishedDataCopy);
+      setCurrentData(publishedDataCopy);
       savedOk = true;
     } catch (err) {
       console.error("Error al guardar borrador antes de publicar:", err);
@@ -120,11 +125,11 @@ export const useFaqManagement = () => {
     initialData,
     currentData,
     status,
-    error, // Se puede quitar si no se usa fuera del hook
-    alertInfo, // Exponer estado de alerta
+    // error, // No usado directamente por el componente UI
+    alertInfo,
     saveDraft,
     publishChanges,
     setCurrentData,
-    clearAlert // Exponer función para limpiar alerta
+    clearAlert
   };
-}; 
+};

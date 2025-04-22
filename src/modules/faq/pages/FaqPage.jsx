@@ -12,21 +12,21 @@ import { Logo } from '../../../shared/components/logo/Logo'; // Importar Logo
 export const FaqPage = () => {
   const { faqData, status, error, isPreview } = useFaqPageData();
 
-  // Estado de carga
+  // --- Renderizado Condicional --- 
+
   if (status === 'loading') {
-    // return <LoadingSpinner />;
     return (
       <div className="container text-center py-5">
+        {/* Considerar <Spinner /> */}
         <p>Cargando...</p>
       </div>
     );
   }
 
-  // Estado de error (incluye no encontrar datos)
   if (status === 'error') {
     return (
       <div className="container text-center py-5">
-        <div className="mb-4"><Logo /></div> {/* Mostrar logo incluso en error */}
+        <div className="mb-4"><Logo /></div>
         <h1 className="h3 mb-3">Preguntas Frecuentes</h1>
         {isPreview && <p className="text-warning small mb-3">(Modo Previsualización)</p>}
         <div className="alert alert-warning d-inline-block">{error || 'Ocurrió un error inesperado.'}</div>
@@ -34,20 +34,8 @@ export const FaqPage = () => {
     );
   }
 
-  // Estado éxito, pero sin datos o sin items (esto no debería pasar si el status es 'success' 
-  // gracias a la lógica del hook, pero por seguridad se puede mantener)
-  if (status === 'success' && (!faqData || !faqData.faqItems || faqData.faqItems.length === 0)) {
-    return (
-      <div className="container text-center py-5">
-        <div className="mb-4"><Logo /></div> {/* Mostrar logo incluso en caso de error */}
-        <h1 className="h3 mb-3">Preguntas Frecuentes</h1>
-        {isPreview && <p className="text-warning small mb-3">(Modo Previsualización)</p>}
-        <div className="alert alert-warning d-inline-block">No hay preguntas frecuentes disponibles en este momento.</div>
-      </div>
-    );
-  }
-  
-  // Estado éxito con datos
+  // --- Renderizado Principal (status === 'success') --- 
+
   return (
     <div className="container py-5">
       <div className="text-center mb-5">
@@ -60,7 +48,9 @@ export const FaqPage = () => {
         {faqData?.pageDescription && <p className="lead text-muted">{faqData.pageDescription}</p>}
       </div>
 
+      {/* FaqAccordion maneja internamente el caso de items vacíos */}
       <FaqAccordion items={faqData?.faqItems} />
+
     </div>
   );
 }; 

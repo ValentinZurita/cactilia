@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 /**
  * Componente que renderiza la estructura de acordeón de Bootstrap
@@ -9,17 +9,24 @@ import React from 'react';
  * @returns {JSX.Element | null} El acordeón renderizado o null si no hay items.
  */
 export const FaqAccordion = ({ items }) => {
+  // Retorna un mensaje si no hay items para mostrar
   if (!items || items.length === 0) {
-    return <p className="text-center text-muted">No hay preguntas frecuentes disponibles.</p>; // Mensaje si está vacío
+    return <p className="text-center text-muted">No hay preguntas frecuentes disponibles.</p>;
   }
 
-  const sortedItems = [...items].sort((a, b) => (a.order || 0) - (b.order || 0));
+  // Ordena por el campo 'order' si existe, si no, mantiene el orden original
+  const sortedItems = useMemo(() => 
+      [...items].sort((a, b) => (a.order || 0) - (b.order || 0)), 
+      [items]
+  ); // Usar useMemo para evitar re-sortear en cada render si items no cambia
 
   return (
     // Usar el acordeón por defecto sin clases extra como mb-2
     <div className="accordion" id="faqAccordion">
       {sortedItems.map((item, index) => {
+        // Determina si el item debe estar colapsado inicialmente (todos menos el primero)
         const isCollapsed = index !== 0;
+        // Genera IDs únicos para accesibilidad y control del colapso
         const collapseId = `collapse-${item.id || index}`;
         const headingId = `heading-${item.id || index}`;
 
@@ -47,6 +54,9 @@ export const FaqAccordion = ({ items }) => {
             >
               {/* Padding por defecto de accordion-body */}
               <div className="accordion-body">
+                {/* IMPORTANTE: Si 'item.answer' puede contener HTML del usuario,
+                    debe sanitizarse antes de usar dangerouslySetInnerHTML. 
+                    Actualmente se renderiza como texto plano. */}
                 {item.answer}
               </div>
             </div>

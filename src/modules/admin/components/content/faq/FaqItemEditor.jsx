@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 
 /**
  * Componente para editar un único item de Pregunta/Respuesta (FAQ).
@@ -26,29 +26,28 @@ export const FaqItemEditor = memo(({
   isLast 
 }) => {
 
-  const handleInputChange = (event) => {
+  const handleInputChange = useCallback((event) => {
     const { name, value } = event.target;
     onUpdate(index, name, value);
-  };
+  }, [index, onUpdate]);
 
-  const handleRemoveClick = () => {
+  const handleRemoveClick = useCallback(() => {
     onRemove(index);
-  };
+  }, [index, onRemove]);
 
-  const handleMoveUpClick = () => {
+  const handleMoveUpClick = useCallback(() => {
     onMoveUp(index);
-  };
+  }, [index, onMoveUp]);
 
-  const handleMoveDownClick = () => {
+  const handleMoveDownClick = useCallback(() => {
     onMoveDown(index);
-  };
+  }, [index, onMoveDown]);
 
   return (
     <div className="card mb-3 shadow-sm">
       <div className="card-body">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="card-title mb-0">Pregunta #{index + 1}</h5>
-          {/* Grupo de botones de acción */}
           <div className="btn-group btn-group-sm" role="group" aria-label="Acciones de item">
             <button
               type="button"
@@ -81,7 +80,7 @@ export const FaqItemEditor = memo(({
         </div>
 
         <div className="mb-3">
-          <label htmlFor={`faq-question-${index}`} className="form-label">Pregunta</label>
+          <label htmlFor={`faq-question-${index}`} className="form-label visually-hidden">Pregunta</label>
           <input
             type="text"
             className="form-control"
@@ -91,11 +90,12 @@ export const FaqItemEditor = memo(({
             onChange={handleInputChange}
             placeholder="Escribe la pregunta aquí"
             required
+            aria-label={`Pregunta ${index + 1}`}
           />
         </div>
 
-        <div className="mb-3">
-          <label htmlFor={`faq-answer-${index}`} className="form-label">Respuesta</label>
+        <div className="mb-0">
+          <label htmlFor={`faq-answer-${index}`} className="form-label visually-hidden">Respuesta</label>
           <textarea
             className="form-control"
             id={`faq-answer-${index}`}
@@ -105,6 +105,7 @@ export const FaqItemEditor = memo(({
             onChange={handleInputChange}
             placeholder="Escribe la respuesta aquí"
             required
+            aria-label={`Respuesta a la pregunta ${index + 1}`}
           ></textarea>
         </div>
       </div>

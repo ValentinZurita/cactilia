@@ -24,6 +24,7 @@ const lazyLoadNamed = (importFn, componentName) => {
 const HomePage = lazyLoadNamed(() => import("../modules/public/pages/HomePage.jsx"), "HomePage");
 const ContactPage = lazyLoadNamed(() => import("../modules/public/pages/ContactPage.jsx"), "ContactPage");
 const FaqPage = lazyLoadNamed(() => import("../modules/faq/pages/FaqPage.jsx"), "FaqPage");
+const CookiesPolicyPage = lazyLoadNamed(() => import("../modules/cookies-policy/pages/CookiesPolicyPage.jsx"), "CookiesPolicyPage");
 const CartPage = lazyLoadNamed(() => import("../modules/shop/pages/CartPage.jsx"), "CartPage");
 const CheckoutPage = lazyLoadNamed(() => import('../modules/shop/pages/CheckoutPage.jsx'), "CheckoutPage");
 
@@ -74,6 +75,13 @@ export const AppRouter = () => {
         <Route path="faq" element={
           <Suspense fallback={<SuspenseFallback />}>
             <FaqPage />
+          </Suspense>
+        } />
+
+        {/** Nueva ruta: /cookies-policy */}
+        <Route path="cookies-policy" element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <CookiesPolicyPage />
           </Suspense>
         } />
 

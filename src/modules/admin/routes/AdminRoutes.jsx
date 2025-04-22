@@ -45,6 +45,7 @@ const HomePageManagementPage = lazyLoadNamed(() => import("../components/content
 const ShopPageManagementPage = lazyLoadNamed(() => import("../components/content/shop/ShopPageManagementPage"), "ShopPageManagementPage");
 const ContactPageManagementPage = lazyLoadNamed(() => import("../components/content/contact/ContactPageManagementPage"), "ContactPageManagementPage");
 const FaqManagementPage = lazyLoadNamed(() => import("../components/content/faq/FaqManagementPage"), "FaqManagementPage");
+const CookiesPolicyManagementPage = lazyLoadNamed(() => import("../components/content/cookies-policy/CookiesPolicyManagementPage"), "CookiesPolicyManagementPage");
 const OrderManagementPage = lazyLoadNamed(() => import('../components/orders/OrderManagementPage.jsx'), "OrderManagementPage");
 const ShippingManagementPage = lazyLoadNamed(() => import('../components/shipping/pages/ShippingManagementPage.jsx'), "ShippingManagementPage");
 const ShippingDebugTool = lazyLoadNamed(() => import('../components/dashboard/ShippingDebugTool.jsx'), "ShippingDebugTool");
@@ -128,6 +129,11 @@ const AdminRoutes = () => {
           <Route path="content/faq" element={
             <Suspense fallback={<SuspenseFallback />}>
               <FaqManagementPage />
+            </Suspense>
+          } />
+          <Route path="content/cookies-policy" element={
+            <Suspense fallback={<SuspenseFallback />}>
+              <CookiesPolicyManagementPage />
             </Suspense>
           } />
 

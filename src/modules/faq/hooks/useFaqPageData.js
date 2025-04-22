@@ -39,23 +39,23 @@ export const useFaqPageData = () => {
               ? 'No se encontró el borrador de Preguntas Frecuentes.'
               : 'No se encontró el contenido publicado de Preguntas Frecuentes.';
             setError(message);
-            setStatus('error'); 
-            setFaqData(null); // Asegura que faqData sea null en error
+            setStatus('error');
+            setFaqData(null);
           }
         }
       } catch (err) {
         if (isMounted) {
-          console.error(`Error al cargar FAQ (${isPreview ? 'borrador' : 'publicadas'}):`, err);
+          // console.error(`Error al cargar FAQ (${isPreview ? 'borrador' : 'publicadas'}):`, err); // Mantenemos console.error
           setError('Ocurrió un error al cargar las preguntas frecuentes.');
           setStatus('error');
-          setFaqData(null); // Asegura que faqData sea null en error
+          setFaqData(null);
         }
       }
     };
 
     loadData();
     return () => { isMounted = false };
-  }, [isPreview]); // Dependencia clave: isPreview
+  }, [isPreview]);
 
   return { faqData, status, error, isPreview };
 }; 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { FaqItemEditor } from './FaqItemEditor'; // Importa el editor de item
-import { getFaqContent } from './faqService'; // Importa la función para obtener datos
+// import { getFaqContent } from './faqService'; // Ya no se usa aquí, lo maneja el hook
 import { v4 as uuidv4 } from 'uuid'; // Para generar IDs únicos para nuevos items
 import { EditorActionBar } from '../shared/EditorActionBar'; // Importar la barra de acciones
 import { EditorToolbar } from '../shared/EditorToolbar'; // Importar EditorToolbar
+import { PageMetadataEditor } from '../shared/PageMetadataEditor'; // Importar el nuevo componente
 
 /**
  * Componente principal para editar el contenido de la página de FAQ.
@@ -27,124 +28,96 @@ export const FaqEditor = memo(({
   error = null,
 }) => {
   // Estado para los datos actuales en el editor
-  const [pageData, setPageData] = useState(() => JSON.parse(JSON.stringify(initialData || {
-    pageTitle: 'Preguntas Frecuentes',
-    pageDescription: '',
-    faqItems: [],
-  }))); // Copia profunda inicial
-
-  // Estado para detectar cambios
+  const [pageData, setPageData] = useState(() => 
+    JSON.parse(JSON.stringify(initialData || {
+      pageTitle: 'Preguntas Frecuentes',
+      pageDescription: '',
+      faqItems: [],
+    }))
+  ); 
   const [isDirty, setIsDirty] = useState(false);
 
-  // Detectar cambios comparando pageData con initialData
+  // Efecto para detectar cambios (comparación profunda)
   useEffect(() => {
-    // Compara las versiones serializadas para una comparación de valor más fiable
     const currentJson = JSON.stringify(pageData);
-    const initialJson = JSON.stringify(initialData);
+    const initialJson = JSON.stringify(initialData || {
+      pageTitle: 'Preguntas Frecuentes', 
+      pageDescription: '',
+      faqItems: [],
+    });
     setIsDirty(currentJson !== initialJson);
   }, [pageData, initialData]);
 
-  // Actualizar pageData si initialData cambia desde fuera (después de guardar)
+  // Efecto para sincronizar con los datos iniciales/guardados desde el padre
   useEffect(() => {
     if (initialData) {
-      // Solo actualiza si no está sucio para no perder cambios no guardados
-      // O si la versión inicial JSON es diferente de la actual (refleja un guardado)
-      if (!isDirty || JSON.stringify(initialData) !== JSON.stringify(pageData)) {
-         setPageData(JSON.parse(JSON.stringify(initialData)));
+      // Solo actualiza si no hay cambios pendientes o si los datos iniciales realmente cambiaron
+      const initialJson = JSON.stringify(initialData);
+      const currentJson = JSON.stringify(pageData);
+      if (!isDirty || initialJson !== currentJson) {
+         // Usar deep copy al setear desde initialData
+         setPageData(JSON.parse(initialJson));
       }
     }
-  }, [initialData]); // Dependencia solo de initialData
+  }, [initialData, isDirty]); // Agregar isDirty a las dependencias
 
-  // Manejador para cambios en campos generales (título, descripción)
-  const handlePageDataChange = (event) => {
+  // --- Manejadores de Cambios Internos --- 
+
+  const handlePageDataChange = useCallback((event) => {
     const { name, value } = event.target;
-    setPageData(prevData => ({
-      ...prevData,
-      [name]: value,
-    }));
-    // setIsDirty(true); // Se maneja con useEffect ahora
-  };
+    setPageData(prevData => ({ ...prevData, [name]: value }));
+  }, []);
 
-  // Añadir un nuevo item de FAQ vacío
-  const handleAddItem = () => {
+  const handleAddItem = useCallback(() => {
     setPageData(prevData => ({
       ...prevData,
       faqItems: [
-        ...prevData.faqItems,
+        ...(prevData.faqItems || []), 
         { id: uuidv4(), question: '', answer: '' },
       ],
     }));
-    // setIsDirty(true);
-  };
+  }, []);
 
-  // Actualizar un item de FAQ existente en la lista
   const handleUpdateItem = useCallback((index, field, value) => {
     setPageData(prevData => {
-      const updatedItems = [...prevData.faqItems];
+      const updatedItems = [...(prevData.faqItems || [])];
       if (updatedItems[index]) {
         updatedItems[index] = { ...updatedItems[index], [field]: value };
       }
       return { ...prevData, faqItems: updatedItems };
     });
-    setIsDirty(true); // Marcar como sucio al actualizar
   }, []);
 
-  // Eliminar un item de FAQ de la lista
   const handleRemoveItem = useCallback((index) => {
     setPageData(prevData => ({
       ...prevData,
-      faqItems: prevData.faqItems.filter((_, i) => i !== index),
+      faqItems: (prevData.faqItems || []).filter((_, i) => i !== index),
     }));
-    setIsDirty(true); // Marcar como sucio al eliminar
   }, []);
 
-  // Mover un item hacia arriba
   const handleMoveItemUp = useCallback((index) => {
-    if (index === 0) return; // No se puede mover más arriba
+    if (index === 0) return;
     setPageData(prevData => {
-      const items = [...prevData.faqItems];
-      const temp = items[index];
-      items[index] = items[index - 1];
-      items[index - 1] = temp;
+      const items = [...(prevData.faqItems || [])];
+      [items[index], items[index - 1]] = [items[index - 1], items[index]]; 
       return { ...prevData, faqItems: items };
     });
-    setIsDirty(true); // Marcar como sucio al reordenar
   }, []);
 
-  // Mover un item hacia abajo
   const handleMoveItemDown = useCallback((index) => {
     setPageData(prevData => {
-      const items = [...prevData.faqItems];
-      if (index >= items.length - 1) return; // No se puede mover más abajo
-      const temp = items[index];
-      items[index] = items[index + 1];
-      items[index + 1] = temp;
+      const items = [...(prevData.faqItems || [])];
+      if (index >= items.length - 1) return;
+      [items[index], items[index + 1]] = [items[index + 1], items[index]]; 
       return { ...prevData, faqItems: items };
     });
-    setIsDirty(true); // Marcar como sucio al reordenar
   }, []);
 
-  // Llamar al callback onSave cuando el botón Guardar de la ActionBar se presione
-  const handleSaveChanges = () => {
-    if (onSave) {
-      onSave(pageData); // Pasa los datos actuales del editor
-      //setIsDirty(false); // Se reseteará cuando initialData se actualice
-    }
-  };
+  // --- Lógica para pasar a componentes hijos --- 
 
-  // Llamar al callback onPublish cuando el botón Publicar de la ActionBar se presione
-  const handlePublishChanges = () => {
-    if (onPublish) {
-      // La lógica en ManagementPage ya guarda antes de publicar
-      onPublish(); 
-      //setIsDirty(false); // Se reseteará cuando initialData se actualice
-    }
-  };
-
-  // Determinar si hay contenido guardado (para habilitar "Publicar")
+  const handleSaveChanges = () => onSave(pageData);
+  const handlePublishChanges = () => onPublish();
   const hasSavedContent = useMemo(() => !!initialData?.createdAt, [initialData]);
-
-  // Construir la URL de previsualización
   const previewUrl = `/faq?preview=true&t=${Date.now()}`;
 
   return (
@@ -154,40 +127,20 @@ export const FaqEditor = memo(({
         hasChanges={isDirty}
       />
 
-      {error && <div className="alert alert-danger mt-3">Error: {error}</div>}
+      {/* Mostrar error pasado desde el padre */}
+      {error && <div className="alert alert-danger mt-3">{error}</div>}
 
-      {/* Campos para Título y Descripción de la Página */}
-      <div className="card mb-4">
-        <div className="card-header">Información de la Página</div>
-        <div className="card-body">
-          <div className="mb-3">
-            <label htmlFor="pageTitle" className="form-label">Título de la Página</label>
-            <input
-              type="text"
-              className="form-control"
-              id="pageTitle"
-              name="pageTitle"
-              value={pageData.pageTitle}
-              onChange={handlePageDataChange}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="pageDescription" className="form-label">Descripción Corta (SEO)</label>
-            <textarea
-              className="form-control"
-              id="pageDescription"
-              name="pageDescription"
-              rows="3"
-              value={pageData.pageDescription}
-              onChange={handlePageDataChange}
-              disabled={isLoading}
-            ></textarea>
-          </div>
-        </div>
-      </div>
+      {/* --- Renderizado de Formularios --- */}
+      
+      {/* Usar el componente reutilizable PageMetadataEditor */}
+      <PageMetadataEditor 
+        pageTitle={pageData.pageTitle}
+        pageDescription={pageData.pageDescription}
+        onChange={handlePageDataChange} // El mismo handler sirve
+        isLoading={isLoading}
+      />
 
-      {/* Sección para editar los Items de FAQ */}
+      {/* Card Preguntas y Respuestas */}
       <div className="card mb-4">
         <div className="card-header d-flex justify-content-between align-items-center">
           <span>Preguntas y Respuestas</span>
@@ -201,7 +154,7 @@ export const FaqEditor = memo(({
           </button>
         </div>
         <div className="card-body">
-          {pageData.faqItems && pageData.faqItems.length > 0 ? (
+          {(pageData?.faqItems && pageData.faqItems.length > 0) ? (
             pageData.faqItems.map((item, index) => (
               <FaqItemEditor
                 key={item.id || index}
@@ -209,10 +162,10 @@ export const FaqEditor = memo(({
                 index={index}
                 onUpdate={handleUpdateItem}
                 onRemove={handleRemoveItem}
-                onMoveUp={handleMoveItemUp}      // Pasar nueva función
-                onMoveDown={handleMoveItemDown}  // Pasar nueva función
-                isFirst={index === 0}           // Pasar flag isFirst
-                isLast={index === pageData.faqItems.length - 1} // Pasar flag isLast
+                onMoveUp={handleMoveItemUp}
+                onMoveDown={handleMoveItemDown}
+                isFirst={index === 0}
+                isLast={index === (pageData.faqItems.length - 1)}
               />
             ))
           ) : (
@@ -221,15 +174,14 @@ export const FaqEditor = memo(({
         </div>
       </div>
 
-      {/* Usar la barra de acciones compartida */}
+      {/* Barra de Acciones Inferior */}
       <EditorActionBar
         onSave={handleSaveChanges}
         onPublish={handlePublishChanges}
-        // onReset={handleReset} // Opcional: implementar si se necesita
-        saving={isLoading}      // Usar isLoading como indicador de guardado
-        publishing={isLoading} // Usar isLoading como indicador de publicación
-        hasChanges={isDirty}    // Pasar el estado de cambios detectados
-        hasSavedContent={hasSavedContent} // Indica si ya hay algo guardado
+        saving={isLoading}
+        publishing={isLoading}
+        hasChanges={isDirty}
+        hasSavedContent={hasSavedContent}
       />
     </>
   );

@@ -3,7 +3,7 @@ export const QUICK_LINKS = [
   { label: "Tienda", url: "/tienda" },
   { label: "Contacto", url: "/contacto" },
   { label: "Preguntas Frecuentes", url: "/faq" },
-  { label: "Politica de Cokies", url: "/faq" },
+  { label: "Política de Cookies", url: "/cookies-policy" },
 ];
 
 export const SOCIAL_MEDIA_LINKS = [
