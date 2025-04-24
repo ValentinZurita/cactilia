@@ -8,10 +8,14 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { StripeProvider } from './contexts/StripeContext.jsx';
 import { loadCartFromFirestore, mergeCartsOnLogin } from './modules/shop/features/cart/store/index.js'
+import { useSiteMetadata } from './shared/hooks/useSiteMetadata.js';
 
 export const App = () => {
   // Check if user is authenticated
   const status = useCheckAuth();
+
+  // Call the metadata hook to handle title/favicon updates
+  useSiteMetadata();
 
   // Get dispatch function from Redux
   const dispatch = useDispatch();

@@ -52,15 +52,40 @@ const CompanyInfoPage = () => {
    * Guardar los datos de la empresa
    * @param {Object} data - Datos de la empresa a guardar
    */
-  const handleSave = async (data) => {
+  const handleSave = async (nestedData) => {
+    // LOG AÑADIDO 1: Ver datos anidados recibidos
+    console.log("Datos ANIDADOS recibidos por handleSave:", JSON.stringify(nestedData, null, 2)); 
+
+    // Aplanar la estructura para Firestore
+    const dataToSave = {
+      // Tomar campos de la sección 'general' y ponerlos en el nivel superior
+      name: nestedData.general?.name ?? '', 
+      legalName: nestedData.general?.legalName ?? '',
+      rfc: nestedData.general?.rfc ?? '',
+      logoUrl: nestedData.general?.logoUrl ?? '', // <--- Clave aquí
+      description: nestedData.general?.description ?? '',
+      
+      // Mantener las otras secciones como objetos anidados (si Firestore las espera así)
+      contact: nestedData.contact ?? {},
+      businessHours: nestedData.businessHours ?? [],
+      socialMedia: nestedData.socialMedia ?? {},
+      paymentConfig: nestedData.paymentConfig ?? {}
+      // Asegúrate de incluir aquí TODOS los campos que Firestore espera en el nivel superior
+      // Si 'contact', 'businessHours', etc., también deben ser aplanados, hay que hacerlo.
+      // Pero basándonos en el objeto inicial, parece que solo 'general' necesita aplanarse.
+    };
+
+    // LOG AÑADIDO 2: Ver datos aplanados que se enviarán
+    console.log("Intentando guardar datos APLANADOS:", JSON.stringify(dataToSave, null, 2)); 
+
     try {
       setSaveStatus({ success: false, error: null, loading: true });
       
-      // Usar el servicio real para guardar en Firestore
-      await companyInfoService.saveCompanyInfo(data);
+      // Enviar los datos APLANADOS al servicio
+      await companyInfoService.saveCompanyInfo(dataToSave); 
       
-      // Actualizar datos locales
-      setCompanyData(data);
+      // Actualizar datos locales con la estructura ANIDADA que usa el componente
+      setCompanyData(nestedData); 
       
       // Mostrar mensaje de éxito
       setSaveStatus({ 
@@ -97,12 +122,14 @@ const CompanyInfoPage = () => {
   const handleSectionUpdate = (sectionName, sectionData) => {
     if (!companyData) return;
     
-    const updatedData = {
-      ...companyData,
-      [sectionName]: sectionData
-    };
-    
-    setCompanyData(updatedData);
+    // Actualizar el estado de forma inmutable y correcta
+    setCompanyData(prevData => ({
+      ...prevData, // Mantener todas las secciones existentes
+      [sectionName]: { // Actualizar solo la sección específica
+        ...(prevData[sectionName] || {}), // Mantener campos existentes en esa sección si los hay
+        ...sectionData // Aplicar los cambios de la sección
+      }
+    }));
   };
 
   /**

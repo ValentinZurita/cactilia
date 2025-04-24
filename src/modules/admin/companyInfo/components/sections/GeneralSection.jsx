@@ -103,7 +103,7 @@ const GeneralSection = ({ data, onUpdate }) => {
         <div className="col-md-6">
           <div className="form-group">
             <label htmlFor="logoUrl" className="form-label">
-              URL del Logo
+              URL del Favicon
             </label>
             <input
               type="url"
@@ -112,10 +112,10 @@ const GeneralSection = ({ data, onUpdate }) => {
               name="logoUrl"
               value={generalInfo.logoUrl}
               onChange={handleChange}
-              placeholder="https://ejemplo.com/logo.png"
+              placeholder="https://ejemplo.com/favicon.ico"
             />
             <small className="form-text text-muted">
-              URL de la imagen de tu logo.
+              URL del icono (.ico, .png) para la pestaña del navegador.
             </small>
           </div>
         </div>

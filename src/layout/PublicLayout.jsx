@@ -3,9 +3,9 @@
 import { Outlet } from "react-router-dom";
 import { Footer } from "../shared/components/footer/Footer";
 import { GlobalMessages } from '../modules/user/components/shared/index.js';
+import { Navbar } from "../shared/components";
 
 import "../styles/publicLayout.css";
-import { Navbar } from '../shared/components/Navbar.jsx'
 
 export const PublicLayout = () => {
   return (
