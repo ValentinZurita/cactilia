@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CompanyInfoForm } from '../components/form/CompanyInfoForm';
 import { SaveFeedback } from '../components/common/SaveFeedback';
 import { companyInfoService } from '../services/companyInfoService';
-import NavigationTabs from '../components/navigation/NavigationTabs';
+import NavigationTabs from '../../common/components/NavigationTabs.jsx';
 import GeneralSection from '../components/sections/GeneralSection';
 import ContactSection from '../components/sections/ContactSection';
 import BusinessHoursSection from '../components/sections/BusinessHoursSection';
