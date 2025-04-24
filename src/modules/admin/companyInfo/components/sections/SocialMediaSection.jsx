@@ -51,6 +51,20 @@ const SocialMediaSection = ({ data, onUpdate }) => {
     }
   };
 
+  /**
+   * @function handleToggleVisibility
+   * @description Cambia el estado de visibilidad de un enlace social basado en su ID.
+   * @param {string} idToToggle - El ID del enlace a cambiar.
+   */
+  const handleToggleVisibility = (idToToggle) => {
+    const updatedItems = currentItems.map(item => 
+      item.id === idToToggle 
+        ? { ...item, visible: !(item.visible !== false) } // Toggle visibility, default to true if undefined
+        : item
+    );
+    onUpdate({ items: updatedItems }); // Actualizar el estado padre (que ahora guarda en Firestore)
+  };
+
   return (
     <div className="social-media-section">
       {/* Encabezado y Botón de Añadir - Remove h5 */}
@@ -75,6 +89,7 @@ const SocialMediaSection = ({ data, onUpdate }) => {
               key={item.id} // Usar el ID único como key
               item={item} 
               onRemove={handleRemove} 
+              onToggleVisibility={handleToggleVisibility} // Pass the toggle handler
             />
           ))
         ) : (

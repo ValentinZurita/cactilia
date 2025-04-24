@@ -6,7 +6,7 @@ import { HeaderSectionEditor } from './HeaderSectionEditor.jsx';
 import { ContactInfoEditor } from './ContactInfoEditor.jsx';
 import { FormFieldsEditor } from './FormFieldsEditor.jsx';
 import { MapSectionEditor } from './MapSectionEditor.jsx';
-import { SocialMediaEditor } from './SocialMediaEditor.jsx';
+// import { SocialMediaEditor } from './SocialMediaEditor.jsx';
 
 /**
  * Componente principal que orquesta la edición de la página de contacto.
@@ -58,11 +58,14 @@ export default function ContactPageEditor() {
       name: 'Mapa',
       description: 'Ubicación en Google Maps'
     },
+    // Remove the social media section from the editor options
+    /*
     socialMedia: {
       icon: 'bi-people',
       name: 'Redes Sociales',
       description: 'Enlaces a tus redes sociales'
     }
+    */
   };
 
   // =========================================================================
@@ -242,6 +245,8 @@ export default function ContactPageEditor() {
           />
         );
 
+      // Remove the case for rendering SocialMediaEditor
+      /*
       case 'socialMedia':
         return (
           <SocialMediaEditor
@@ -249,6 +254,7 @@ export default function ContactPageEditor() {
             onUpdate={(newData) => handleSectionUpdate('socialMedia', newData)}
           />
         );
+      */
 
       default:
         return <p className="text-muted">No se encontró un editor para esta sección.</p>;

@@ -1,12 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+// Import common action button components
+import { ActionButton } from '../../../common/components/ActionButton.jsx';
+import { ActionButtonsContainer } from '../../../common/components/ActionButtonsContainer.jsx';
 
 /**
  * @component SocialLinkItem
  * @description Muestra una única fila para una red social configurada, incluyendo icono,
  *              etiqueta, URL (acortada) y un botón para eliminar.
  */
-export const SocialLinkItem = ({ item, onRemove }) => {
+export const SocialLinkItem = ({ item, onRemove, onToggleVisibility }) => {
   // Función simple para acortar URLs largas para visualización
   const shortenUrl = (url) => {
     if (!url) return '';
@@ -37,17 +40,26 @@ export const SocialLinkItem = ({ item, onRemove }) => {
           </a>
         </div>
       </div>
-      <div>
-        {/* Podríamos añadir un toggle de visibilidad aquí si quisiéramos */}
-        <button 
-          type="button" 
-          className="btn btn-sm btn-outline-danger" 
-          onClick={() => onRemove(item.id)} // Llama a onRemove con el ID
+      {/* Use ActionButtonsContainer for consistent styling */}
+      <ActionButtonsContainer size="sm" ariaLabel="Acciones de enlace social">
+        {/* Visibility Action Button */}
+        <ActionButton
+          iconClass={`bi ${item.visible !== false ? 'bi-eye-fill' : 'bi-eye-slash-fill'}`}
+          title={item.visible !== false ? 'Ocultar enlace' : 'Mostrar enlace'}
+          onClick={() => onToggleVisibility(item.id)}
+          variant="light"
+          textColor="secondary"
+        />
+        {/* Delete Action Button */}
+        <ActionButton
+          iconClass="bi bi-trash"
           title="Eliminar"
-        >
-          <i className="bi bi-trash"></i>
-        </button>
-      </div>
+          onClick={() => onRemove(item.id)}
+          variant="light"
+          textColor="secondary"
+          hoverTextColor="danger"
+        />
+      </ActionButtonsContainer>
     </div>
   );
 };
@@ -61,4 +73,5 @@ SocialLinkItem.propTypes = {
     visible: PropTypes.bool // Aunque no se use visualmente aquí, es parte del dato
   }).isRequired,
   onRemove: PropTypes.func.isRequired,
+  onToggleVisibility: PropTypes.func.isRequired,
 }; 

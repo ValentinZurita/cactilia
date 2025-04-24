@@ -1,9 +1,11 @@
 // src/modules/public/pages/ContactPage.jsx
+import React, { useState, useEffect } from 'react';
 import { useContactPageContent } from '../components/contact/hooks/useContactPageContent.js'
 import { Logo } from '../../../shared/components/logo/Logo.jsx'
 import '../styles/contact.css'
 import { ContactForm } from '../components/contact/components/index.js'
-import { CONTACT_INFO, SOCIAL_MEDIA_LINKS } from '../../../shared/constants/index.js'
+import { getSocialMediaLinks } from '../../../services/firebase/firestoreService'
+import { CONTACT_INFO } from '../../../shared/constants/index.js'
 
 /**
  * Enhanced Contact Page component that uses the customizable content
@@ -13,7 +15,9 @@ import { CONTACT_INFO, SOCIAL_MEDIA_LINKS } from '../../../shared/constants/inde
  */
 export const ContactPage = () => {
   // Load customized content for the page
-  const { pageContent, loading, getSection } = useContactPageContent()
+  const { pageContent, loading: pageLoading, getSection } = useContactPageContent()
+  const [socialLinks, setSocialLinks] = useState([]);
+  const [socialLinksLoading, setSocialLinksLoading] = useState(true);
 
   // Get configuration for each section
   const headerConfig = getSection('header')
@@ -21,6 +25,24 @@ export const ContactPage = () => {
   const formConfig = getSection('form')
   const mapConfig = getSection('map')
   const socialMediaConfig = getSection('socialMedia')
+
+  // Fetch social media links from Firestore
+  useEffect(() => {
+    const fetchLinks = async () => {
+      setSocialLinksLoading(true);
+      try {
+        const linksFromDb = await getSocialMediaLinks();
+        const visibleLinks = linksFromDb.filter(link => link.visible !== false);
+        setSocialLinks(visibleLinks);
+      } catch (error) {
+        console.error("Error fetching social media links for Contact Page:", error);
+        setSocialLinks([]); // Set to empty array on error
+      } finally {
+        setSocialLinksLoading(false);
+      }
+    };
+    fetchLinks();
+  }, []);
 
   // Get contact information (default or custom)
   const getContactDetails = () => {
@@ -42,12 +64,7 @@ export const ContactPage = () => {
 
   // Get visible social media items
   const getVisibleSocialMedia = () => {
-    if (socialMediaConfig?.items && Array.isArray(socialMediaConfig.items)) {
-      return socialMediaConfig.items.filter(item => item.visible !== false)
-    }
-
-    // If no custom configuration, use defaults from constants
-    return SOCIAL_MEDIA_LINKS
+    return socialLinks;
   }
 
   const contactDetails = getContactDetails()
@@ -121,13 +138,13 @@ export const ContactPage = () => {
       </div>
 
       {/* Social media links */}
-      {contactInfoConfig.showSocialMedia !== false && visibleSocialMedia.length > 0 && (
+      {contactInfoConfig.showSocialMedia !== false && !socialLinksLoading && visibleSocialMedia.length > 0 && (
         <div className="social-links mt-4">
           <h5 className="text-white-50 fw-light mb-3">Síguenos</h5>
           <div className="d-flex">
-            {visibleSocialMedia.map((social, index) => (
+            {visibleSocialMedia.map((social) => (
               <a
-                key={index}
+                key={social.id || social.url}
                 href={social.url}
                 className="text-white social-icon me-2"
                 target="_blank"
@@ -193,8 +210,8 @@ export const ContactPage = () => {
     )
   }
 
-  // Show loading spinner while content is being fetched
-  if (loading) {
+  // Show loading spinner while either page content OR social links are loading
+  if (pageLoading || socialLinksLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
         <div className="spinner-border text-primary" role="status">

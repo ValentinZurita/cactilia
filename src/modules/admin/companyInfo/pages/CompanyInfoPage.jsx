@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SaveFeedback } from '../components/common/SaveFeedback';
 import { companyInfoService } from '../services/companyInfoService';
+import { getSocialMediaLinks, updateSocialMediaLinks } from '../../../../services/firebase/firestoreService.js';
 import NavigationTabs from '../../common/components/NavigationTabs.jsx';
 import GeneralSection from '../components/sections/GeneralSection';
 import ContactSection from '../components/sections/ContactSection';
@@ -33,10 +34,18 @@ const CompanyInfoPage = () => {
         setLoading(true);
         setError(null);
         
-        // Usar el servicio real para Firestore
-        const data = await companyInfoService.getCompanyInfo();
+        // 1. Fetch general company info (assuming this excludes social links now)
+        const generalData = await companyInfoService.getCompanyInfo();
         
-        setCompanyData(data);
+        // 2. Fetch social media links separately
+        const socialLinks = await getSocialMediaLinks();
+        
+        // 3. Combine the data
+        setCompanyData({ 
+          ...generalData, 
+          socialMedia: { items: socialLinks } // Store social links under socialMedia.items
+        });
+
       } catch (err) {
         console.error('Error loading company data:', err);
         setError('No se pudieron cargar los datos de la empresa');
@@ -93,18 +102,42 @@ const CompanyInfoPage = () => {
 
   /**
    * Actualizar una sección específica de los datos
+   * Handles saving social links directly to Firestore when updated.
    */
-  const handleSectionUpdate = (sectionName, sectionData) => {
+  const handleSectionUpdate = async (sectionName, sectionData) => {
     if (!companyData) return;
-    
-    // Actualizar el estado de forma inmutable y correcta
-    setCompanyData(prevData => ({
-      ...prevData, // Mantener todas las secciones existentes
-      [sectionName]: { // Actualizar solo la sección específica
-        ...(prevData[sectionName] || {}), // Mantener campos existentes en esa sección si los hay
-        ...sectionData // Aplicar los cambios de la sección
+
+    // If the updated section is socialMedia, save directly to Firestore
+    if (sectionName === 'socialMedia') {
+      // Assuming sectionData from SocialMediaSection is { items: [...] }
+      const linksToSave = sectionData.items || []; 
+      try {
+        // Attempt to save to Firestore first
+        const success = await updateSocialMediaLinks(linksToSave);
+        if (success) {
+          // If Firestore save is successful, update local state
+          setCompanyData(prevData => ({
+            ...prevData,
+            socialMedia: { items: linksToSave } // Update with the successfully saved links
+          }));
+           // Optionally show temporary success feedback specific to social links
+           console.log("Social links updated in Firestore and local state.");
+        } else {
+           // Handle Firestore save failure (e.g., show an error message)
+           console.error("Failed to save social links to Firestore.");
+           // Maybe set an error state specific to this section?
+        }
+      } catch (error) {
+        console.error("Error calling updateSocialMediaLinks:", error);
+        // Handle unexpected errors during the save attempt
       }
-    }));
+    } else {
+      // For all other sections, just update local state (will be saved with main Save button)
+      setCompanyData(prevData => ({
+        ...prevData,
+        [sectionName]: sectionData // Original logic for other sections
+      }));
+    }
   };
 
   /**
@@ -207,7 +240,7 @@ const CompanyInfoPage = () => {
             
             {activeSection === 'social' && (
               <SocialMediaSection 
-                data={companyData.socialMedia || {}} 
+                data={companyData.socialMedia || { items: [] }} 
                 onUpdate={(data) => handleSectionUpdate('socialMedia', data)}
               />
             )}
