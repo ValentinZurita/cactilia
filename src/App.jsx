@@ -1,4 +1,3 @@
-// src/App.jsx
 import '../src/styles/global.css';
 import '../src/styles/scrollbar.css';
 import { AppRouter } from './routes/AppRouter';

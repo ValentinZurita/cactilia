@@ -1,5 +1,3 @@
-// src/layout/PublicLayout.jsx
-
 import { Outlet } from "react-router-dom";
 import { Footer } from "../shared/components/footer/Footer";
 import { GlobalMessages } from '../modules/user/components/shared/index.js';
