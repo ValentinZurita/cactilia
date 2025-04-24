@@ -229,7 +229,7 @@ const CompanyInfoPage = () => {
           </div>
           
           {/* Botones de acción */}
-          <div className="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+          <div className="mt-4 pt-3 d-flex justify-content-end gap-2">
             <button 
               className="btn btn-outline-secondary px-4"
               onClick={() => window.location.reload()}

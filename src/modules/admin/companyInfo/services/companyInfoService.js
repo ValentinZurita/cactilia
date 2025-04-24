@@ -54,7 +54,6 @@ export const companyInfoService = {
       legalName: '',
       rfc: '',
       logoUrl: '',
-      description: '',
       contact: {
         email: 'info@cactilia.com',
         phone: '',
