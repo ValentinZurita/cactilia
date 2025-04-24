@@ -9,7 +9,6 @@ const GeneralSection = ({ data, onUpdate }) => {
     name: data.name || '',
     legalName: data.legalName || '',
     rfc: data.rfc || '',
-    logoUrl: data.logoUrl || '',
     description: data.description || ''
   });
   
@@ -100,30 +99,10 @@ const GeneralSection = ({ data, onUpdate }) => {
           </div>
         </div>
         
-        <div className="col-md-6">
-          <div className="form-group">
-            <label htmlFor="logoUrl" className="form-label">
-              URL del Favicon
-            </label>
-            <input
-              type="url"
-              className="form-control"
-              id="logoUrl"
-              name="logoUrl"
-              value={generalInfo.logoUrl}
-              onChange={handleChange}
-              placeholder="https://ejemplo.com/favicon.ico"
-            />
-            <small className="form-text text-muted">
-              URL del icono (.ico, .png) para la pestaña del navegador.
-            </small>
-          </div>
-        </div>
-        
         <div className="col-12">
           <div className="form-group">
             <label htmlFor="description" className="form-label">
-              Descripción de la Empresa
+              Descripción (Footer/Interna)
             </label>
             <textarea
               className="form-control"
@@ -135,7 +114,7 @@ const GeneralSection = ({ data, onUpdate }) => {
               placeholder="Describe brevemente tu empresa..."
             ></textarea>
             <small className="form-text text-muted">
-              Esta descripción puede aparecer en el pie de página y en la sección "Acerca de".
+              Descripción para uso interno (ej. pie de página, sección "Acerca de"). No afecta SEO de Google directamente.
             </small>
           </div>
         </div>

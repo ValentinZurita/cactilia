@@ -91,6 +91,11 @@ export const companyInfoService = {
           transfer: { enabled: false, config: {} },
           cash: { enabled: false, config: {} }
         }
+      },
+      seo: {
+        siteName: 'Cactilia',
+        metaDescription: '',
+        faviconUrl: ''
       }
     };
   }

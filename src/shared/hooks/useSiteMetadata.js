@@ -15,34 +15,37 @@ import { useCompanyInfo } from '../../modules/admin/companyInfo/hooks/useCompany
  * No renderiza ningún elemento visual.
  */
 export const useSiteMetadata = () => {
-  const { companyInfo, loading } = useCompanyInfo();
+  // Leer companyInfo completo, que incluye el objeto seo
+  const { companyInfo, loading } = useCompanyInfo(); 
 
   useEffect(() => {
     // Solo proceder si la carga ha terminado y tenemos datos
-    if (!loading && companyInfo) {
+    // Usar optional chaining (?.) por si companyInfo o companyInfo.seo son null/undefined inicialmente
+    if (!loading && companyInfo?.seo) { 
+      const { siteName, metaDescription, faviconUrl } = companyInfo.seo;
 
       // -------------------------------------
       // 1. Actualizar Título del Documento
       // -------------------------------------
-      if (companyInfo.name) {
-        document.title = companyInfo.name;
+      if (siteName) { // Usar siteName de seo
+        document.title = siteName;
       }
 
       // -------------------------------------
       // 2. Actualizar Favicon
       // -------------------------------------
-      if (companyInfo.logoUrl) {
+      if (faviconUrl) { // Usar faviconUrl de seo
         let faviconLink = document.querySelector("link[rel='icon']"); 
 
         // Determinar tipo MIME basado en la extensión (básico)
         let mimeType = '';
-        if (companyInfo.logoUrl.endsWith('.ico')) {
+        if (faviconUrl.endsWith('.ico')) {
           mimeType = 'image/x-icon';
-        } else if (companyInfo.logoUrl.endsWith('.png')) {
+        } else if (faviconUrl.endsWith('.png')) {
           mimeType = 'image/png';
-        } else if (companyInfo.logoUrl.endsWith('.svg')) {
+        } else if (faviconUrl.endsWith('.svg')) {
           mimeType = 'image/svg+xml';
-        } else if (companyInfo.logoUrl.endsWith('.jpg') || companyInfo.logoUrl.endsWith('.jpeg')) {
+        } else if (faviconUrl.endsWith('.jpg') || faviconUrl.endsWith('.jpeg')) {
           mimeType = 'image/jpeg';
         } // Se pueden añadir más tipos si es necesario
 
@@ -54,7 +57,7 @@ export const useSiteMetadata = () => {
         }
 
         // Actualizar el href y el tipo
-        faviconLink.href = companyInfo.logoUrl;
+        faviconLink.href = faviconUrl;
         if (mimeType) {
           faviconLink.type = mimeType;
         } else {
@@ -66,7 +69,7 @@ export const useSiteMetadata = () => {
       // -------------------------------------
       // 3. Actualizar Meta Descripción (SEO)
       // -------------------------------------
-      if (companyInfo.description) { 
+      if (metaDescription) { // Usar metaDescription de seo
         let metaDescriptionTag = document.querySelector("meta[name='description']");
 
         // Si no existe la etiqueta, crearla
@@ -77,8 +80,33 @@ export const useSiteMetadata = () => {
         }
         
         // Actualizar el contenido
-        metaDescriptionTag.content = companyInfo.description; 
+        metaDescriptionTag.content = metaDescription;
       } 
+
+      // -------------------------------------
+      // 4. Actualizar Datos Estructurados (JSON-LD) para Nombre del Sitio
+      // -------------------------------------
+      if (siteName) { // Usar siteName de seo
+        const structuredData = {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": siteName, // Usar siteName
+          "url": window.location.origin // URL base del sitio
+        };
+
+        let structuredDataScript = document.getElementById('website-structured-data');
+
+        // Si no existe la etiqueta, crearla
+        if (!structuredDataScript) {
+          structuredDataScript = document.createElement('script');
+          structuredDataScript.type = 'application/ld+json';
+          structuredDataScript.id = 'website-structured-data';
+          document.head.appendChild(structuredDataScript);
+        }
+
+        // Actualizar el contenido del script
+        structuredDataScript.textContent = JSON.stringify(structuredData);
+      }
     }
   }, [companyInfo, loading]);
 

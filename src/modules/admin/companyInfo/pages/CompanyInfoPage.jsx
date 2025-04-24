@@ -8,6 +8,7 @@ import ContactSection from '../components/sections/ContactSection';
 import BusinessHoursSection from '../components/sections/BusinessHoursSection';
 import SocialMediaSection from '../components/sections/SocialMediaSection';
 import PaymentSection from '../components/sections/PaymentSection';
+import SeoSection from '../components/sections/SeoSection';
 
 /**
  * Página principal para la sección de Datos de la Empresa
@@ -52,40 +53,15 @@ const CompanyInfoPage = () => {
    * Guardar los datos de la empresa
    * @param {Object} data - Datos de la empresa a guardar
    */
-  const handleSave = async (nestedData) => {
-    // LOG AÑADIDO 1: Ver datos anidados recibidos
-    console.log("Datos ANIDADOS recibidos por handleSave:", JSON.stringify(nestedData, null, 2)); 
-
-    // Aplanar la estructura para Firestore
-    const dataToSave = {
-      // Tomar campos de la sección 'general' y ponerlos en el nivel superior
-      name: nestedData.general?.name ?? '', 
-      legalName: nestedData.general?.legalName ?? '',
-      rfc: nestedData.general?.rfc ?? '',
-      logoUrl: nestedData.general?.logoUrl ?? '', // <--- Clave aquí
-      description: nestedData.general?.description ?? '',
-      
-      // Mantener las otras secciones como objetos anidados (si Firestore las espera así)
-      contact: nestedData.contact ?? {},
-      businessHours: nestedData.businessHours ?? [],
-      socialMedia: nestedData.socialMedia ?? {},
-      paymentConfig: nestedData.paymentConfig ?? {}
-      // Asegúrate de incluir aquí TODOS los campos que Firestore espera en el nivel superior
-      // Si 'contact', 'businessHours', etc., también deben ser aplanados, hay que hacerlo.
-      // Pero basándonos en el objeto inicial, parece que solo 'general' necesita aplanarse.
-    };
-
-    // LOG AÑADIDO 2: Ver datos aplanados que se enviarán
-    console.log("Intentando guardar datos APLANADOS:", JSON.stringify(dataToSave, null, 2)); 
-
+  const handleSave = async (companyDataToSave) => {
     try {
       setSaveStatus({ success: false, error: null, loading: true });
       
-      // Enviar los datos APLANADOS al servicio
-      await companyInfoService.saveCompanyInfo(dataToSave); 
+      // Enviar los datos directamente (con objeto seo anidado) al servicio
+      await companyInfoService.saveCompanyInfo(companyDataToSave); 
       
       // Actualizar datos locales con la estructura ANIDADA que usa el componente
-      setCompanyData(nestedData); 
+      setCompanyData(companyDataToSave); // Usar el mismo objeto que se guardó
       
       // Mostrar mensaje de éxito
       setSaveStatus({ 
@@ -185,6 +161,14 @@ const CompanyInfoPage = () => {
         <NavigationTabs 
           activeSection={activeSection} 
           onSectionChange={handleSectionChange} 
+          tabs={[
+            { id: 'general', label: 'General' },
+            { id: 'contact', label: 'Contacto' },
+            { id: 'hours', label: 'Horarios' },
+            { id: 'social', label: 'Redes Sociales' },
+            { id: 'payment', label: 'Pagos' },
+            { id: 'seo', label: 'SEO / Metadatos' } 
+          ]}
         />
         
         <div className="p-4">
@@ -233,6 +217,13 @@ const CompanyInfoPage = () => {
               <PaymentSection 
                 data={companyData.paymentConfig || {}} 
                 onUpdate={(data) => handleSectionUpdate('paymentConfig', data)}
+              />
+            )}
+            
+            {activeSection === 'seo' && (
+              <SeoSection 
+                data={companyData.seo || {}}
+                onUpdate={(data) => handleSectionUpdate('seo', data)}
               />
             )}
           </div>
