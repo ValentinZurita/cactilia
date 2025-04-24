@@ -11,6 +11,15 @@ export const InputField = ({ id, name, label, value, onChange, type = 'text', pl
     <div className="form-group">
       <label htmlFor={id} className="form-label">
         {label} {required && <span className="text-danger">*</span>}
+        {helpText && (
+          <i 
+            className="bi bi-info-circle-fill ms-1 text-secondary"
+            style={{ cursor: 'pointer' }}
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            title={helpText}
+          ></i>
+        )}
       </label>
       {isTextArea ? (
         <textarea
@@ -35,7 +44,6 @@ export const InputField = ({ id, name, label, value, onChange, type = 'text', pl
           required={required}
         />
       )}
-      {helpText && <small className="form-text text-muted">{helpText}</small>}
     </div>
   </div>
 );

@@ -1,46 +1,80 @@
+// --- Estilos Globales ---
 import '../src/styles/global.css';
 import '../src/styles/scrollbar.css';
-import { AppRouter } from './routes/AppRouter';
-import { useCheckAuth } from './shared/hooks/useCheckAuth.js';
-import { Spinner } from './shared/components/spinner/Spinner.jsx';
+
+// --- React y Redux ---
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+
+// --- Hooks Personalizados ---
+import { useCheckAuth } from './shared/hooks/useCheckAuth.js';
+import { useSiteMetadata } from './shared/hooks/useSiteMetadata.js'; 
+
+// --- Componentes Compartidos ---
+import { Spinner } from './shared/components/spinner/Spinner.jsx';
+
+// --- Contextos ---
 import { StripeProvider } from './contexts/StripeContext.jsx';
-import { loadCartFromFirestore, mergeCartsOnLogin } from './modules/shop/features/cart/store/index.js'
-import { useSiteMetadata } from './shared/hooks/useSiteMetadata.js';
 
+// --- Lógica del Store (Redux) ---
+import { loadCartFromFirestore } from './modules/shop/features/cart/store/index.js'; // Asumiendo que mergeCartsOnLogin ya no se usa directamente aquí
+
+// --- Router Principal ---
+import { AppRouter } from './routes/AppRouter';
+
+/**
+ * @component App
+ * @description Componente raíz de la aplicación.
+ * Responsabilidades principales:
+ * - Aplicar estilos globales.
+ * - Verificar el estado de autenticación del usuario.
+ * - Inicializar metadatos globales del sitio (título, favicon, etc.) usando `useSiteMetadata`.
+ * - Cargar el carrito del usuario desde Firestore al iniciar sesión.
+ * - Proveer el contexto de Stripe.
+ * - Renderizar el enrutador principal (`AppRouter`).
+ * - Mostrar un spinner mientras se verifica la autenticación.
+ */
 export const App = () => {
-  // Check if user is authenticated
-  const status = useCheckAuth();
 
-  // Call the metadata hook to handle title/favicon updates
-  useSiteMetadata();
+  // --- Hooks de Estado y Autenticación ---
+  const status = useCheckAuth(); // Verifica el estado de autenticación al cargar
+  const auth = useSelector(state => state.auth); // Obtiene estado de autenticación de Redux
+  const dispatch = useDispatch(); // Obtiene la función dispatch de Redux
 
-  // Get dispatch function from Redux
-  const dispatch = useDispatch();
 
-  // Get user authentication status
-  const auth = useSelector(state => state.auth);
+  // --- Hook para Metadatos Globales ---
+  // Inicializa/actualiza <title>, favicon, <meta description>, JSON-LD, etc.
+  useSiteMetadata(); 
 
-  // Effect to load cart when user logs in
+
+  // --- Efecto para Cargar Carrito del Usuario ---
   useEffect(() => {
-    // Si el usuario está autenticado, cargar su carrito desde Firestore
+    // Si el usuario está autenticado y tenemos su UID, cargar su carrito
     if (status === 'authenticated' && auth.uid) {
-      // Cargar directamente el carrito del usuario desde Firestore
-      // Sin fusionar para evitar duplicaciones
+      // Despacha la acción para cargar el carrito desde Firestore
+      // Nota: La lógica de fusión de carritos (si existe) debería estar dentro del store/thunk.
       dispatch(loadCartFromFirestore());
     }
+    // Dependencias: se ejecuta cuando cambia el estado de autenticación o el UID
   }, [status, auth.uid, dispatch]);
 
-  // Show spinner while checking authentication status
+
+  // --- Renderizado Condicional: Spinner de Carga ---
+  // Muestra un spinner mientras se determina el estado de autenticación
   if (status === 'checking') {
-    // Show spinner
     return <Spinner />;
   }
 
+  // --- Renderizado Principal ---
   return (
+
+    // Proveedor de Contexto de Stripe
     <StripeProvider>
+
+      {/* Enrutador principal que define las páginas de la aplicación */}
       <AppRouter />
+
     </StripeProvider>
+
   );
 };
