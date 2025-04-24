@@ -164,7 +164,7 @@ const CompanyInfoPage = () => {
           tabs={[
             { id: 'general', label: 'General' },
             { id: 'contact', label: 'Contacto' },
-            { id: 'hours', label: 'Horarios' },
+            // { id: 'hours', label: 'Horarios' }, // Comment out the 'Horarios' tab
             { id: 'social', label: 'Redes Sociales' },
             { id: 'payment', label: 'Pagos' },
             { id: 'seo', label: 'SEO / Metadatos' } 
