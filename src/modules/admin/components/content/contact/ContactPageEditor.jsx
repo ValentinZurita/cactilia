@@ -245,7 +245,6 @@ export default function ContactPageEditor() {
           />
         );
 
-      // Remove the case for rendering SocialMediaEditor
       /*
       case 'socialMedia':
         return (

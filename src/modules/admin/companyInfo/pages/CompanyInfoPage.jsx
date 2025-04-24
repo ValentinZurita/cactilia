@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SaveFeedback } from '../components/common/SaveFeedback';
 import { companyInfoService } from '../services/companyInfoService';
-import { getSocialMediaLinks, updateSocialMediaLinks } from '../../../../services/firebase/firestoreService.js';
+import { getSocialMediaLinks, updateSocialMediaLinks } from '../../../../services/firebase/companyInfoService.js';
 import NavigationTabs from '../../common/components/NavigationTabs.jsx';
 import GeneralSection from '../components/sections/GeneralSection';
 import ContactSection from '../components/sections/ContactSection';

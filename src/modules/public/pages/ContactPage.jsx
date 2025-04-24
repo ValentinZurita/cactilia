@@ -1,10 +1,9 @@
-// src/modules/public/pages/ContactPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react'
 import { useContactPageContent } from '../components/contact/hooks/useContactPageContent.js'
 import { Logo } from '../../../shared/components/logo/Logo.jsx'
 import '../styles/contact.css'
 import { ContactForm } from '../components/contact/components/index.js'
-import { getSocialMediaLinks } from '../../../services/firebase/firestoreService'
+import { getSocialMediaLinks } from '../../../services/firebase/companyInfoService'
 import { CONTACT_INFO } from '../../../shared/constants/index.js'
 
 /**
@@ -13,11 +12,12 @@ import { CONTACT_INFO } from '../../../shared/constants/index.js'
  *
  * @returns {JSX.Element}
  */
+
 export const ContactPage = () => {
   // Load customized content for the page
   const { pageContent, loading: pageLoading, getSection } = useContactPageContent()
-  const [socialLinks, setSocialLinks] = useState([]);
-  const [socialLinksLoading, setSocialLinksLoading] = useState(true);
+  const [socialLinks, setSocialLinks] = useState([])
+  const [socialLinksLoading, setSocialLinksLoading] = useState(true)
 
   // Get configuration for each section
   const headerConfig = getSection('header')
@@ -29,20 +29,20 @@ export const ContactPage = () => {
   // Fetch social media links from Firestore
   useEffect(() => {
     const fetchLinks = async () => {
-      setSocialLinksLoading(true);
+      setSocialLinksLoading(true)
       try {
-        const linksFromDb = await getSocialMediaLinks();
-        const visibleLinks = linksFromDb.filter(link => link.visible !== false);
-        setSocialLinks(visibleLinks);
+        const linksFromDb = await getSocialMediaLinks()
+        const visibleLinks = linksFromDb.filter(link => link.visible !== false)
+        setSocialLinks(visibleLinks)
       } catch (error) {
-        console.error("Error fetching social media links for Contact Page:", error);
-        setSocialLinks([]); // Set to empty array on error
+        console.error('Error fetching social media links for Contact Page:', error)
+        setSocialLinks([]) // Set to empty array on error
       } finally {
-        setSocialLinksLoading(false);
+        setSocialLinksLoading(false)
       }
-    };
-    fetchLinks();
-  }, []);
+    }
+    fetchLinks()
+  }, [])
 
   // Get contact information (default or custom)
   const getContactDetails = () => {
@@ -64,11 +64,12 @@ export const ContactPage = () => {
 
   // Get visible social media items
   const getVisibleSocialMedia = () => {
-    return socialLinks;
+    return socialLinks
   }
 
   const contactDetails = getContactDetails()
   const visibleSocialMedia = getVisibleSocialMedia()
+
 
   /**
    * Renders the heading section (title and subtitle)
@@ -83,6 +84,7 @@ export const ContactPage = () => {
       </div>
     </div>
   )
+
 
   /**
    * Renders the contact information card with social media links
@@ -164,6 +166,7 @@ export const ContactPage = () => {
       </div>
     </div>
   )
+
 
   /**
    * Renders the contact form card

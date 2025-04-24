@@ -12,12 +12,23 @@ import { AddButton } from '../../../common/components/AddButton.jsx';
  *              Permite añadir y eliminar enlaces.
  */
 const SocialMediaSection = ({ data, onUpdate }) => {
+
+  // ========================================================================
+  // 1. Estados y Datos
+  // ========================================================================
+
   // Estado para controlar la visibilidad del formulario de añadir
   const [showAddForm, setShowAddForm] = useState(false);
 
   // Obtener la lista de items (asegurarse de que siempre sea un array)
-  // Comprobar si 'data' y 'data.items' existen y son un array.
+  // Si 'data' o 'data.items' no existen o no son array, usar array vacío.
   const currentItems = (data && Array.isArray(data.items)) ? data.items : [];
+
+
+
+  // ========================================================================
+  // 2. Handlers de Eventos
+  // ========================================================================
 
   /**
    * @function handleAdd
@@ -65,59 +76,89 @@ const SocialMediaSection = ({ data, onUpdate }) => {
     onUpdate({ items: updatedItems }); // Actualizar el estado padre (que ahora guarda en Firestore)
   };
 
-  return (
-    <div className="social-media-section">
-      {/* Encabezado y Botón de Añadir - Remove h5 */}
-      <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-        {/* Empty div to push the button to the right using justify-content-between */}
-        <div></div> {/* Remains empty to keep alignment if needed, or remove if title added back */}        
-      </div>
 
-      {/* Formulario para Añadir (condicional) */}
-      {showAddForm && (
-        <AddSocialLinkForm 
-          onAdd={handleAdd}
-          onCancel={() => setShowAddForm(false)}
-        />
-      )}
 
-      {/* Lista de Enlaces Existentes */}
-      <div className="list-group">
-        {currentItems.length > 0 ? (
-          currentItems.map(item => (
-            <SocialLinkItem 
-              key={item.id} // Usar el ID único como key
-              item={item} 
-              onRemove={handleRemove} 
-              onToggleVisibility={handleToggleVisibility} // Pass the toggle handler
-            />
-          ))
-        ) : (
-          <p className="text-muted fst-italic px-3">No hay enlaces a redes sociales añadidos.</p>
-        )}
-      </div>
-      
-      {/* Botón para Añadir Nuevo Enlace (visible si el form no está) */}      
-      {!showAddForm && (
-        // Use the new AddButton component
-        <AddButton 
-          onClick={() => setShowAddForm(true)}
-          title="Añadir Enlace" // Specific title for this instance
-          className="mt-3 text-center" // Apply wrapper classes here
-          // Default size, color (btn-dark), icon (bi-plus-lg), and hoverScale are fine
-        />
-      )}
+  // ========================================================================
+  // 3. Funciones de Renderizado Locales (Helpers)
+  // ========================================================================
 
-      {/* Nota informativa (si no hay items y el form no está visible) */}
-      {!showAddForm && currentItems.length === 0 && (
-         <div className="mt-4 text-muted small">
-          <i className="bi bi-info-circle me-1"></i>
-          Añade enlaces a tus perfiles sociales para que aparezcan en tu sitio.
-        </div>
+  /** Renderiza el encabezado (actualmente vacío, placeholder) */
+  const renderHeader = () => (
+    <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+      <div></div> {/* Placeholder para mantener alineación si se añade título */}        
+    </div>
+  );
+
+  /** Renderiza el formulario para añadir un nuevo enlace (si está visible) */
+  const renderAddForm = () => {
+    if (!showAddForm) return null;
+    return (
+      <AddSocialLinkForm 
+        onAdd={handleAdd}
+        onCancel={() => setShowAddForm(false)}
+      />
+    );
+  };
+
+  /** Renderiza la lista de enlaces existentes o un mensaje si está vacía */
+  const renderLinkList = () => (
+    <div className="list-group">
+      {currentItems.length > 0 ? (
+        currentItems.map(item => (
+          <SocialLinkItem 
+            key={item.id} // Usar el ID único como key
+            item={item} 
+            onRemove={handleRemove} 
+            onToggleVisibility={handleToggleVisibility} // Pasar el handler
+          />
+        ))
+      ) : (
+        <p className="text-muted fst-italic px-3">No hay enlaces a redes sociales añadidos.</p>
       )}
     </div>
   );
+
+  /** Renderiza el botón para mostrar el formulario de añadir (si no está visible) */
+  const renderAddButton = () => {
+    if (showAddForm) return null;
+    return (
+      <AddButton 
+        onClick={() => setShowAddForm(true)}
+        title="Añadir Enlace"
+        className="mt-3 text-center"
+      />
+    );
+  };
+
+  /** Renderiza una nota informativa si no hay items y el form no está visible */
+  const renderInfoMessage = () => {
+    if (showAddForm || currentItems.length > 0) return null;
+    return (
+       <div className="mt-4 text-muted small">
+        <i className="bi bi-info-circle me-1"></i>
+        Añade enlaces a tus perfiles sociales para que aparezcan en tu sitio.
+      </div>
+    );
+  };
+
+
+
+  // ========================================================================
+  // 4. Renderizado Principal del Componente
+  // ========================================================================
+  
+  return (
+    <div className="social-media-section">
+      {renderHeader()}
+      {renderAddForm()}
+      {renderLinkList()}
+      {renderAddButton()}
+      {renderInfoMessage()}
+    </div>
+  );
 };
+
+
 
 SocialMediaSection.propTypes = {
   // Aceptar que 'data' puede no tener 'items' o 'items' no ser array inicialmente

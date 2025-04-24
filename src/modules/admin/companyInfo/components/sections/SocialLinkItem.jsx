@@ -1,15 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-// Import common action button components
 import { ActionButton } from '../../../common/components/ActionButton.jsx';
 import { ActionButtonsContainer } from '../../../common/components/ActionButtonsContainer.jsx';
 
 /**
  * @component SocialLinkItem
  * @description Muestra una única fila para una red social configurada, incluyendo icono,
- *              etiqueta, URL (acortada) y un botón para eliminar.
+ *              etiqueta, URL (acortada), botón de visibilidad y botón para eliminar.
  */
+
 export const SocialLinkItem = ({ item, onRemove, onToggleVisibility }) => {
+
   // Función simple para acortar URLs largas para visualización
   const shortenUrl = (url) => {
     if (!url) return '';
@@ -24,7 +25,10 @@ export const SocialLinkItem = ({ item, onRemove, onToggleVisibility }) => {
   };
 
   return (
+
     <div className="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+      
+      {/* Sección de Información (Izquierda) */}
       <div className="d-flex align-items-center flex-grow-1 me-3" style={{ minWidth: '200px' }}>
         <i className={`bi ${item.icon || 'bi-link-45deg'} me-3 fs-5`}></i>
         <div>
@@ -34,31 +38,36 @@ export const SocialLinkItem = ({ item, onRemove, onToggleVisibility }) => {
             target="_blank" 
             rel="noopener noreferrer" 
             className="text-muted text-decoration-none small"
-            title={item.url} // Mostrar URL completa en tooltip del navegador
+            title={item.url} // Tooltip con URL completa
           >
             {shortenUrl(item.url) || 'Sin URL'}
           </a>
         </div>
       </div>
-      {/* Use ActionButtonsContainer for consistent styling */}
+
+      {/* Sección de Acciones (Derecha) */}
       <ActionButtonsContainer size="sm" ariaLabel="Acciones de enlace social">
-        {/* Visibility Action Button */}
+
+        {/* Botón para Cambiar Visibilidad */}
         <ActionButton
           iconClass={`bi ${item.visible !== false ? 'bi-eye-fill' : 'bi-eye-slash-fill'}`}
           title={item.visible !== false ? 'Ocultar enlace' : 'Mostrar enlace'}
           onClick={() => onToggleVisibility(item.id)}
           variant="light"
           textColor="secondary"
+          // Sin hoverTextColor específico para el ojo
         />
-        {/* Delete Action Button */}
+
+        {/* Botón para Eliminar */}
         <ActionButton
           iconClass="bi bi-trash"
           title="Eliminar"
-          onClick={() => onRemove(item.id)}
+          onClick={() => onRemove(item.id)} // Confirmación manejada en el padre
           variant="light"
           textColor="secondary"
-          hoverTextColor="danger"
+          hoverTextColor="danger" // Icono rojo al pasar el ratón
         />
+
       </ActionButtonsContainer>
     </div>
   );
