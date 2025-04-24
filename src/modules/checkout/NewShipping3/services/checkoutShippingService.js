@@ -87,18 +87,32 @@ class CheckoutShippingService {
       // Ya que el servicio original espera (cartItems, address) y nuestro componente pasa (address, cartItems)
       const result = await shippingService.getShippingOptions(normalizedItems, address, normalizedRules);
       
-      if (!result || result.length === 0) {
-        console.log('⚠️ No se obtuvieron opciones de envío');
+      // Verificar si la operación subyacente falló (incluso si devolvió un objeto)
+      if (!result || !result.success) {
+        console.log('⚠️ No se obtuvieron opciones de envío o la operación falló:', result?.error);
+        return [];
+      }
+      
+      // Asegurarse de que result.options sea un array antes de mapear
+      if (!Array.isArray(result.options)) {
+        console.error('Error inesperado: result.options no es un array.', result);
         return [];
       }
       
       // Verificar si hay información de envío parcial
-      const hasPartialShipping = result.partial_shipping === true;
-      const unavailableProducts = result.unavailable_products || '';
-      const productsWithoutShipping = result.products_without_shipping || [];
+      const hasPartialShipping = result.partial === true;
+      const unavailableProducts = result.unavailableProducts || [];
+      const productsWithoutShipping = result.products_without_shipping || result.unavailableProducts?.map(p => p.id) || [];
+      
+      // Obtener nombres de productos no disponibles para el log (si es necesario)
+      const unavailableProductNames = unavailableProducts
+        .map(p => p.name || p.title || p.id || 'Producto desconocido')
+        .join(', ');
+      
+      console.log(`⚠️ Envío parcial: ${productsWithoutShipping.length} productos no pueden enviarse a esta dirección: ${unavailableProductNames}`);
       
       // Formatear las opciones para que sean compatibles con nuestro componente
-      const options = result.map(option => {
+      const options = result.options.map(option => {
         // Logs para debugging
         console.log(`🔄 Procesando opción de envío: ${option.id}`);
         console.log(`- minDays: ${option.minDays}, maxDays: ${option.maxDays}`);
@@ -178,7 +192,7 @@ class CheckoutShippingService {
       
       // Si hay envío parcial, agregar información para mostrar al usuario
       if (hasPartialShipping) {
-        console.log(`⚠️ Envío parcial: ${unavailableProducts} no pueden enviarse a esta dirección`);
+        console.log(`⚠️ Envío parcial: ${productsWithoutShipping.length} productos no pueden enviarse a esta dirección: ${unavailableProductNames}`);
         
         // Convertir información de productos no enviables a formato de opciones
         normalizedItems.forEach(item => {

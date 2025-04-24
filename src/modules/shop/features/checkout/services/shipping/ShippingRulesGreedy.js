@@ -10,42 +10,80 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
+// Importar el mapeo de abreviaciones
+import { STATE_ABBREVIATIONS } from '../../../../../checkout/NewShipping3/constants'; // Ruta corregida
+
 /**
  * Determina si una regla de envío es válida para la dirección proporcionada
  * @param {Object} rule - Regla de envío desde Firebase
  * @param {Object} address - Dirección del usuario
  * @returns {boolean} - true si la regla es válida
  */
-const isRuleValidForAddress = (rule, address) => {
+export const isRuleValidForAddress = (rule, address) => {
   if (!rule || !address) return false;
   
   // Normalizar datos para comparación
   const postalCode = (address.postalCode || address.zip || '').toString().trim();
-  const state = (address.state || address.provincia || '').toString().toLowerCase().trim();
+  // Obtener estado completo y normalizarlo
+  const fullStateName = (address.state || address.provincia || '').toString();
+  // Convertir estado COMPLETO a abreviatura para comparar con coverage_values
+  const stateAbbreviation = STATE_ABBREVIATIONS[fullStateName]?.toLowerCase().trim() || fullStateName.toLowerCase().trim(); // Fallback al nombre completo si no hay abreviatura
   const country = (address.country || 'MX').toString().toLowerCase().trim();
   
+  console.log(`[isRuleValidForAddress] Debug: Rule ID=${rule.id}, Type=${rule.coverage_type || rule.tipo_cobertura}, Address State=${fullStateName}, Abbr=${stateAbbreviation}, Zip=${postalCode}`);
+
   // Verificar tipo de cobertura
-  switch(rule.coverage_type || rule.tipo_cobertura) {
+  const coverageType = (rule.coverage_type || rule.tipo_cobertura || '').trim().toLowerCase();
+  // Log character codes for debugging elusive 'national' match issue
+  const typeChars = coverageType.split('').map(c => c.charCodeAt(0)).join(' ');
+  const nationalChars = 'national'.split('').map(c => c.charCodeAt(0)).join(' ');
+  console.log(`[isRuleValidForAddress] Comparing coverageType: '${coverageType}' (Codes: ${typeChars}) with 'national' (Codes: ${nationalChars})`);
+  
+  // *** Explicit check for 'national' BEFORE the switch ***
+  if (coverageType === 'national') {
+    console.log(`[isRuleValidForAddress] *** Explicit check PASSED for 'national' on rule ${rule.id}`);
+    return true;
+  }
+
+  switch(coverageType) { // Usar variable normalizada
     // Cobertura nacional
-    case 'nacional':
+    case 'national':
+      console.log(`[isRuleValidForAddress] Matched 'national' for rule ${rule.id}`);
       return true;
     
-    // Cobertura por código postal
+    // Cobertura por código postal (usando coverage_type 'zip')
+    case 'zip':
+      const isValidZip = Array.isArray(rule.coverage_values) &&
+             rule.coverage_values.some(cp => cp.toString().trim() === postalCode);
+      console.log(`[isRuleValidForAddress] Matched 'zip' for rule ${rule.id}. Values: [${rule.coverage_values?.join(', ')}], Address Zip: ${postalCode}, Valid: ${isValidZip}`);
+      return isValidZip;
+    
+    // Cobertura por estado/provincia (usando coverage_type 'state' y abreviatura)
+    case 'state':
+      const isValidState = Array.isArray(rule.coverage_values) &&
+             rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation); // Comparar con abreviatura
+      console.log(`[isRuleValidForAddress] Matched 'state' for rule ${rule.id}. Values: [${rule.coverage_values?.join(', ')}], Address Abbr: ${stateAbbreviation}, Valid: ${isValidState}`);
+      return isValidState;
+    
+    // Mantener casos antiguos por compatibilidad si es necesario?
     case 'por_codigo_postal':
     case 'postal_code':
-      return Array.isArray(rule.coverage_values) && 
-             rule.coverage_values.some(cp => cp.toString().trim() === postalCode);
+       return Array.isArray(rule.coverage_values) &&
+              rule.coverage_values.some(cp => cp.toString().trim() === postalCode);
     
     // Cobertura por estado/provincia
     case 'por_estado':
-    case 'state':
-      return Array.isArray(rule.coverage_values) && 
-             rule.coverage_values.some(s => s.toString().toLowerCase().trim() === state);
-             
+    // case 'state': // Quitar este duplicado si usamos el nuevo 'state'
+       return Array.isArray(rule.coverage_values) &&
+              rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation); // Usar abreviatura también aquí por si acaso
+    
     // Cobertura por país
     case 'por_pais':
     case 'country':
       return rule.coverage_country?.toLowerCase().trim() === country;
+    
+    default:
+      console.log(`[isRuleValidForAddress] Rule ${rule.id} tiene tipo desconocido o no manejado: '${coverageType}'. Verificando campos alternativos.`);
   }
   
   // Verificar campos alternativos (compatibilidad con esquema actual)
@@ -53,7 +91,7 @@ const isRuleValidForAddress = (rule, address) => {
     return true;
   }
   
-  if (Array.isArray(rule.cobertura_estados) && rule.cobertura_estados.some(s => s.toString().toLowerCase().trim() === state)) {
+  if (Array.isArray(rule.cobertura_estados) && rule.cobertura_estados.some(s => s.toString().toLowerCase().trim() === stateAbbreviation)) {
     return true;
   }
   
@@ -347,26 +385,51 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
   cartItems.forEach(item => {
     const product = item.product || item;
     const productId = product.id;
-    
+    console.log(`---
+[DEBUG] Procesando Producto ID: ${productId}, Nombre: ${product.name}`);
+
     // Obtener reglas asignadas al producto
     const assignedRuleIds = product.shippingRuleIds || [];
-    
+    console.log(`[DEBUG] Reglas Asignadas: ${assignedRuleIds.join(', ')}`);
+
     if (!assignedRuleIds.length) {
+      console.log(`[DEBUG] Producto ${productId} NO tiene reglas asignadas.`);
       productsWithoutRules.push(product);
       return;
     }
-    
+
+    // Log individual rule validity BEFORE filtering
+    console.log(`[DEBUG] Verificando validez de reglas asignadas para la dirección:`);
+    assignedRuleIds.forEach(ruleId => {
+      const ruleToCheck = shippingRules.find(r => r.id === ruleId);
+      if (ruleToCheck) {
+        const isValid = isRuleValidForAddress(ruleToCheck, address);
+        console.log(`  - Regla ID: ${ruleId}, Válida? ${isValid}`);
+      } else {
+        console.log(`  - Regla ID: ${ruleId}, ¡No encontrada en la lista principal!`);
+      }
+    });
+
     // Filtrar reglas válidas que cubran la dirección
     const validRules = shippingRules
       .filter(rule => assignedRuleIds.includes(rule.id) && isRuleValidForAddress(rule, address));
-    
+
+    console.log(`[DEBUG] Reglas Válidas ENCONTRADAS después de filtrar: ${validRules.map(r => r.id).join(', ') || 'Ninguna'}`);
+
     if (validRules.length > 0) {
       validRulesByProduct[productId] = validRules;
     } else {
       productsWithoutRules.push(product);
     }
   });
-  
+
+  // --- START DEBUG LOGGING ---
+  console.log('[DEBUG] Productos SIN reglas válidas para la dirección:', productsWithoutRules.map(p => p.id));
+  console.log('[DEBUG] Productos CON reglas válidas para la dirección:', Object.keys(validRulesByProduct));
+  console.log(`[DEBUG] ¿Hay productos sin reglas? ${productsWithoutRules.length > 0}`);
+  console.log(`[DEBUG] ¿Hay productos CON reglas? ${Object.keys(validRulesByProduct).length > 0}`);
+  // --- END DEBUG LOGGING ---
+
   // Si hay productos sin reglas válidas, no podemos completar el envío
   if (productsWithoutRules.length > 0) {
     const productNames = productsWithoutRules.map(p => p.name || `ID: ${p.id}`).join(', ');

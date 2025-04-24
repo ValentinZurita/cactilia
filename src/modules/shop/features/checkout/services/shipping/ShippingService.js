@@ -89,11 +89,16 @@ export const getShippingOptions = async (cartItems, addressInfo, customRules = n
     } else {
       console.warn('⚠️ No se encontraron opciones de envío válidas');
     }
-    
-    return options;
+
+    // Devolver el objeto de resultado COMPLETO para que las capas superiores
+    // puedan manejar el envío parcial y los productos no disponibles.
+    // return options; // <-- Incorrecto, pierde información parcial
+    return result; // <-- Correcto, devuelve el objeto completo
   } catch (error) {
     console.error('❌ Error al obtener opciones de envío:', error);
-    return [];
+    // En caso de error, devolver un objeto con success: false
+    // return []; // <-- Devuelve array vacío, inconsistente
+    return { success: false, error: error.message || 'Error interno', options: [] }; // <-- Devuelve objeto de error
   }
 };
 

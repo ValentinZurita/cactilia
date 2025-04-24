@@ -339,10 +339,11 @@ export const CheckoutContent = () => {
           cartItems={cartItems}
           
           customShippingComponent={(props) => (
-            checkout.selectedAddressType && 
+            checkout.selectedAddressType &&
             (checkout.selectedAddressType === 'saved' ? checkout.selectedAddressId : checkout.newAddressData) ? (
+              (cartItems && cartItems.length > 0) ? (
               <CheckoutSection title="Selecciona un método de envío" stepNumber={2}>
-                <NewShippingIntegration 
+                <NewShippingIntegration
                   cartItems={cartItems}
                   address={checkout.selectedAddressType === 'saved' ? 
                     checkout.addresses.find(addr => addr.id === checkout.selectedAddressId) : 
@@ -354,6 +355,11 @@ export const CheckoutContent = () => {
                   error={props.error}
                 />
               </CheckoutSection>
+              ) : (
+                 <CheckoutSection title="Selecciona un método de envío" stepNumber={2}>
+                   <p>Cargando productos del carrito...</p>
+                 </CheckoutSection>
+              )
             ) : (
               <CheckoutSection title="Selecciona un método de envío" stepNumber={2}>
                 <div className="alert alert-info">
