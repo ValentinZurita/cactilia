@@ -22,79 +22,39 @@ import { STATE_ABBREVIATIONS } from '../../../../../checkout/NewShipping3/consta
 export const isRuleValidForAddress = (rule, address) => {
   if (!rule || !address) return false;
   
-  // Normalizar datos para comparación
   const postalCode = (address.postalCode || address.zip || '').toString().trim();
-  // Obtener estado completo y normalizarlo
   const fullStateName = (address.state || address.provincia || '').toString();
-  // Convertir estado COMPLETO a abreviatura para comparar con coverage_values
-  const stateAbbreviation = STATE_ABBREVIATIONS[fullStateName]?.toLowerCase().trim() || fullStateName.toLowerCase().trim(); // Fallback al nombre completo si no hay abreviatura
+  const stateAbbreviation = STATE_ABBREVIATIONS[fullStateName]?.toLowerCase().trim() || fullStateName.toLowerCase().trim();
   const country = (address.country || 'MX').toString().toLowerCase().trim();
-  
-  console.log(`[isRuleValidForAddress] Debug: Rule ID=${rule.id}, Type=${rule.coverage_type || rule.tipo_cobertura}, Address State=${fullStateName}, Abbr=${stateAbbreviation}, Zip=${postalCode}`);
-
-  // Verificar tipo de cobertura
   const coverageType = (rule.coverage_type || rule.tipo_cobertura || '').trim().toLowerCase();
-  // Log character codes for debugging elusive 'national' match issue
-  const typeChars = coverageType.split('').map(c => c.charCodeAt(0)).join(' ');
-  const nationalChars = 'national'.split('').map(c => c.charCodeAt(0)).join(' ');
-  console.log(`[isRuleValidForAddress] Comparing coverageType: '${coverageType}' (Codes: ${typeChars}) with 'national' (Codes: ${nationalChars})`);
-  
-  // *** Explicit check for 'national' BEFORE the switch ***
+
   if (coverageType === 'national') {
-    console.log(`[isRuleValidForAddress] *** Explicit check PASSED for 'national' on rule ${rule.id}`);
     return true;
   }
 
-  switch(coverageType) { // Usar variable normalizada
-    // Cobertura nacional
-    case 'national':
-      console.log(`[isRuleValidForAddress] Matched 'national' for rule ${rule.id}`);
-      return true;
-    
-    // Cobertura por código postal (usando coverage_type 'zip')
+  switch(coverageType) {
     case 'zip':
-      const isValidZip = Array.isArray(rule.coverage_values) &&
-             rule.coverage_values.some(cp => cp.toString().trim() === postalCode);
-      console.log(`[isRuleValidForAddress] Matched 'zip' for rule ${rule.id}. Values: [${rule.coverage_values?.join(', ')}], Address Zip: ${postalCode}, Valid: ${isValidZip}`);
-      return isValidZip;
-    
-    // Cobertura por estado/provincia (usando coverage_type 'state' y abreviatura)
+      return Array.isArray(rule.coverage_values) && rule.coverage_values.some(cp => cp.toString().trim() === postalCode);
     case 'state':
-      const isValidState = Array.isArray(rule.coverage_values) &&
-             rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation); // Comparar con abreviatura
-      console.log(`[isRuleValidForAddress] Matched 'state' for rule ${rule.id}. Values: [${rule.coverage_values?.join(', ')}], Address Abbr: ${stateAbbreviation}, Valid: ${isValidState}`);
-      return isValidState;
-    
-    // Mantener casos antiguos por compatibilidad si es necesario?
-    case 'por_codigo_postal':
-    case 'postal_code':
-       return Array.isArray(rule.coverage_values) &&
-              rule.coverage_values.some(cp => cp.toString().trim() === postalCode);
-    
-    // Cobertura por estado/provincia
-    case 'por_estado':
-    // case 'state': // Quitar este duplicado si usamos el nuevo 'state'
-       return Array.isArray(rule.coverage_values) &&
-              rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation); // Usar abreviatura también aquí por si acaso
-    
-    // Cobertura por país
-    case 'por_pais':
+      return Array.isArray(rule.coverage_values) && rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation);
     case 'country':
       return rule.coverage_country?.toLowerCase().trim() === country;
-    
-    default:
-      console.log(`[isRuleValidForAddress] Rule ${rule.id} tiene tipo desconocido o no manejado: '${coverageType}'. Verificando campos alternativos.`);
+    case 'por_codigo_postal':
+    case 'postal_code':
+      return Array.isArray(rule.coverage_values) && rule.coverage_values.some(cp => cp.toString().trim() === postalCode);
+    case 'por_estado':
+      return Array.isArray(rule.coverage_values) && rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation);
+    case 'por_pais':
+      return rule.coverage_country?.toLowerCase().trim() === country;
   }
-  
-  // Verificar campos alternativos (compatibilidad con esquema actual)
+
   if (Array.isArray(rule.cobertura_cp) && rule.cobertura_cp.some(cp => cp.toString().trim() === postalCode)) {
     return true;
   }
-  
   if (Array.isArray(rule.cobertura_estados) && rule.cobertura_estados.some(s => s.toString().toLowerCase().trim() === stateAbbreviation)) {
     return true;
   }
-  
+
   return false;
 };
 
@@ -108,13 +68,6 @@ const calculateShippingDetails = (rule, products) => {
   if (!rule || !products || products.length === 0) {
     return { cost: 0, minDays: null, maxDays: null, isFree: false };
   }
-  
-  // Debugging para ver toda la información de tiempos en la regla
-  console.log(`🕒 ANÁLISIS DE TIEMPOS DE ENTREGA - Regla ID: ${rule.id}`);
-  console.log(`- tiempo_minimo: ${rule.tiempo_minimo}`);
-  console.log(`- min_days: ${rule.min_days}`);
-  console.log(`- tiempo_maximo: ${rule.tiempo_maximo}`);
-  console.log(`- max_days: ${rule.max_days}`);
   
   // Calcular subtotal para validar envío gratis por monto mínimo
   const subtotal = products.reduce((sum, item) => {
@@ -146,7 +99,6 @@ const calculateShippingDetails = (rule, products) => {
         const pesoExtra = pesoTotal - pesoMaximo;
         const costoExtra = pesoExtra * costoPorKgExtra;
         
-        console.log(`📦 Cargo por peso extra: ${pesoExtra.toFixed(2)}kg x ${costoPorKgExtra}$ = ${costoExtra.toFixed(2)}$`);
         cost += costoExtra;
       }
     }
@@ -160,7 +112,6 @@ const calculateShippingDetails = (rule, products) => {
         const productosExtra = products.length - maxProductos;
         const costoExtra = productosExtra * costoPorProductoExtra;
         
-        console.log(`📦 Cargo por productos extra: ${productosExtra} x ${costoPorProductoExtra}$ = ${costoExtra.toFixed(2)}$`);
         cost += costoExtra;
       }
     }
@@ -189,25 +140,7 @@ const calculateShippingDetails = (rule, products) => {
   
   // Si tiene opciones de mensajería, usar datos de la opción preferida
   if (Array.isArray(rule.opciones_mensajeria) && rule.opciones_mensajeria.length > 0) {
-    // Log para opciones de mensajería
-    console.log(`- Opciones de mensajería: ${rule.opciones_mensajeria.length}`);
-    rule.opciones_mensajeria.forEach((opcion, index) => {
-      console.log(`  Opción #${index+1}: ${JSON.stringify(opcion)}`);
-      console.log(`  - tiempo_minimo: ${opcion.tiempo_minimo}`);
-      console.log(`  - min_days: ${opcion.min_days}`);
-      console.log(`  - minDays: ${opcion.minDays}`);
-      console.log(`  - tiempo_maximo: ${opcion.tiempo_maximo}`);
-      console.log(`  - max_days: ${opcion.max_days}`);
-      console.log(`  - maxDays: ${opcion.maxDays}`);
-      console.log(`  - tiempo_entrega: ${opcion.tiempo_entrega}`);
-    });
-    
-    // Ordenar por precio para obtener la más económica
-    const sortedOptions = [...rule.opciones_mensajeria].sort((a, b) => 
-      parseFloat(a.precio || 0) - parseFloat(b.precio || 0)
-    );
-    
-    const bestOption = sortedOptions[0];
+    const bestOption = rule.opciones_mensajeria[0];
     cost = parseFloat(bestOption.precio || 0);
     
     // Aplicar reglas de configuración de paquetes para la opción de mensajería
@@ -223,7 +156,6 @@ const calculateShippingDetails = (rule, products) => {
           const pesoExtra = pesoTotal - pesoMaximo;
           const costoExtra = pesoExtra * costoPorKgExtra;
           
-          console.log(`📦 [Opción] Cargo por peso extra: ${pesoExtra.toFixed(2)}kg x ${costoPorKgExtra}$ = ${costoExtra.toFixed(2)}$`);
           cost += costoExtra;
         }
       }
@@ -237,14 +169,12 @@ const calculateShippingDetails = (rule, products) => {
           const productosExtra = products.length - maxProductos;
           const costoExtra = productosExtra * costoPorProductoExtra;
           
-          console.log(`📦 [Opción] Cargo por productos extra: ${productosExtra} x ${costoPorProductoExtra}$ = ${costoExtra.toFixed(2)}$`);
           cost += costoExtra;
         }
       }
     }
     
     // Actualizar tiempos solo si están definidos en la opción
-    // IMPORTANTE: Comprobar todas las posibles ubicaciones de los tiempos de entrega
     if (bestOption.tiempo_minimo !== undefined && bestOption.tiempo_minimo !== null) {
       minDays = parseInt(bestOption.tiempo_minimo, 10);
     } else if (bestOption.min_days !== undefined && bestOption.min_days !== null) {
@@ -267,14 +197,11 @@ const calculateShippingDetails = (rule, products) => {
       if (tiempoMatch && tiempoMatch.length >= 3) {
         if (minDays === null) minDays = parseInt(tiempoMatch[1], 10);
         if (maxDays === null) maxDays = parseInt(tiempoMatch[2], 10);
-        console.log(`  - Extraídos de tiempo_entrega: min=${minDays}, max=${maxDays}`);
       } else if (bestOption.tiempo_entrega.match(/(\d+)/)) {
-        // Si solo hay un número (ej: "2 días")
         const singleMatch = bestOption.tiempo_entrega.match(/(\d+)/);
         const days = parseInt(singleMatch[1], 10);
         if (minDays === null) minDays = days;
         if (maxDays === null) maxDays = days;
-        console.log(`  - Extraído de tiempo_entrega (valor único): ${days} días`);
       }
     }
   }
@@ -293,12 +220,6 @@ const calculateShippingDetails = (rule, products) => {
   if (minDays !== null && maxDays !== null && maxDays < minDays) {
     maxDays = minDays;
   }
-  
-  // Imprimir los valores finales para debugging
-  console.log(`🕒 RESULTADO DE TIEMPOS - Regla ID: ${rule.id}`);
-  console.log(`- minDays: ${minDays}`);
-  console.log(`- maxDays: ${maxDays}`);
-  console.log(`💰 Costo final calculado: ${cost}`);
   
   return {
     cost,
@@ -327,7 +248,6 @@ const canAddProductToGroup = (group, product, rule) => {
   if (config.maximo_productos_por_paquete !== undefined) {
     const maxProductos = parseInt(config.maximo_productos_por_paquete, 10);
     if (!isNaN(maxProductos) && group.products.length >= maxProductos) {
-      console.log(`⚠️ No se puede añadir ${product.name || product.id} al grupo: límite de ${maxProductos} productos alcanzado`);
       return false;
     }
   }
@@ -346,7 +266,6 @@ const canAddProductToGroup = (group, product, rule) => {
       const pesoTotal = pesoActual + parseFloat(product.weight || 0);
       
       if (pesoTotal > pesoMaximo) {
-        console.log(`⚠️ No se puede añadir ${product.name || product.id} al grupo: peso máximo de ${pesoMaximo}kg excedido (${pesoTotal}kg)`);
         return false;
       }
     }
@@ -376,7 +295,7 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
     return { success: false, error: "No hay reglas de envío disponibles" };
   }
   
-  console.log(`🔍 Procesando ${cartItems.length} productos con ${shippingRules.length} reglas de envío`);
+  console.log(`[Greedy] 🔍 Iniciando cálculo para ${cartItems.length} productos con ${shippingRules.length} reglas.`);
   
   // Paso 1: Encontrar reglas válidas para cada producto
   const validRulesByProduct = {};
@@ -385,36 +304,16 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
   cartItems.forEach(item => {
     const product = item.product || item;
     const productId = product.id;
-    console.log(`---
-[DEBUG] Procesando Producto ID: ${productId}, Nombre: ${product.name}`);
 
-    // Obtener reglas asignadas al producto
     const assignedRuleIds = product.shippingRuleIds || [];
-    console.log(`[DEBUG] Reglas Asignadas: ${assignedRuleIds.join(', ')}`);
 
     if (!assignedRuleIds.length) {
-      console.log(`[DEBUG] Producto ${productId} NO tiene reglas asignadas.`);
       productsWithoutRules.push(product);
       return;
     }
 
-    // Log individual rule validity BEFORE filtering
-    console.log(`[DEBUG] Verificando validez de reglas asignadas para la dirección:`);
-    assignedRuleIds.forEach(ruleId => {
-      const ruleToCheck = shippingRules.find(r => r.id === ruleId);
-      if (ruleToCheck) {
-        const isValid = isRuleValidForAddress(ruleToCheck, address);
-        console.log(`  - Regla ID: ${ruleId}, Válida? ${isValid}`);
-      } else {
-        console.log(`  - Regla ID: ${ruleId}, ¡No encontrada en la lista principal!`);
-      }
-    });
-
-    // Filtrar reglas válidas que cubran la dirección
     const validRules = shippingRules
       .filter(rule => assignedRuleIds.includes(rule.id) && isRuleValidForAddress(rule, address));
-
-    console.log(`[DEBUG] Reglas Válidas ENCONTRADAS después de filtrar: ${validRules.map(r => r.id).join(', ') || 'Ninguna'}`);
 
     if (validRules.length > 0) {
       validRulesByProduct[productId] = validRules;
@@ -423,73 +322,47 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
     }
   });
 
-  // --- START DEBUG LOGGING ---
-  console.log('[DEBUG] Productos SIN reglas válidas para la dirección:', productsWithoutRules.map(p => p.id));
-  console.log('[DEBUG] Productos CON reglas válidas para la dirección:', Object.keys(validRulesByProduct));
-  console.log(`[DEBUG] ¿Hay productos sin reglas? ${productsWithoutRules.length > 0}`);
-  console.log(`[DEBUG] ¿Hay productos CON reglas? ${Object.keys(validRulesByProduct).length > 0}`);
-  // --- END DEBUG LOGGING ---
+  console.log(`[Greedy] Productos CON reglas válidas para la dirección: ${Object.keys(validRulesByProduct).length} (${Object.keys(validRulesByProduct).join(', ') || 'Ninguno'})`);
+  console.log(`[Greedy] Productos SIN reglas válidas para la dirección: ${productsWithoutRules.length} (${productsWithoutRules.map(p => p.id).join(', ') || 'Ninguno'})`);
 
-  // Si hay productos sin reglas válidas, no podemos completar el envío
   if (productsWithoutRules.length > 0) {
     const productNames = productsWithoutRules.map(p => p.name || `ID: ${p.id}`).join(', ');
     
-    // Verificar si hay al menos un producto con regla válida
     if (Object.keys(validRulesByProduct).length > 0) {
-      // Modificación: Continuar con los productos que sí tienen reglas válidas
-      console.log(`⚠️ Envío parcial: ${productsWithoutRules.length} productos no tienen envío disponible a esta dirección: ${productNames}`);
+      console.log(`[Greedy] ⚠️ Activando modo de Envío Parcial. Productos no cubiertos: ${productNames}`);
       
-      // Paso 2: Agrupar productos por regla para minimizar envíos
       const shippingGroups = [];
       const productAssignments = {};
       
-      // Primera pasada: intentar agrupar productos por reglas similares
       Object.entries(validRulesByProduct).forEach(([productId, validRules]) => {
-        // Encontrar el producto original
         const item = cartItems.find(item => (item.product || item).id === productId);
         if (!item) return;
-        
         const product = item.product || item;
         
-        // Ordenar reglas por prioridad y costo:
-        // 1. Primero CP específico, luego estado, luego nacional
-        // 2. Dentro de cada tipo, ordenar por costo (menor primero)
         const sortedRules = [...validRules].sort((a, b) => {
-          // Función para determinar prioridad de tipo de cobertura
           const getCoveragePriority = (rule) => {
             const coverageType = rule.coverage_type || rule.tipo_cobertura;
-            // Prioridad máxima a código postal específico
             if (coverageType === 'por_codigo_postal') return 3;
-            // Segunda prioridad a estado
             if (coverageType === 'por_estado') return 2;
-            // Tercera prioridad a zona Local
             if (rule.zona === 'Local') return 1;
-            // Menor prioridad a reglas nacionales
             if (coverageType === 'nacional') return 0;
-            return -1; // Prioridad por defecto
+            return -1;
           };
           
-          // Primero comparar por tipo de cobertura
           const priorityA = getCoveragePriority(a);
           const priorityB = getCoveragePriority(b);
           
-          if (priorityA !== priorityB) {
-            return priorityB - priorityA; // Mayor prioridad primero
-          }
+          if (priorityA !== priorityB) return priorityB - priorityA;
           
-          // Si son del mismo tipo, comparar por precio
           const costA = parseFloat(a.precio_base || a.base_price || 100);
           const costB = parseFloat(b.precio_base || b.base_price || 100);
-          return costA - costB; // Menor costo primero
+          return costA - costB;
         });
         
-        // Intentar añadir a un grupo existente
         let addedToGroup = false;
         
         for (const group of shippingGroups) {
-          // Verificar si alguna regla del producto es la misma que la del grupo
           if (sortedRules.some(rule => rule.id === group.rule.id)) {
-            // Verificar restricciones de peso y cantidad
             if (canAddProductToGroup(group, product, group.rule)) {
               group.products.push(product);
               productAssignments[productId] = group.rule.id;
@@ -499,7 +372,6 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
           }
         }
         
-        // Si no se pudo añadir a ningún grupo, crear uno nuevo
         if (!addedToGroup) {
           const bestRule = sortedRules[0];
           const newGroup = {
@@ -513,18 +385,12 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
         }
       });
       
-      // Paso 3: Calcular costos y detalles de envío para cada grupo
       const shippingOptions = shippingGroups.map(group => {
-        // REMOVE initial calculation for the whole group:
-        // const { cost, minDays, maxDays, isFree } = calculateShippingDetails(group.rule, group.products);
-        
-        // --- START: Extract static details from the rule ---
         let minDays = null;
         let maxDays = null;
         let deliveryTimeText = '';
-        const rule = group.rule; // Use a shorter alias
+        const rule = group.rule;
 
-        // Extract min/max days (check various possible fields)
         if (rule.tiempo_minimo !== undefined && rule.tiempo_minimo !== null) minDays = parseInt(rule.tiempo_minimo, 10);
         else if (rule.min_days !== undefined && rule.min_days !== null) minDays = parseInt(rule.min_days, 10);
         else if (rule.minDays !== undefined && rule.minDays !== null) minDays = parseInt(rule.minDays, 10);
@@ -533,11 +399,9 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
         else if (rule.max_days !== undefined && rule.max_days !== null) maxDays = parseInt(rule.max_days, 10);
         else if (rule.maxDays !== undefined && rule.maxDays !== null) maxDays = parseInt(rule.maxDays, 10);
         
-        // Use tiempos from opciones_mensajeria if available (assuming first option is preferred/cheapest)
         if (Array.isArray(rule.opciones_mensajeria) && rule.opciones_mensajeria.length > 0) {
-          const bestOption = rule.opciones_mensajeria[0]; // Assuming sorted elsewhere or taking the first
+          const bestOption = rule.opciones_mensajeria[0];
           
-          // Override min/max days from the specific option
           if (bestOption.tiempo_minimo !== undefined && bestOption.tiempo_minimo !== null) minDays = parseInt(bestOption.tiempo_minimo, 10);
           else if (bestOption.min_days !== undefined && bestOption.min_days !== null) minDays = parseInt(bestOption.min_days, 10);
           else if (bestOption.minDays !== undefined && bestOption.minDays !== null) minDays = parseInt(bestOption.minDays, 10);
@@ -546,216 +410,160 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
           else if (bestOption.max_days !== undefined && bestOption.max_days !== null) maxDays = parseInt(bestOption.max_days, 10);
           else if (bestOption.maxDays !== undefined && bestOption.maxDays !== null) maxDays = parseInt(bestOption.maxDays, 10);
           
-          // Use tiempo_entrega string if present
           if (bestOption.tiempo_entrega) {
             deliveryTimeText = bestOption.tiempo_entrega;
-            console.log(`📅 [Per Package] Usando tiempo_entrega predefinido: "${deliveryTimeText}"`);
-            // Attempt to extract min/max if not already set
-             if ((minDays === null || maxDays === null)) {
-               const tiempoMatch = bestOption.tiempo_entrega.match(/(\d+)[-\s]*(\d+)/);
-               if (tiempoMatch && tiempoMatch.length >= 3) {
-                 if (minDays === null) minDays = parseInt(tiempoMatch[1], 10);
-                 if (maxDays === null) maxDays = parseInt(tiempoMatch[2], 10);
-                 console.log(`  - [Per Package] Extraídos de tiempo_entrega: min=${minDays}, max=${maxDays}`);
-               } else if (bestOption.tiempo_entrega.match(/(\d+)/)) {
-                 const singleMatch = bestOption.tiempo_entrega.match(/(\d+)/);
-                 const days = parseInt(singleMatch[1], 10);
-                 if (minDays === null) minDays = days;
-                 if (maxDays === null) maxDays = days;
-                 console.log(`  - [Per Package] Extraído de tiempo_entrega (valor único): ${days} días`);
-               }
-             }
+            if ((minDays === null || maxDays === null)) {
+              const tiempoMatch = bestOption.tiempo_entrega.match(/(\d+)[-\s]*(\d+)/);
+              if (tiempoMatch && tiempoMatch.length >= 3) {
+                if (minDays === null) minDays = parseInt(tiempoMatch[1], 10);
+                if (maxDays === null) maxDays = parseInt(tiempoMatch[2], 10);
+              } else if (bestOption.tiempo_entrega.match(/(\d+)/)) {
+                const singleMatch = bestOption.tiempo_entrega.match(/(\d+)/);
+                const days = parseInt(singleMatch[1], 10);
+                if (minDays === null) minDays = days;
+                if (maxDays === null) maxDays = days;
+              }
+            }
           }
         }
 
-        // Generate deliveryTimeText if not set by specific option
         if (!deliveryTimeText && minDays !== null && maxDays !== null) {
           if (minDays === maxDays) {
             deliveryTimeText = minDays === 1 ? `Entrega en 1 día hábil` : `Entrega en ${minDays} días hábiles`;
           } else {
             deliveryTimeText = `Entrega en ${minDays}-${maxDays} días hábiles`;
           }
-          console.log(`📅 [Per Package] Tiempo de entrega generado: "${deliveryTimeText}"`);
         }
-        // --- END: Extract static details from the rule ---
 
-        
-        // --- START: Package Splitting Logic (modified to keep full product objects) ---
         let packagesCount = 1;
-        let packagesInfo = []; // Array to hold package details { id, products: [full_product_objects], weight, productCount, subtotal, packagePrice, isFree }
-        
+        let packagesInfo = [];
         const ruleConfig = rule.configuracion_paquetes || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].configuracion_paquetes : {});
         const hasPackageConfig = !!ruleConfig;
-        
         const maxProductsPerPackage = hasPackageConfig ? parseInt(ruleConfig.maximo_productos_por_paquete, 10) : NaN;
         const maxWeightPerPackage = hasPackageConfig ? parseFloat(ruleConfig.peso_maximo_paquete) : NaN;
         
         if (!isNaN(maxProductsPerPackage) && maxProductsPerPackage > 0 && group.products.length > maxProductsPerPackage) {
-           // Split by max products
-           packagesCount = Math.ceil(group.products.length / maxProductsPerPackage);
-           for (let i = 0; i < packagesCount; i++) {
-             const startIdx = i * maxProductsPerPackage;
-             const endIdx = Math.min(startIdx + maxProductsPerPackage, group.products.length);
-             const packageProducts = group.products.slice(startIdx, endIdx); // Keep full objects
-             packagesInfo.push({
-               id: `pkg_${group.id}_${i+1}`,
-               products: packageProducts, // Store full product objects
-               productCount: packageProducts.length,
-               weight: packageProducts.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0) // Calculate weight
-             });
-           }
-           console.log(`📦 [Per Package] Se dividirá en ${packagesCount} paquetes por restricción de ${maxProductsPerPackage} productos.`);
-        
+          packagesCount = Math.ceil(group.products.length / maxProductsPerPackage);
+          for (let i = 0; i < packagesCount; i++) {
+            const startIdx = i * maxProductsPerPackage;
+            const endIdx = Math.min(startIdx + maxProductsPerPackage, group.products.length);
+            const packageProducts = group.products.slice(startIdx, endIdx);
+            packagesInfo.push({
+              id: `pkg_${group.id}_${i+1}`,
+              products: packageProducts,
+              productCount: packageProducts.length,
+              weight: packageProducts.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0)
+            });
+          }
         } else if (!isNaN(maxWeightPerPackage) && maxWeightPerPackage > 0) {
-            // Try splitting by max weight
-            let currentPackageProducts = [];
-            let currentPackageWeight = 0;
-            packagesInfo = [];
+          let currentPackageProducts = [];
+          let currentPackageWeight = 0;
+          packagesInfo = [];
 
-            for (const product of group.products) {
-              const productWeight = parseFloat(product.weight || 0);
-              // Check if adding this product exceeds max weight (and the package isn't empty)
-              if (currentPackageWeight + productWeight > maxWeightPerPackage && currentPackageProducts.length > 0) {
-                // Finalize previous package
-                packagesInfo.push({
-                  id: `pkg_${group.id}_${packagesInfo.length + 1}`,
-                  products: currentPackageProducts, // Store full objects
-                  productCount: currentPackageProducts.length,
-                  weight: currentPackageWeight
-                });
-                // Start new package
-                currentPackageProducts = [product];
-                currentPackageWeight = productWeight;
-              } else {
-                // Add to current package
-                currentPackageProducts.push(product);
-                currentPackageWeight += productWeight;
-              }
-            }
-            // Add the last package if it has products
-            if (currentPackageProducts.length > 0) {
+          for (const product of group.products) {
+            const productWeight = parseFloat(product.weight || 0);
+            if (currentPackageWeight + productWeight > maxWeightPerPackage && currentPackageProducts.length > 0) {
               packagesInfo.push({
                 id: `pkg_${group.id}_${packagesInfo.length + 1}`,
-                products: currentPackageProducts, // Store full objects
+                products: currentPackageProducts,
                 productCount: currentPackageProducts.length,
                 weight: currentPackageWeight
               });
-            }
-            packagesCount = packagesInfo.length;
-            if (packagesCount > 1) {
-              console.log(`📦 [Per Package] Se dividirá en ${packagesCount} paquetes por restricción de peso (${maxWeightPerPackage}kg).`);
+              currentPackageProducts = [product];
+              currentPackageWeight = productWeight;
             } else {
-              // Ensure the single package info is stored if not split
-              packagesInfo = [{
-                 id: `pkg_${group.id}_1`,
-                 products: group.products, // Store full objects
-                 productCount: group.products.length,
-                 weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0)
-              }];
-               console.log(`📦 [Per Package] No se requiere dividir por peso (${maxWeightPerPackage}kg). Paquete único creado.`);
+              currentPackageProducts.push(product);
+              currentPackageWeight += productWeight;
             }
-
-        } else {
-            // No splitting needed, create a single package entry
+          }
+          if (currentPackageProducts.length > 0) {
+            packagesInfo.push({
+              id: `pkg_${group.id}_${packagesInfo.length + 1}`,
+              products: currentPackageProducts,
+              productCount: currentPackageProducts.length,
+              weight: currentPackageWeight
+            });
+          }
+          packagesCount = packagesInfo.length;
+          if (packagesCount > 1) {
+          } else {
             packagesInfo = [{
                id: `pkg_${group.id}_1`,
-               products: group.products, // Store full objects
+               products: group.products,
                productCount: group.products.length,
                weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0)
             }];
-            packagesCount = 1;
-             console.log(`📦 [Per Package] No se requiere dividir. Paquete único creado.`);
+          }
+        } else {
+          packagesInfo = [{
+             id: `pkg_${group.id}_1`,
+             products: group.products,
+             productCount: group.products.length,
+             weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0)
+          }];
+          packagesCount = 1;
         }
-        // --- END: Package Splitting Logic ---
 
-        // --- START: Calculate Cost Per Package ---
         let totalOptionCost = 0;
-        const freeShippingMinAmount = parseFloat(rule.envio_gratis_monto_minimo); // Get only once
+        const freeShippingMinAmount = parseFloat(rule.envio_gratis_monto_minimo);
         const basePrice = parseFloat(rule.precio_base || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].precio : 0) || 0);
         const costPerKgExtra = hasPackageConfig ? parseFloat(ruleConfig.costo_por_kg_extra || 0) : 0;
-        // Note: cost_por_producto_extra is not implemented here yet, assuming weight is primary for now.
-        
-        console.log(`💰 [Per Package] Calculando costos individuales. Regla ID: ${rule.id}, Base: ${basePrice}, Min Gratis: ${freeShippingMinAmount || 'N/A'}, Kg Extra: ${costPerKgExtra}, Peso Max: ${maxWeightPerPackage || 'N/A'}`);
 
         packagesInfo.forEach((pkg, index) => {
-          // 1. Calculate package subtotal
           pkg.subtotal = pkg.products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * (p.quantity || 1)), 0);
-          
-          // 2. Check for free shipping based on package subtotal
           pkg.isFree = false;
           if (!isNaN(freeShippingMinAmount) && freeShippingMinAmount > 0 && pkg.subtotal >= freeShippingMinAmount) {
             pkg.isFree = true;
-             console.log(`💰 [Per Package] Paquete ${pkg.id}: Subtotal ${pkg.subtotal.toFixed(2)} >= ${freeShippingMinAmount} -> ENVÍO GRATIS`);
-          } else {
-             console.log(`💰 [Per Package] Paquete ${pkg.id}: Subtotal ${pkg.subtotal.toFixed(2)} < ${freeShippingMinAmount || 'N/A'} -> CALCULAR COSTO`);
           }
 
-          // 3. Calculate package cost if not free
           if (pkg.isFree) {
             pkg.packagePrice = 0;
           } else {
             let currentPackagePrice = basePrice;
-            
-            // Apply extra weight cost if applicable
             if (costPerKgExtra > 0 && !isNaN(maxWeightPerPackage) && pkg.weight > maxWeightPerPackage) {
               const extraWeight = pkg.weight - maxWeightPerPackage;
-              const extraKgsRoundedUp = Math.ceil(extraWeight); // Assuming charge per whole kg over limit
+              const extraKgsRoundedUp = Math.ceil(extraWeight);
               const extraCost = extraKgsRoundedUp * costPerKgExtra;
               currentPackagePrice += extraCost;
-              console.log(`  - [Per Package] Paquete ${pkg.id}: Peso ${pkg.weight.toFixed(2)}kg > ${maxWeightPerPackage}kg. Extra: ${extraWeight.toFixed(2)}kg -> ${extraKgsRoundedUp}kg. Costo extra: ${extraCost.toFixed(2)}`);
-            } else {
-               console.log(`  - [Per Package] Paquete ${pkg.id}: Peso ${pkg.weight.toFixed(2)}kg <= ${maxWeightPerPackage || 'N/A'}kg. Sin costo extra por peso.`);
             }
-            
-            // TODO: Apply cost_por_producto_extra if needed based on pkg.productCount and maxProductsPerPackage
-
             pkg.packagePrice = currentPackagePrice;
           }
-          
-          console.log(`  - [Per Package] Costo final Paquete ${pkg.id}: ${pkg.packagePrice.toFixed(2)}`);
-          
-          // 4. Add package cost to total option cost
           totalOptionCost += pkg.packagePrice;
         });
-        
-        console.log(`💰 [Per Package] Costo total calculado para la opción (Regla ${rule.id}): ${totalOptionCost.toFixed(2)}`);
-        // --- END: Calculate Cost Per Package ---
 
-        // Determine overall 'isFree' for the option (true only if total cost is 0)
         const finalIsFree = totalOptionCost === 0;
 
         const option = {
-          id: `ship_${group.id}_${uuidv4()}`, // Make ID more specific
+          id: `ship_${group.id}_${uuidv4()}`,
           name: rule.zona || rule.nombre || rule.name || 'Envío Estándar',
           carrier: rule.carrier || rule.proveedor || '',
-          description: rule.descripcion || rule.description || '', // Will be overwritten later
-          price: totalOptionCost, // Use the summed cost
-          products: group.products.map(p => p.id), // Still list all products covered by option
-          isFree: finalIsFree, // Reflect if the final summed cost is zero
+          description: rule.descripcion || rule.description || '',
+          price: totalOptionCost,
+          products: group.products.map(p => p.id),
+          isFree: finalIsFree,
           rule_id: rule.id,
           minDays,
           maxDays,
           isNational: (rule.coverage_type === 'nacional' || rule.tipo === 'nacional'),
           zoneType: rule.coverage_type || rule.tipo || 'standard',
           deliveryTime: deliveryTimeText,
-          // Add relevant config details used in calculation
           precio_base: basePrice,
           envio_gratis_monto_minimo: freeShippingMinAmount > 0 ? freeShippingMinAmount : undefined,
-          configuracion_paquetes: ruleConfig, // Include the config used
+          configuracion_paquetes: ruleConfig,
           opciones_mensajeria: rule.opciones_mensajeria,
-          // Package breakdown
           packagesCount,
-          packagesInfo, // Include detailed package info with costs
-          // Mark that prices were calculated per package
+          packagesInfo,
           packagesWithPrices: true 
         };
         
-        // Generate detailed description based on packages
-        option.description = generateDetailedDescription(option, group.products); // Pass original products for description context
-        
+        option.description = generateDetailedDescription(option, group.products);
+
+        console.log(`[Greedy]   ✅ Opción Parcial Calculada: "${option.name}" (ID: ${option.rule_id}), Costo: $${option.price.toFixed(2)}, Productos: ${option.products.length}, Paquetes: ${option.packagesCount}`);
+
         return option;
       });
-      
+
+      console.log(`[Greedy] ✅ Cálculo parcial completado. Devolviendo ${shippingOptions.length} opciones.`);
       return {
         success: true,
         options: shippingOptions,
@@ -766,65 +574,46 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
       };
     }
     
-    // Si ningún producto tiene reglas válidas, retornar error
+    console.log(`[Greedy] ❌ No hay reglas válidas para NINGÚN producto en esta dirección.`);
     return { 
       success: false, 
       error: `No hay opciones de envío disponibles para: ${productNames}`,
       products_without_shipping: productsWithoutRules.map(p => p.id)
     };
   }
-  
-  // Paso 2: Agrupar productos por regla para minimizar envíos
+
+  console.log(`[Greedy] ✅ Todos los productos tienen al menos una regla válida para la dirección.`);
   const shippingGroups = [];
   const productAssignments = {};
-  
-  // Primera pasada: intentar agrupar productos por reglas similares
+
   cartItems.forEach(item => {
     const product = item.product || item;
     const productId = product.id;
     const validRules = validRulesByProduct[productId] || [];
-    
     if (validRules.length === 0) return;
-    
-    // Ordenar reglas por prioridad y costo:
-    // 1. Primero CP específico, luego estado, luego nacional
-    // 2. Dentro de cada tipo, ordenar por costo (menor primero)
+
     const sortedRules = [...validRules].sort((a, b) => {
-      // Función para determinar prioridad de tipo de cobertura
       const getCoveragePriority = (rule) => {
         const coverageType = rule.coverage_type || rule.tipo_cobertura;
-        // Prioridad máxima a código postal específico
         if (coverageType === 'por_codigo_postal') return 3;
-        // Segunda prioridad a estado
         if (coverageType === 'por_estado') return 2;
-        // Tercera prioridad a zona Local
         if (rule.zona === 'Local') return 1;
-        // Menor prioridad a reglas nacionales
         if (coverageType === 'nacional') return 0;
-        return -1; // Prioridad por defecto
+        return -1;
       };
       
-      // Primero comparar por tipo de cobertura
       const priorityA = getCoveragePriority(a);
       const priorityB = getCoveragePriority(b);
+      if (priorityA !== priorityB) return priorityB - priorityA;
       
-      if (priorityA !== priorityB) {
-        return priorityB - priorityA; // Mayor prioridad primero
-      }
-      
-      // Si son del mismo tipo, comparar por precio
       const costA = parseFloat(a.precio_base || a.base_price || 100);
       const costB = parseFloat(b.precio_base || b.base_price || 100);
-      return costA - costB; // Menor costo primero
+      return costA - costB;
     });
-    
-    // Intentar añadir a un grupo existente
+
     let addedToGroup = false;
-    
     for (const group of shippingGroups) {
-      // Verificar si alguna regla del producto es la misma que la del grupo
       if (sortedRules.some(rule => rule.id === group.rule.id)) {
-        // Verificar restricciones de peso y cantidad
         if (canAddProductToGroup(group, product, group.rule)) {
           group.products.push(product);
           productAssignments[productId] = group.rule.id;
@@ -833,33 +622,21 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
         }
       }
     }
-    
-    // Si no se pudo añadir a ningún grupo, crear uno nuevo
+
     if (!addedToGroup) {
       const bestRule = sortedRules[0];
-      const newGroup = {
-        id: uuidv4(),
-        rule: bestRule,
-        products: [product]
-      };
-      
+      const newGroup = { id: uuidv4(), rule: bestRule, products: [product] };
       shippingGroups.push(newGroup);
       productAssignments[productId] = bestRule.id;
     }
   });
-  
-  // Paso 3: Calcular costos y detalles de envío para cada grupo
+
   const shippingOptions = shippingGroups.map(group => {
-    // REMOVE initial calculation for the whole group:
-    // const { cost, minDays, maxDays, isFree } = calculateShippingDetails(group.rule, group.products);
-    
-    // --- START: Extract static details from the rule ---
     let minDays = null;
     let maxDays = null;
     let deliveryTimeText = '';
-    const rule = group.rule; // Use a shorter alias
+    const rule = group.rule;
 
-    // Extract min/max days (check various possible fields)
     if (rule.tiempo_minimo !== undefined && rule.tiempo_minimo !== null) minDays = parseInt(rule.tiempo_minimo, 10);
     else if (rule.min_days !== undefined && rule.min_days !== null) minDays = parseInt(rule.min_days, 10);
     else if (rule.minDays !== undefined && rule.minDays !== null) minDays = parseInt(rule.minDays, 10);
@@ -868,11 +645,9 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
     else if (rule.max_days !== undefined && rule.max_days !== null) maxDays = parseInt(rule.max_days, 10);
     else if (rule.maxDays !== undefined && rule.maxDays !== null) maxDays = parseInt(rule.maxDays, 10);
     
-    // Use tiempos from opciones_mensajeria if available (assuming first option is preferred/cheapest)
     if (Array.isArray(rule.opciones_mensajeria) && rule.opciones_mensajeria.length > 0) {
-      const bestOption = rule.opciones_mensajeria[0]; // Assuming sorted elsewhere or taking the first
+      const bestOption = rule.opciones_mensajeria[0];
       
-      // Override min/max days from the specific option
       if (bestOption.tiempo_minimo !== undefined && bestOption.tiempo_minimo !== null) minDays = parseInt(bestOption.tiempo_minimo, 10);
       else if (bestOption.min_days !== undefined && bestOption.min_days !== null) minDays = parseInt(bestOption.min_days, 10);
       else if (bestOption.minDays !== undefined && bestOption.minDays !== null) minDays = parseInt(bestOption.minDays, 10);
@@ -881,216 +656,160 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
       else if (bestOption.max_days !== undefined && bestOption.max_days !== null) maxDays = parseInt(bestOption.max_days, 10);
       else if (bestOption.maxDays !== undefined && bestOption.maxDays !== null) maxDays = parseInt(bestOption.maxDays, 10);
       
-      // Use tiempo_entrega string if present
       if (bestOption.tiempo_entrega) {
         deliveryTimeText = bestOption.tiempo_entrega;
-        console.log(`📅 [Per Package] Usando tiempo_entrega predefinido: "${deliveryTimeText}"`);
-        // Attempt to extract min/max if not already set
-         if ((minDays === null || maxDays === null)) {
-           const tiempoMatch = bestOption.tiempo_entrega.match(/(\d+)[-\s]*(\d+)/);
-           if (tiempoMatch && tiempoMatch.length >= 3) {
-             if (minDays === null) minDays = parseInt(tiempoMatch[1], 10);
-             if (maxDays === null) maxDays = parseInt(tiempoMatch[2], 10);
-             console.log(`  - [Per Package] Extraídos de tiempo_entrega: min=${minDays}, max=${maxDays}`);
-           } else if (bestOption.tiempo_entrega.match(/(\d+)/)) {
-             const singleMatch = bestOption.tiempo_entrega.match(/(\d+)/);
-             const days = parseInt(singleMatch[1], 10);
-             if (minDays === null) minDays = days;
-             if (maxDays === null) maxDays = days;
-             console.log(`  - [Per Package] Extraído de tiempo_entrega (valor único): ${days} días`);
-           }
-         }
+        if ((minDays === null || maxDays === null)) {
+          const tiempoMatch = bestOption.tiempo_entrega.match(/(\d+)[-\s]*(\d+)/);
+          if (tiempoMatch && tiempoMatch.length >= 3) {
+            if (minDays === null) minDays = parseInt(tiempoMatch[1], 10);
+            if (maxDays === null) maxDays = parseInt(tiempoMatch[2], 10);
+          } else if (bestOption.tiempo_entrega.match(/(\d+)/)) {
+            const singleMatch = bestOption.tiempo_entrega.match(/(\d+)/);
+            const days = parseInt(singleMatch[1], 10);
+            if (minDays === null) minDays = days;
+            if (maxDays === null) maxDays = days;
+          }
+        }
       }
     }
 
-    // Generate deliveryTimeText if not set by specific option
     if (!deliveryTimeText && minDays !== null && maxDays !== null) {
       if (minDays === maxDays) {
         deliveryTimeText = minDays === 1 ? `Entrega en 1 día hábil` : `Entrega en ${minDays} días hábiles`;
       } else {
         deliveryTimeText = `Entrega en ${minDays}-${maxDays} días hábiles`;
       }
-      console.log(`📅 [Per Package] Tiempo de entrega generado: "${deliveryTimeText}"`);
     }
-    // --- END: Extract static details from the rule ---
 
-    
-    // --- START: Package Splitting Logic (modified to keep full product objects) ---
     let packagesCount = 1;
-    let packagesInfo = []; // Array to hold package details { id, products: [full_product_objects], weight, productCount, subtotal, packagePrice, isFree }
-    
+    let packagesInfo = [];
     const ruleConfig = rule.configuracion_paquetes || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].configuracion_paquetes : {});
     const hasPackageConfig = !!ruleConfig;
-    
     const maxProductsPerPackage = hasPackageConfig ? parseInt(ruleConfig.maximo_productos_por_paquete, 10) : NaN;
     const maxWeightPerPackage = hasPackageConfig ? parseFloat(ruleConfig.peso_maximo_paquete) : NaN;
-    
-    if (!isNaN(maxProductsPerPackage) && maxProductsPerPackage > 0 && group.products.length > maxProductsPerPackage) {
-       // Split by max products
-       packagesCount = Math.ceil(group.products.length / maxProductsPerPackage);
-       for (let i = 0; i < packagesCount; i++) {
-         const startIdx = i * maxProductsPerPackage;
-         const endIdx = Math.min(startIdx + maxProductsPerPackage, group.products.length);
-         const packageProducts = group.products.slice(startIdx, endIdx); // Keep full objects
-         packagesInfo.push({
-           id: `pkg_${group.id}_${i+1}`,
-           products: packageProducts, // Store full product objects
-           productCount: packageProducts.length,
-           weight: packageProducts.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0) // Calculate weight
-         });
-       }
-       console.log(`📦 [Per Package] Se dividirá en ${packagesCount} paquetes por restricción de ${maxProductsPerPackage} productos.`);
-    
-    } else if (!isNaN(maxWeightPerPackage) && maxWeightPerPackage > 0) {
-        // Try splitting by max weight
-        let currentPackageProducts = [];
-        let currentPackageWeight = 0;
-        packagesInfo = [];
 
-        for (const product of group.products) {
-          const productWeight = parseFloat(product.weight || 0);
-          // Check if adding this product exceeds max weight (and the package isn't empty)
-          if (currentPackageWeight + productWeight > maxWeightPerPackage && currentPackageProducts.length > 0) {
-            // Finalize previous package
-            packagesInfo.push({
-              id: `pkg_${group.id}_${packagesInfo.length + 1}`,
-              products: currentPackageProducts, // Store full objects
-              productCount: currentPackageProducts.length,
-              weight: currentPackageWeight
-            });
-            // Start new package
-            currentPackageProducts = [product];
-            currentPackageWeight = productWeight;
-          } else {
-            // Add to current package
-            currentPackageProducts.push(product);
-            currentPackageWeight += productWeight;
-          }
-        }
-        // Add the last package if it has products
-        if (currentPackageProducts.length > 0) {
+    if (!isNaN(maxProductsPerPackage) && maxProductsPerPackage > 0 && group.products.length > maxProductsPerPackage) {
+      packagesCount = Math.ceil(group.products.length / maxProductsPerPackage);
+      for (let i = 0; i < packagesCount; i++) {
+        const startIdx = i * maxProductsPerPackage;
+        const endIdx = Math.min(startIdx + maxProductsPerPackage, group.products.length);
+        const packageProducts = group.products.slice(startIdx, endIdx);
+        packagesInfo.push({
+          id: `pkg_${group.id}_${i+1}`,
+          products: packageProducts,
+          productCount: packageProducts.length,
+          weight: packageProducts.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0)
+        });
+      }
+    } else if (!isNaN(maxWeightPerPackage) && maxWeightPerPackage > 0) {
+      let currentPackageProducts = [];
+      let currentPackageWeight = 0;
+      packagesInfo = [];
+
+      for (const product of group.products) {
+        const productWeight = parseFloat(product.weight || 0);
+        if (currentPackageWeight + productWeight > maxWeightPerPackage && currentPackageProducts.length > 0) {
           packagesInfo.push({
             id: `pkg_${group.id}_${packagesInfo.length + 1}`,
-            products: currentPackageProducts, // Store full objects
+            products: currentPackageProducts,
             productCount: currentPackageProducts.length,
             weight: currentPackageWeight
           });
-        }
-        packagesCount = packagesInfo.length;
-        if (packagesCount > 1) {
-          console.log(`📦 [Per Package] Se dividirá en ${packagesCount} paquetes por restricción de peso (${maxWeightPerPackage}kg).`);
+          currentPackageProducts = [product];
+          currentPackageWeight = productWeight;
         } else {
-          // Ensure the single package info is stored if not split
-          packagesInfo = [{
-             id: `pkg_${group.id}_1`,
-             products: group.products, // Store full objects
-             productCount: group.products.length,
-             weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0)
-          }];
-           console.log(`📦 [Per Package] No se requiere dividir por peso (${maxWeightPerPackage}kg). Paquete único creado.`);
+          currentPackageProducts.push(product);
+          currentPackageWeight += productWeight;
         }
-
-    } else {
-        // No splitting needed, create a single package entry
+      }
+      if (currentPackageProducts.length > 0) {
+        packagesInfo.push({
+          id: `pkg_${group.id}_${packagesInfo.length + 1}`,
+          products: currentPackageProducts,
+          productCount: currentPackageProducts.length,
+          weight: currentPackageWeight
+        });
+      }
+      packagesCount = packagesInfo.length;
+      if (packagesCount > 1) {
+      } else {
         packagesInfo = [{
            id: `pkg_${group.id}_1`,
-           products: group.products, // Store full objects
+           products: group.products,
            productCount: group.products.length,
            weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0)
         }];
-        packagesCount = 1;
-         console.log(`📦 [Per Package] No se requiere dividir. Paquete único creado.`);
+      }
+    } else {
+      packagesInfo = [{
+         id: `pkg_${group.id}_1`,
+         products: group.products,
+         productCount: group.products.length,
+         weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0)
+      }];
+      packagesCount = 1;
     }
-    // --- END: Package Splitting Logic ---
 
-    // --- START: Calculate Cost Per Package ---
     let totalOptionCost = 0;
-    const freeShippingMinAmount = parseFloat(rule.envio_gratis_monto_minimo); // Get only once
+    const freeShippingMinAmount = parseFloat(rule.envio_gratis_monto_minimo);
     const basePrice = parseFloat(rule.precio_base || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].precio : 0) || 0);
     const costPerKgExtra = hasPackageConfig ? parseFloat(ruleConfig.costo_por_kg_extra || 0) : 0;
-    // Note: cost_por_producto_extra is not implemented here yet, assuming weight is primary for now.
-    
-    console.log(`💰 [Per Package] Calculando costos individuales. Regla ID: ${rule.id}, Base: ${basePrice}, Min Gratis: ${freeShippingMinAmount || 'N/A'}, Kg Extra: ${costPerKgExtra}, Peso Max: ${maxWeightPerPackage || 'N/A'}`);
 
     packagesInfo.forEach((pkg, index) => {
-      // 1. Calculate package subtotal
       pkg.subtotal = pkg.products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * (p.quantity || 1)), 0);
-      
-      // 2. Check for free shipping based on package subtotal
       pkg.isFree = false;
       if (!isNaN(freeShippingMinAmount) && freeShippingMinAmount > 0 && pkg.subtotal >= freeShippingMinAmount) {
         pkg.isFree = true;
-         console.log(`💰 [Per Package] Paquete ${pkg.id}: Subtotal ${pkg.subtotal.toFixed(2)} >= ${freeShippingMinAmount} -> ENVÍO GRATIS`);
-      } else {
-         console.log(`💰 [Per Package] Paquete ${pkg.id}: Subtotal ${pkg.subtotal.toFixed(2)} < ${freeShippingMinAmount || 'N/A'} -> CALCULAR COSTO`);
       }
 
-      // 3. Calculate package cost if not free
       if (pkg.isFree) {
         pkg.packagePrice = 0;
       } else {
         let currentPackagePrice = basePrice;
-        
-        // Apply extra weight cost if applicable
         if (costPerKgExtra > 0 && !isNaN(maxWeightPerPackage) && pkg.weight > maxWeightPerPackage) {
           const extraWeight = pkg.weight - maxWeightPerPackage;
-          const extraKgsRoundedUp = Math.ceil(extraWeight); // Assuming charge per whole kg over limit
+          const extraKgsRoundedUp = Math.ceil(extraWeight);
           const extraCost = extraKgsRoundedUp * costPerKgExtra;
           currentPackagePrice += extraCost;
-          console.log(`  - [Per Package] Paquete ${pkg.id}: Peso ${pkg.weight.toFixed(2)}kg > ${maxWeightPerPackage}kg. Extra: ${extraWeight.toFixed(2)}kg -> ${extraKgsRoundedUp}kg. Costo extra: ${extraCost.toFixed(2)}`);
-        } else {
-           console.log(`  - [Per Package] Paquete ${pkg.id}: Peso ${pkg.weight.toFixed(2)}kg <= ${maxWeightPerPackage || 'N/A'}kg. Sin costo extra por peso.`);
         }
-        
-        // TODO: Apply cost_por_producto_extra if needed based on pkg.productCount and maxProductsPerPackage
-
         pkg.packagePrice = currentPackagePrice;
       }
-      
-      console.log(`  - [Per Package] Costo final Paquete ${pkg.id}: ${pkg.packagePrice.toFixed(2)}`);
-      
-      // 4. Add package cost to total option cost
       totalOptionCost += pkg.packagePrice;
     });
-    
-    console.log(`💰 [Per Package] Costo total calculado para la opción (Regla ${rule.id}): ${totalOptionCost.toFixed(2)}`);
-    // --- END: Calculate Cost Per Package ---
 
-    // Determine overall 'isFree' for the option (true only if total cost is 0)
     const finalIsFree = totalOptionCost === 0;
 
     const option = {
-      id: `ship_${group.id}_${uuidv4()}`, // Make ID more specific
+      id: `ship_${group.id}_${uuidv4()}`,
       name: rule.zona || rule.nombre || rule.name || 'Envío Estándar',
       carrier: rule.carrier || rule.proveedor || '',
-      description: rule.descripcion || rule.description || '', // Will be overwritten later
-      price: totalOptionCost, // Use the summed cost
-      products: group.products.map(p => p.id), // Still list all products covered by option
-      isFree: finalIsFree, // Reflect if the final summed cost is zero
+      description: rule.descripcion || rule.description || '',
+      price: totalOptionCost,
+      products: group.products.map(p => p.id),
+      isFree: finalIsFree,
       rule_id: rule.id,
       minDays,
       maxDays,
       isNational: (rule.coverage_type === 'nacional' || rule.tipo === 'nacional'),
       zoneType: rule.coverage_type || rule.tipo || 'standard',
       deliveryTime: deliveryTimeText,
-      // Add relevant config details used in calculation
       precio_base: basePrice,
       envio_gratis_monto_minimo: freeShippingMinAmount > 0 ? freeShippingMinAmount : undefined,
-      configuracion_paquetes: ruleConfig, // Include the config used
+      configuracion_paquetes: ruleConfig,
       opciones_mensajeria: rule.opciones_mensajeria,
-      // Package breakdown
       packagesCount,
-      packagesInfo, // Include detailed package info with costs
-      // Mark that prices were calculated per package
+      packagesInfo,
       packagesWithPrices: true 
     };
     
-    // Generate detailed description based on packages
-    option.description = generateDetailedDescription(option, group.products); // Pass original products for description context
-    
+    option.description = generateDetailedDescription(option, group.products);
+
+    console.log(`[Greedy]   ✅ Opción Calculada: "${option.name}" (ID: ${option.rule_id}), Costo: $${option.price.toFixed(2)}, Productos: ${option.products.length}, Paquetes: ${option.packagesCount}`);
+
     return option;
   });
-  
+
+  console.log(`[Greedy] ✅ Cálculo completo finalizado. Devolviendo ${shippingOptions.length} opciones.`);
   return {
     success: true,
     options: shippingOptions,
