@@ -75,12 +75,7 @@ export const companyInfoService = {
         { day: 'Domingo', open: false, openingTime: '', closingTime: '' }
       ],
       socialMedia: {
-        facebook: '',
-        instagram: '',
-        twitter: '',
-        youtube: '',
-        tiktok: '',
-        pinterest: ''
+        items: []
       },
       paymentConfig: {
         testMode: true,

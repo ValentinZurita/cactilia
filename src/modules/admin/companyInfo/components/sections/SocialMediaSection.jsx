@@ -1,123 +1,127 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { v4 as uuidv4 } from 'uuid'; // Import UUID generator
+import { SocialLinkItem } from './SocialLinkItem.jsx';
+import { AddSocialLinkForm } from './AddSocialLinkForm.jsx';
+// Import the new AddButton
+import { AddButton } from '../../../common/components/AddButton.jsx';
 
 /**
- * Sección para redes sociales de la empresa
- * Con diseño elegante y minimalista
+ * @component SocialMediaSection
+ * @description Sección para gestionar dinámicamente los enlaces a redes sociales de la empresa.
+ *              Permite añadir y eliminar enlaces.
  */
 const SocialMediaSection = ({ data, onUpdate }) => {
-  const [socialMedia, setSocialMedia] = useState({
-    facebook: data.facebook || '',
-    instagram: data.instagram || '',
-    twitter: data.twitter || '',
-    youtube: data.youtube || '',
-    tiktok: data.tiktok || '',
-    pinterest: data.pinterest || ''
-  });
-  
-  // Configuración de redes sociales disponibles
-  const socialNetworks = [
-    { id: 'facebook', name: 'Facebook', icon: 'facebook', placeholder: 'https://facebook.com/tuempresa', color: '#1877F2' },
-    { id: 'instagram', name: 'Instagram', icon: 'instagram', placeholder: 'https://instagram.com/tuempresa', color: '#C13584' },
-    { id: 'twitter', name: 'Twitter', icon: 'twitter-x', placeholder: 'https://twitter.com/tuempresa', color: '#000000' },
-    { id: 'youtube', name: 'YouTube', icon: 'youtube', placeholder: 'https://youtube.com/c/tuempresa', color: '#FF0000' },
-    { id: 'tiktok', name: 'TikTok', icon: 'tiktok', placeholder: 'https://tiktok.com/@tuempresa', color: '#000000' },
-    { id: 'pinterest', name: 'Pinterest', icon: 'pinterest', placeholder: 'https://pinterest.com/tuempresa', color: '#E60023' }
-  ];
-  
+  // Estado para controlar la visibilidad del formulario de añadir
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  // Obtener la lista de items (asegurarse de que siempre sea un array)
+  // Comprobar si 'data' y 'data.items' existen y son un array.
+  const currentItems = (data && Array.isArray(data.items)) ? data.items : [];
+
   /**
-   * Actualizar una red social específica
-   * @param {string} network - ID de la red social
-   * @param {string} value - URL o identificador
+   * @function handleAdd
+   * @description Añade un nuevo enlace de red social a la lista.
+   * @param {object} newItemData - Objeto con { label, icon, url, visible } del nuevo enlace.
    */
-  const handleSocialChange = (network, value) => {
-    const updatedSocial = {
-      ...socialMedia,
-      [network]: value
+  const handleAdd = (newItemData) => {
+    const newItem = {
+      ...newItemData,
+      id: uuidv4(), // Generar un ID único
     };
-    
-    setSocialMedia(updatedSocial);
-    onUpdate(updatedSocial);
+    const updatedItems = [...currentItems, newItem];
+    onUpdate({ items: updatedItems }); // Actualizar el estado padre
+    setShowAddForm(false); // Ocultar el formulario después de añadir
   };
-  
+
   /**
-   * Verificar si una URL es válida
-   * @param {string} url - URL a verificar
-   * @returns {boolean} - Resultado de la validación
+   * @function handleRemove
+   * @description Elimina un enlace de red social de la lista basado en su ID.
+   * @param {string} idToRemove - El ID del enlace a eliminar.
    */
-  const isValidUrl = (url) => {
-    if (!url) return true; // Vacío es válido
-    try {
-      new URL(url);
-      return true;
-    } catch (e) {
-      return false;
+  const handleRemove = (idToRemove) => {
+    const itemToRemove = currentItems.find(item => item.id === idToRemove);
+    const confirmMessage = itemToRemove 
+      ? `¿Estás seguro de eliminar el enlace a ${itemToRemove.label || 'esta red social'}?`
+      : '¿Estás seguro de eliminar este enlace?';
+      
+    if (window.confirm(confirmMessage)) {
+      const updatedItems = currentItems.filter(item => item.id !== idToRemove);
+      onUpdate({ items: updatedItems }); // Actualizar el estado padre
     }
   };
-  
+
   return (
     <div className="social-media-section">
-      <div className="row mb-4">
-        <div className="col-12 mb-4">
-          <h5 className="fw-medium mb-3">
-            <i className="bi bi-share me-2"></i>
-            Redes Sociales
-          </h5>
-          <p className="text-muted">
-            Configura los enlaces a tus redes sociales que se mostrarán en tu tienda.
-          </p>
+      {/* Encabezado y Botón de Añadir - Remove h5 */}
+      <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+        {/* Empty div to push the button to the right using justify-content-between */}
+        <div></div> {/* Remains empty to keep alignment if needed, or remove if title added back */}        
+      </div>
+
+      {/* Formulario para Añadir (condicional) */}
+      {showAddForm && (
+        <AddSocialLinkForm 
+          onAdd={handleAdd}
+          onCancel={() => setShowAddForm(false)}
+        />
+      )}
+
+      {/* Lista de Enlaces Existentes */}
+      <div className="list-group">
+        {currentItems.length > 0 ? (
+          currentItems.map(item => (
+            <SocialLinkItem 
+              key={item.id} // Usar el ID único como key
+              item={item} 
+              onRemove={handleRemove} 
+            />
+          ))
+        ) : (
+          <p className="text-muted fst-italic px-3">No hay enlaces a redes sociales añadidos.</p>
+        )}
+      </div>
+      
+      {/* Botón para Añadir Nuevo Enlace (visible si el form no está) */}      
+      {!showAddForm && (
+        // Use the new AddButton component
+        <AddButton 
+          onClick={() => setShowAddForm(true)}
+          title="Añadir Enlace" // Specific title for this instance
+          className="mt-3 text-center" // Apply wrapper classes here
+          // Default size, color (btn-dark), icon (bi-plus-lg), and hoverScale are fine
+        />
+      )}
+
+      {/* Nota informativa (si no hay items y el form no está visible) */}
+      {!showAddForm && currentItems.length === 0 && (
+         <div className="mt-4 text-muted small">
+          <i className="bi bi-info-circle me-1"></i>
+          Añade enlaces a tus perfiles sociales para que aparezcan en tu sitio.
         </div>
-      </div>
-      
-      {/* Cards de redes sociales */}
-      <div className="row g-4">
-        {socialNetworks.map((network) => (
-          <div className="col-md-6 col-lg-4" key={network.id}>
-            <div className="card h-100 border-0 shadow-sm">
-              <div className="card-header bg-white border-0 pt-3" style={{ borderLeft: `4px solid ${network.color}` }}>
-                <div className="d-flex align-items-center">
-                  <div 
-                    className="rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" 
-                    style={{ backgroundColor: `${network.color}20`, width: 40, height: 40 }}
-                  >
-                    <i className={`bi bi-${network.icon}`} style={{ color: network.color }}></i>
-                  </div>
-                  <h6 className="mb-0 fw-medium">{network.name}</h6>
-                </div>
-              </div>
-              <div className="card-body">
-                <div className="form-group">
-                  <input
-                    type="url"
-                    className={`form-control ${socialMedia[network.id] && !isValidUrl(socialMedia[network.id]) ? 'is-invalid' : ''}`}
-                    value={socialMedia[network.id] || ''}
-                    onChange={(e) => handleSocialChange(network.id, e.target.value)}
-                    placeholder={network.placeholder}
-                    aria-label={`URL de ${network.name}`}
-                  />
-                  {socialMedia[network.id] && !isValidUrl(socialMedia[network.id]) && (
-                    <div className="invalid-feedback">
-                      Por favor, ingresa una URL válida
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <div className="mt-4 text-muted small">
-        <i className="bi bi-info-circle me-1"></i>
-        Deja en blanco las redes sociales que no quieras mostrar.
-      </div>
+      )}
     </div>
   );
 };
 
 SocialMediaSection.propTypes = {
-  data: PropTypes.object.isRequired,
+  // Aceptar que 'data' puede no tener 'items' o 'items' no ser array inicialmente
+  data: PropTypes.shape({
+    items: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      label: PropTypes.string,
+      icon: PropTypes.string,
+      url: PropTypes.string,
+      visible: PropTypes.bool
+    }))
+  }), 
   onUpdate: PropTypes.func.isRequired
 };
+
+// Valor por defecto para data si no se proporciona
+SocialMediaSection.defaultProps = {
+  data: { items: [] },
+};
+
 
 export default SocialMediaSection; 
