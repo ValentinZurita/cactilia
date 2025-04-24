@@ -27,7 +27,10 @@ export const useBootstrapTooltips = () => {
       const tooltipInstances = tooltipTriggerList.map(tooltipTriggerEl => {
         // Se pueden pasar opciones adicionales aquí si es necesario,
         // ej. { container: 'body' } para evitar problemas de z-index en layouts complejos.
-        return new window.bootstrap.Tooltip(tooltipTriggerEl);
+        // Añadir opción de delay para que aparezcan más rápido
+        return new window.bootstrap.Tooltip(tooltipTriggerEl, {
+          delay: { show: 150, hide: 50 } // Retraso en ms (mostrar rápido, ocultar rápido)
+        });
       });
 
       // 4. Función de limpieza (Cleanup)

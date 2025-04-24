@@ -26,7 +26,7 @@ const NavigationTabs = ({ activeSection, onSectionChange, tabs = [] }) => {
       hours: 'clock',
       social: 'share',
       payment: 'credit-card',
-      seo: 'google' // Añadir icono para SEO
+      seo: 'globe' 
     };
     return icons[tabId] || 'question-circle'; // Icono por defecto
   };
