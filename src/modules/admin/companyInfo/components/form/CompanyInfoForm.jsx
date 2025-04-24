@@ -4,7 +4,6 @@ import { ContactSection } from './ContactSection';
 import { GeneralInfoSection } from './GeneralInfoSection';
 import { BusinessHoursSection } from './BusinessHoursSection';
 import { SocialMediaSection } from './SocialMediaSection';
-import { PaymentConfigSection } from './PaymentConfigSection';
 
 /**
  * Formulario principal para gestionar datos de la empresa
@@ -57,15 +56,6 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
       tiktok: '',
       pinterest: ''
     },
-    
-    // Configuración de pagos
-    paymentConfig: {
-      bankName: '',
-      accountNumber: '',
-      clabe: '',
-      accountHolder: '',
-      supportedMethods: ['card', 'oxxo', 'bank_transfer']
-    }
   });
   
   // Cargar datos iniciales si existen
@@ -147,12 +137,6 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
       <SocialMediaSection 
         data={formData.socialMedia}
         onUpdate={(data) => handleSectionUpdate('socialMedia', data)}
-      />
-      
-      {/* Configuración de pagos */}
-      <PaymentConfigSection 
-        data={formData.paymentConfig}
-        onUpdate={(data) => handleSectionUpdate('paymentConfig', data)}
       />
       
       {/* Botones de acción */}
