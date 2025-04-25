@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Logo } from '../../../../shared/components/logo/Logo.jsx';
 import '../../../../styles/global.css';
 import './../../styles/homepage.css';
+import { useImageSlider } from '../../hooks/useImageSlider';
 
 /**
  * HeroSection Component con transiciones CSS puras
- * Implementa un slider con transiciones fluidas usando CSS puro
+ * Muestra un banner con imágenes rotativas (controlado por useImageSlider)
  *
  * @param {Object} props
- * @param {string|Array} props.images - Imágenes a mostrar (string o array de URLs ya procesadas)
+ * @param {Array<{id: string, src: string, alt: string}>} props.images - Array de objetos de imagen a mostrar.
  * @param {string} props.title - Título principal
  * @param {string} props.subtitle - Subtítulo
  * @param {boolean} props.showLogo - Si se muestra el logo
@@ -21,7 +22,7 @@ import './../../styles/homepage.css';
  * @param {number} props.interval - Intervalo de rotación en ms
  * @returns {JSX.Element}
  */
-export const HeroSection = ({
+export const HeroSection = React.memo(({
                               images,
                               title,
                               subtitle,
@@ -33,66 +34,19 @@ export const HeroSection = ({
                               height = "100vh",
                               autoRotate = false,
                               interval = 5000,
-                              // Eliminar collectionId y useCollection de las props
-                              // collectionId, 
-                              // useCollection = false,
                             }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const imagesContainerRef = useRef(null);
-  const preloadedImages = useRef(new Set());
-  const intervalRef = useRef(null);
 
-  // Simplificar useMemo para usar siempre la prop 'images'
-  const imageArray = useMemo(() => {
-    // Asegurar que siempre sea un array, incluso si viene null/undefined o un string
-    return Array.isArray(images) ? images : (images ? [images] : []);
-  }, [images]); // Solo depende de la prop 'images'
+  // Use the hook to manage slider state and logic
+  const { currentIndex } = useImageSlider(images, autoRotate, interval);
 
-  // Función para precargar imágenes
-  const preloadImages = (imagesToPreload) => {
-    imagesToPreload.forEach(url => {
-      if (!preloadedImages.current.has(url)) {
-        const img = new Image();
-        img.src = url;
-        img.onload = () => {
-          preloadedImages.current.add(url);
-        };
-      }
-    });
-  };
+  // Memoize image array processing (ensure it's always an array)
+  const imageArray = useMemo(() => (
+    Array.isArray(images) ? images.filter(img => img?.src) : []
+  ), [images]);
 
-  // Configurar rotación automática
-  useEffect(() => {
-    // Precargar todas las imágenes al inicio
-    preloadImages(imageArray);
-
-    if (autoRotate && imageArray.length > 1) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      intervalRef.current = setInterval(() => {
-        if (!isTransitioning) {
-          setIsTransitioning(true);
-          setTimeout(() => {
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % imageArray.length);
-            setIsTransitioning(false);
-          }, 500); // Duración de la transición (ej. 0.5s)
-        }
-      }, interval);
-    }
-
-    // Limpiar intervalo al desmontar o si cambia la configuración
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [autoRotate, imageArray, interval, isTransitioning]); // Dependencias correctas
-
-  // Crear estilos CSS para cada imagen
+  // Function to create styles remains the same, uses currentIndex from hook
   const createImageStyles = (index) => {
-    const imageUrl = imageArray[index]?.src; // Get the src URL
+    const imageUrl = imageArray[index]?.src; // Get the src URL from the processed array
     return {
       position: 'absolute',
       top: 0,
@@ -103,31 +57,45 @@ export const HeroSection = ({
       backgroundImage: `url(${imageUrl})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      // Transición más rápida para el fade
-      transition: 'opacity 0.5s ease-in-out', 
+      // Consider slightly longer transition for smoother effect
+      transition: 'opacity 0.8s ease-in-out', 
       zIndex: index === currentIndex ? 1 : 0
     };
   };
+  
+  // Handle case where no valid images are available
+  if (imageArray.length === 0) {
+    // Optionally return a placeholder or null
+    // For now, let's render the section without images but with content
+    console.warn('HeroSection: No valid images provided.');
+    // return null; 
+  }
 
   return (
     <section
       className="hero-section position-relative text-white text-center d-flex flex-column justify-content-center align-items-center"
       style={{ height, overflow: 'hidden' }}
+      aria-label={title || 'Hero section'}
+      role="region"
     >
-      {/* Container para todas las imágenes */}
-      <div
-        ref={imagesContainerRef}
-        className="position-absolute top-0 start-0 w-100 h-100"
-      >
-        {/* Renderizar todas las imágenes con opacidad controlada */}
-        {imageArray.map((_, index) => (
-          <div
-            key={index}
-            style={createImageStyles(index)}
-            aria-hidden={index !== currentIndex}
-          />
-        ))}
-      </div>
+      {/* Container for images - only render if images exist */}
+      {imageArray.length > 0 && (
+        <div
+          className="position-absolute top-0 start-0 w-100 h-100"
+          aria-live="polite" // Announce changes for screen readers
+          aria-atomic="true"
+        >
+          {imageArray.map((image, index) => (
+            <div
+              key={image.id || index} // Use image.id if available, otherwise index
+              style={createImageStyles(index)}
+              role="img" // Role for semantic meaning
+              aria-label={image.alt || `Slide ${index + 1}`}
+              aria-hidden={index !== currentIndex}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Overlay oscuro */}
       <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" style={{ zIndex: 2 }}></div>
@@ -135,14 +103,15 @@ export const HeroSection = ({
       {/* Contenido del Hero */}
       <div className="position-relative" style={{ zIndex: 3 }}>
         {showLogo && <Logo color="white" />}
-        <h1 className="display-6 fw-bold">{title}</h1>
+        {/* Use heading levels appropriately */}
+        <h1 className="display-6 fw-bold">{title}</h1> 
         {showSubtitle && <p className="lead text-xs">{subtitle}</p>}
 
         {showButton && (
           <a
             href={buttonLink}
             className="btn btn-lg text-white btn-success text-xs"
-            style={{ backgroundColor: "var(--green-1)" }}
+            style={{ backgroundColor: "var(--green-1)" }} // Consider moving to CSS class
           >
             {buttonText}
           </a>
@@ -150,4 +119,7 @@ export const HeroSection = ({
       </div>
     </section>
   );
-};
+});
+
+// Add display name for React DevTools
+HeroSection.displayName = 'HeroSection';
