@@ -165,6 +165,8 @@ const shopPageSlice = createSlice({
         }
       })
       .addCase(fetchInitialShopData.fulfilled, (state, action) => {
+        // Always set isLoading to false when fulfilled, regardless of skipped
+        state.isLoading = false; 
         if (!action.payload?.skipped) {
             state.allProducts = action.payload.allProducts;
             state.categories = action.payload.categories;
@@ -173,7 +175,6 @@ const shopPageSlice = createSlice({
             state.bannerConfig = action.payload.bannerConfig; 
             state.bannerCollectionImages = action.payload.bannerCollectionImages;
             state.lastFetchTimestamp = action.payload.timestamp;
-            state.isLoading = false;
         }
       })
       .addCase(fetchInitialShopData.rejected, (state, action) => {

@@ -38,6 +38,15 @@ const persistedAuthReducer = persistReducer(authPersistConfig, authSlice.reducer
 const persistedCartReducer = persistReducer(cartPersistConfig, cartSlice.reducer)
 const persistedOrdersReducer = persistReducer(ordersPersistConfig, ordersReducer)
 
+// Config persistence for shopPage
+const shopPagePersistConfig = {
+  key: 'shopPage',
+  storage,
+  // Persist core data and timestamp, exclude filters/pagination/loading/error
+  whitelist: ['allProducts', 'categories', 'categoriesMap', 'bannerConfig', 'bannerCollectionImages', 'lastFetchTimestamp'] 
+};
+const persistedShopPageReducer = persistReducer(shopPagePersistConfig, shopPageReducer);
+
 // Crear un customSerializer para manejar objetos de Firestore
 const firestoreSerializableCheck = {
   isSerializable: (value) => {
@@ -81,7 +90,7 @@ export const store = configureStore({
     orders: persistedOrdersReducer, // Añadimos el reducer de orders
     homepage: homepageReducer,
     siteConfig: siteConfigReducer,
-    shopPage: shopPageReducer,
+    shopPage: persistedShopPageReducer,
   },
 
   // Add the middleware to ignore some actions for the persistence
