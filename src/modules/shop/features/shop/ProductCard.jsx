@@ -1,116 +1,98 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import '../../../../styles/pages/shop.css';
 import '../cart/styles/ProductCartd.css';
 import { CartButton } from '../cart/components/index.js';
-import { useAsync } from '../../hooks/useAsync';
-import { getProductCurrentStock, validateAndNormalizeProduct } from '../../services/productServices.js';
-import { ensureShippingProperties } from '../../services/productServices.js';
+import { validateAndNormalizeProduct, ensureShippingProperties } from '../../services/productServices.js';
 import { ImageComponent } from '../../../../shared/components/images/ImageComponent.jsx';
 
-export const ProductCard = ({ product, onProductClick }) => {
-  // Asegurar que el producto tiene propiedades de envío y datos válidos
-  const [processedProduct, setProcessedProduct] = useState(product);
-  
-  // Procesar el producto cuando cambia para asegurar propiedades y validarlo
-  useEffect(() => {
-    const validateProduct = () => {
-      // Primero validar y normalizar (corregir problemas posibles)
-      const { product: validatedProduct, valid, warnings } = validateAndNormalizeProduct(product, true);
-      
-      // Aplicar ensureShippingProperties para garantía adicional
-      const finalProduct = ensureShippingProperties(validatedProduct, 'ProductCard');
-      
-      setProcessedProduct(finalProduct);
-    };
-    
-    validateProduct();
+export const ProductCard = React.memo(({ product, onProductClick }) => {
+  // Use useMemo to process the product only when the input product changes
+  const processedProduct = useMemo(() => {
+      if (!product) return null; // Handle null/undefined product
+      // Validate and normalize first
+      const { product: validatedProduct } = validateAndNormalizeProduct(product, true);
+      // Ensure shipping properties
+      return ensureShippingProperties(validatedProduct, 'ProductCard');
   }, [product]);
+
+  // Destructure product data AFTER processing
+  // Use default values for safety
+  const { id, name, mainImage, price, category, stock = 0 } = processedProduct || {}; 
   
-  // Destructure product data
-  const { id, name, mainImage, price, category } = processedProduct;
+  // State for stock (now derived directly from prop)
+  const currentStock = stock ?? 0; // Use the stock from the processed product
+  const isOutOfStock = currentStock <= 0;
 
-  // Hook para obtener stock actual en tiempo real
-  const {
-    data: currentStock,
-    isPending: isLoadingStock
-  } = useAsync(() => getProductCurrentStock(id), true);
-
-  // Determinar si el producto está agotado
-  const isOutOfStock = currentStock === 0 || isLoadingStock;
-
-  /**
-   * Handle the entire card click => open modal
-   * Verificar que el clic no fue en el botón de carrito
-   */
+  // Handle card click (no changes needed here, but ensure processedProduct is used)
   const handleCardClick = (e) => {
-    // Verificar que el clic no fue en el botón de carrito o sus descendientes
     if (e.target.closest('.cart-btn')) {
-      console.log('Clic en botón de carrito, ignorando apertura de modal');
       return;
     }
-
-    console.log('ProductCard: handleCardClick ejecutado para producto:', name);
-
-    if (onProductClick) {
+    // Pass the fully processed product to the modal
+    if (onProductClick && processedProduct) { 
       onProductClick(processedProduct);
     }
   };
 
-  /**
-   * Prevenir la propagación del evento al hacer clic en el botón de carrito
-   */
+  // Prevent propagation (no changes needed here)
   const handleCartButtonWrapperClick = (e) => {
     e.stopPropagation();
-    console.log('ProductCard: Propagación detenida en wrapper del CartButton');
   };
+
+  // Handle potential null product during processing
+  if (!processedProduct) {
+    // Optionally render a placeholder or null
+    return null; 
+  }
 
   return (
     <div
-      className="card product-card"
+      className="card product-card h-100" // Added h-100 for consistent height
       onClick={handleCardClick}
+      role="button" // Add role for accessibility
+      tabIndex={0} // Make it focusable
+      aria-label={`Ver detalles de ${name}`}
     >
-      {/* Contenedor de imagen con efecto de elevación */}
-      <div className="product-image-container">
+      <div className="product-image-container position-relative"> 
         <ImageComponent
           src={mainImage}
-          alt={name}
+          alt={name || 'Producto'} // Provide default alt text
           className="card-img-top"
+          loading="lazy" // Add lazy loading for images
         />
 
-        {/* Badge de disponibilidad */}
         {isOutOfStock && (
-          <span className="position-absolute top-0 start-0 m-2 badge status-badge">
+          <span className="position-absolute top-0 start-0 m-2 badge bg-danger status-badge"> {/* Use bg-danger for consistency */}
             Agotado
           </span>
         )}
 
-        {/* Badge de stock bajo (opcional) */}
-        {!isOutOfStock && currentStock <= 5 && currentStock > 0 && (
+        {!isOutOfStock && currentStock <= 5 && (
           <span className="position-absolute top-0 start-0 m-2 badge bg-warning text-dark low-stock-badge">
             ¡Solo {currentStock} disponibles!
           </span>
         )}
       </div>
 
-      {/* Información del producto */}
       <div className="card-body product-info d-flex flex-column">
-        <h5 className="product-title">{name}</h5>
+        {/* Use min-height or similar CSS if needed to prevent title height changes */}
+        <h5 className="product-title flex-grow-1">{name || 'Nombre no disponible'}</h5> 
 
-        <div className="d-flex justify-content-between align-items-center mt-auto">
+        <div className="d-flex justify-content-between align-items-center mt-auto pt-2"> {/* Added pt-2 for spacing */}
           <div>
-            <div className="d-flex gap-2">
-              <p className="category-label">{category}</p>
-            </div>
-            <p className="text-soft-black product-price">${price.toFixed(2)}</p>
+            {category && (
+                <p className="category-label mb-1">{category}</p> // Ensure margin is appropriate
+            )}
+            <p className="text-soft-black product-price mb-0">${price?.toFixed(2) ?? '--.--'}</p> {/* Handle potential undefined price */}
           </div>
 
-          {/* Botón de carrito */}
           <div
             className="cart-button-wrapper"
             onClick={handleCartButtonWrapperClick}
           >
             <CartButton
-              product={{...processedProduct, stock: currentStock}}
+              // Pass the processed product with the stock we derived
+              product={processedProduct} 
               variant="icon"
               disabled={isOutOfStock}
             />
@@ -119,4 +101,7 @@ export const ProductCard = ({ product, onProductClick }) => {
       </div>
     </div>
   );
-};
+});
+
+// Add display name for React DevTools
+ProductCard.displayName = 'ProductCard';
