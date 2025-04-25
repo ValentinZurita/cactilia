@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { HeroSection, HomeCarousel, HomeSection, ProductCarousel } from '../components/home-page/index.js'
 import { SkeletonHero, SkeletonCarousel } from '../components/skeletons/index.js'
 import '../../../styles/global.css'
@@ -9,6 +10,15 @@ import { getCollectionImages } from '../../admin/services/collectionsService.js'
 import { ContentService } from '../../admin/services/contentService.js'
 import { getFeaturedProductsForHome } from '../../admin/services/productService.js'
 import { getFeaturedCategoriesForHome } from '../../admin/services/categoryService.js'
+import { 
+  fetchHomepageData, 
+  selectHomepagePageData,
+  selectHomepageFeaturedProducts,
+  selectHomepageFeaturedCategories,
+  selectHomepageCollectionImages,
+  selectHomepageIsLoading,
+  selectHomepageError
+} from '../../../store/slices/homepageSlice.js'
 
 /**
  * HomePage
@@ -25,14 +35,19 @@ import { getFeaturedCategoriesForHome } from '../../admin/services/categoryServi
  * - Soporte para colecciones de imágenes en hero y carrusel de granja.
  * - Fallback a datos de muestra cuando no hay datos en Firestore.
  * - Orden dinámico de las secciones, según configuración almacenada o por defecto.
+ * Now uses Redux store (homepageSlice) for data fetching and state management.
  */
 export const HomePage = () => {
-  // ---------------------- STATE ----------------------
-  const [pageData, setPageData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [collectionImages, setCollectionImages] = useState({})
-  const [featuredProducts, setFeaturedProducts] = useState([])
-  const [featuredCategories, setFeaturedCategories] = useState([])
+  // Get Redux dispatch function
+  const dispatch = useDispatch()
+
+  // Select data from Redux store
+  const pageData = useSelector(selectHomepagePageData)
+  const featuredProducts = useSelector(selectHomepageFeaturedProducts)
+  const featuredCategories = useSelector(selectHomepageFeaturedCategories)
+  const collectionImages = useSelector(selectHomepageCollectionImages)
+  const isLoading = useSelector(selectHomepageIsLoading)
+  const error = useSelector(selectHomepageError)
 
   // ---------------------- FALLBACK DATA ----------------------
   // Imágenes de muestra para secciones de carrusel (OurFarmSection).
@@ -63,120 +78,15 @@ export const HomePage = () => {
     }))
 
   // ---------------------- EFFECTS ----------------------
-  /**
-   * Función para cargar los datos de la página
-   */
+  // Fetch data on component mount if not already loading or loaded
   useEffect(() => {
-    const loadPageData = async () => {
-      try {
-        // setLoading(true) ya no es necesario aquí si el estado inicial es true
-
-        // 1. Cargar datos principales en paralelo
-        const contentServicePromise = ContentService.getPageContent('home', 'published')
-          .catch((err) => {
-            console.error('Error cargando contenido de la página:', err)
-            return { ok: false, error: err, data: null }
-          })
-
-        const results = await Promise.allSettled([ // Usar allSettled para manejar errores individuales
-          getFeaturedProductsForHome().catch(err => ({ ok: false, error: err, data: [] })),
-          getFeaturedCategoriesForHome().catch(err => ({ ok: false, error: err, data: [] })),
-          contentServicePromise,
-        ])
-
-        // Procesar resultados individuales
-        const productsResult = results[0];
-        const categoriesResult = results[1];
-        const contentResult = results[2];
-
-        if (productsResult.status === 'fulfilled' && productsResult.value.ok) {
-          setFeaturedProducts(productsResult.value.data);
-        } else {
-          console.error('Error cargando productos destacados:', productsResult.reason || productsResult.value?.error);
-        }
-
-        if (categoriesResult.status === 'fulfilled' && categoriesResult.value.ok) {
-          setFeaturedCategories(categoriesResult.value.data);
-        } else {
-          console.error('Error cargando categorías destacadas:', categoriesResult.reason || categoriesResult.value?.error);
-        }
-
-        let pageContentData = null;
-        if (contentResult.status === 'fulfilled' && contentResult.value?.ok && contentResult.value?.data) {
-          pageContentData = contentResult.value.data;
-          setPageData(pageContentData);
-
-          // 3. Cargar imágenes de colecciones (si es necesario)
-          const heroSection = pageContentData.sections?.hero;
-          const farmCarouselSection = pageContentData.sections?.farmCarousel;
-          const collectionPromises = [];
-
-          if (heroSection?.useCollection && heroSection?.collectionId && !collectionImages[heroSection.collectionId]) {
-            collectionPromises.push(loadCollectionImages(heroSection.collectionId));
-          }
-          if (farmCarouselSection?.useCollection && farmCarouselSection?.collectionId && !collectionImages[farmCarouselSection.collectionId]) {
-            collectionPromises.push(loadCollectionImages(farmCarouselSection.collectionId));
-          }
-
-          if (collectionPromises.length > 0) {
-            await Promise.allSettled(collectionPromises);
-          }
-        } else {
-          if (contentResult.status === 'rejected' || contentResult.value?.error) {
-            console.warn('No se pudo cargar el contenido de la página:', contentResult.reason || contentResult.value?.error);
-          } else {
-            console.warn('No se encontró contenido publicado para la página home.');
-          }
-          setPageData(null);
-        }
-
-      } catch (error) {
-        console.error('Error inesperado durante la carga de datos de la página:', error);
-        setPageData(null);
-        setFeaturedProducts([]); // Asegurar reseteo en error general
-        setFeaturedCategories([]);
-      } finally {
-        // Importante: Poner setLoading(false) en el finally
-        // para asegurar que se oculte el skeleton incluso si hay errores.
-        setLoading(false);
-      }
+    // Check isLoading status from Redux store before dispatching
+    if (!isLoading && !pageData && !error) { // Fetch only if idle and no data/error
+      dispatch(fetchHomepageData())
     }
-
-    loadPageData()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dispatch, isLoading, pageData, error]) // Dependencies ensure fetch only happens once needed
 
   // ---------------------- HELPERS ----------------------
-  /**
-   * Carga las imágenes de una colección (por ID) usando getCollectionImages().
-   * Almacena los **datos completos** de cada imagen en `collectionImages` state
-   * para poder acceder a `resizedUrls` posteriormente.
-   */
-  const loadCollectionImages = async (collectionId) => {
-    if (!collectionId) return
-    if (collectionImages[collectionId]) return // evitar carga repetida
-
-    try {
-      const result = await getCollectionImages(collectionId)
-      if (result.ok && Array.isArray(result.data)) {
-        // Guardar los datos completos de las imágenes, no solo formateados
-        setCollectionImages((prev) => ({
-          ...prev,
-          [collectionId]: result.data, // Guardar el array de datos completos
-        }))
-        return { ok: true, data: result.data } // Devolver éxito y datos completos
-      } else {
-        // Si result.ok es falso o data no es array
-        console.warn(`No se pudieron cargar imágenes válidas para la colección ${collectionId}.`)
-        setCollectionImages((prev) => ({ ...prev, [collectionId]: [] })) // Marcar como cargada (vacía)
-        return { ok: false, error: 'No valid images found' }
-      }
-    } catch (error) {
-      console.error(`Error cargando imágenes de la colección ${collectionId}:`, error)
-      setCollectionImages((prev) => ({ ...prev, [collectionId]: [] })) // Marcar como cargada (vacía) con error
-      return { ok: false, error }
-    }
-  }
-
   /**
    * Renderiza la página por defecto cuando no hay datos personalizados
    * o para usuarios no autenticados que no pueden acceder a los datos
@@ -249,231 +159,141 @@ export const HomePage = () => {
   };
   // --- FIN FUNCIÓN AUXILIAR ---
 
-  // ---------------------- RENDER ----------------------
-  // Si estamos cargando los datos iniciales (contenido de la página)
-  if (loading) {
+  // ---------------------- RENDER LOGIC ----------------------
+  
+  // --- Render Skeletons --- 
+  if (isLoading && !pageData) { // Show skeleton only on initial load
     return (
       <>
         <SkeletonHero />
-        {/* Mostrar dos carruseles skeleton como ejemplo */}
-        <SkeletonCarousel count={4} />
-        <SkeletonCarousel count={4} />
+        <SkeletonCarousel />
+        <SkeletonCarousel />
       </>
-    )
+    );
   }
 
-  // Si después de cargar, no hay datos de página o estructura inválida, usar la versión por defecto
-  // Esto actúa como fallback si la carga del contenido principal falla.
-  if (!pageData || !pageData.sections) {
-    console.warn('No hay datos de página o estructura inválida, usando la versión predeterminada.')
-    return renderDefaultPage() // Mantenemos esto como fallback final
+  // --- Render Error State --- (Optional but good practice)
+  if (error) {
+    return (
+      <div className="container text-center py-5">
+        <h2 className="text-danger">Error al cargar la página</h2>
+        <p>{typeof error === 'string' ? error : 'Ocurrió un problema inesperado.'}</p>
+        {/* Optionally add a retry button */}
+      </div>
+    );
   }
 
-  // Extraemos sections y blockOrder (si existe)
-  const { sections, blockOrder } = pageData
+  // --- Render Content (Using Redux state or Fallbacks) ---
+  
+  // Use data from Redux store, fallback to sample data if needed
+  const productsToShow = featuredProducts?.length > 0 ? featuredProducts : sampleProducts;
+  const categoriesToShow = featuredCategories?.length > 0 ? featuredCategories : sampleCategories;
 
-  // Si no hay secciones definidas, también se usa la página por defecto
-  if (!sections) {
-    console.warn('La estructura de datos no es correcta, usando la versión predeterminada')
-    return renderDefaultPage()
-  }
+  // Determine section order (using pageData from Redux)
+  const sectionOrder = pageData?.sectionOrder || ['hero', 'featuredProducts', 'farmCarousel', 'featuredCategories']; 
 
-  // Determinar el orden de renderización
-  const renderOrder = Array.isArray(blockOrder) && blockOrder.length > 0
-    ? blockOrder
-    : Object.keys(sections)
+  // Helper to render sections based on order and configuration
+  const renderSections = () => {
+    return sectionOrder.map(sectionKey => {
+      const sectionConfig = pageData?.sections?.[sectionKey] || {};
+      if (sectionConfig.visible === false) return null; // Skip hidden sections
 
-  // Renderizar las secciones en el orden especificado
+      switch (sectionKey) {
+        case 'hero':
+          console.log("DEBUG: Hero sectionConfig:", sectionConfig); // LOG 1
+          console.log("DEBUG: Collection Images from store:", collectionImages); // LOG 2
+          const heroImagesData = sectionConfig.useCollection
+            ? (collectionImages[sectionConfig.collectionId] || [])
+            : sectionConfig.images || [];
+          console.log("DEBUG: Raw heroImagesData:", heroImagesData); // LOG 3
+
+          const formattedHeroImages = heroImagesData.map((img, idx) => {
+              if (!img) {
+                  console.error("DEBUG: Found null/undefined image data in heroImagesData at index", idx);
+                  return null; // Skip null/undefined entries
+              }
+              const url = getImageUrlBySize(img, 'large') || '/public/images/placeholder.jpg';
+              console.log("DEBUG: Formatting image:", img, "-> Result URL:", url); // LOG 4
+              return {
+                  id: img.id || `hero-${idx}`,
+                  src: url,
+                  alt: img.alt || sectionConfig.title || 'Hero Image'
+              }
+          }).filter(Boolean); // Remove any null entries if errors occurred
+
+          console.log("DEBUG: Final formattedHeroImages:", formattedHeroImages); // LOG 5
+
+          return (
+            <HeroSection
+              key={sectionKey}
+              title={sectionConfig.title || 'Bienvenido a Cactilia'}
+              subtitle={sectionConfig.subtitle || 'Descubre nuestros productos naturales'}
+              ctaText={sectionConfig.ctaText || 'Ver productos'}
+              ctaLink={sectionConfig.ctaLink || '/shop'}
+              images={formattedHeroImages.length > 0 ? formattedHeroImages : [{ id: 'fallback', src: '/public/images/placeholder.jpg', alt: 'Placeholder' }]}
+            />
+          );
+
+        case 'featuredProducts':
+          return (
+            <HomeSection
+              key={sectionKey}
+              title={sectionConfig.title || 'Productos destacados'}
+              subtitle={sectionConfig.subtitle || 'Descubre nuestra selección'}
+              bgColor={sectionConfig.bgColor || 'var(--bg-light)'}
+              link={sectionConfig.link || '/shop'}
+              linkText={sectionConfig.linkText || 'Ver todos los productos'}
+            >
+              <ProductCarousel products={productsToShow} />
+            </HomeSection>
+          );
+
+        case 'farmCarousel': // Assuming 'farmCarousel' uses HomeCarousel
+          const farmImagesData = sectionConfig.useCollection
+            ? (collectionImages[sectionConfig.collectionId] || [])
+            : sectionConfig.images || [];
+           const formattedFarmImages = farmImagesData.map((img, idx) => ({
+            id: img.id || `farm-${idx}`,
+            src: getImageUrlBySize(img, 'medium') || '/public/images/placeholder.jpg', 
+            alt: img.alt || 'Imagen de la granja'
+          }));  
+          return (
+            <HomeSection
+              key={sectionKey}
+              title={sectionConfig.title || 'Nuestra Granja'}
+              subtitle={sectionConfig.subtitle || 'Conoce de dónde vienen nuestros productos'}
+              bgColor={sectionConfig.bgColor}
+              // No link/linkText by default for this type
+            >
+              <HomeCarousel images={formattedFarmImages.length > 0 ? formattedFarmImages : sampleImages} />
+            </HomeSection>
+          );
+
+        case 'featuredCategories':
+          return (
+            <HomeSection
+              key={sectionKey}
+              title={sectionConfig.title || 'Explora categorías'}
+              subtitle={sectionConfig.subtitle || 'Encuentra lo que buscas'}
+              bgColor={sectionConfig.bgColor}
+              link={sectionConfig.link || '/shop'}
+              linkText={sectionConfig.linkText || 'Ver todas las categorías'}
+            >
+              <ProductCarousel products={categoriesToShow} isCategories={true} />
+            </HomeSection>
+          );
+        
+        default:
+          return null;
+      }
+    });
+  };
+
+  // --- Component Return --- 
   return (
-    <div className="home-section">
-      {renderOrder.map((sectionId) => {
-        if (!sections[sectionId]) return null
-
-        const sectionData = sections[sectionId]
-
-        switch (sectionId) {
-          case 'hero': {
-            const heroConfig = sectionData || {}
-            const collectionId = heroConfig.collectionId
-            const useCollection = heroConfig.useCollection
-            // Leer el tamaño deseado, default a 'large' para Hero (o 'original' si lo prefieres)
-            const desiredSize = heroConfig.imageSize || 'large'; 
-
-            // Obtener los datos completos de la imagen de la colección
-            const fullImageData = (useCollection && collectionId && collectionImages[collectionId])
-                ? collectionImages[collectionId]
-                : []
-
-            // Comprobar si la colección aún se está cargando
-            const collectionIsLoading = useCollection && collectionId && !collectionImages.hasOwnProperty(collectionId);
-            // console.log(`Hero - Collection ${collectionId} loading: ${collectionIsLoading}, Data available: ${fullImageData.length > 0}`)
-           
-            let heroUrlsToShow = []
-            if (useCollection && fullImageData.length > 0) {
-                // Usar la función auxiliar para obtener la URL del tamaño deseado para cada imagen
-                heroUrlsToShow = fullImageData
-                    .map(imgData => getImageUrlBySize(imgData, desiredSize)) // Pasa el objeto completo
-                    .filter(Boolean); // Quita nulos si getImageUrlBySize falla
-            } else if (heroConfig.backgroundImage) {
-                heroUrlsToShow = [heroConfig.backgroundImage]
-            } else {
-                heroUrlsToShow = heroImages
-            }
-            // Fallback final si todo falla
-            if (heroUrlsToShow.length === 0 && !collectionIsLoading) heroUrlsToShow = heroImages; 
-
-            if (collectionIsLoading) {
-              return <div key={sectionId} style={{
-                height: heroConfig.height || '100vh',
-                background: '#e0e0e0',
-              }} />
-            }
-
-            return (
-              <HeroSection
-                key={sectionId}
-                images={heroUrlsToShow}
-                title={heroConfig.title || 'Bienvenido a Cactilia'}
-                subtitle={
-                  heroConfig.subtitle ||
-                  'Productos frescos y naturales para una vida mejor'
-                }
-                showButton={heroConfig.showButton !== false}
-                buttonText={heroConfig.buttonText || 'Conoce Más'}
-                buttonLink={heroConfig.buttonLink || '#'}
-                showLogo={heroConfig.showLogo !== false}
-                showSubtitle={heroConfig.showSubtitle !== false}
-                height={heroConfig.height || '100vh'}
-                autoRotate={heroConfig.autoRotate !== false}
-                interval={heroConfig.interval || 5000}
-              />
-            )
-          }
-
-          case 'featuredProducts': {
-            // Mostrar skeleton si no hay productos reales aún
-            if (featuredProducts.length === 0) {
-              // **RECOMENDACIÓN:** Reemplaza esto con tu componente CarouselSkeleton.
-              return <div key={sectionId} style={{
-                minHeight: '400px',
-                background: '#f5f5f5', // Gris más claro
-              }} />
-            }
-            return (
-              <HomeSection
-                key={sectionId}
-                title={sectionData.title || 'Productos Destacados'}
-                subtitle={
-                  sectionData.subtitle || 'Explora nuestra selección especial.'
-                }
-                icon={sectionData.icon || 'bi-star-fill'}
-                showBg={sectionData.showBg === true}
-                spacing="py-6"
-                height="min-vh-75"
-              >
-                <ProductCarousel
-                  products={
-                    featuredProducts.length > 0 ? featuredProducts : sampleProducts // Usa samples solo si featured está vacío
-                  }
-                  isCategory={false}
-                />
-              </HomeSection>
-            )
-          }
-
-          case 'farmCarousel': {
-            const farmConfig = sectionData || {}
-            const collectionId = farmConfig.collectionId
-            const useCollection = farmConfig.useCollection
-            // Leer tamaño deseado para carrusel, default a 'medium'
-            const desiredSize = farmConfig.imageSize || 'medium'
-
-            // Obtener datos completos de la colección
-            const fullImageData = (useCollection && collectionId && collectionImages[collectionId])
-                ? collectionImages[collectionId]
-                : []
-
-            // Comprobar si la colección aún se está cargando
-            const collectionIsLoading = useCollection && collectionId && !collectionImages.hasOwnProperty(collectionId);
-            // console.log(`Farm - Collection ${collectionId} loading: ${collectionIsLoading}, Data available: ${fullImageData.length > 0}`)
-
-            let farmImagesToShow = []
-            if (useCollection && fullImageData.length > 0) {
-                farmImagesToShow = fullImageData.map(imgData => ({
-                    // Mantener id y alt si existen, o generar fallbacks
-                    id: imgData.id || imgData.name, // Usar name como fallback para id
-                    alt: imgData.alt || imgData.name || `Imagen de la colección`, // Usar name como fallback para alt
-                    // Usar la función auxiliar para obtener la URL del tamaño deseado
-                    src: getImageUrlBySize(imgData, desiredSize) // Pasar el objeto completo
-                })).filter(img => img.src); // Filtrar si no se encontró URL válida
-            }
-            // Usar imágenes de muestra como fallback si no hay colección o falla la carga
-            if (farmImagesToShow.length === 0 && !collectionIsLoading) farmImagesToShow = sampleImages;
-
-            if (collectionIsLoading) {
-              // Renderizar skeleton.
-              return <div key={sectionId} style={{
-                minHeight: '400px',
-                background: '#f5f5f5',
-              }} />
-            }
-
-            // Renderizar la sección con las imágenes correctas (thumbnails medianos)
-            return (
-              <HomeSection
-                key={sectionId}
-                title={farmConfig.title || 'Nuestro Huerto'}
-                subtitle={
-                  farmConfig.subtitle ||
-                  'Descubre la belleza y frescura de nuestra granja.'
-                }
-                icon={farmConfig.icon || 'bi-tree-fill'}
-                showBg={farmConfig.showBg !== false}
-                spacing="py-6"
-                height="min-vh-75"
-              >
-                <HomeCarousel images={farmImagesToShow} />
-              </HomeSection>
-            )
-          }
-
-          case 'productCategories': {
-            // Mostrar skeleton si no hay categorías reales aún
-            if (featuredCategories.length === 0) {
-              // **RECOMENDACIÓN:** Reemplaza esto con tu componente CarouselSkeleton.
-              return <div key={sectionId} style={{
-                minHeight: '400px',
-                background: '#f5f5f5', // Gris más claro
-              }} />
-            }
-            return (
-              <HomeSection
-                key={sectionId}
-                title={sectionData.title || 'Descubre Nuestros Productos'}
-                subtitle={
-                  sectionData.subtitle ||
-                  'Explora por categorías.'
-                }
-                icon={sectionData.icon || 'bi-box-seam'}
-                showBg={sectionData.showBg === true}
-                spacing="py-6"
-                height="min-vh-75"
-              >
-                <ProductCarousel
-                  products={
-                    featuredCategories.length > 0 ? featuredCategories : sampleCategories // Usa samples solo si featured está vacío
-                  }
-                  isCategory={true}
-                />
-              </HomeSection>
-            )
-          }
-
-          default:
-            console.warn(`Sección desconocida encontrada: ${sectionId}`)
-            return null
-        }
-      })}
+    <div className="homepage-container">
+      {renderSections()} 
+      {/* Footer will be rendered by the main layout */}
     </div>
-  )
-}
+  );
+};

@@ -4,19 +4,20 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { ContentService } from '../../modules/admin/services/contentService';
 import { getFeaturedProductsForHome } from '../../modules/admin/services/productService';
 import { getFeaturedCategoriesForHome } from '../../modules/admin/services/categoryService';
-// Importa getCollectionImages si decides cachearlas también
-// import { getCollectionImages } from '../../modules/admin/services/collectionsService';
+import { getCollectionImages } from '../../modules/admin/services/collectionsService.js';
 
 // --- Thunk Asíncrono ---
 export const fetchHomepageData = createAsyncThunk(
   'homepage/fetchData',
   async (_, { getState, rejectWithValue }) => {
     // Revisar si ya tenemos los datos básicos (ej. pageData)
-    const { pageData: existingPageData } = getState().homepage; // Asegúrate que el reducer se llame 'homepage'
-    if (existingPageData) {
-      console.log('Homepage data already in store, skipping fetch.');
-      // Retornar un objeto vacío o específico para indicar que no se hizo fetch
-      // Esto evita que el estado fulfilled sobreescriba innecesariamente.
+    const { pageData: existingPageData, collectionImages: existingCollections } = getState().homepage;
+    // Skip fetch only if we have both pageData AND relevant collection images (if any)
+    // This check might need refinement depending on how collection IDs are determined
+    const shouldSkip = !!existingPageData; // Simple check for now, improve if needed
+
+    if (shouldSkip) {
+      console.log('Homepage data likely already in store, skipping fetch.');
       return { skipped: true };
     }
 
@@ -38,6 +39,7 @@ export const fetchHomepageData = createAsyncThunk(
         products: [],
         categories: [],
         pageData: null,
+        collectionImages: {}, // Initialize collectionImages
       };
 
       if (productsResult.status === 'fulfilled' && productsResult.value.ok) {
@@ -54,6 +56,38 @@ export const fetchHomepageData = createAsyncThunk(
 
       if (contentResult.status === 'fulfilled' && contentResult.value?.ok && contentResult.value?.data) {
         fetchedData.pageData = contentResult.value.data;
+
+        // --- Cargar Imágenes de Colecciones --- 
+        const heroSection = fetchedData.pageData.sections?.hero;
+        const farmCarouselSection = fetchedData.pageData.sections?.farmCarousel;
+        const collectionsToLoad = new Map();
+
+        if (heroSection?.useCollection && heroSection?.collectionId) {
+          collectionsToLoad.set(heroSection.collectionId, null);
+        }
+        if (farmCarouselSection?.useCollection && farmCarouselSection?.collectionId) {
+          collectionsToLoad.set(farmCarouselSection.collectionId, null);
+        }
+        
+        if (collectionsToLoad.size > 0) {
+            console.log('Loading collection images for IDs:', [...collectionsToLoad.keys()]);
+            const collectionPromises = Array.from(collectionsToLoad.keys()).map(id => 
+                getCollectionImages(id).catch(err => ({ ok: false, error: err, data: [] }))
+            );
+            const collectionResults = await Promise.allSettled(collectionPromises);
+
+            Array.from(collectionsToLoad.keys()).forEach((id, index) => {
+                const result = collectionResults[index];
+                if (result.status === 'fulfilled' && result.value.ok) {
+                    fetchedData.collectionImages[id] = result.value.data; // Store the array of image data
+                } else {
+                    console.error(`Failed to load collection ${id}:`, result.reason || result.value?.error);
+                    fetchedData.collectionImages[id] = []; // Store empty array on failure
+                }
+            });
+        }
+        // --- Fin Carga Imágenes ---
+
       } else {
          console.warn('Error fetching page content:', contentResult.reason || contentResult.value?.error);
       }
@@ -72,7 +106,8 @@ const initialState = {
   pageData: null,
   featuredProducts: [],
   featuredCategories: [],
-  isLoading: false,
+  collectionImages: {}, // Add collectionImages state
+  isLoading: false, // Changed to isLoading to match common patterns
   error: null,
 };
 
@@ -85,24 +120,22 @@ const homepageSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchHomepageData.pending, (state, action) => {
-        // Solo poner isLoading si no hay datos previos
-        // Evita el flicker si se skipea el fetch porque ya hay datos
-        if (!action.meta.arg?.skipped && !state.pageData) {
+        // Reset status only if not skipped
+        if (!action.meta.arg?.skipped) {
           state.isLoading = true;
+          state.error = null;
         }
-        state.error = null;
       })
       .addCase(fetchHomepageData.fulfilled, (state, action) => {
-        // No hacer nada si el fetch fue skipeado
         if (action.payload?.skipped) {
-          state.isLoading = false; // Asegurar que loading quede en false
+          state.isLoading = false;
           return;
         }
-
-        // Actualizar estado con los datos recibidos
+        // Update state with all fetched data
         state.pageData = action.payload.pageData;
         state.featuredProducts = action.payload.products;
         state.featuredCategories = action.payload.categories;
+        state.collectionImages = action.payload.collectionImages; // Store collection images
         state.isLoading = false;
       })
       .addCase(fetchHomepageData.rejected, (state, action) => {
@@ -113,4 +146,13 @@ const homepageSlice = createSlice({
 });
 
 // Exportar el reducer
-export default homepageSlice.reducer; 
+export default homepageSlice.reducer;
+
+// Add selector for collectionImages
+export const selectHomepageData = (state) => state.homepage;
+export const selectHomepagePageData = (state) => state.homepage.pageData;
+export const selectHomepageFeaturedProducts = (state) => state.homepage.featuredProducts;
+export const selectHomepageFeaturedCategories = (state) => state.homepage.featuredCategories;
+export const selectHomepageCollectionImages = (state) => state.homepage.collectionImages;
+export const selectHomepageIsLoading = (state) => state.homepage.isLoading;
+export const selectHomepageError = (state) => state.homepage.error; 

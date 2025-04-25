@@ -40,6 +40,7 @@ export const HeroSection = ({
                               // collectionId, 
                               // useCollection = false,
                             }) => {
+  console.log("DEBUG [HeroSection]: Received images prop:", images); // Log inicial
   const [currentIndex, setCurrentIndex] = useState(0);
   // Eliminar estados collectionImages y loading
   // const [collectionImages, setCollectionImages] = useState([]);
@@ -117,7 +118,7 @@ export const HeroSection = ({
       width: '100%',
       height: '100%',
       opacity: index === currentIndex ? 1 : 0,
-      backgroundImage: `url(${imageArray[index]})`,
+      backgroundImage: `url(${imageArray[index]?.src})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       // Transición más rápida para el fade
