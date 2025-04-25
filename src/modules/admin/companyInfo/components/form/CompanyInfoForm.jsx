@@ -61,6 +61,8 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
   // Cargar datos iniciales si existen
   useEffect(() => {
     if (initialData) {
+      console.log("Initial Data received in CompanyInfoForm:", initialData); // Log para ver los datos iniciales
+      console.log("Business Hours from Initial Data:", initialData.businessHours); // Log específico para businessHours
       setFormData(prevData => ({
         ...prevData,
         ...initialData
@@ -103,8 +105,8 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
   
   return (
     <form onSubmit={handleSubmit} className="company-info-form">
-      {/* Información general */}
-      <GeneralInfoSection 
+      {/* Información general (TEMPORARILY COMMENTED OUT) */}
+      {/* <GeneralInfoSection 
         data={{
           companyName: formData.companyName,
           legalName: formData.legalName,
@@ -113,10 +115,10 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
           description: formData.description
         }}
         onFieldChange={handleFieldChange}
-      />
+      /> */}
       
-      {/* Información de contacto */}
-      <ContactSection 
+      {/* Información de contacto (TEMPORARILY COMMENTED OUT) */}
+      {/* <ContactSection 
         data={{
           email: formData.email,
           phone: formData.phone,
@@ -125,7 +127,7 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
         }}
         onUpdate={(data) => handleSectionUpdate('address', data)}
         onFieldChange={handleFieldChange}
-      />
+      /> */}
       
       {/* Horarios */}
       <BusinessHoursSection 
@@ -133,11 +135,11 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
         onUpdate={(data) => handleSectionUpdate('businessHours', data)}
       />
       
-      {/* Redes sociales */}
-      <SocialMediaSection 
+      {/* Redes sociales (TEMPORARILY COMMENTED OUT) */}
+      {/* <SocialMediaSection 
         data={formData.socialMedia}
         onUpdate={(data) => handleSectionUpdate('socialMedia', data)}
-      />
+      /> */}
       
       {/* Botones de acción */}
       <div className="d-flex justify-content-end mt-4 border-top pt-4">

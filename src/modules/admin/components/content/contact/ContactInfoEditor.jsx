@@ -8,10 +8,11 @@
 export function ContactInfoEditor({ data = {}, onUpdate }) {
   // =========================================================================
   // 1. Manejador de cambios: Actualiza una propiedad específica
+  // NO LONGER USED FOR PHONE/EMAIL/ADDRESS/HOURS
   // =========================================================================
-  function handleChange(field, value) {
-    onUpdate({ [field]: value });
-  }
+  // function handleChange(field, value) {
+  //   onUpdate({ [field]: value });
+  // }
 
   // =========================================================================
   // 2. Render principal: separamos en helpers para mejorar la legibilidad
@@ -20,7 +21,18 @@ export function ContactInfoEditor({ data = {}, onUpdate }) {
     <div className="contact-info-editor">
       <div className="mb-4">
         {renderHeader()}
-        {renderContactFields()}
+        {/* Remove direct contact field rendering */}
+        {/* {renderContactFields()} */}
+
+        {/* Add informational message */}
+        <div className="alert alert-info mt-3" role="alert">
+          <i className="bi bi-info-circle-fill me-2"></i>
+          La información principal de contacto (teléfono, email, dirección, horario) se gestiona ahora desde la sección "Información de la Empresa" &gt; "Contacto".
+        </div>
+
+        {/* Keep options like showing social media if they exist (assuming they are part of 'data') */}
+        {/* Example: renderShowSocialMediaToggle() */} 
+
       </div>
     </div>
   );
@@ -36,107 +48,35 @@ export function ContactInfoEditor({ data = {}, onUpdate }) {
     return (
       <>
         <h6 className="fw-bold mb-3 border-bottom pb-2 text-primary">
-          Datos de Contacto
+          Datos de Contacto (Vista en Página Pública)
         </h6>
       </>
     );
   }
 
-  /**
-   * Renderiza los campos de contacto en un grid (teléfono, email, dirección, horario).
-   */
-  function renderContactFields() {
-    return (
-      <div className="row g-3">
-        {renderPhoneField()}
-        {renderEmailField()}
-        {renderAddressField()}
-        {renderHoursField()}
-      </div>
-    );
-  }
+  // REMOVE the renderContactFields function and its sub-functions
+  // /**
+  //  * Renderiza los campos de contacto en un grid (teléfono, email, dirección, horario).
+  //  */
+  // function renderContactFields() { ... }
 
-  /**
-   * Campo: Teléfono
-   */
-  function renderPhoneField() {
-    return (
-      <div className="col-md-6">
-        <div className="mb-3">
-          <label htmlFor="customPhone" className="form-label">Teléfono</label>
-          <input
-            type="text"
-            className="form-control"
-            id="customPhone"
-            value={data.customPhone || ''}
-            onChange={(e) => handleChange('customPhone', e.target.value)}
-            placeholder="Ej: +52 55 1234 5678"
-          />
-        </div>
-      </div>
-    );
-  }
+  // /**
+  //  * Campo: Teléfono
+  //  */
+  // function renderPhoneField() { ... }
 
-  /**
-   * Campo: Email
-   */
-  function renderEmailField() {
-    return (
-      <div className="col-md-6">
-        <div className="mb-3">
-          <label htmlFor="customEmail" className="form-label">Email</label>
-          <input
-            type="email"
-            className="form-control"
-            id="customEmail"
-            value={data.customEmail || ''}
-            onChange={(e) => handleChange('customEmail', e.target.value)}
-            placeholder="Ej: contacto@cactilia.com"
-          />
-        </div>
-      </div>
-    );
-  }
+  // /**
+  //  * Campo: Email
+  //  */
+  // function renderEmailField() { ... }
 
-  /**
-   * Campo: Dirección
-   */
-  function renderAddressField() {
-    return (
-      <div className="col-md-6">
-        <div className="mb-3">
-          <label htmlFor="customAddress" className="form-label">Dirección</label>
-          <textarea
-            className="form-control"
-            id="customAddress"
-            value={data.customAddress || ''}
-            onChange={(e) => handleChange('customAddress', e.target.value)}
-            placeholder="Ej: Av. Siempre Viva 742, CDMX"
-            rows="2"
-          />
-        </div>
-      </div>
-    );
-  }
+  // /**
+  //  * Campo: Dirección
+  //  */
+  // function renderAddressField() { ... }
 
-  /**
-   * Campo: Horario
-   */
-  function renderHoursField() {
-    return (
-      <div className="col-md-6">
-        <div className="mb-3">
-          <label htmlFor="customHours" className="form-label">Horario</label>
-          <input
-            type="text"
-            className="form-control"
-            id="customHours"
-            value={data.customHours || ''}
-            onChange={(e) => handleChange('customHours', e.target.value)}
-            placeholder="Ej: Lunes a Viernes: 9am - 6pm"
-          />
-        </div>
-      </div>
-    );
-  }
+  // /**
+  //  * Campo: Horario
+  //  */
+  // function renderHoursField() { ... }
 }

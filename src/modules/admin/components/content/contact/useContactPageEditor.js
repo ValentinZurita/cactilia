@@ -62,14 +62,11 @@ export function useContactPageEditor() {
                   || DEFAULT_CONTACT_TEMPLATE.sections.header.subtitle,
               },
               contactInfo: {
-                customPhone: result.data.sections?.contactInfo?.customPhone || '',
-                customEmail: result.data.sections?.contactInfo?.customEmail || '',
-                customAddress: result.data.sections?.contactInfo?.customAddress || '',
-                customHours: result.data.sections?.contactInfo?.customHours
-                  || 'Lunes a Viernes: 9am - 6pm',
+                showSocialMedia: result.data.sections?.contactInfo?.showSocialMedia !== false,
+                showContactInfo: result.data.sections?.contactInfo?.showContactInfo !== false
               },
               map: {
-                showMap: true,
+                showMap: result.data.sections?.map?.showMap !== false,
                 embedUrl: result.data.sections?.map?.embedUrl || '',
                 height: result.data.sections?.map?.height || '400px',
               },
@@ -100,13 +97,11 @@ export function useContactPageEditor() {
                 subtitle: DEFAULT_CONTACT_TEMPLATE.sections.header.subtitle,
               },
               contactInfo: {
-                customPhone: '',
-                customEmail: '',
-                customAddress: '',
-                customHours: 'Lunes a Viernes: 9am - 6pm',
+                showSocialMedia: DEFAULT_CONTACT_TEMPLATE.sections?.contactInfo?.showSocialMedia !== false,
+                showContactInfo: DEFAULT_CONTACT_TEMPLATE.sections?.contactInfo?.showContactInfo !== false
               },
               map: {
-                showMap: true,
+                showMap: DEFAULT_CONTACT_TEMPLATE.sections?.map?.showMap !== false,
                 embedUrl: DEFAULT_CONTACT_TEMPLATE.sections.map.embedUrl,
                 height: DEFAULT_CONTACT_TEMPLATE.sections.map.height,
               },
@@ -135,13 +130,11 @@ export function useContactPageEditor() {
               subtitle: DEFAULT_CONTACT_TEMPLATE.sections.header.subtitle,
             },
             contactInfo: {
-              customPhone: '',
-              customEmail: '',
-              customAddress: '',
-              customHours: 'Lunes a Viernes: 9am - 6pm',
+              showSocialMedia: DEFAULT_CONTACT_TEMPLATE.sections?.contactInfo?.showSocialMedia !== false,
+              showContactInfo: DEFAULT_CONTACT_TEMPLATE.sections?.contactInfo?.showContactInfo !== false
             },
             map: {
-              showMap: true,
+              showMap: DEFAULT_CONTACT_TEMPLATE.sections?.map?.showMap !== false,
               embedUrl: '',
               height: '400px',
             },
@@ -188,6 +181,12 @@ export function useContactPageEditor() {
   function handleSectionUpdate(sectionId, newData) {
     if (!pageConfig) return;
     const updatedConfig = JSON.parse(JSON.stringify(pageConfig));
+    
+    // Ensure the section exists before trying to update it
+    if (!updatedConfig.sections[sectionId]) {
+      updatedConfig.sections[sectionId] = {};
+    }
+    
     updatedConfig.sections[sectionId] = {
       ...updatedConfig.sections[sectionId],
       ...newData
@@ -271,13 +270,11 @@ export function useContactPageEditor() {
           subtitle: DEFAULT_CONTACT_TEMPLATE.sections.header.subtitle,
         },
         contactInfo: {
-          customPhone: '',
-          customEmail: '',
-          customAddress: '',
-          customHours: 'Lunes a Viernes: 9am - 6pm',
+          showSocialMedia: DEFAULT_CONTACT_TEMPLATE.sections?.contactInfo?.showSocialMedia !== false,
+          showContactInfo: DEFAULT_CONTACT_TEMPLATE.sections?.contactInfo?.showContactInfo !== false
         },
         map: {
-          showMap: true,
+          showMap: DEFAULT_CONTACT_TEMPLATE.sections?.map?.showMap !== false,
           embedUrl: DEFAULT_CONTACT_TEMPLATE.sections.map.embedUrl,
           height: DEFAULT_CONTACT_TEMPLATE.sections.map.height,
         },

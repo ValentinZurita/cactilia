@@ -4,33 +4,38 @@ import { Logo } from '../../../shared/components/logo/Logo.jsx'
 import '../styles/contact.css'
 import { ContactForm } from '../components/contact/components/index.js'
 import { getSocialMediaLinks } from '../../../services/firebase/companyInfoService'
-import { CONTACT_INFO } from '../../../shared/constants/index.js'
+import { useCompanyInfo } from '../../admin/companyInfo/hooks/useCompanyInfo.js'
 
 /**
  * Enhanced Contact Page component that uses the customizable content
- * managed through the admin interface
+ * managed through the admin interface AND company info settings
  *
  * @returns {JSX.Element}
  */
 
 export const ContactPage = () => {
-  // Load customized content for the page
+  // Load customized content for the page (titles, sections visibility, form config)
   const { pageContent, loading: pageLoading, getSection } = useContactPageContent()
+  // Load company info (for phone, email, address, hours, social links)
+  const { companyInfo, loading: companyInfoLoading } = useCompanyInfo()
+
   const [socialLinks, setSocialLinks] = useState([])
   const [socialLinksLoading, setSocialLinksLoading] = useState(true)
 
-  // Get configuration for each section
+  // Get configuration for each section FROM CONTENT EDITOR
   const headerConfig = getSection('header')
-  const contactInfoConfig = getSection('contactInfo')
+  const contactInfoConfig = getSection('contactInfo') // Still needed for showSocialMedia, showContactInfo
   const formConfig = getSection('form')
   const mapConfig = getSection('map')
-  const socialMediaConfig = getSection('socialMedia')
+  // socialMediaConfig is no longer used here as links come from companyInfoService/useCompanyInfo
 
-  // Fetch social media links from Firestore
+  // Fetch social media links from Firestore (this might be redundant if useCompanyInfo already provides them)
+  // TODO: Check if useCompanyInfo hook can be updated to provide processed social links directly
   useEffect(() => {
     const fetchLinks = async () => {
       setSocialLinksLoading(true)
       try {
+        // Using the direct service call for now
         const linksFromDb = await getSocialMediaLinks()
         const visibleLinks = linksFromDb.filter(link => link.visible !== false)
         setSocialLinks(visibleLinks)
@@ -44,32 +49,37 @@ export const ContactPage = () => {
     fetchLinks()
   }, [])
 
-  // Get contact information (default or custom)
-  const getContactDetails = () => {
-    if (contactInfoConfig.useDefaultInfo !== false) {
-      return {
-        phone: CONTACT_INFO.phone,
-        email: CONTACT_INFO.email,
-        address: CONTACT_INFO.address,
-        hours: 'Lunes a Viernes: 9am - 6pm',
-      }
-    }
-    return {
-      phone: contactInfoConfig.customPhone || CONTACT_INFO.phone,
-      email: contactInfoConfig.customEmail || CONTACT_INFO.email,
-      address: contactInfoConfig.customAddress || CONTACT_INFO.address,
-      hours: contactInfoConfig.customHours || 'Lunes a Viernes: 9am - 6pm',
-    }
-  }
-
-  // Get visible social media items
+  // Get visible social media items (using state populated by useEffect)
   const getVisibleSocialMedia = () => {
     return socialLinks
   }
 
-  const contactDetails = getContactDetails()
-  const visibleSocialMedia = getVisibleSocialMedia()
+  const visibleSocialMedia = getVisibleSocialMedia() // Still used
 
+  // Helper function to format address from companyInfo object
+  const formatAddress = () => {
+    if (!companyInfo?.contact?.address) return 'Dirección no disponible';
+    const { street, city, state, zipCode } = companyInfo.contact.address;
+    // Basic formatting, adjust as needed
+    return [street, city, state, zipCode].filter(Boolean).join(', ');
+  }
+
+  // Helper function to format business hours
+  const formatBusinessHours = () => {
+    if (!companyInfo?.businessHours || companyInfo.businessHours.length === 0) {
+      return 'Horario no disponible';
+    }
+    // Example formatting: Find first open day range, or just list Monday-Friday if typical
+    const weekdays = companyInfo.businessHours.filter(
+      (d) => ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].includes(d.day) && d.open
+    );
+    if (weekdays.length === 5 && weekdays.every(d => d.openingTime === weekdays[0].openingTime && d.closingTime === weekdays[0].closingTime)) {
+      return `Lunes a Viernes: ${weekdays[0].openingTime} - ${weekdays[0].closingTime}`;
+    }
+    // Fallback to a simpler representation or list all days
+    // This part might need more complex logic based on desired display
+    return 'Consulte nuestro horario detallado'; // Placeholder
+  }
 
   /**
    * Renders the heading section (title and subtitle)
@@ -85,11 +95,17 @@ export const ContactPage = () => {
     </div>
   )
 
-
   /**
    * Renders the contact information card with social media links
    */
-  const renderContactInfoCard = () => (
+  const renderContactInfoCard = () => {
+    // Get details directly from companyInfo
+    const phone = companyInfo?.contact?.phone || 'N/A';
+    const email = companyInfo?.contact?.email || 'N/A';
+    const address = formatAddress();
+    const hours = formatBusinessHours();
+
+    return (
     <div className="contact-info-card">
       <div className="contact-info-header">
         <Logo styles={{ maxWidth: '100px' }} color="white" captionColor="text-white" />
@@ -107,7 +123,7 @@ export const ContactPage = () => {
           </div>
           <div className="info-content">
             <h6 className="info-title">Teléfono</h6>
-            <p className="info-text">{contactDetails.phone}</p>
+            <p className="info-text">{phone}</p>
           </div>
         </div>
         <div className="contact-info-item">
@@ -116,7 +132,7 @@ export const ContactPage = () => {
           </div>
           <div className="info-content">
             <h6 className="info-title">Email</h6>
-            <p className="info-text">{contactDetails.email}</p>
+            <p className="info-text">{email}</p>
           </div>
         </div>
         <div className="contact-info-item">
@@ -125,7 +141,7 @@ export const ContactPage = () => {
           </div>
           <div className="info-content">
             <h6 className="info-title">Dirección</h6>
-            <p className="info-text">{contactDetails.address}</p>
+            <p className="info-text">{address}</p>
           </div>
         </div>
         <div className="contact-info-item">
@@ -134,7 +150,7 @@ export const ContactPage = () => {
           </div>
           <div className="info-content">
             <h6 className="info-title">Horario</h6>
-            <p className="info-text">{contactDetails.hours}</p>
+            <p className="info-text">{hours}</p>
           </div>
         </div>
       </div>
@@ -165,8 +181,8 @@ export const ContactPage = () => {
         <div className="decoration-circle"></div>
       </div>
     </div>
-  )
-
+    )
+  }
 
   /**
    * Renders the contact form card
@@ -213,8 +229,8 @@ export const ContactPage = () => {
     )
   }
 
-  // Show loading spinner while either page content OR social links are loading
-  if (pageLoading || socialLinksLoading) {
+  // Show loading spinner while page content OR company info OR social links are loading
+  if (pageLoading || companyInfoLoading || socialLinksLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
         <div className="spinner-border text-primary" role="status">
@@ -235,14 +251,14 @@ export const ContactPage = () => {
 
         {/* Main content area */}
         <div className="row contact-content-wrapper">
-          {/* Contact info card */}
+          {/* Contact info card - visibility controlled by content editor */}
           {contactInfoConfig.showContactInfo !== false && (
             <div className="col-lg-5 mb-4 mb-lg-0">
               {renderContactInfoCard()}
             </div>
           )}
 
-          {/* Contact form card */}
+          {/* Contact form card - visibility controlled by content editor */}
           {formConfig.showForm !== false && (
             <div className={`col-lg-${contactInfoConfig.showContactInfo !== false ? '7' : '12'}`}>
               {renderContactFormCard()}
