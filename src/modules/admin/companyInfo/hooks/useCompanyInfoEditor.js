@@ -137,6 +137,18 @@ export function useCompanyInfoEditor() {
   };
 
   /**
+   * Actualizar un campo individual de nivel superior en el estado local
+   */
+  const handleFieldChange = (fieldName, value) => {
+    if (!companyData) return;
+    console.log(`Actualizando campo: ${fieldName} = ${value}`);
+    setCompanyData(prevData => ({
+      ...prevData,
+      [fieldName]: value
+    }));
+  };
+
+  /**
    * Ocultar mensajes de retroalimentación
    */
   const handleDismissFeedback = () => {
@@ -156,6 +168,7 @@ export function useCompanyInfoEditor() {
     handleSave,
     handleSectionChange,
     handleSectionUpdate,
+    handleFieldChange,
     handleDismissFeedback
   };
 } 

@@ -25,7 +25,8 @@ const CompanyInfoPage = () => {
     handleSave,
     handleSectionChange,
     handleSectionUpdate,
-    handleDismissFeedback
+    handleDismissFeedback,
+    handleFieldChange
   } = useCompanyInfoEditor();
 
   const renderContent = () => {
@@ -99,7 +100,7 @@ const CompanyInfoPage = () => {
             {activeSection === 'general' && (
               <GeneralSection 
                 data={companyData}
-                onUpdate={(data) => handleSectionUpdate('general', data)}
+                onFieldChange={handleFieldChange}
               />
             )}
             

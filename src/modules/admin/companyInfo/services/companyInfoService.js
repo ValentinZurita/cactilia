@@ -51,6 +51,7 @@ export const companyInfoService = {
   getDefaultCompanyInfo: () => {
     return {
       name: 'Cactilia',
+      navbarBrandText: 'Cactilia',
       legalName: '',
       rfc: '',
       logoUrl: '',
