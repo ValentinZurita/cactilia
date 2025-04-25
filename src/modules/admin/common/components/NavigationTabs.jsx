@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-// Import TabItem from the same directory
 import { TabItem } from './TabItem.jsx'; 
+
+
 
 /**
  * @component NavigationTabs
@@ -13,7 +14,9 @@ import { TabItem } from './TabItem.jsx';
  * @param {function} props.onSectionChange - Callback que se ejecuta al hacer clic en una pestaña.
  * @param {Array<object>} props.tabs - Array de objetos (`id`, `label`) para las pestañas.
  */
+
 const NavigationTabs = ({ activeSection, onSectionChange, tabs }) => {
+
 
   /**
    * @function getIcon
@@ -21,12 +24,13 @@ const NavigationTabs = ({ activeSection, onSectionChange, tabs }) => {
    *              ATENCIÓN: Actualmente contiene iconos específicos. Si se reutiliza este componente
    *              en otros contextos, considerar pasar los iconos como props o mover esta lógica.
    */
+
   const getIcon = (tabId) => {
     // Icon mapping - Currently specific to CompanyInfo sections
     const icons = {
       general: 'building',
       contact: 'envelope',
-      // hours: 'clock', 
+      hours: 'clock',
       social: 'share',
       payment: 'credit-card',
       seo: 'globe'
@@ -35,8 +39,12 @@ const NavigationTabs = ({ activeSection, onSectionChange, tabs }) => {
     return icons[tabId] || 'question-circle'; // Default icon
   };
 
+
   return (
+    
     <div className="mb-4"> 
+
+      {/* Navegación de Pestañas */}
       <ul className="nav nav-tabs border-0 mb-0">
         {tabs.map((tab) => (
           <TabItem
@@ -48,10 +56,14 @@ const NavigationTabs = ({ activeSection, onSectionChange, tabs }) => {
           />
         ))}
       </ul>
+
+      {/* Línea divisoria */}
       <div className="border-bottom mb-3"></div> 
+
     </div>
   );
 };
+
 
 NavigationTabs.propTypes = {
   activeSection: PropTypes.string.isRequired,

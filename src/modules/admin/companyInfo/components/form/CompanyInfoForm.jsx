@@ -105,8 +105,8 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
   
   return (
     <form onSubmit={handleSubmit} className="company-info-form">
-      {/* Información general (TEMPORARILY COMMENTED OUT) */}
-      {/* <GeneralInfoSection 
+      {/* Información general */}
+      <GeneralInfoSection 
         data={{
           companyName: formData.companyName,
           legalName: formData.legalName,
@@ -115,10 +115,10 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
           description: formData.description
         }}
         onFieldChange={handleFieldChange}
-      /> */}
+      />
       
-      {/* Información de contacto (TEMPORARILY COMMENTED OUT) */}
-      {/* <ContactSection 
+      {/* Información de contacto */}
+      <ContactSection 
         data={{
           email: formData.email,
           phone: formData.phone,
@@ -127,7 +127,7 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
         }}
         onUpdate={(data) => handleSectionUpdate('address', data)}
         onFieldChange={handleFieldChange}
-      /> */}
+      />
       
       {/* Horarios */}
       <BusinessHoursSection 
@@ -135,11 +135,11 @@ export const CompanyInfoForm = ({ initialData, onSave, isSaving }) => {
         onUpdate={(data) => handleSectionUpdate('businessHours', data)}
       />
       
-      {/* Redes sociales (TEMPORARILY COMMENTED OUT) */}
-      {/* <SocialMediaSection 
+      {/* Redes sociales */}
+      <SocialMediaSection 
         data={formData.socialMedia}
         onUpdate={(data) => handleSectionUpdate('socialMedia', data)}
-      /> */}
+      />
       
       {/* Botones de acción */}
       <div className="d-flex justify-content-end mt-4 border-top pt-4">
