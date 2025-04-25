@@ -10,15 +10,15 @@ import { getCollectionImages } from '../../modules/admin/services/collectionsSer
 export const fetchHomepageData = createAsyncThunk(
   'homepage/fetchData',
   async (_, { getState, rejectWithValue }) => {
-    // Revisar si ya tenemos los datos básicos (ej. pageData)
-    const { pageData: existingPageData, collectionImages: existingCollections } = getState().homepage;
-    // Skip fetch only if we have both pageData AND relevant collection images (if any)
-    // This check might need refinement depending on how collection IDs are determined
-    const shouldSkip = !!existingPageData; // Simple check for now, improve if needed
-
-    if (shouldSkip) {
-      console.log('Homepage data likely already in store, skipping fetch.');
-      return { skipped: true };
+    // Revisar si ya tenemos los datos básicos y si el caché es reciente
+    const { pageData: existingPageData, collectionImages: existingCollections, lastFetchTimestamp } = getState().homepage;
+    
+    // Check cache validity
+    if (lastFetchTimestamp && (Date.now() - lastFetchTimestamp < CACHE_TTL) && existingPageData) {
+      console.log('Homepage data is fresh in store (persisted), skipping fetch.');
+      // We might need to ensure collectionImages are also loaded if they weren't persisted or loaded correctly initially
+      // For simplicity now, we assume if pageData exists and is fresh, the rest is okay.
+      return { skipped: true }; 
     }
 
     console.log('Fetching homepage data from Firestore...');
@@ -40,6 +40,7 @@ export const fetchHomepageData = createAsyncThunk(
         categories: [],
         pageData: null,
         collectionImages: {}, // Initialize collectionImages
+        timestamp: null, // Add timestamp for cache validation
       };
 
       if (productsResult.status === 'fulfilled' && productsResult.value.ok) {
@@ -88,6 +89,8 @@ export const fetchHomepageData = createAsyncThunk(
         }
         // --- Fin Carga Imágenes ---
 
+        // Add timestamp to successful payload
+        fetchedData.timestamp = Date.now();
       } else {
          console.warn('Error fetching page content:', contentResult.reason || contentResult.value?.error);
       }
@@ -109,7 +112,10 @@ const initialState = {
   collectionImages: {}, // Add collectionImages state
   isLoading: false, // Changed to isLoading to match common patterns
   error: null,
+  lastFetchTimestamp: null, // Add timestamp for cache validation
 };
+
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours TTL
 
 const homepageSlice = createSlice({
   name: 'homepage',
@@ -136,6 +142,7 @@ const homepageSlice = createSlice({
         state.featuredProducts = action.payload.products;
         state.featuredCategories = action.payload.categories;
         state.collectionImages = action.payload.collectionImages; // Store collection images
+        state.lastFetchTimestamp = action.payload.timestamp; // Update timestamp
         state.isLoading = false;
       })
       .addCase(fetchHomepageData.rejected, (state, action) => {
