@@ -78,7 +78,7 @@ const CompanyInfoPage = () => {
             { id: 'contact', label: 'Contacto' },
             { id: 'hours', label: 'Horarios' },
             { id: 'social', label: 'Redes Sociales' },
-            { id: 'payment', label: 'Pagos' },
+            // { id: 'payment', label: 'Pagos' }, 
             { id: 'seo', label: 'SEO / Metadatos' } 
           ]}
         />
@@ -129,12 +129,14 @@ const CompanyInfoPage = () => {
             )}
             
             {/* Sección de pagos */}
+            {/* 
             {activeSection === 'payment' && (
               <PaymentSection 
                 data={companyData.paymentConfig || {}}
                 onUpdate={(data) => handleSectionUpdate('paymentConfig', data)}
               />
             )}
+            */}
             
             {/* Sección de SEO / Metadatos */}
             {activeSection === 'seo' && (
