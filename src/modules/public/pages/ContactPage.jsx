@@ -161,8 +161,19 @@ export const ContactPage = () => {
     // Obtener detalles directamente desde companyInfo
     const phone = companyInfo?.contact?.phone || 'N/A';
     const email = companyInfo?.contact?.email || 'N/A';
+    const whatsapp = companyInfo?.contact?.whatsapp; // Get WhatsApp number
     const address = formatAddress();
     const hours = formatBusinessHours(); // Usa la nueva función
+
+    // Helper function to format WhatsApp URL
+    const formatWhatsAppUrl = (number) => {
+      if (!number) return '#';
+      // Remove non-digit characters
+      const digits = number.replace(/\D/g, '');
+      // Basic check if it looks like a valid number
+      if (digits.length < 10) return '#'; // Or handle differently
+      return `https://wa.me/${digits}`;
+    }
 
     return (
     <div className="contact-info-card">
@@ -185,6 +196,28 @@ export const ContactPage = () => {
             <p className="info-text">{phone}</p>
           </div>
         </div>
+
+        {/* WhatsApp Item (conditionally rendered) - MOVED HERE */}
+        {whatsapp && (
+          <div className="contact-info-item">
+            <div className="icon-container">
+              <i className="bi bi-whatsapp"></i>
+            </div>
+            <div className="info-content">
+              <h6 className="info-title">WhatsApp</h6>
+              {/* Make it a clickable link */}
+              <a 
+                href={formatWhatsAppUrl(whatsapp)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="info-text text-white text-decoration-none"
+              >
+                {whatsapp}
+              </a>
+            </div>
+          </div>
+        )}
+
         <div className="contact-info-item">
           <div className="icon-container">
             <i className="bi bi-envelope-fill"></i>

@@ -70,71 +70,73 @@ const BusinessHoursSection = ({ data, onUpdate }) => {
   
   return (
     <div className="business-hours-section">
-      <div className="table-responsive">
-        <table className="table table-hover align-middle">
-          <thead className="table-light">
-            <tr>
-              <th>Día</th>
-              <th>Estado</th>
-              <th>Horario de apertura</th>
-              <th>Horario de cierre</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {businessHours.map((hour, index) => (
-              <tr key={hour.day} className={!hour.open ? 'text-muted' : ''}>
-                <td>
-                  <span className="fw-medium">{hour.day}</span>
-                </td>
-                <td>
-                  <div className="form-check form-switch">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id={`open-${index}`}
-                      checked={hour.open}
-                      onChange={() => handleToggleOpen(index)}
-                    />
-                    <label className="form-check-label" htmlFor={`open-${index}`}>
-                      {hour.open ? 'Abierto' : 'Cerrado'}
-                    </label>
-                  </div>
-                </td>
-                <td>
-                  <input
-                    type="time"
-                    className="form-control form-control-sm"
-                    value={hour.openingTime}
-                    onChange={(e) => handleTimeChange(index, 'openingTime', e.target.value)}
-                    disabled={!hour.open}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="time"
-                    className="form-control form-control-sm"
-                    value={hour.closingTime}
-                    onChange={(e) => handleTimeChange(index, 'closingTime', e.target.value)}
-                    disabled={!hour.open}
-                  />
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    onClick={() => handleCopyToAll(index)}
-                    disabled={!hour.open}
-                    title="Aplicar este horario a todos los días abiertos"
-                  >
-                    <i className="bi bi-files me-1"></i>
-                    Aplicar a todos
-                  </button>
-                </td>
+      <div className="card border-0 shadow-sm overflow-hidden">
+        <div className="table-responsive">
+          <table className="table table-hover align-middle mb-0">
+            <thead className="table-dark">
+              <tr>
+                <th scope="col" className="px-3 py-3 border-0">Día</th>
+                <th scope="col" className="px-3 py-3 border-0">Estado</th>
+                <th scope="col" className="px-3 py-3 border-0">Horario de apertura</th>
+                <th scope="col" className="px-3 py-3 border-0">Horario de cierre</th>
+                <th scope="col" className="px-3 py-3 border-0">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {businessHours.map((hour, index) => (
+                <tr key={hour.day} className={!hour.open ? 'text-muted' : ''}>
+                  <td className="px-3 py-2">
+                    <span className="fw-medium">{hour.day}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={`open-${index}`}
+                        checked={hour.open}
+                        onChange={() => handleToggleOpen(index)}
+                      />
+                      <label className="form-check-label" htmlFor={`open-${index}`}>
+                        {hour.open ? 'Abierto' : 'Cerrado'}
+                      </label>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="time"
+                      className="form-control form-control-sm"
+                      value={hour.openingTime}
+                      onChange={(e) => handleTimeChange(index, 'openingTime', e.target.value)}
+                      disabled={!hour.open}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="time"
+                      className="form-control form-control-sm"
+                      value={hour.closingTime}
+                      onChange={(e) => handleTimeChange(index, 'closingTime', e.target.value)}
+                      disabled={!hour.open}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => handleCopyToAll(index)}
+                      disabled={!hour.open}
+                      title="Aplicar este horario a todos los días abiertos"
+                    >
+                      <i className="bi bi-files me-1"></i>
+                      Aplicar a todos
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
       
       <div className="mt-3 text-muted small">
