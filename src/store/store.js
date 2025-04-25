@@ -56,6 +56,15 @@ const homepagePersistConfig = {
 };
 const persistedHomepageReducer = persistReducer(homepagePersistConfig, homepageReducer);
 
+// Config persistence for siteConfig
+const siteConfigPersistConfig = {
+  key: 'siteConfig',
+  storage,
+  // Persist core info and timestamp
+  whitelist: ['companyInfo', 'lastFetchTimestamp'] 
+};
+const persistedSiteConfigReducer = persistReducer(siteConfigPersistConfig, siteConfigReducer);
+
 // Crear un customSerializer para manejar objetos de Firestore
 const firestoreSerializableCheck = {
   isSerializable: (value) => {
@@ -97,9 +106,9 @@ export const store = configureStore({
     cart: persistedCartReducer,
     messages: messagesReducer,
     orders: persistedOrdersReducer, // Añadimos el reducer de orders
-    homepage: persistedHomepageReducer,
-    siteConfig: siteConfigReducer,
-    shopPage: persistedShopPageReducer,
+    homepage: persistedHomepageReducer, // Use persisted homepage reducer
+    siteConfig: persistedSiteConfigReducer, // Use persisted site config reducer
+    shopPage: persistedShopPageReducer, // Use persisted shop page reducer
   },
 
   // Add the middleware to ignore some actions for the persistence

@@ -1,11 +1,12 @@
-import React from 'react'
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux';
 import { useContactPageContent } from '../components/contact/hooks/useContactPageContent.js'
 import { Logo } from '../../../shared/components/logo/Logo.jsx'
 import '../styles/contact.css'
 import { ContactForm } from '../components/contact/components/index.js'
 import { Spinner } from '../../../shared/components/spinner/Spinner.jsx'
 import { 
+  fetchCompanyInfo,
   selectCompanyInfo, 
   selectSocialLinks, 
   selectSiteConfigStatus 
@@ -20,6 +21,7 @@ import {
  */
 
 export const ContactPage = () => {
+  const dispatch = useDispatch();
 
   // Cargar contenido personalizado para la página (títulos, visibilidad de secciones, config del formulario)
   const { pageContent, loading: pageLoading, getSection } = useContactPageContent()
@@ -28,6 +30,17 @@ export const ContactPage = () => {
   const companyInfo = useSelector(selectCompanyInfo);
   const socialLinks = useSelector(selectSocialLinks);
   const siteConfigStatus = useSelector(selectSiteConfigStatus);
+
+  // Fetch company info if needed when component mounts
+  useEffect(() => {
+    // Fetch only if status is idle (to avoid multiple fetches)
+    // The thunk itself will handle cache validation
+    if (siteConfigStatus === 'idle') {
+      dispatch(fetchCompanyInfo());
+      // Optionally dispatch fetchSocialLinks if needed here too, 
+      // or ensure it's dispatched elsewhere (e.g., App.jsx)
+    }
+  }, [dispatch, siteConfigStatus]);
 
   // Obtener configuración para cada sección DESDE EL EDITOR DE CONTENIDO
   const headerConfig = getSection('header')

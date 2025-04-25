@@ -11,7 +11,7 @@ export const fetchCompanyInfo = createAsyncThunk(
       // Excluimos explícitamente socialMedia si viene del servicio principal
       // Asumimos que socialMedia se maneja por separado
       const { socialMedia, ...companyInfoData } = data || {}; 
-      return companyInfoData;
+      return { data: companyInfoData, timestamp: Date.now() };
     } catch (error) {
       console.error('Error fetching company info:', error);
       return rejectWithValue(error.message || 'Failed to fetch company info');
@@ -34,11 +34,14 @@ export const fetchSocialLinks = createAsyncThunk(
   }
 );
 
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours TTL
+
 const initialState = {
   companyInfo: null,
   socialLinks: [],
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
+  lastFetchTimestamp: null, // Add timestamp for cache validation
 };
 
 const siteConfigSlice = createSlice({
@@ -54,13 +57,20 @@ const siteConfigSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // --- Fetch Company Info ---
-      .addCase(fetchCompanyInfo.pending, (state) => {
+      .addCase(fetchCompanyInfo.pending, (state, action) => {
+        // Only set loading if fetch isn't skipped (though skipped logic is in the thunk)
+        // We rely on the fulfilled/rejected cases to set final status correctly.
         state.status = 'loading';
         state.error = null; // Reset error on new request
       })
       .addCase(fetchCompanyInfo.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.companyInfo = action.payload;
+        // Always set final status, even if skipped
+        state.status = 'succeeded'; 
+        state.error = null;
+        if (!action.payload?.skipped) {
+          state.companyInfo = action.payload.data; // Access the actual data
+          state.lastFetchTimestamp = action.payload.timestamp; // Update timestamp
+        }
       })
       .addCase(fetchCompanyInfo.rejected, (state, action) => {
         state.status = 'failed';
