@@ -18,6 +18,7 @@ import { StripeProvider } from './contexts/StripeContext.jsx';
 
 // --- Lógica del Store (Redux) ---
 import { loadCartFromFirestore } from './modules/shop/features/cart/store/index.js'; // Asumiendo que mergeCartsOnLogin ya no se usa directamente aquí
+import { fetchCompanyInfo, fetchSocialLinks, selectSiteConfigStatus } from './store/slices/siteConfigSlice.js';
 
 // --- Router Principal ---
 import { AppRouter } from './routes/AppRouter';
@@ -40,6 +41,7 @@ export const App = () => {
   const status = useCheckAuth(); // Verifica el estado de autenticación al cargar
   const auth = useSelector(state => state.auth); // Obtiene estado de autenticación de Redux
   const dispatch = useDispatch(); // Obtiene la función dispatch de Redux
+  const siteConfigStatus = useSelector(selectSiteConfigStatus);
 
 
   // --- Hook para Metadatos Globales ---
@@ -57,6 +59,17 @@ export const App = () => {
     }
     // Dependencias: se ejecuta cuando cambia el estado de autenticación o el UID
   }, [status, auth.uid, dispatch]);
+
+  // --- Efecto para Cargar Configuración del Sitio ---
+  useEffect(() => {
+    // Cargar la configuración del sitio solo si no se ha cargado ya
+    if (siteConfigStatus === 'idle') {
+      console.log('Dispatching initial site config fetch...');
+      dispatch(fetchCompanyInfo());
+      dispatch(fetchSocialLinks());
+    }
+    // Dependencia: solo se ejecuta si el estado de carga cambia a 'idle'
+  }, [siteConfigStatus, dispatch]);
 
 
   // --- Renderizado Condicional: Spinner de Carga ---

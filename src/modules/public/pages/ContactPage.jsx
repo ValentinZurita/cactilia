@@ -1,15 +1,20 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { useSelector } from 'react-redux';
 import { useContactPageContent } from '../components/contact/hooks/useContactPageContent.js'
 import { Logo } from '../../../shared/components/logo/Logo.jsx'
 import '../styles/contact.css'
 import { ContactForm } from '../components/contact/components/index.js'
-import { getSocialMediaLinks } from '../../../services/firebase/companyInfoService'
-import { useCompanyInfo } from '../../admin/companyInfo/hooks/useCompanyInfo.js'
+import { Spinner } from '../../../shared/components/spinner/Spinner.jsx'
+import { 
+  selectCompanyInfo, 
+  selectSocialLinks, 
+  selectSiteConfigStatus 
+} from '../../../store/slices/siteConfigSlice.js';
 
 
 /**
  * Componente Mejorado de la Página de Contacto que utiliza contenido personalizable
- * gestionado a través de la interfaz de administración Y la configuración de información de la empresa.
+ * gestionado a través de la interfaz de administración Y datos globales del store Redux.
  *
  * @returns {JSX.Element}
  */
@@ -19,12 +24,10 @@ export const ContactPage = () => {
   // Cargar contenido personalizado para la página (títulos, visibilidad de secciones, config del formulario)
   const { pageContent, loading: pageLoading, getSection } = useContactPageContent()
 
-  // Cargar información de la empresa (para teléfono, email, dirección, horario)
-  const { companyInfo, loading: companyInfoLoading } = useCompanyInfo()
-
-  // Obtener enlaces de redes sociales desde Firestore
-  const [socialLinks, setSocialLinks] = useState([])
-  const [socialLinksLoading, setSocialLinksLoading] = useState(true)
+  // Obtener datos globales del store de Redux
+  const companyInfo = useSelector(selectCompanyInfo);
+  const socialLinks = useSelector(selectSocialLinks);
+  const siteConfigStatus = useSelector(selectSiteConfigStatus);
 
   // Obtener configuración para cada sección DESDE EL EDITOR DE CONTENIDO
   const headerConfig = getSection('header')
@@ -32,35 +35,16 @@ export const ContactPage = () => {
   const formConfig = getSection('form')
   const mapConfig = getSection('map')
 
-  // Obtener enlaces de redes sociales desde Firestore (podría ser redundante si useCompanyInfo ya los provee)
-  // TODO: Revisar si el hook useCompanyInfo puede actualizarse para proveer enlaces sociales procesados directamente.
-  useEffect(() => {
-    const fetchLinks = async () => {
-      setSocialLinksLoading(true)
-      try {
-        // Usando la llamada directa al servicio por ahora
-        const linksFromDb = await getSocialMediaLinks()
-        const visibleLinks = linksFromDb.filter(link => link.visible !== false)
-        setSocialLinks(visibleLinks)
-      } catch (error) {
-        console.error('Error al obtener enlaces de redes sociales para la Página de Contacto:', error)
-        setSocialLinks([]) // Establecer a array vacío en caso de error
-      } finally {
-        setSocialLinksLoading(false)
-      }
-    }
-    fetchLinks()
-  }, [])
 
-  // Obtener ítems visibles de redes sociales (usando el estado poblado por useEffect)
+  // Obtener ítems visibles de redes sociales (desde el store)
   const getVisibleSocialMedia = () => {
-    return socialLinks
+    // Filter the socialLinks from the store
+    return socialLinks?.filter(link => link.visible !== false) || [];
   }
 
-  // Obtener enlaces de redes sociales visibles
-  const visibleSocialMedia = getVisibleSocialMedia() // Aún usado
+  const visibleSocialMedia = getVisibleSocialMedia() 
 
-  // Función auxiliar para formatear la dirección desde el objeto companyInfo
+  // Función auxiliar para formatear la dirección desde el objeto companyInfo (del store)
   const formatAddress = () => {
     if (!companyInfo?.contact?.address) return 'Dirección no disponible';
     const { street, city, state, zipCode } = companyInfo.contact.address;
@@ -68,7 +52,7 @@ export const ContactPage = () => {
     return [street, city, state, zipCode].filter(Boolean).join(', ');
   }
 
-  // Función auxiliar para formatear el horario de atención
+  // Función auxiliar para formatear el horario de atención (desde companyInfo del store)
   const formatBusinessHours = () => {
     if (!companyInfo?.businessHours || companyInfo.businessHours.length === 0) {
       return 'Horario no disponible';
@@ -158,12 +142,12 @@ export const ContactPage = () => {
 
   const renderContactInfoCard = () => {
     
-    // Obtener detalles directamente desde companyInfo
+    // Obtener detalles directamente desde companyInfo (del store)
     const phone = companyInfo?.contact?.phone || 'N/A';
     const email = companyInfo?.contact?.email || 'N/A';
-    const whatsapp = companyInfo?.contact?.whatsapp; // Get WhatsApp number
+    const whatsapp = companyInfo?.contact?.whatsapp;
     const address = formatAddress();
-    const hours = formatBusinessHours(); // Usa la nueva función
+    const hours = formatBusinessHours();
 
     // Helper function to format WhatsApp URL
     const formatWhatsAppUrl = (number) => {
@@ -250,7 +234,7 @@ export const ContactPage = () => {
       </div>
 
       {/* Social media links */}
-      {contactInfoConfig.showSocialMedia !== false && !socialLinksLoading && visibleSocialMedia.length > 0 && (
+      {contactInfoConfig.showSocialMedia !== false && visibleSocialMedia.length > 0 && (
         <div className="social-links mt-4">
           <h5 className="text-white-50 fw-light mb-3">Síguenos</h5>
           <div className="d-flex">
@@ -323,13 +307,13 @@ export const ContactPage = () => {
     )
   }
 
-  // Mostrar spinner de carga mientras se carga el contenido de la página O la info de la empresa O los enlaces sociales
-  if (pageLoading || companyInfoLoading || socialLinksLoading) {
+  // Mostrar spinner de carga mientras se carga el contenido de la página O la configuración del sitio
+  // Consider pageLoading (for contact page specific content) AND siteConfigStatus
+  if (pageLoading || siteConfigStatus === 'loading' || siteConfigStatus === 'idle') {
     return (
-      <div className="d-flex justify-content-center align-items-center py-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      // Use a shared spinner component if available
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '70vh' }}>
+        <Spinner /> 
       </div>
     )
   }

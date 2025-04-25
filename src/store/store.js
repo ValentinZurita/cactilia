@@ -8,6 +8,7 @@ import messagesReducer from './messages/messageSlice.js'
 import ordersReducer from '../modules/admin/components/orders/slices/ordersSlice.js';
 import { cartSlice } from '../modules/shop/features/cart/store/index.js'
 import homepageReducer from './slices/homepageSlice.js'
+import siteConfigReducer from './slices/siteConfigSlice.js'
 
 // Config persistence for auth
 const authPersistConfig = {
@@ -78,6 +79,7 @@ export const store = configureStore({
     messages: messagesReducer,
     orders: persistedOrdersReducer, // Añadimos el reducer de orders
     homepage: homepageReducer,
+    siteConfig: siteConfigReducer,
   },
 
   // Add the middleware to ignore some actions for the persistence
