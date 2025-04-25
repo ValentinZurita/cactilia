@@ -70,18 +70,6 @@ const BusinessHoursSection = ({ data, onUpdate }) => {
   
   return (
     <div className="business-hours-section">
-      <div className="row mb-4">
-        <div className="col-12 mb-4">
-          <h5 className="fw-medium mb-3">
-            <i className="bi bi-clock me-2"></i>
-            Horarios de Atención
-          </h5>
-          <p className="text-muted">
-            Configura los horarios en que tu negocio atiende a clientes.
-          </p>
-        </div>
-      </div>
-      
       <div className="table-responsive">
         <table className="table table-hover align-middle">
           <thead className="table-light">

@@ -67,6 +67,8 @@ const CompanyInfoPage = () => {
     // Renderizar sección activa
     return (
       <div className="bg-white rounded-3 shadow-sm">
+
+        {/* Navegación de pestañas */}
         <NavigationTabs 
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
@@ -80,6 +82,7 @@ const CompanyInfoPage = () => {
           ]}
         />
         
+        {/* Contenido de la página */}
         <div className="p-4">
           {(saveStatus.success || saveStatus.error) && (
             <div className="mb-4">
@@ -91,6 +94,7 @@ const CompanyInfoPage = () => {
             </div>
           )}
           
+          {/* Contenido de las secciones */}
           <div className="tab-content">
             {activeSection === 'general' && (
               <GeneralSection 
@@ -99,6 +103,7 @@ const CompanyInfoPage = () => {
               />
             )}
             
+            {/* Sección de contacto */}
             {activeSection === 'contact' && (
               <ContactSection 
                 data={companyData.contact || {}}
@@ -106,6 +111,7 @@ const CompanyInfoPage = () => {
               />
             )}
             
+            {/* Sección de horarios */}
             {activeSection === 'hours' && (
               <BusinessHoursSection 
                 data={companyData.businessHours || []}
@@ -113,6 +119,7 @@ const CompanyInfoPage = () => {
               />
             )}
             
+            {/* Sección de redes sociales */}
             {activeSection === 'social' && (
               <SocialMediaSection 
                 data={companyData.socialMedia || { items: [] }}
@@ -120,6 +127,7 @@ const CompanyInfoPage = () => {
               />
             )}
             
+            {/* Sección de pagos */}
             {activeSection === 'payment' && (
               <PaymentSection 
                 data={companyData.paymentConfig || {}}
@@ -127,6 +135,7 @@ const CompanyInfoPage = () => {
               />
             )}
             
+            {/* Sección de SEO / Metadatos */}
             {activeSection === 'seo' && (
               <SeoSection 
                 data={companyData.seo || {}}
@@ -135,7 +144,10 @@ const CompanyInfoPage = () => {
             )}
           </div>
           
+          {/* Botones de acción */}
           <div className="mt-4 pt-3 d-flex justify-content-end gap-2">
+           
+            
             <button 
               className="btn btn-outline-secondary px-4"
               onClick={() => window.location.reload()}
@@ -144,6 +156,7 @@ const CompanyInfoPage = () => {
               Cancelar
             </button>
             
+            {/* Botón de guardado */}
             <button 
               className="btn btn-dark px-4"
               onClick={() => handleSave(companyData)}
@@ -158,6 +171,7 @@ const CompanyInfoPage = () => {
                 'Guardar cambios'
               )}
             </button>
+            
           </div>
         </div>
       </div>
