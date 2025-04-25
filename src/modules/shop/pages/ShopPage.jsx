@@ -1,19 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux'; // Import Redux hooks
 import { HeroSection } from '../../public/components/home-page';
 import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMessage} from '../features/shop/index.js';
 
 import { heroImages } from '../../../shared/constants';
-import { getCollectionImages } from '../../admin/services/collectionsService';
-import { getShopPageContent } from '../../admin/components/content/shop/shopPageService.js'
-import { useModal, useProducts } from '../hooks/index.js'
+// Remove unused service imports
+// import { getCollectionImages } from '../../admin/services/collectionsService';
+// import { getShopPageContent } from '../../admin/components/content/shop/shopPageService.js'
+// Remove unused hook import
+// import { useProducts } from '../hooks/index.js'
+import { useModal } from '../hooks/index.js' 
 import { useCart } from '../features/cart/hooks/useCart.js'
 
-export const ShopPage = () => {
-  // Estado para el banner personalizado
-  const [bannerConfig, setBannerConfig] = useState(null);
-  const [collectionImages, setCollectionImages] = useState([]);
+// Import actions and selectors from shopPageSlice
+import {
+  fetchInitialShopData,
+  setSearchTerm,
+  setSelectedCategory,
+  setPriceOrder,
+  setCurrentPage,
+  selectPaginatedProducts,
+  selectCategoryFilterOptions,
+  selectShopTotalPages,
+  selectShopIsLoading,
+  selectShopError,
+  selectShopFilters,
+  selectShopPagination,
+  // Import banner selectors
+  selectShopBannerConfig,
+  selectShopBannerCollectionImages,
+} from '../../../store/slices/shopPageSlice.js';
 
-  // Data fetching logic
+// Re-introduce or import the helper function
+const getImageUrlBySize = (imgData, desiredSize = 'medium') => {
+  if (!imgData) return null;
+  const resized = imgData.resizedUrls;
+  const originalUrl = imgData.url || imgData.src;
+  const largeKey = '1200x1200';
+  const mediumKey = '600x600';
+  const smallKey = '200x200';
+
+  switch (desiredSize) {
+    case 'original':
+      return originalUrl;
+    case 'large':
+      return (resized && resized[largeKey]) || originalUrl;
+    case 'medium':
+      return (resized && resized[mediumKey]) || (resized && resized[largeKey]) || originalUrl;
+    case 'small':
+      return (resized && resized[smallKey]) || (resized && resized[mediumKey]) || originalUrl;
+    default:
+      console.warn(`Tamaño de imagen no reconocido o no especificado: '${desiredSize}'. Usando tamaño mediano por defecto.`);
+      return (resized && resized[mediumKey]) || (resized && resized[largeKey]) || originalUrl;
+  }
+};
+
+export const ShopPage = () => {
+  const dispatch = useDispatch();
+
+  // --- Select state from Redux store ---
+  const products = useSelector(selectPaginatedProducts);
+  const categories = useSelector(selectCategoryFilterOptions); // Use selector for filter options
+  const totalPages = useSelector(selectShopTotalPages);
+  const isLoading = useSelector(selectShopIsLoading);
+  const error = useSelector(selectShopError);
+  const filters = useSelector(selectShopFilters);
+  const { currentPage } = useSelector(selectShopPagination);
+  // Select banner data
+  const bannerConfig = useSelector(selectShopBannerConfig);
+  const bannerCollectionImages = useSelector(selectShopBannerCollectionImages);
+
+  // Remove local state for banner and products
+  // const [bannerConfig, setBannerConfig] = useState(null);
+  // const [collectionImages, setCollectionImages] = useState([]);
+  /* 
   const {
     loading,
     error,
@@ -29,140 +89,137 @@ export const ShopPage = () => {
     setCurrentPage,
     categories,
   } = useProducts();
+  */
 
-  // Modal logic
+  // Modal logic (remains the same)
   const { isOpen, selectedProduct, openModal, closeModal } = useModal();
 
-  // Cart logic
+  // Cart logic (remains the same)
   const { handleAddToCart } = useCart();
 
-  // Cargar la configuración del banner
+  // Fetch initial data on component mount
   useEffect(() => {
-    const loadBannerConfig = async () => {
-      try {
-        const result = await getShopPageContent('published');
-        if (result.ok && result.data && result.data.sections && result.data.sections.banner) {
-          setBannerConfig(result.data.sections.banner);
+    dispatch(fetchInitialShopData());
+  }, [dispatch]);
 
-          // Cargar imágenes de colección si es necesario
-          if (result.data.sections.banner.useCollection && result.data.sections.banner.collectionId) {
-            loadCollectionImages(result.data.sections.banner.collectionId);
-          }
-        }
-      } catch (error) {
-        console.error('Error cargando configuración del banner:', error);
-      }
-    };
-
+  // Remove banner loading logic
+  /*
+  useEffect(() => {
+    const loadBannerConfig = async () => { ... };
     loadBannerConfig();
   }, []);
 
-  // Cargar imágenes de colección
-  const loadCollectionImages = async (collectionId) => {
-    try {
-      const result = await getCollectionImages(collectionId);
-      if (result.ok && Array.isArray(result.data)) {
-        // Guardar los datos completos de la imagen, no solo la URL
-        setCollectionImages(result.data);
+  const loadCollectionImages = async (collectionId) => { ... };
+  */
+
+  // --- Event Handlers using Redux Actions ---
+  const handleSearchChange = (term) => {
+    dispatch(setSearchTerm(term));
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    // categoryId will be null for 'All Categories'
+    dispatch(setSelectedCategory(categoryId)); 
+  };
+
+  const handlePriceOrderChange = (order) => {
+    dispatch(setPriceOrder(order));
+  };
+
+  const handlePageChange = (page) => {
+    dispatch(setCurrentPage(page));
+  };
+
+  // --- Render Logic ---
+  
+  // Function to prepare banner props dynamically
+  const getBannerProps = () => {
+    let imagesToShow = heroImages; // Default fallback
+    const title = bannerConfig?.title || "Tienda de Cactilia";
+    const subtitle = bannerConfig?.subtitle || "Encuentra productos frescos y naturales";
+    const showLogo = bannerConfig?.showLogo !== false;
+    const showSubtitle = bannerConfig?.showSubtitle !== false;
+    const height = bannerConfig?.height || "50vh";
+    const autoRotate = bannerConfig?.autoRotate || false;
+    const desiredSize = bannerConfig?.imageSize || 'large';
+
+    if (bannerConfig) {
+      if (bannerConfig.useCollection && bannerCollectionImages.length > 0) {
+         // Use collection images, prepare array of objects { id, src, alt }
+         imagesToShow = bannerCollectionImages
+          .map(imgData => ({
+              id: imgData.id || `banner-img-${Math.random()}`,
+              src: getImageUrlBySize(imgData, desiredSize),
+              alt: imgData.alt || bannerConfig.title || 'Banner Image'
+          }))
+          .filter(img => img.src); // Filter out entries where URL generation failed
+      } else if (bannerConfig.backgroundImage) {
+         // Use single background image (no resizing needed here)
+         // Create an object structure even for single image
+         imagesToShow = [{
+             id: 'single-banner-img',
+             src: bannerConfig.backgroundImage,
+             alt: bannerConfig.title || 'Banner Image' 
+         }];
       }
-    } catch (error) {
-      console.error('Error cargando imágenes de colección:', error);
     }
+    // Ensure there's always at least a fallback image
+    if (!imagesToShow || imagesToShow.length === 0) {
+      imagesToShow = heroImages;
+    }
+
+    return {
+      images: imagesToShow,
+      title,
+      subtitle,
+      showLogo,
+      showSubtitle,
+      height,
+      autoRotate,
+      showButton: false, // Shop banner typically doesn't have a main CTA button
+    };
   };
 
-  // --- FUNCIÓN AUXILIAR PARA SELECCIONAR URL POR TAMAÑO (copiada de HomePage.jsx) ---
-  const getImageUrlBySize = (imgData, desiredSize = 'medium') => {
-    if (!imgData) return null;
-
-    const resized = imgData.resizedUrls;
-    const originalUrl = imgData.url || imgData.src;
-
-    const largeKey = '1200x1200';
-    const mediumKey = '600x600';
-    const smallKey = '200x200';
-
-    switch (desiredSize) {
-      case 'original':
-        return originalUrl;
-      case 'large':
-        return (resized && resized[largeKey]) || originalUrl;
-      case 'medium':
-        return (resized && resized[mediumKey]) || (resized && resized[largeKey]) || originalUrl;
-      case 'small':
-        return (resized && resized[smallKey]) || (resized && resized[mediumKey]) || originalUrl;
-      default:
-        console.warn(`Tamaño de imagen no reconocido o no especificado: '${desiredSize}'. Usando tamaño mediano por defecto.`);
-        return (resized && resized[mediumKey]) || (resized && resized[largeKey]) || originalUrl;
-    }
-  };
-  // --- FIN FUNCIÓN AUXILIAR ---
+  const bannerProps = getBannerProps();
 
   return (
     <>
-      {/* Hero Banner */}
-      {(() => {
-        // Lógica para determinar las imágenes del banner aquí mismo
-        let imagesToShow = heroImages; // Default fallback
-        const desiredSize = bannerConfig?.imageSize || 'large'; // Default a 'large'
-
-        if (bannerConfig) {
-          if (bannerConfig.useCollection && collectionImages.length > 0) {
-            imagesToShow = collectionImages
-              .map(imgData => getImageUrlBySize(imgData, desiredSize))
-              .filter(Boolean);
-          } else if (bannerConfig.backgroundImage) {
-            // Para imagen única, no aplicamos resizing, usamos la URL directa
-            imagesToShow = [bannerConfig.backgroundImage];
-          }
-        }
-
-        // Asegurar que siempre haya algo que mostrar
-        if (!imagesToShow || imagesToShow.length === 0) {
-          imagesToShow = heroImages;
-        }
-
-        return (
-          <HeroSection
-            images={imagesToShow} // Usar las imágenes procesadas
-            title={bannerConfig?.title || "Tienda de Cactilia"}
-            subtitle={bannerConfig?.subtitle || "Encuentra productos frescos y naturales"}
-            showButton={false}
-            showLogo={bannerConfig?.showLogo !== false}
-            showSubtitle={bannerConfig?.showSubtitle !== false}
-            height={bannerConfig?.height || "50vh"}
-            autoRotate={bannerConfig?.autoRotate || false}
-          />
-        );
-      })()}
-
-      {/* Barra de Búsqueda */}
-      <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-
-      {/* Filtros */}
-      <FilterBar
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        priceOrder={priceOrder}
-        setPriceOrder={setPriceOrder}
-        categories={categories}
+      {/* Hero Banner - Dynamic based on Redux state */}
+      <HeroSection {...bannerProps} />
+      
+      {/* SearchBar - Pass current filter value and handler */}
+      <SearchBar 
+        searchTerm={filters.searchTerm} 
+        setSearchTerm={handleSearchChange} 
       />
 
-      {/* Mensajes de Estado (loading / error) */}
-      <StatusMessage loading={loading} error={error} />
+      {/* FilterBar - Pass current filter values and handlers */}
+      <FilterBar
+        selectedCategory={filters.selectedCategory} 
+        setSelectedCategory={handleCategoryChange} 
+        priceOrder={filters.priceOrder}
+        setPriceOrder={handlePriceOrderChange} 
+        categories={categories} // Pass formatted categories from selector
+      />
 
-      {/* Listado de productos y paginación (solo si no hay error y se han cargado los datos) */}
-      {!loading && !error && (
+      {/* StatusMessage - Uses Redux state */}
+      <StatusMessage loading={isLoading} error={error} />
+
+      {/* ProductList & Pagination - Use Redux state */}
+      {!isLoading && !error && (
         <>
           <ProductList products={products} onProductClick={openModal} />
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+          {totalPages > 1 && (
+             <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange} 
+             />
+          )}
         </>
       )}
 
-      {/* Modal del producto */}
+      {/* ProductModal - No changes needed */}
       <ProductModal
         product={selectedProduct}
         isOpen={isOpen}

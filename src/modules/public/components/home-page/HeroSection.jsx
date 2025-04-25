@@ -40,27 +40,11 @@ export const HeroSection = ({
                               // collectionId, 
                               // useCollection = false,
                             }) => {
-  console.log("DEBUG [HeroSection]: Received images prop:", images); // Log inicial
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Eliminar estados collectionImages y loading
-  // const [collectionImages, setCollectionImages] = useState([]);
-  // const [loading, setLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const imagesContainerRef = useRef(null);
   const preloadedImages = useRef(new Set());
   const intervalRef = useRef(null);
-
-  // Eliminar useEffect que cargaba colecciones
-  /*
-  useEffect(() => {
-    const loadCollectionImages = async () => {
-      if (useCollection && collectionId) {
-        // ... código eliminado ...
-      }
-    };
-    loadCollectionImages();
-  }, [useCollection, collectionId]);
-  */
 
   // Simplificar useMemo para usar siempre la prop 'images'
   const imageArray = useMemo(() => {
@@ -111,6 +95,7 @@ export const HeroSection = ({
 
   // Crear estilos CSS para cada imagen
   const createImageStyles = (index) => {
+    const imageUrl = imageArray[index]?.src; // Get the src URL
     return {
       position: 'absolute',
       top: 0,
@@ -118,7 +103,7 @@ export const HeroSection = ({
       width: '100%',
       height: '100%',
       opacity: index === currentIndex ? 1 : 0,
-      backgroundImage: `url(${imageArray[index]?.src})`,
+      backgroundImage: `url(${imageUrl})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       // Transición más rápida para el fade
