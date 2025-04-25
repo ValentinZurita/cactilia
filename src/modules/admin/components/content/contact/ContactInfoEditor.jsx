@@ -5,17 +5,12 @@
  * @param {Object}   [props.data={}]   - Datos de la sección (phone, email, address, etc.).
  * @param {Function} props.onUpdate    - Función para actualizar la configuración.
  */
+
 export function ContactInfoEditor({ data = {}, onUpdate }) {
-  // =========================================================================
-  // 1. Manejador de cambios: Actualiza una propiedad específica
-  // NO LONGER USED FOR PHONE/EMAIL/ADDRESS/HOURS
-  // =========================================================================
-  // function handleChange(field, value) {
-  //   onUpdate({ [field]: value });
-  // }
+
 
   // =========================================================================
-  // 2. Render principal: separamos en helpers para mejorar la legibilidad
+  // 1. Render principal: separamos en helpers para mejorar la legibilidad
   // =========================================================================
   return (
     <div className="contact-info-editor">
@@ -38,7 +33,7 @@ export function ContactInfoEditor({ data = {}, onUpdate }) {
   );
 
   // =========================================================================
-  // 3. Funciones locales de render (helpers)
+  // 2. Funciones locales de render (helpers)
   // =========================================================================
 
   /**
@@ -54,29 +49,4 @@ export function ContactInfoEditor({ data = {}, onUpdate }) {
     );
   }
 
-  // REMOVE the renderContactFields function and its sub-functions
-  // /**
-  //  * Renderiza los campos de contacto en un grid (teléfono, email, dirección, horario).
-  //  */
-  // function renderContactFields() { ... }
-
-  // /**
-  //  * Campo: Teléfono
-  //  */
-  // function renderPhoneField() { ... }
-
-  // /**
-  //  * Campo: Email
-  //  */
-  // function renderEmailField() { ... }
-
-  // /**
-  //  * Campo: Dirección
-  //  */
-  // function renderAddressField() { ... }
-
-  // /**
-  //  * Campo: Horario
-  //  */
-  // function renderHoursField() { ... }
 }

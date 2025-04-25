@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { SaveFeedback } from '../components/common/SaveFeedback';
-import { companyInfoService } from '../services/companyInfoService';
-import { getSocialMediaLinks, updateSocialMediaLinks } from '../../../../services/firebase/companyInfoService.js';
 import NavigationTabs from '../../common/components/NavigationTabs.jsx';
 import GeneralSection from '../components/sections/GeneralSection';
 import ContactSection from '../components/sections/ContactSection';
@@ -9,147 +7,26 @@ import BusinessHoursSection from '../components/sections/BusinessHoursSection';
 import SocialMediaSection from '../components/sections/SocialMediaSection';
 import PaymentSection from '../components/sections/PaymentSection';
 import SeoSection from '../components/sections/SeoSection';
+import { useCompanyInfoEditor } from '../hooks/useCompanyInfoEditor';
 
 /**
  * Página principal para la sección de Datos de la Empresa
- * Estilo elegante y minimalista similar a Orders y Shipping
+ * Utiliza el hook useCompanyInfoEditor para la lógica y se centra en la presentación.
  * 
  * @returns {JSX.Element} Página de datos de la empresa
  */
 const CompanyInfoPage = () => {
-  const [companyData, setCompanyData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeSection, setActiveSection] = useState('general');
-  const [saveStatus, setSaveStatus] = useState({
-    success: false,
-    error: null,
-    loading: false
-  });
-
-  // Cargar datos de la empresa al iniciar
-  useEffect(() => {
-    const fetchCompanyData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // 1. Fetch general company info (assuming this excludes social links now)
-        const generalData = await companyInfoService.getCompanyInfo();
-        
-        // 2. Fetch social media links separately
-        const socialLinks = await getSocialMediaLinks();
-        
-        // 3. Combine the data
-        setCompanyData({ 
-          ...generalData, 
-          socialMedia: { items: socialLinks } // Store social links under socialMedia.items
-        });
-
-      } catch (err) {
-        console.error('Error loading company data:', err);
-        setError('No se pudieron cargar los datos de la empresa');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCompanyData();
-  }, []);
-
-  /**
-   * Guardar los datos de la empresa
-   * @param {Object} data - Datos de la empresa a guardar
-   */
-  const handleSave = async (companyDataToSave) => {
-    try {
-      setSaveStatus({ success: false, error: null, loading: true });
-      
-      // Enviar los datos directamente (con objeto seo anidado) al servicio
-      await companyInfoService.saveCompanyInfo(companyDataToSave); 
-      
-      // Actualizar datos locales con la estructura ANIDADA que usa el componente
-      setCompanyData(companyDataToSave); // Usar el mismo objeto que se guardó
-      
-      // Mostrar mensaje de éxito
-      setSaveStatus({ 
-        success: 'Los datos de la empresa se han guardado correctamente', 
-        error: null, 
-        loading: false 
-      });
-      
-      // Ocultar mensaje después de 5 segundos
-      setTimeout(() => {
-        setSaveStatus(prev => ({ ...prev, success: false }));
-      }, 5000);
-      
-    } catch (err) {
-      console.error('Error saving company data:', err);
-      setSaveStatus({ 
-        success: false, 
-        error: 'No se pudieron guardar los datos de la empresa: ' + (err.message || 'Error desconocido'), 
-        loading: false 
-      });
-    }
-  };
-
-  /**
-   * Manejar cambios en secciones específicas y actualizar datos
-   */
-  const handleSectionChange = (section) => {
-    setActiveSection(section);
-  };
-
-  /**
-   * Actualizar una sección específica de los datos
-   * Handles saving social links directly to Firestore when updated.
-   */
-  const handleSectionUpdate = async (sectionName, sectionData) => {
-    if (!companyData) return;
-
-    // If the updated section is socialMedia, save directly to Firestore
-    if (sectionName === 'socialMedia') {
-      // Assuming sectionData from SocialMediaSection is { items: [...] }
-      const linksToSave = sectionData.items || []; 
-      try {
-        // Attempt to save to Firestore first
-        const success = await updateSocialMediaLinks(linksToSave);
-        if (success) {
-          // If Firestore save is successful, update local state
-          setCompanyData(prevData => ({
-            ...prevData,
-            socialMedia: { items: linksToSave } // Update with the successfully saved links
-          }));
-           // Optionally show temporary success feedback specific to social links
-           console.log("Social links updated in Firestore and local state.");
-        } else {
-           // Handle Firestore save failure (e.g., show an error message)
-           console.error("Failed to save social links to Firestore.");
-           // Maybe set an error state specific to this section?
-        }
-      } catch (error) {
-        console.error("Error calling updateSocialMediaLinks:", error);
-        // Handle unexpected errors during the save attempt
-      }
-    } else {
-      // For all other sections, just update local state (will be saved with main Save button)
-      setCompanyData(prevData => ({
-        ...prevData,
-        [sectionName]: sectionData // Original logic for other sections
-      }));
-    }
-  };
-
-  /**
-   * Ocultar mensajes de retroalimentación
-   */
-  const handleDismissFeedback = () => {
-    setSaveStatus({
-      success: false,
-      error: null,
-      loading: false
-    });
-  };
+  const {
+    companyData,
+    loading,
+    error,
+    activeSection,
+    saveStatus,
+    handleSave,
+    handleSectionChange,
+    handleSectionUpdate,
+    handleDismissFeedback
+  } = useCompanyInfoEditor();
 
   const renderContent = () => {
     if (loading) {
@@ -191,8 +68,8 @@ const CompanyInfoPage = () => {
     return (
       <div className="bg-white rounded-3 shadow-sm">
         <NavigationTabs 
-          activeSection={activeSection} 
-          onSectionChange={handleSectionChange} 
+          activeSection={activeSection}
+          onSectionChange={handleSectionChange}
           tabs={[
             { id: 'general', label: 'General' },
             { id: 'contact', label: 'Contacto' },
@@ -204,7 +81,6 @@ const CompanyInfoPage = () => {
         />
         
         <div className="p-4">
-          {/* Mostrar mensaje de guardado si existe */}
           {(saveStatus.success || saveStatus.error) && (
             <div className="mb-4">
               <SaveFeedback 
@@ -215,39 +91,38 @@ const CompanyInfoPage = () => {
             </div>
           )}
           
-          {/* Secciones */}
           <div className="tab-content">
             {activeSection === 'general' && (
               <GeneralSection 
-                data={companyData} 
+                data={companyData}
                 onUpdate={(data) => handleSectionUpdate('general', data)}
               />
             )}
             
             {activeSection === 'contact' && (
               <ContactSection 
-                data={companyData.contact || {}} 
+                data={companyData.contact || {}}
                 onUpdate={(data) => handleSectionUpdate('contact', data)}
               />
             )}
             
             {activeSection === 'hours' && (
               <BusinessHoursSection 
-                data={companyData.businessHours || []} 
+                data={companyData.businessHours || []}
                 onUpdate={(data) => handleSectionUpdate('businessHours', data)}
               />
             )}
             
             {activeSection === 'social' && (
               <SocialMediaSection 
-                data={companyData.socialMedia || { items: [] }} 
+                data={companyData.socialMedia || { items: [] }}
                 onUpdate={(data) => handleSectionUpdate('socialMedia', data)}
               />
             )}
             
             {activeSection === 'payment' && (
               <PaymentSection 
-                data={companyData.paymentConfig || {}} 
+                data={companyData.paymentConfig || {}}
                 onUpdate={(data) => handleSectionUpdate('paymentConfig', data)}
               />
             )}
@@ -260,7 +135,6 @@ const CompanyInfoPage = () => {
             )}
           </div>
           
-          {/* Botones de acción */}
           <div className="mt-4 pt-3 d-flex justify-content-end gap-2">
             <button 
               className="btn btn-outline-secondary px-4"
@@ -292,7 +166,6 @@ const CompanyInfoPage = () => {
 
   return (
     <div className="container-fluid py-4">
-      {/* Encabezado de la página */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="page-title fw-medium mb-0">
           Datos de la Empresa
