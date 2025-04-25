@@ -2,13 +2,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux'; // Import Redux hooks
 import { HeroSection } from '../../public/components/home-page';
 import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMessage} from '../features/shop/index.js';
-
 import { heroImages } from '../../../shared/constants';
-// Remove unused service imports
-// import { getCollectionImages } from '../../admin/services/collectionsService';
-// import { getShopPageContent } from '../../admin/components/content/shop/shopPageService.js'
-// Remove unused hook import
-// import { useProducts } from '../hooks/index.js'
 import { useModal } from '../hooks/index.js' 
 import { useCart } from '../features/cart/hooks/useCart.js'
 

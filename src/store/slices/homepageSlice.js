@@ -1,7 +1,5 @@
-// src/store/slices/homepageSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { createSelector } from '@reduxjs/toolkit'; // Asegurarse de que esté importado si se usan selectores derivados aquí
-// Ajusta las rutas a tus servicios según la ubicación de este slice
+import { createSelector } from '@reduxjs/toolkit'; 
 import { ContentService } from '../../modules/admin/services/contentService';
 import { getFeaturedProductsForHome } from '../../modules/admin/services/productService';
 import { getFeaturedCategoriesForHome } from '../../modules/admin/services/categoryService';
@@ -134,7 +132,7 @@ const homepageSlice = createSlice({
   name: 'homepage', // Nombre del slice (usado en las actions types)
   initialState, // Estado inicial definido arriba
   reducers: {
-    // Aquí irían reducers síncronos si fueran necesarios
+    // Aquí se colocaran reducers síncronos si fueran necesarios
     // Ejemplo: setHomepageTheme: (state, action) => { state.theme = action.payload; }
   },
   // Manejo de las acciones asíncronas del thunk (pending, fulfilled, rejected)
@@ -182,7 +180,6 @@ const homepageSlice = createSlice({
 export default homepageSlice.reducer;
 
 // Exportar selectores para acceder fácilmente al estado desde los componentes
-// (Se pueden mover a un archivo separado de selectores si la lógica crece)
 export const selectHomepageData = (state) => state.homepage; // Selector general para todo el estado del slice
 export const selectHomepagePageData = (state) => state.homepage.pageData;
 export const selectHomepageFeaturedProducts = (state) => state.homepage.featuredProducts;

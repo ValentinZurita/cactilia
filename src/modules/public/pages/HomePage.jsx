@@ -6,10 +6,6 @@ import '../../../styles/global.css'
 import './../../public/styles/homepage.css'
 import './../../public/styles/skeletons.css'
 import { heroImages } from '../../../shared/constants/images.js'
-import { getCollectionImages } from '../../admin/services/collectionsService.js'
-import { ContentService } from '../../admin/services/contentService.js'
-import { getFeaturedProductsForHome } from '../../admin/services/productService.js'
-import { getFeaturedCategoriesForHome } from '../../admin/services/categoryService.js'
 import { 
   fetchHomepageData, 
   selectHomepagePageData,

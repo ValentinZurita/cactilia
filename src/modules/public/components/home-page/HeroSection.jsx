@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Logo } from '../../../../shared/components/logo/Logo.jsx';
-// Ya no necesita getCollectionImages ni heroImages (vendrán de props)
-// import { heroImages } from '../../../../shared/constants/images.js';
-// import { getCollectionImages } from '../../../admin/services/collectionsService.js';
 import '../../../../styles/global.css';
 import './../../styles/homepage.css';
 
