@@ -9,6 +9,7 @@ import { OrderTotals } from '../../shop/features/order/component/index.js'
 import { OrderAddressCard } from '../../shop/features/order/component/index.js'
 import { OrderPaymentInfo } from '../../shop/features/order/component/index.js'
 import { OrderNotes } from '../../shop/features/order/component/index.js'
+import { formatDate } from '../../../utils/formatting/formatters';
 
 // Import components from shop module
 
@@ -23,7 +24,6 @@ export const OrderDetailPage = () => {
     orderLoading,
     orderError,
     fetchOrderById,
-    formatOrderDate,
     mapOrderStatusToDisplay
   } = useOrders();
 
@@ -79,7 +79,7 @@ export const OrderDetailPage = () => {
         {/* Información general de la orden */}
         <OrderOverview
           orderId={order.id}
-          orderDate={formatOrderDate(order.createdAt)}
+          orderDate={formatDate(order.createdAt)}
           status={order.status}
           createdAt={order.createdAt}
         />

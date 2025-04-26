@@ -31,6 +31,7 @@ export const UserRoutes = () => {
     // Agregamos un fallback para que se muestre un spinner mientras se carga la página
     <Suspense fallback={<Spinner />}>
 
+      {/* Rutas */}
       <Routes>
 
         {/* Checkout requiere autenticación */}
@@ -64,11 +65,15 @@ export const UserRoutes = () => {
 
           {/* Cualquier ruta dentro de /profile que no exista -> /profile/orders */}
           <Route path="*" element={<Navigate to="orders" replace />} />
+
         </Route>
 
         {/* Cualquier ruta fuera de /checkout o /profile (en este contexto) */}
         <Route path="*" element={<Navigate to="/" />} />
+
       </Routes>
+
     </Suspense>
+
   );
 };

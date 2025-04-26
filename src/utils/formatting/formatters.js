@@ -1,66 +1,128 @@
 /**
- * Utilidades de formateo para fechas, moneda y texto
+ * ============================================
+ *            UTILIDADES DE FORMATEO
+ * ============================================
+ * Este archivo contiene funciones de utilidad para
+ * formatear fechas, moneda y texto.
  */
 
+// --------------------------------------------
+//          FORMATEO DE FECHAS
+// --------------------------------------------
+
 /**
- * Formatea una fecha al formato local
- * @param {Date|string|number} date - La fecha a formatear
- * @param {string} locale - El locale a usar (default: 'es-MX')
- * @param {Object} options - Opciones de formato
- * @returns {string} La fecha formateada
+ * Formatea una fecha al formato local.
+ * Maneja objetos Date, strings, números y Timestamps de Firestore.
+ * 
+ * @param {Date|string|number|object} date - La fecha a formatear.
+ * @param {string} locale - El locale a usar (ej. 'es-MX', 'en-US'). Default: 'es-MX'.
+ * @param {Object} options - Opciones de formato adicionales para Intl.DateTimeFormat.
+ * @returns {string} La fecha formateada (DD/MM/YYYY por defecto) o un string vacío si la fecha es inválida o hay error.
  */
 export const formatDate = (date, locale = 'es-MX', options = {}) => {
-  const defaultOptions = { 
-    day: '2-digit', 
-    month: '2-digit', 
-    year: 'numeric',
-    ...options
-  };
-  
-  const dateObj = date instanceof Date ? date : new Date(date);
-  return new Intl.DateTimeFormat(locale, defaultOptions).format(dateObj);
+  try {
+    const defaultOptions = { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      ...options
+    };
+    
+    let dateObj;
+    // Verificar si es un Timestamp de Firestore (tiene el método .toDate)
+    if (date && typeof date.toDate === 'function') {
+      dateObj = date.toDate(); 
+    } else if (date instanceof Date) {
+      // Si ya es un objeto Date
+      dateObj = date;
+    } else {
+      // Intentar parsear otros tipos (string, número)
+      dateObj = new Date(date);
+    }
+
+    // Verificar si el objeto Date resultante es válido
+    if (isNaN(dateObj.getTime())) {
+      console.error('[formatDate] Valor de fecha inválido proporcionado:', date);
+      return ''; // Devolver cadena vacía para fechas inválidas
+    }
+
+    // Formatear la fecha válida
+    return new Intl.DateTimeFormat(locale, defaultOptions).format(dateObj);
+
+  } catch (error) {
+    console.error('[formatDate] Error formateando fecha:', error, 'Input:', date);
+    return ''; // Devolver cadena vacía en caso de error
+  }
 };
 
+// --------------------------------------------
+//          FORMATEO DE MONEDA
+// --------------------------------------------
+
 /**
- * Formatea un valor a formato de moneda
- * @param {number} amount - El monto a formatear
- * @param {string} currency - El código de moneda (default: 'MXN')
- * @param {string} locale - El locale a usar (default: 'es-MX')
- * @returns {string} El monto formateado como moneda
+ * Formatea un valor numérico a formato de moneda local.
+ * 
+ * @param {number} amount - El monto a formatear.
+ * @param {string} currency - El código de moneda (ISO 4217). Default: 'MXN'.
+ * @param {string} locale - El locale a usar (ej. 'es-MX', 'en-US'). Default: 'es-MX'.
+ * @returns {string} El monto formateado como moneda (ej. '$1,234.56').
  */
 export const formatCurrency = (amount, currency = 'MXN', locale = 'es-MX') => {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
+  // Asegurarse de que el monto sea un número
+  const numericAmount = Number(amount);
+  if (isNaN(numericAmount)) {
+    console.error('[formatCurrency] Valor no numérico proporcionado:', amount);
+    return ''; // Devolver cadena vacía si no es un número
+  }
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(numericAmount);
+  } catch (error) {
+    console.error('[formatCurrency] Error formateando moneda:', error, 'Input:', amount);
+    return ''; // Devolver cadena vacía en caso de error
+  }
 };
 
+// --------------------------------------------
+//          MANIPULACIÓN DE TEXTO
+// --------------------------------------------
+
 /**
- * Trunca un texto a una longitud específica y agrega puntos suspensivos
- * @param {string} text - El texto a truncar
- * @param {number} maxLength - La longitud máxima (default: 100)
- * @returns {string} El texto truncado
+ * Trunca un texto a una longitud máxima especificada y agrega puntos suspensivos.
+ * 
+ * @param {string} text - El texto a truncar.
+ * @param {number} maxLength - La longitud máxima permitida. Default: 100.
+ * @returns {string} El texto truncado con '...' al final si excede maxLength, o el texto original.
  */
 export const truncateText = (text, maxLength = 100) => {
-  if (!text || text.length <= maxLength) return text;
+  if (!text || typeof text !== 'string' || text.length <= maxLength) {
+    return text || ''; // Devuelve el texto o vacío si es null/undefined
+  }
   return text.substring(0, maxLength) + '...';
 };
 
 /**
- * Convierte un string a formato slug (URL amigable)
- * @param {string} text - El texto a convertir
- * @returns {string} El slug generado
+ * Convierte un string a formato "slug" (ideal para URLs amigables).
+ * Ej: "Texto con Acentos y Ñ" -> "texto-con-acentos-y-n"
+ * 
+ * @param {string} text - El texto a convertir.
+ * @returns {string} El slug generado.
  */
 export const slugify = (text) => {
+  if (!text || typeof text !== 'string') return '';
+  
   return text
-    .toString()
-    .normalize('NFD') // Normalizar acentos
-    .replace(/[\u0300-\u036f]/g, '') // Remover diacríticos
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-') // Espacios a guiones
-    .replace(/[^\w-]+/g, '') // Remover caracteres especiales
-    .replace(/--+/g, '-'); // Reemplazar múltiples guiones con uno solo
+    .toString() // Asegurar que sea string
+    .normalize('NFD') // Separar caracteres base de diacríticos (acentos, etc.)
+    .replace(/[\u0300-\u036f]/g, '') // Remover los diacríticos
+    .toLowerCase() // Convertir a minúsculas
+    .trim() // Quitar espacios al inicio y final
+    .replace(/\s+/g, '-') // Reemplazar espacios (uno o más) por un solo guion
+    .replace(/[^\w-]+/g, '') // Remover caracteres que no sean alfanuméricos o guion
+    .replace(/--+/g, '-'); // Reemplazar múltiples guiones seguidos por uno solo
 };
