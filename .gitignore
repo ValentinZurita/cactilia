@@ -66,3 +66,6 @@ docs/
 # Temporary ignores (Review later)
 /src/modules/checkout/NewShipping2/
 /src/modules/checkout/NewShipping3/
+
+# Ignore tests directory
+/tests/
