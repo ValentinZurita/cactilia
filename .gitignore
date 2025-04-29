@@ -35,6 +35,7 @@ functions/proyecto-terminal-74824-firebase-adminsdk-8hrfa-fa8eb6620c.json
 .DS_Store
 .junie/
 .github/
+.firebase/
 .vscode/
 *.suo
 *.ntvs*
