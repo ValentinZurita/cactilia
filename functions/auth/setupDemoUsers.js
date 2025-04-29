@@ -25,11 +25,17 @@ exports.setupDemoUsers = onCall({ region: "us-central1" }, async (request) => { 
   // --- DATOS DE USUARIOS DEMO HARDCODEADOS ---
   const demoUsers = [
     // uid: "Zf2IzClkhrOjEXPdrvh3vLut9tz1", email: "visitante@demo.com", displayName: "Visitante Demo", role: "user"
-    { uid: "Zf2IzClkhrOjEXPdrvh3vLut9tz1", email: "visitante@demo.com", displayName: "Visitante Demo", role: "user" },
+    //{ uid: "Zf2IzClkhrOjEXPdrvh3vLut9tz1", email: "visitante@demo.com", displayName: "Visitante Demo", role: "user" },
     // uid: "wyVhO0jvJWMhMGgZyNcI6DwL8cp2", email: "admin@demo.com", displayName: "Admin Demo", role: "admin"
-    { uid: "wyVhO0jvJWMhMGgZyNcI6DwL8cp2", email: "admin@demo.com", displayName: "Admin Demo", role: "admin" },
+    //{ uid: "wyVhO0jvJWMhMGgZyNcI6DwL8cp2", email: "admin@demo.com", displayName: "Admin Demo", role: "admin" },
     // uid: "SIjElDECZSgLiGkDtylX8k0X0KE2", email: "superadmin@demo.com", displayName: "Super Admin Demo", role: "superadmin"
-    { uid: "SIjElDECZSgLiGkDtylX8k0X0KE2", email: "superadmin@demo.com", displayName: "Super Admin Demo", role: "superadmin" },
+    //{ uid: "SIjElDECZSgLiGkDtylX8k0X0KE2", email: "superadmin@demo.com", displayName: "Super Admin Demo", role: "superadmin" },
+    
+
+    // Nuevo usuarios
+    { uid: "oSJnzycnbpdJcm7hM6nvCkUa3ST2", email: "superadmin2@demo.com", displayName: "Super Admin 2", role: "superadmin" },
+    { uid: "d46iq2LSfyT8uYyfGudz7WO5S143", email: "superadmin3@demo.com", displayName: "Super Admin 3", role: "superadmin" },
+ 
   ];
   // -----------------------------------------
 

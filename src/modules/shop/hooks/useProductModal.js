@@ -3,35 +3,35 @@ import { useCart } from '../features/cart/hooks/useCart';
 import { useStockValidation } from './useStockValidation';
 
 /**
- * Hook to manage the state and logic for the ProductModal component.
- * @param {object | null} product - The product to display in the modal.
- * @param {boolean} isOpen - Whether the modal is currently open.
- * @param {Function} onClose - Function to close the modal.
- * @returns {object} - State values and handlers for the modal component.
+ * Hook para gestionar el estado y la lógica del componente ProductModal.
+ * @param {object | null} product - El producto a mostrar en el modal.
+ * @param {boolean} isOpen - Indica si el modal está abierto actualmente.
+ * @param {Function} onClose - Función para cerrar el modal.
+ * @returns {object} - Valores de estado y manejadores para el componente modal.
  */
 export const useProductModal = (product, isOpen, onClose) => {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [stockError, setStockError] = useState(null);
-  const [isOutOfStockState, setIsOutOfStockState] = useState(false); // Internal state for stock status
+  const [isOutOfStockState, setIsOutOfStockState] = useState(false); // Estado interno para el estado de stock
 
   const { addToCart, isInCart, getItem } = useCart();
   const { validateStock } = useStockValidation(getItem);
 
-  // Derived state: Calculate available stock considering cart quantity
-  const productStock = product?.stock ?? 0; // Use nullish coalescing for safety
+  // Estado derivado: Calcula el stock disponible considerando la cantidad en el carrito
+  const productStock = product?.stock ?? 0; // Usar nullish coalescing por seguridad
   const cartQuantity = isInCart(product?.id) ? getItem(product?.id)?.quantity ?? 0 : 0;
   const availableStock = Math.max(productStock - cartQuantity, 0);
   const isOutOfStock = isOutOfStockState || availableStock <= 0;
 
-  // Reset state and check initial stock when modal opens or product changes
+  // Resetear estado y comprobar stock inicial cuando se abre el modal o cambia el producto
   useEffect(() => {
     const checkInitialStock = async () => {
       if (isOpen && product) {
         setAdded(false);
         setStockError(null);
         
-        // Re-evaluate stock status based on potentially updated product/cart data
+        // Re-evaluar el estado de stock basado en datos potencialmente actualizados del producto/carrito
         const currentCartQty = getItem(product.id)?.quantity || 0;
         const currentAvailable = Math.max((product.stock ?? 0) - currentCartQty, 0);
 
@@ -40,10 +40,10 @@ export const useProductModal = (product, isOpen, onClose) => {
           setQuantity(0); 
         } else {
           setIsOutOfStockState(false);
-          setQuantity(1); // Reset to 1 if stock is available
+          setQuantity(1); // Resetear a 1 si hay stock disponible
         }
       } else {
-        // Reset when closing
+        // Resetear al cerrar
         setQuantity(1);
         setAdded(false);
         setStockError(null);
@@ -52,11 +52,11 @@ export const useProductModal = (product, isOpen, onClose) => {
     };
 
     checkInitialStock();
-    // Dependencies: isOpen, product (specifically product.id and product.stock could be used if stable)
-    // getItem is included as cart state might influence initial availability
+    // Dependencias: isOpen, product (específicamente product.id y product.stock podrían usarse si son estables)
+    // getItem se incluye ya que el estado del carrito podría influir en la disponibilidad inicial
   }, [isOpen, product, getItem]); 
 
-  // --- Event Handlers ---
+  // --- Manejadores de Eventos ---
   const handleIncrement = useCallback(async () => {
     if (!product) return;
     const nextQty = quantity + 1;
@@ -67,15 +67,15 @@ export const useProductModal = (product, isOpen, onClose) => {
       setStockError(null);
     } else {
       setStockError(result.error || 'No se pudo incrementar la cantidad.');
-      // Adjust quantity if validation returned a max possible value
+      // Ajustar cantidad si la validación devolvió un valor máximo posible
       if (typeof result.quantity === 'number') {
          setQuantity(result.quantity);
-         // If adjusted quantity is 0, explicitly mark as out of stock
+         // Si la cantidad ajustada es 0, marcar explícitamente como sin stock
          if(result.quantity <= 0) {
             setIsOutOfStockState(true);
-            setAdded(false); // Reset added state if stock runs out
+            setAdded(false); // Resetear estado 'added' si se acaba el stock
          } else {
-           // Ensure we don't incorrectly flag as out of stock if some quantity is still possible
+           // Asegurar que no marquemos incorrectamente como sin stock si aún es posible alguna cantidad
            setIsOutOfStockState(false); 
          }
       }
@@ -85,8 +85,8 @@ export const useProductModal = (product, isOpen, onClose) => {
   const handleDecrement = useCallback(() => {
     if (quantity > 1) {
       setQuantity(prev => prev - 1);
-      setStockError(null); // Clear error on valid decrement
-      setIsOutOfStockState(false); // Should not be out of stock if decrementing from > 1
+      setStockError(null); // Limpiar error en decremento válido
+      setIsOutOfStockState(false); // No debería estar sin stock si se decrementa desde > 1
     }
   }, [quantity]);
 
@@ -107,13 +107,11 @@ export const useProductModal = (product, isOpen, onClose) => {
     }
 
     try {
-      // Pass true for the `validate` parameter in addToCart ONLY if server-side validation is desired redundantely
-      // Or pass false if client-side validation (`useStockValidation`) is sufficient.
-      // Passing true might be safer but could lead to double validation.
-      const res = await addToCart(product, quantity, false); // Assuming client validation is enough
+      // Pasar true para el parámetro `validate` en addToCart
+      const res = await addToCart(product, quantity, true);
       if (res?.success) {
         setAdded(true);
-        // Close modal after a short delay for user feedback
+        // Cerrar modal después de un breve retraso para feedback al usuario
         const timer = setTimeout(onClose, 1500);
         return () => clearTimeout(timer);
       }
@@ -123,7 +121,7 @@ export const useProductModal = (product, isOpen, onClose) => {
     }
   }, [product, quantity, addToCart, onClose, validateStock]);
 
-  // Calculate total price
+  // Calcular precio total
   const totalPrice = product ? (product.price * quantity).toFixed(2) : '0.00';
 
   return {

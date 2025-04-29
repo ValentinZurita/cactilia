@@ -1,1 +1,24 @@
+# Dependencies
 node_modules/
+
+# Environment variables & Runtime config
+.env*
+!.env.example
+.runtimeconfig.json
+
+# Sensitive keys
+serviceAccountKey.json
+# Añade aquí cualquier otro archivo de clave privada específico de functions/
+
+# Logs
+*.log
+firestore-debug.log*
+*-debug.log
+
+# OS generated files
+.DS_Store
+
+# Build / Cache artifacts
+/lib/
+/dist/
+*.cache
