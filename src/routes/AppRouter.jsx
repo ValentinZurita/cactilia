@@ -4,6 +4,10 @@ import { PublicLayout } from '../layout/PublicLayout'
 import { RequireAuth } from '../modules/auth/components/RequireAuth'
 import { ProfileLayout } from '../modules/user/components/profile/index.js'
 
+// --- Stripe --- ADDED
+import { StripeProvider } from '../contexts/StripeContext.jsx'
+import { Elements } from '@stripe/react-stripe-js'
+
 // Componente de carga
 import { Spinner } from '../shared/components/spinner/Spinner.jsx'
 
@@ -103,11 +107,13 @@ export const AppRouter = () => {
         <Route
           path="checkout"
           element={
-            <RequireAuth>
-              <Suspense fallback={<SuspenseFallback />}>
-                <CheckoutPage />
-              </Suspense>
-            </RequireAuth>
+            <StripeProvider>
+              <RequireAuth>
+                <Suspense fallback={<SuspenseFallback />}>
+                  <CheckoutPage />
+                </Suspense>
+              </RequireAuth>
+            </StripeProvider>
           }
         />
 
@@ -139,9 +145,11 @@ export const AppRouter = () => {
             </Suspense>
           } />
           <Route path="payments" element={
-            <Suspense fallback={<SuspenseFallback />}>
-              <PaymentsPage />
-            </Suspense>
+            <StripeProvider>
+              <Suspense fallback={<SuspenseFallback />}>
+                <PaymentsPage />
+              </Suspense>
+            </StripeProvider>
           } />
           <Route path="settings" element={
             <Suspense fallback={<SuspenseFallback />}>

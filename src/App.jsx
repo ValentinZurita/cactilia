@@ -14,7 +14,7 @@ import { useSiteMetadata } from './shared/hooks/useSiteMetadata.js';
 import { Spinner } from './shared/components/spinner/Spinner.jsx';
 
 // --- Contextos ---
-import { StripeProvider } from './contexts/StripeContext.jsx';
+// import { StripeProvider } from './contexts/StripeContext.jsx'; // REMOVED
 
 // --- Lógica del Store (Redux) ---
 import { loadCartFromFirestore } from './modules/shop/features/cart/store/index.js'; // Asumiendo que mergeCartsOnLogin ya no se usa directamente aquí
@@ -80,14 +80,6 @@ export const App = () => {
 
   // --- Renderizado Principal ---
   return (
-
-    // Proveedor de Contexto de Stripe
-    <StripeProvider>
-
-      {/* Enrutador principal que define las páginas de la aplicación */}
-      <AppRouter />
-
-    </StripeProvider>
-
+    <AppRouter />
   );
 };
