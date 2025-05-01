@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, lazy, Suspense } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { HeroSection, HomeCarousel, HomeSection, ProductCarousel } from '../components/home-page/index.js'
+import { HomeCarousel, HomeSection } from '../components/home-page/index.js'
 import { SkeletonHero, SkeletonCarousel } from '../components/skeletons/index.js'
 import '../../../styles/global.css'
 import './../../public/styles/homepage.css'
@@ -33,6 +33,12 @@ import { openProductModal } from "../../../store/slices/uiSlice.js";
  * - Orden y visibilidad de secciones configurables dinámicamente.
  * - Utiliza Redux (`homepageSlice`) para la obtención y gestión del estado.
  */
+
+// --- Definición de Componentes Lazy ---
+const LazyHeroSection = lazy(() => import('../components/home-page/HeroSection.jsx'));
+const LazyProductCarousel = lazy(() => import('../components/home-page/ProductCarousel.jsx'));
+// HomeCarousel y HomeSection podrían hacerse lazy también si son complejos, pero empezamos con los más probables.
+
 export const HomePage = () => {
   const dispatch = useDispatch()
 
@@ -78,14 +84,16 @@ export const HomePage = () => {
         : [];
 
     return (
-        <HeroSection
-            key="hero"
+      // Envolver con Suspense y usar el componente Lazy
+      <Suspense key="hero-suspense" fallback={<SkeletonHero />}>
+        <LazyHeroSection
             title={sectionConfig.title || 'Bienvenido a Cactilia'}
             subtitle={sectionConfig.subtitle || 'Descubre nuestros productos naturales'}
             ctaText={sectionConfig.ctaText || 'Ver productos'}
             ctaLink={sectionConfig.ctaLink || '/shop'}
             images={heroImagesProcessed.length > 0 ? heroImagesProcessed : [{ id: 'fallback', src: '/public/images/placeholder.jpg', alt: 'Placeholder' }]}
         />
+      </Suspense>
     );
   };
 
@@ -99,10 +107,13 @@ export const HomePage = () => {
             link={sectionConfig.link || '/shop'}
             linkText={sectionConfig.linkText || 'Ver todos los productos'}
         >
-            <ProductCarousel 
+          {/* Envolver con Suspense y usar el componente Lazy */}
+          <Suspense key="fp-carousel-suspense" fallback={<SkeletonCarousel />}>
+            <LazyProductCarousel 
               products={products} 
               onProductClick={handleProductCardClick} 
             />
+          </Suspense>
         </HomeSection>
     );
   };
@@ -142,10 +153,13 @@ export const HomePage = () => {
             link={sectionConfig.link || '/shop'}
             linkText={sectionConfig.linkText || 'Ver todas las categorías'}
         >
-            <ProductCarousel 
+          {/* Envolver con Suspense y usar el componente Lazy */}
+          <Suspense key="fc-carousel-suspense" fallback={<SkeletonCarousel />}>
+            <LazyProductCarousel 
               products={categories} 
               isCategory={true}
             />
+           </Suspense>
         </HomeSection>
     );
   };

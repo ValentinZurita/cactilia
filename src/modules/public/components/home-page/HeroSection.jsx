@@ -22,7 +22,7 @@ import { useImageSlider } from '../../hooks/useImageSlider';
  * @param {number} props.interval - Intervalo de rotación en ms
  * @returns {JSX.Element}
  */
-export const HeroSection = React.memo(({
+const HeroSectionComponent = React.memo(({
                               images,
                               title,
                               subtitle,
@@ -122,4 +122,7 @@ export const HeroSection = React.memo(({
 });
 
 // Add display name for React DevTools
-HeroSection.displayName = 'HeroSection';
+HeroSectionComponent.displayName = 'HeroSection';
+
+// Exportar por defecto
+export default HeroSectionComponent;

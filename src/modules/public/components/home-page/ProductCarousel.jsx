@@ -19,7 +19,7 @@ import '../../styles/homepage.css';
  * @param {boolean} [isCategory=false] - Indica si los elementos son categorías.
  * @param {function} [onProductClick] - Función a ejecutar cuando se hace clic en una tarjeta, recibe el objeto producto/categoría.
  */
-export const ProductCarousel = React.memo(({ products, isCategory = false, onProductClick }) => {
+const ProductCarouselComponent = React.memo(({ products, isCategory = false, onProductClick }) => {
   const navigate = useNavigate();
 
   // --- Optimización con useMemo para displayProducts ---
@@ -150,4 +150,7 @@ export const ProductCarousel = React.memo(({ products, isCategory = false, onPro
   );
 });
 
-ProductCarousel.displayName = 'ProductCarousel';
+ProductCarouselComponent.displayName = 'ProductCarousel';
+
+// Exportar por defecto
+export default ProductCarouselComponent;
