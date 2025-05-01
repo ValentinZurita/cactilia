@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy } from 'react'; // Import React, Suspense, lazy
+import React, { useEffect, Suspense, lazy, useCallback, useMemo } from 'react'; // Import React, Suspense, lazy, useCallback, useMemo
 import { useLocation } from 'react-router-dom'; // Import useLocation
 import { useDispatch, useSelector } from 'react-redux'; // Import Redux hooks
 import { HeroSection } from '../../public/components/home-page';
@@ -99,6 +99,28 @@ export const ShopPage = () => {
   // Cart logic (remains the same)
   const { handleAddToCart } = useCart();
 
+  // --- Memoized Handlers ---
+  const handleProductClick = useCallback((product) => {
+    openModal(product);
+  }, [openModal]); // Dependency: openModal from useModal
+
+  // --- Event Handlers using Redux Actions --- (using useCallback for consistency, though maybe less critical here)
+  const handleSearchChange = useCallback((term) => {
+    dispatch(setSearchTerm(term));
+  }, [dispatch]);
+
+  const handleCategoryChange = useCallback((categoryName) => {
+    dispatch(setSelectedCategory(categoryName)); 
+  }, [dispatch]);
+
+  const handlePriceOrderChange = useCallback((order) => {
+    dispatch(setPriceOrder(order));
+  }, [dispatch]);
+
+  const handlePageChange = useCallback((page) => {
+    dispatch(setCurrentPage(page));
+  }, [dispatch]);
+
   // Fetch initial data on component mount
   useEffect(() => {
     dispatch(fetchInitialShopData());
@@ -113,29 +135,13 @@ export const ShopPage = () => {
     if (location.state?.preselectCategoryName) {
         window.history.replaceState({}, document.title);
     }
-  }, [location.state, dispatch]); 
+  }, [location.state, dispatch, filters.selectedCategory]); // Added filters.selectedCategory dependency if used inside
 
-  // --- Event Handlers using Redux Actions ---
-  const handleSearchChange = (term) => {
-    dispatch(setSearchTerm(term));
-  };
-
-  const handleCategoryChange = (categoryName) => {
-    dispatch(setSelectedCategory(categoryName)); 
-  };
-
-  const handlePriceOrderChange = (order) => {
-    dispatch(setPriceOrder(order));
-  };
-
-  const handlePageChange = (page) => {
-    dispatch(setCurrentPage(page));
-  };
-
-  // --- Render Logic ---
+  // --- Render Logic --- 
   
   // Function to prepare banner props dynamically
-  const getBannerProps = () => {
+  // Let's memoize the result of getBannerProps
+  const bannerProps = useMemo(() => {
     let imagesToShow = heroImages; // Default fallback
     const title = bannerConfig?.title || "Tienda de Cactilia";
     const subtitle = bannerConfig?.subtitle || "Encuentra productos frescos y naturales";
@@ -147,17 +153,14 @@ export const ShopPage = () => {
 
     if (bannerConfig) {
       if (bannerConfig.useCollection && bannerCollectionImages.length > 0) {
-         // Use collection images, prepare array of objects { id, src, alt }
          imagesToShow = bannerCollectionImages
           .map(imgData => ({
               id: imgData.id || `banner-img-${Math.random()}`,
               src: getImageUrlBySize(imgData, desiredSize),
               alt: imgData.alt || bannerConfig.title || 'Banner Image'
           }))
-          .filter(img => img.src); // Filter out entries where URL generation failed
+          .filter(img => img.src);
       } else if (bannerConfig.backgroundImage) {
-         // Use single background image (no resizing needed here)
-         // Create an object structure even for single image
          imagesToShow = [{
              id: 'single-banner-img',
              src: bannerConfig.backgroundImage,
@@ -165,7 +168,6 @@ export const ShopPage = () => {
          }];
       }
     }
-    // Ensure there's always at least a fallback image
     if (!imagesToShow || imagesToShow.length === 0) {
       imagesToShow = heroImages;
     }
@@ -178,11 +180,10 @@ export const ShopPage = () => {
       showSubtitle,
       height,
       autoRotate,
-      showButton: false, // Shop banner typically doesn't have a main CTA button
+      showButton: false,
     };
-  };
-
-  const bannerProps = getBannerProps();
+    // Dependencies for banner props calculation
+  }, [bannerConfig, bannerCollectionImages, heroImages]); 
 
   return (
     <>
@@ -192,16 +193,16 @@ export const ShopPage = () => {
       {/* SearchBar - Pass current filter value and handler */}
       <SearchBar 
         searchTerm={filters.searchTerm} 
-        setSearchTerm={handleSearchChange} 
+        setSearchTerm={handleSearchChange} // Pass memoized handler
       />
 
       {/* FilterBar - Pass current filter values and handlers */}
       <FilterBar
         selectedCategory={filters.selectedCategory} 
-        setSelectedCategory={handleCategoryChange} 
+        setSelectedCategory={handleCategoryChange} // Pass memoized handler
         priceOrder={filters.priceOrder}
-        setPriceOrder={handlePriceOrderChange} 
-        categories={categories} // Pass formatted categories from selector
+        setPriceOrder={handlePriceOrderChange} // Pass memoized handler
+        categories={categories} 
       />
 
       {/* StatusMessage - Uses Redux state */}
@@ -210,12 +211,13 @@ export const ShopPage = () => {
       {/* ProductList & Pagination - Use Redux state */}
       {!isLoading && !error && (
         <>
-          <ProductList products={products} onProductClick={openModal} />
+          {/* Pass the memoized handleProductClick callback */}
+          <ProductList products={products} onProductClick={handleProductClick} /> 
           {totalPages > 1 && (
              <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onPageChange={handlePageChange} 
+                onPageChange={handlePageChange} // Pass memoized handler
              />
           )}
         </>
