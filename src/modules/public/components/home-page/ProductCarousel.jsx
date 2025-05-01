@@ -130,5 +130,4 @@ export const ProductCarousel = React.memo(({ products, isCategory = false, onPro
   );
 });
 
-// Optional: Add display name
 ProductCarousel.displayName = 'ProductCarousel';
