@@ -6,6 +6,7 @@ import { Routes, Route } from "react-router-dom";
 import { PublicLayout } from '../../../layout/PublicLayout.jsx';
 import { RequireAuth } from '../../auth/components/RequireAuth.jsx'; // Componente para proteger rutas
 import { ProfileLayout } from '../../user/components/profile/index.js'; // Layout específico para el perfil
+import { PublicLayoutSkeleton } from "../../../layout/PublicLayoutSkeleton.jsx"; // Skeleton para el layout público
 
 // --- Carga Diferida (Lazy Loading) de Componentes --- 
 // Estas páginas/componentes se cargarán solo cuando sean necesarios.
@@ -24,11 +25,6 @@ const AddressesPageLazy = lazy(() => import('../../user/pages/AddressesPage'));
 const PaymentsPageLazy = lazy(() => import('../../user/pages/PaymentsPage'));
 const SettingsPageLazy = lazy(() => import('../../user/pages/SettingsPage'));
 
-// --- Componente Fallback para Suspense ---
-// Se muestra mientras los componentes lazy se están cargando.
-// TODO: Reemplazar por un componente Skeleton/Spinner más elaborado.
-const LoadingFallback = () => <div>Cargando...</div>; 
-
 /**
  * Componente que define las rutas principales accesibles bajo el PublicLayout.
  * Incluye rutas públicas, de tienda, autenticación y el perfil de usuario protegido.
@@ -37,7 +33,8 @@ const LoadingFallback = () => <div>Cargando...</div>;
 export const PublicRoutes = () => {
   return (
     // Suspense envuelve las rutas para manejar la carga diferida
-    <Suspense fallback={<LoadingFallback />}>
+    // Usa PublicLayoutSkeleton como fallback visual durante la carga de la ruta
+    <Suspense fallback={<PublicLayoutSkeleton />}>
       <Routes>
         {/* Ruta base que aplica el Layout Público a todas las rutas anidadas */}
         <Route element={<PublicLayout />}>
@@ -55,6 +52,7 @@ export const PublicRoutes = () => {
           {/* RequireAuth asegura que solo usuarios autenticados accedan */}
           {/* ProfileLayout aplica el diseño específico del perfil */}
           <Route path="/profile" element={<RequireAuth><ProfileLayout /></RequireAuth>}>
+            
             {/* Sub-rutas dentro del perfil de usuario */}
             <Route index element={<OverviewPageLazy />} /> {/* Ruta índice por defecto */}
             <Route path="overview" element={<OverviewPageLazy />} />
@@ -62,6 +60,7 @@ export const PublicRoutes = () => {
             <Route path="addresses" element={<AddressesPageLazy />} />
             <Route path="payments" element={<PaymentsPageLazy />} />
             <Route path="settings" element={<SettingsPageLazy />} />
+            
           </Route>
         
         </Route> {/* Fin de Ruta con PublicLayout */}
