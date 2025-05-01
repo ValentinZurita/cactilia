@@ -46,10 +46,10 @@ export const HomePage = () => {
   // ---------------------- EFECTOS ----------------------
   // Carga los datos al montar el componente si no están ya cargando o cargados.
   useEffect(() => {
-    if (!isLoading && !pageData && !error) { // Solo hace fetch si está inactivo y sin datos/error
+    if (!isLoading && !pageData && !error) { 
       dispatch(fetchHomepageData())
     }
-    // Dependencias aseguran que el fetch solo ocurra cuando sea necesario
+    // Restore original dependencies
   }, [dispatch, isLoading, pageData, error]) 
 
   // --- Función para manejar clic en tarjeta de producto/categoría ---

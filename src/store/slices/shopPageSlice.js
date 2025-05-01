@@ -1,85 +1,91 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { createSelector } from '@reduxjs/toolkit';
-// Import product and category services
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
+// Servicios para obtener datos de Firestore
 import { getProducts } from '../../modules/admin/services/productService.js'; 
 import { getCategories } from '../../modules/admin/services/categoryService.js';
-import { getShopPageContent } from '../../modules/admin/components/content/shop/shopPageService.js'; // Import service for banner content
-import { getCollectionImages } from '../../modules/admin/services/collectionsService.js'; // Import service for collection images
+import { getShopPageContent } from '../../modules/admin/components/content/shop/shopPageService.js'; // Contenido de la página de tienda (ej. banner)
+import { getCollectionImages } from '../../modules/admin/services/collectionsService.js'; // Imágenes de colecciones (para banner)
 
-// --- Initial State ---
+// --- Estado Inicial del Slice ---
 const initialState = {
-  // Store all active products fetched initially
+  // Almacena TODOS los productos activos obtenidos inicialmente
   allProducts: [], 
-  // Store categories map {id: name}
+  // Mapa de categorías { id: nombre } para referencia rápida
   categoriesMap: {},
+  // Filtros aplicados actualmente
   filters: {
     searchTerm: '',
-    selectedCategory: null, // Use null for 'all'
-    priceOrder: '', // 'asc', 'desc', ''
+    selectedCategory: null, // null o string vacío significa 'todas'
+    priceOrder: '', // Valores posibles: 'Destacados', 'Menor a Mayor', 'Mayor a Menor', ''
   },
-  // Store raw categories array
+  // Almacena el array original de objetos de categoría
   categories: [], 
+  // Estado de la paginación
   pagination: {
     currentPage: 1,
     pageSize: 12, 
-    // totalPages & totalProducts will be derived in selectors or updated after filtering
-    // totalPages: 1, 
-    // totalProducts: 0,
   },
+  // Estado de carga para las peticiones asíncronas
   isLoading: false,
+  // Posible error durante la carga
   error: null,
-  lastFetchTimestamp: null, // For simple time-based cache validation
-  // Add state for banner
+  // Timestamp de la última carga exitosa para caché simple
+  lastFetchTimestamp: null,
+  // Estado específico para el banner de la tienda
   bannerConfig: null,
   bannerCollectionImages: [], 
 };
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+// Tiempo de vida del caché (5 minutos)
+const CACHE_TTL = 5 * 60 * 1000; 
 
-// --- Thunks ---
+// --- Thunks (Acciones Asíncronas) ---
 
-// Thunk to fetch initial products and categories if not cached or cache expired
+/**
+ * Thunk para cargar los datos iniciales de la tienda (productos, categorías, banner).
+ * Usa un caché simple basado en tiempo para evitar cargas innecesarias.
+ */
 export const fetchInitialShopData = createAsyncThunk(
   'shopPage/fetchInitialData',
   async (_, { getState, rejectWithValue }) => {
     const { lastFetchTimestamp, allProducts, categories, bannerConfig } = getState().shopPage;
 
-    // Basic time-based cache check (include bannerConfig check)
+    // Comprobación del caché simple basado en tiempo y existencia de datos clave
     if (lastFetchTimestamp && (Date.now() - lastFetchTimestamp < CACHE_TTL) && allProducts.length > 0 && categories.length > 0 && bannerConfig) {
-      console.log('Shop data is fresh in store, skipping fetch.');
-      return { skipped: true };
+      console.log('Datos de tienda frescos en el store, omitiendo fetch.');
+      return { skipped: true }; // Indica que se omitió el fetch
     }
 
-    console.log('Fetching initial shop data (products, categories, banner)...');
+    console.log('Obteniendo datos iniciales de la tienda (productos, categorías, banner)...');
     try {
-      // Fetch products, categories, and banner config in parallel
+      // Ejecutar peticiones en paralelo para eficiencia
       const results = await Promise.allSettled([
         getProducts(),
         getCategories(),
-        getShopPageContent('published') // Fetch banner config
+        getShopPageContent('published') // Obtener configuración del banner publicado
       ]);
 
       const productsResult = results[0];
       const categoriesResult = results[1];
       const bannerConfigResult = results[2];
 
-      // --- Process Products ---
+      // --- Procesar Productos ---
       if (productsResult.status === 'rejected' || !productsResult.value?.ok) {
-        throw new Error(productsResult.reason?.message || productsResult.value?.error || 'Failed to fetch products');
+        throw new Error(productsResult.reason?.message || productsResult.value?.error || 'Error al obtener productos');
       }
       const productsData = productsResult.value.data;
 
-      // --- Process Categories ---
+      // --- Procesar Categorías ---
       if (categoriesResult.status === 'rejected' || !categoriesResult.value?.ok) {
-        throw new Error(categoriesResult.reason?.message || categoriesResult.value?.error || 'Failed to fetch categories');
+        throw new Error(categoriesResult.reason?.message || categoriesResult.value?.error || 'Error al obtener categorías');
       }
       const categoriesData = categoriesResult.value.data;
+      // Crear mapa ID -> Nombre para facilitar la asignación a productos
       const categoriesMap = categoriesData.reduce((acc, category) => {
         acc[category.id] = category.name;
         return acc;
       }, {});
 
-      // Filter active products and add category name
+      // Filtrar productos activos y añadirles el nombre de su categoría
       const activeProducts = productsData
         .filter(prod => prod.active)
         .map(prod => ({
@@ -87,64 +93,64 @@ export const fetchInitialShopData = createAsyncThunk(
           category: prod.categoryId ? categoriesMap[prod.categoryId] : 'Sin categoría',
         }));
 
-      // --- Process Banner Config ---
+      // --- Procesar Configuración del Banner ---
       let fetchedBannerConfig = null;
       let fetchedBannerImages = [];
       if (bannerConfigResult.status === 'fulfilled' && bannerConfigResult.value?.ok && bannerConfigResult.value?.data?.sections?.banner) {
         fetchedBannerConfig = bannerConfigResult.value.data.sections.banner;
-        // Fetch collection images if needed for the banner
+        // Si el banner usa una colección de imágenes, obtenerlas
         if (fetchedBannerConfig.useCollection && fetchedBannerConfig.collectionId) {
           try {
             const imageResult = await getCollectionImages(fetchedBannerConfig.collectionId);
             if (imageResult.ok && Array.isArray(imageResult.data)) {
               fetchedBannerImages = imageResult.data;
             } else {
-               console.warn(`Failed to fetch banner collection images: ${imageResult.error || 'Unknown error'}`);
+               console.warn(`Error al obtener imágenes de la colección del banner: ${imageResult.error || 'Error desconocido'}`);
             }
           } catch (imgError) {
-             console.warn(`Error fetching banner collection images: ${imgError.message}`);
+             console.warn(`Error obteniendo imágenes de colección del banner: ${imgError.message}`);
           }
         }
       } else {
-          console.warn('Failed to fetch banner configuration or banner section not found.');
-          // Handle error or missing banner config if needed (e.g., set a default)
+          console.warn('Error al obtener configuración del banner o sección no encontrada.');
       }
       
-      // TODO: Image caching
+      // TODO: Implementar caché de imágenes si es necesario
 
+      // Devolver todos los datos obtenidos
       return {
         allProducts: activeProducts,
         categories: categoriesData,
         categoriesMap: categoriesMap,
         bannerConfig: fetchedBannerConfig,
         bannerCollectionImages: fetchedBannerImages,
-        timestamp: Date.now(),
+        timestamp: Date.now(), // Guardar timestamp para el caché
       };
 
     } catch (error) {
-      console.error('Error in fetchInitialShopData:', error);
-      return rejectWithValue(error.message);
+      console.error('Error en fetchInitialShopData:', error);
+      return rejectWithValue(error.message); // Rechazar promesa en caso de error
     }
   }
 );
 
-// --- Slice Definition ---
+// --- Definición del Slice con Reducers Síncronos y ExtraReducers para Thunks ---
 const shopPageSlice = createSlice({
   name: 'shopPage',
   initialState,
+  // Reducers: Modifican el estado de forma síncrona en respuesta a acciones
   reducers: {
-    // Actions to update filters and pagination directly
     setSearchTerm: (state, action) => {
       state.filters.searchTerm = action.payload;
-      state.pagination.currentPage = 1;
+      state.pagination.currentPage = 1; // Resetear a página 1 al buscar
     },
     setSelectedCategory: (state, action) => {
       state.filters.selectedCategory = action.payload;
-      state.pagination.currentPage = 1;
+      state.pagination.currentPage = 1; // Resetear a página 1 al cambiar categoría
     },
     setPriceOrder: (state, action) => {
       state.filters.priceOrder = action.payload;
-      state.pagination.currentPage = 1;
+      state.pagination.currentPage = 1; // Resetear a página 1 al cambiar orden
     },
     setCurrentPage: (state, action) => {
       state.pagination.currentPage = action.payload;
@@ -154,24 +160,24 @@ const shopPageSlice = createSlice({
       state.pagination.currentPage = 1;
     }
   },
+  // ExtraReducers: Manejan acciones de otros slices o acciones de createAsyncThunk
   extraReducers: (builder) => {
     builder
-      // Initial Data Fetching
+      // Manejo del ciclo de vida del thunk fetchInitialShopData
       .addCase(fetchInitialShopData.pending, (state, action) => {
-        // Only set loading if fetch wasn't skipped
+        // Poner isLoading a true solo si el fetch no se omitió por caché
         if (!action.meta.arg?.skipped) {
             state.isLoading = true;
             state.error = null;
         }
       })
       .addCase(fetchInitialShopData.fulfilled, (state, action) => {
-        // Always set isLoading to false when fulfilled, regardless of skipped
-        state.isLoading = false; 
+        state.isLoading = false; // Siempre quitar isLoading al finalizar
+        // Si el fetch no se omitió, actualizar el estado con los nuevos datos
         if (!action.payload?.skipped) {
             state.allProducts = action.payload.allProducts;
             state.categories = action.payload.categories;
             state.categoriesMap = action.payload.categoriesMap;
-            // Store banner data
             state.bannerConfig = action.payload.bannerConfig; 
             state.bannerCollectionImages = action.payload.bannerCollectionImages;
             state.lastFetchTimestamp = action.payload.timestamp;
@@ -179,20 +185,18 @@ const shopPageSlice = createSlice({
       })
       .addCase(fetchInitialShopData.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload || 'Failed to fetch initial shop data';
-        state.allProducts = []; // Clear data on error
+        state.error = action.payload || 'Error al cargar datos iniciales de la tienda';
+        // Limpiar datos en caso de error
+        state.allProducts = []; 
         state.categories = [];
         state.categoriesMap = {};
-        // Reset banner data on error too
         state.bannerConfig = null;
         state.bannerCollectionImages = []; 
       });
-      // Note: We removed the separate fetchShopProducts and fetchShopCategories thunks
-      // as the initial fetch gets everything. Filtering/pagination happens in selectors.
   },
 });
 
-// --- Export Actions and Reducer ---
+// --- Exportar Acciones Síncronas y el Reducer Principal ---
 export const {
     setSearchTerm,
     setSelectedCategory,
@@ -203,28 +207,32 @@ export const {
 
 export default shopPageSlice.reducer;
 
-// --- Selectors ---
+// --- Selectores (Funciones para obtener datos específicos del estado) ---
 
-// Basic selectors
+// Selectores básicos
 export const selectShopState = (state) => state.shopPage;
 export const selectAllShopProducts = (state) => state.shopPage.allProducts;
-export const selectShopCategories = (state) => state.shopPage.categories; // Returns array of category objects
+export const selectShopCategories = (state) => state.shopPage.categories; // Devuelve array de objetos categoría {id, name, ...}
 export const selectShopCategoriesMap = (state) => state.shopPage.categoriesMap;
 export const selectShopFilters = (state) => state.shopPage.filters;
 export const selectShopPagination = (state) => state.shopPage.pagination;
 export const selectShopIsLoading = (state) => state.shopPage.isLoading;
 export const selectShopError = (state) => state.shopPage.error;
-// Add selectors for banner data
+// Selectores para el banner
 export const selectShopBannerConfig = (state) => state.shopPage.bannerConfig;
 export const selectShopBannerCollectionImages = (state) => state.shopPage.bannerCollectionImages;
 
-// Derived selectors for filtered and paginated products
+/**
+ * Selector derivado que aplica los filtros (búsqueda, categoría)
+ * y ordenación por precio al listado completo de productos.
+ * Utiliza `createSelector` para memoización (solo recalcula si los inputs cambian).
+ */
 export const selectFilteredProducts = createSelector(
-  [selectAllShopProducts, selectShopFilters],
+  [selectAllShopProducts, selectShopFilters], // Inputs: lista completa y filtros
   (allProducts, filters) => {
-    let filtered = [...allProducts];
+    let filtered = [...allProducts]; // Copiar para no mutar el estado original
 
-    // Filter by search term
+    // Filtrar por término de búsqueda (nombre o categoría)
     if (filters.searchTerm?.trim()) {
       const normalizedSearch = filters.searchTerm.toLowerCase().trim();
       filtered = filtered.filter(prod =>
@@ -233,7 +241,7 @@ export const selectFilteredProducts = createSelector(
       );
     }
 
-    // Filter by category NAME
+    // Filtrar por nombre de categoría
     if (filters.selectedCategory) {
       const selectedCategoryName = filters.selectedCategory.toLowerCase();
       filtered = filtered.filter(prod => 
@@ -241,37 +249,41 @@ export const selectFilteredProducts = createSelector(
       );
     }
 
-    // --- Price Filtering/Sorting --- 
+    // --- Filtrado/Ordenación por Precio/Destacados ---
 
-    // Filter by featured status if selected
+    // Filtrar por destacados si está seleccionado
     if (filters.priceOrder === 'Destacados') {
       filtered = filtered.filter((prod) => {
-        const isFeatured = prod.featured === true;
-        return isFeatured;
+        return prod.featured === true;
       });
     }
 
-    // Then, sort by price if requested (applied to remaining items)
+    // Ordenar por precio si está seleccionado (aplicado a los productos restantes)
     if (filters.priceOrder === 'Menor a Mayor') {
       filtered.sort((a, b) => a.price - b.price);
     } else if (filters.priceOrder === 'Mayor a Menor') {
       filtered.sort((a, b) => b.price - a.price);
     }
 
-    return filtered;
+    return filtered; // Devuelve la lista filtrada y ordenada
   }
 );
 
-// Selector for category options formatted for the Dropdown
+/**
+ * Selector que formatea las opciones de categoría para el Dropdown de FilterBar.
+ * Devuelve un array de nombres de categoría.
+ */
 export const selectCategoryFilterOptions = createSelector(
-  [selectShopCategories], // Input selector: get the raw category objects [{id: '...', name: '...'}, ...]
+  [selectShopCategories], // Input: array de objetos categoría
   (categories) => {
-    // Transform into an array of names for the FilterBar Dropdown
+    // Transforma a un array de nombres
     return categories.map(cat => cat.name);
   }
 );
 
-// Selector for total pages based on filtered products
+/**
+ * Selector que calcula el número total de páginas basado en los productos filtrados.
+ */
 export const selectShopTotalPages = createSelector(
   [selectFilteredProducts, selectShopPagination],
   (filteredProducts, pagination) => {
@@ -279,7 +291,9 @@ export const selectShopTotalPages = createSelector(
   }
 );
 
-// Selector for paginated products based on filtered products and current page
+/**
+ * Selector que obtiene la porción de productos filtrados correspondiente a la página actual.
+ */
 export const selectPaginatedProducts = createSelector(
   [selectFilteredProducts, selectShopPagination],
   (filteredProducts, pagination) => {
@@ -289,7 +303,9 @@ export const selectPaginatedProducts = createSelector(
   }
 );
 
-// Selector for total number of filtered products
+/**
+ * Selector que devuelve el número total de productos después de aplicar filtros.
+ */
 export const selectTotalFilteredProducts = createSelector(
     [selectFilteredProducts],
     (filteredProducts) => filteredProducts.length
