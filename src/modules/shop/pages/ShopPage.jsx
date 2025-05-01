@@ -5,14 +5,12 @@ import { useModal } from '../hooks/index.js'
 import { useCart } from '../features/cart/hooks/useCart.js'
 import { useShopPageLogic } from '../hooks/useShopPageLogic'; // Importar el nuevo hook
 
-// Acciones y Selectores movidos al hook
 
-// Carga diferida del Modal (se mantiene aquí)
+// Carga diferida del Modal
 const ProductModal = lazy(() => 
   import('../features/shop/ProductModal.jsx')
     .then(module => ({ default: module.ProductModal }))
 );
-
 
 // =============================================================================
 // Componente Principal: ShopPage
@@ -20,7 +18,6 @@ const ProductModal = lazy(() =>
 export const ShopPage = () => {
 
   // --- Hooks Personalizados ---
-  // Lógica principal de estado y manejadores relacionados con Redux/filtros
   const {
     products,
     categories,
