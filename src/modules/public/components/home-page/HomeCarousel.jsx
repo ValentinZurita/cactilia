@@ -57,6 +57,7 @@ export const HomeCarousel = React.memo(({ images }) => {
                     src={image.src}
                     className="position-absolute"
                     alt={image.alt || `Imagen ${index + 1}`}
+                    loading="lazy"
                     style={{
                       top: '0',
                       left: '0',

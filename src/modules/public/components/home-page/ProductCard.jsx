@@ -30,8 +30,6 @@ export const ProductCard = React.memo(({
       onCardClick(productData);
     } else if (onCardClick) {
         console.warn('ProductCard clicked with onCardClick but no productData provided.');
-        // Podría llamarse sin argumentos si se decide que es válido
-        // onCardClick(); 
     } 
     // Si no hay onCardClick, no hace nada al hacer clic.
   };
@@ -46,6 +44,7 @@ export const ProductCard = React.memo(({
         <ImageComponent
           src={image}
           alt={name}
+          loading="lazy"
           className="img-fluid object-fit-cover w-100 h-100 rounded-3 transition-all"
           style={{ transition: 'transform 0.3s ease' }}
         />
