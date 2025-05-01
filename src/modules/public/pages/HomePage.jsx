@@ -46,17 +46,12 @@ export const HomePage = () => {
   const lastFetchTimestamp = useSelector(selectHomepageLastFetchTimestamp);
 
   // ---------------------- EFECTOS ----------------------
-  // Carga los datos al montar el componente O si los datos rehidratados son obsoletos
+  // Carga los datos al montar el componente. El thunk decidirá si usar caché o buscar
   useEffect(() => {
-    const now = Date.now();
-    const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 horas (mismo valor que en slice)
-    const isDataStale = !lastFetchTimestamp || (now - lastFetchTimestamp > CACHE_TTL);
-
-    // Despachar si está cargando, si faltan datos, si hay error, o si los datos son obsoletos
-    if (!isLoading && (!pageData || error || isDataStale)) {
-      dispatch(fetchHomepageData())
-    }
-  }, [dispatch, isLoading, pageData, error, lastFetchTimestamp]); // <-- Añadir lastFetchTimestamp a dependencias
+    // 'fetchHomepageData' contiene la lógica para verificar el caché TTL y decidir si realmente necesita buscar datos frescos
+    dispatch(fetchHomepageData());
+    
+  }, [dispatch]); // Ejecutar solo una vez al montar
 
   // --- Función para manejar clic en tarjeta de producto/categoría ---
   const handleProductCardClick = useCallback((productData) => {
