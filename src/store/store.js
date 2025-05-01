@@ -49,7 +49,16 @@ const shopPagePersistConfig = {
 const homepagePersistConfig = {
   key: 'homepage',
   storage,
-  blacklist: ['pageData', 'isLoading', 'error']
+  // Cambiamos a whitelist para incluir explícitamente lo que persistimos
+  // Campos que necesitan ser cacheados
+  whitelist: [
+    'pageData', 
+    'featuredProducts', 
+    'featuredCategories', 
+    'collectionImages', 
+    'lastFetchTimestamp'
+  ] 
+  // Ya no usamos blacklist aquí
 };
 
 // Configuración de persistencia para 'siteConfig'

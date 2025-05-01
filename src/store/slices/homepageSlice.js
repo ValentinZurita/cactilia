@@ -17,7 +17,7 @@ const initialState = {
 };
 
 // Tiempo de vida del caché (Time-To-Live) en milisegundos
-const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 horas
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutos (ajustado)
 const DEFAULT_FEATURED_PRODUCT_LIMIT = 10; // Definir default como constante
 
 // --- Thunk Asíncrono --- 
@@ -25,79 +25,62 @@ const DEFAULT_FEATURED_PRODUCT_LIMIT = 10; // Definir default como constante
 export const fetchHomepageData = createAsyncThunk(
   'homepage/fetchData',
   async (_, { getState, rejectWithValue }) => {
-    // Declarar fetchedPageData aquí para que esté disponible en todo el scope
-    let fetchedPageData = null;
+    const { pageData, featuredProducts, featuredCategories, collectionImages, lastFetchTimestamp } = getState().homepage;
 
-    const { pageData: existingPageData, lastFetchTimestamp } = getState().homepage;
-    
-    // Comprobación del caché (re-habilitada)
-    if (lastFetchTimestamp && (Date.now() - lastFetchTimestamp < CACHE_TTL) && existingPageData) {
-      console.log('Homepage data is fresh in store (persisted), skipping fetch.');
-      return { skipped: true }; 
+    // --- Lógica de Caché Simplificada ---
+    // 1. Comprobar si tenemos datos cacheados y si el caché aún es válido
+    if (pageData && lastFetchTimestamp && (Date.now() - lastFetchTimestamp < CACHE_TTL)) {
+      // Cache HIT: No necesitamos hacer nada más, los datos ya están en el store.
+      // Retornamos un indicador para el reducer.
+      return { cacheHit: true };
     }
 
+    // Cache MISS: Procedemos a buscar datos frescos.
+
+    // --- Obtención de Datos Frescos ---
     try {
+      let fetchedPageData = null;
+      let pageDataError = null;
+
       // 1. Obtener SIEMPRE el contenido de la página (configuración)
       const contentResult = await ContentService.getPageContent('home', 'published');
       if (contentResult.ok) {
         fetchedPageData = contentResult.data;
       } else {
         pageDataError = contentResult.error || 'Failed to fetch page content';
-        console.error('[fetchHomepageData]', pageDataError);
-        // Si falla la carga del pageData esencial, podríamos abortar o continuar con defaults
-        // Por ahora, intentaremos continuar para cargar al menos productos/categorías si es posible
+        console.error('[fetchHomepageData] Error fetching page content:', pageDataError);
+        // Dejamos fetchedPageData como null y seguimos para intentar cargar el resto
       }
 
-      // 2. Comprobar si la caché para el RESTO de los datos es válida (basado en TTL)
-      const isCacheValid = lastFetchTimestamp && (Date.now() - lastFetchTimestamp < CACHE_TTL);
-
-      if (isCacheValid) {
-        console.log('Homepage product/category/image data is fresh based on TTL, using cached data.');
-        // Usar pageData fresco, pero el resto cacheado
-        return {
-          pageData: fetchedPageData, // Siempre actualizado
-          products: existingProducts, 
-          categories: existingCategories,
-          collectionImages: existingCollections, 
-          timestamp: lastFetchTimestamp // Mantener el timestamp original de la caché válida
-        };
-      }
-
-      // 3. Si la caché es inválida (o no existe), obtener el resto de los datos
-      console.log('Homepage product/category/image cache expired or missing, fetching fresh data...');
-
-      // Determinar límite de productos (usando el pageData recién obtenido)
+      // 2. Obtener el resto de los datos (productos, categorías, imágenes)
       let featuredProductLimit = DEFAULT_FEATURED_PRODUCT_LIMIT;
-      if (fetchedPageData) { // Solo si pageData se cargó bien
-        const configuredLimit = fetchedPageData.sections?.featuredProducts?.maxItems;
-        if (typeof configuredLimit === 'number' && configuredLimit >= 1) {
-          featuredProductLimit = configuredLimit;
-          console.log(`[fetchHomepageData] Using configured featured product limit: ${featuredProductLimit}`);
-        } else {
-           console.log(`[fetchHomepageData] Invalid or missing configured product limit, using default: ${featuredProductLimit}`);
-        }
-      } else {
-        console.warn('[fetchHomepageData] Could not read page content, using default featured product limit.');
+      if (fetchedPageData?.sections?.featuredProducts?.maxItems) {
+         const configuredLimit = parseInt(fetchedPageData.sections.featuredProducts.maxItems, 10);
+         if (!isNaN(configuredLimit) && configuredLimit > 0) {
+           featuredProductLimit = configuredLimit;
+         }
       }
 
-      // Ejecutar llamadas en paralelo para productos, categorías, colecciones
-      const otherResults = await Promise.allSettled([
-        getFeaturedProductsForHome(featuredProductLimit).catch(err => ({ ok: false, error: err, data: [] })), 
-        getFeaturedCategoriesForHome().catch(err => ({ ok: false, error: err, data: [] })), 
+      // Ejecutar llamadas en paralelo
+      const [productsResult, categoriesResult, collectionsDataResult] = await Promise.allSettled([
+        getFeaturedProductsForHome(featuredProductLimit), // Asume que esta función devuelve un objeto { ok, data, error } o lanza error
+        getFeaturedCategoriesForHome(), // Asume lo mismo
         // Lógica para cargar imágenes de colección basada en fetchedPageData
         (async () => {
-          if (!fetchedPageData) return { ok: true, data: {} }; // No hay data para buscar colecciones
+          if (!fetchedPageData) return { ok: true, data: {} };
+          const collectionsToLoad = new Map();
           const heroSection = fetchedPageData.sections?.hero;
           const farmCarouselSection = fetchedPageData.sections?.farmCarousel;
-          const collectionsToLoad = new Map();
           if (heroSection?.useCollection && heroSection?.collectionId) collectionsToLoad.set(heroSection.collectionId, null);
           if (farmCarouselSection?.useCollection && farmCarouselSection?.collectionId) collectionsToLoad.set(farmCarouselSection.collectionId, null);
-          
+
           if (collectionsToLoad.size === 0) return { ok: true, data: {} };
 
-          console.log('Loading collection images for IDs:', [...collectionsToLoad.keys()]);
           const collectionPromises = Array.from(collectionsToLoad.keys()).map(id => 
-              getCollectionImages(id).catch(err => ({ ok: false, error: err, data: [] }))
+            getCollectionImages(id).catch(err => {
+              console.error(`Error loading collection ${id}:`, err);
+              return { ok: false, data: [], error: err }; // Devolver un resultado consistente en caso de error
+            })
           );
           const collectionResults = await Promise.allSettled(collectionPromises);
           const loadedCollections = {};
@@ -106,101 +89,84 @@ export const fetchHomepageData = createAsyncThunk(
             if (result.status === 'fulfilled' && result.value.ok) {
               loadedCollections[id] = result.value.data;
             } else {
-              console.error(`Failed to load collection ${id}:`, result.reason || result.value?.error);
-              loadedCollections[id] = [];
+              // Error ya logueado en el catch de getCollectionImages
+              loadedCollections[id] = []; // Usar array vacío como fallback
             }
           });
           return { ok: true, data: loadedCollections };
         })()
       ]);
 
-      const productsResult = otherResults[0];
-      const categoriesResult = otherResults[1];
-      const collectionsResult = otherResults[2];
+      // Procesar resultados y usar datos cacheados como fallback si una petición falla
+      const fetchedProducts = (productsResult.status === 'fulfilled' && productsResult.value.ok) 
+                              ? productsResult.value.data 
+                              : featuredProducts; // Fallback a datos del store
+      const fetchedCategories = (categoriesResult.status === 'fulfilled' && categoriesResult.value.ok) 
+                                ? categoriesResult.value.data 
+                                : featuredCategories; // Fallback a datos del store
+      const fetchedCollectionImages = (collectionsDataResult.status === 'fulfilled' && collectionsDataResult.value.ok) 
+                                       ? collectionsDataResult.value.data 
+                                       : collectionImages; // Fallback a datos del store
 
-      const fetchedData = {
-        pageData: fetchedPageData, // El pageData que obtuvimos al inicio
-        products: (productsResult.status === 'fulfilled' && productsResult.value.ok) ? productsResult.value.data : existingProducts, // Fallback a existente si falla
-        categories: (categoriesResult.status === 'fulfilled' && categoriesResult.value.ok) ? categoriesResult.value.data : existingCategories, // Fallback a existente si falla
-        collectionImages: (collectionsResult.status === 'fulfilled' && collectionsResult.value.ok) ? collectionsResult.value.data : existingCollections, // Fallback a existente si falla
-        timestamp: Date.now() // Nuevo timestamp porque obtuvimos datos frescos
+      // 3. Retornar el conjunto completo de datos con el nuevo timestamp
+      return {
+        pageData: fetchedPageData,
+        products: fetchedProducts,
+        categories: fetchedCategories,
+        collectionImages: fetchedCollectionImages,
+        timestamp: Date.now(), // Nuevo timestamp
+        cacheHit: false // Indicar que no fue un cache hit
       };
-
-      return fetchedData; 
 
     } catch (error) {
       console.error('Unexpected error in fetchHomepageData thunk:', error);
-      // Devolver el pageData si se obtuvo (está en el scope externo), aunque el resto falle
-      return rejectWithValue({ 
-        message: error.message, 
-        // Usar el fetchedPageData del scope externo, que será null si falló antes
-        partialData: { pageData: fetchedPageData } 
-      }); 
+      return rejectWithValue({ message: error.message || 'Unknown error occurred' });
     }
   }
 );
 
 // --- Definición del Slice --- 
 const homepageSlice = createSlice({
-  name: 'homepage', // Nombre del slice (usado en las actions types)
-  initialState, // Estado inicial definido arriba
+  name: 'homepage',
+  initialState,
   reducers: {
-    // Aquí se colocaran reducers síncronos si fueran necesarios
-    // Ejemplo: setHomepageTheme: (state, action) => { state.theme = action.payload; }
+    // Limpiar cache inmeidatamente - util para mostrar cambios depues de actulizaciones en el admin panel
+    // clearHomepageCache: (state) => {
+    //   state.pageData = null;
+    //   state.featuredProducts = [];
+    //   state.featuredCategories = [];
+    //   state.collectionImages = {};
+    //   state.lastFetchTimestamp = null;
+    // }
   },
-  // Manejo de las acciones asíncronas del thunk (pending, fulfilled, rejected)
   extraReducers: (builder) => {
     builder
-      // Acción pendiente (cuando el thunk empieza)
-      .addCase(fetchHomepageData.pending, (state) => { 
-          state.isLoading = true;
-          state.error = null; // Limpiar errores anteriores
+      .addCase(fetchHomepageData.pending, (state) => {
+        // Siempre ponemos isLoading=true y que la UI maneje un posible flash rápido.
+        state.isLoading = true;
+        state.error = null;
       })
-      // Acción completada (cuando el thunk termina exitosamente)
       .addCase(fetchHomepageData.fulfilled, (state, action) => {
-        const previousTimestamp = state.lastFetchTimestamp; // Guardar timestamp anterior
-        const incomingTimestamp = action.payload.timestamp; // Timestamp del payload
-        const incomingPageData = action.payload.pageData;
+        state.isLoading = false;
+        state.error = null;
 
-        // Log para saber qué estamos recibiendo
-        console.log(`>>> Reducer fulfilled - Prev TS: ${previousTimestamp}, Incoming TS: ${incomingTimestamp}`);
-        console.log('>>> Reducer fulfilled - Received productCategories.limit:', incomingPageData?.sections?.productCategories?.limit);
-
-        // Si la caché NO es válida (timestamps diferentes), actualizamos TODO
-        if (previousTimestamp !== incomingTimestamp) {
-          console.log('>>> Reducer fulfilled - Cache MISS, returning new state with all fresh data.');
-          return { // Retornar nuevo objeto de estado
-            ...state, // Mantener otras propiedades del slice si las hubiera
-            isLoading: false,
-            error: null,
-            pageData: incomingPageData ? { ...incomingPageData } : null, // Nueva referencia forzada
-            featuredProducts: action.payload.products,
-            featuredCategories: action.payload.categories,
-            collectionImages: action.payload.collectionImages,
-            lastFetchTimestamp: incomingTimestamp, // Timestamp nuevo
-          };
-        } else {
-          // Si la caché SÍ es válida (timestamps iguales), SOLO actualizamos pageData
-          console.log('>>> Reducer fulfilled - Cache HIT, returning new state with updated pageData only.');
-          return { // Retornar nuevo objeto de estado
-            ...state, // Mantiene products, categories, images, timestamp anteriores
-            isLoading: false,
-            error: null,
-            pageData: incomingPageData ? { ...incomingPageData } : null, // Nueva referencia forzada
-            // lastFetchTimestamp no cambia
-          };
+        // Si el thunk retornó { cacheHit: true }, no hacemos nada al estado
+        if (action.payload.cacheHit === true) {
+           return; // No modificar el estado
         }
-        // Nota: Ya no mutamos 'state' directamente, retornamos el nuevo estado completo.
+        
+        // Si no fue cache hit, actualizamos el estado con los datos frescos del payload
+        state.pageData = action.payload.pageData;
+        state.featuredProducts = action.payload.products;
+        state.featuredCategories = action.payload.categories;
+        state.collectionImages = action.payload.collectionImages;
+        state.lastFetchTimestamp = action.payload.timestamp;
       })
-      // Acción rechazada (cuando el thunk falla)
       .addCase(fetchHomepageData.rejected, (state, action) => {
-        state.isLoading = false; // Termina la carga
-        state.error = action.payload?.message || 'Failed to fetch homepage data'; // Guardar mensaje de error
-
-        // Si hubo datos parciales (al menos pageData), actualizarlos
-        if (action.payload?.partialData?.pageData) {
-          state.pageData = action.payload.partialData.pageData;
-        }
+        state.isLoading = false;
+        state.error = action.payload?.message || 'Failed to fetch homepage data';
+        // Opcional: podrías querer limpiar el timestamp si la carga falla
+        // state.lastFetchTimestamp = null; 
       });
   },
 });
