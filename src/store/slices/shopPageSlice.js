@@ -242,7 +242,7 @@ export const selectFilteredProducts = createSelector(
     }
 
     // Filtrar por nombre de categoría
-    if (filters.selectedCategory) {
+    if (filters.selectedCategory) { // Comprueba si selectedCategory es truthy
       const selectedCategoryName = filters.selectedCategory.toLowerCase();
       filtered = filtered.filter(prod => 
         prod.category?.toLowerCase() === selectedCategoryName

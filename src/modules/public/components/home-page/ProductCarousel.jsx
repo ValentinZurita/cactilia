@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import { ProductCard } from './ProductCard.jsx';
@@ -20,6 +21,8 @@ import '../../styles/homepage.css';
  * @param {function} [onProductClick] - Función a ejecutar cuando se hace clic en una tarjeta, recibe el objeto producto/categoría.
  */
 export const ProductCarousel = React.memo(({ products, isCategory = false, onProductClick }) => {
+  const navigate = useNavigate();
+
   /**
    * Verifica si no hay productos y retorna un mensaje amigable.
    */
@@ -76,6 +79,23 @@ export const ProductCarousel = React.memo(({ products, isCategory = false, onPro
   };
 
   /**
+   * Función de manejo de clic para SwiperSlide
+   */
+  const handleSlideClick = (itemData, itemIsCategory) => {
+    if (itemIsCategory) {
+      const originalId = itemData.id.split('_duplicate_')[0]; 
+      const categoryName = itemData.name; 
+      if (!categoryName) {
+          console.error("[ProductCarousel handleSlideClick] Cannot navigate: Category Name is missing.", itemData);
+          return;
+      }
+      navigate('/shop', { state: { preselectCategoryName: categoryName } });
+    } else if (onProductClick) {
+       onProductClick(itemData); 
+    }
+  };
+
+  /**
    * Retorno del componente principal:
    * - Envuelve el carrusel de productos en su contenedor principal.
    * - Incluye configuración de autoplay, navegación y loop infinito.
@@ -106,13 +126,20 @@ export const ProductCarousel = React.memo(({ products, isCategory = false, onPro
       >
         {/* Render de slides basado en la lista de productos procesada */}
         {displayProducts.map((product) => (
-          <SwiperSlide key={product.id} className="home-product-slide">
+          <SwiperSlide 
+            key={product.id} 
+            className="home-product-slide" 
+            onClick={() => handleSlideClick(product, isCategory)} 
+            style={{ cursor: isCategory ? 'pointer' : (onProductClick ? 'pointer' : 'default')}}
+            role={isCategory || onProductClick ? 'button' : undefined}
+            tabIndex={isCategory || onProductClick ? 0 : undefined}
+            onKeyPress={isCategory || onProductClick ? (e) => e.key === 'Enter' && handleSlideClick(product, isCategory) : undefined}
+          >
             <ProductCard
               id={product.id.split('_duplicate_')[0]}
               name={product.name}
               image={product.image || product.mainImage}
               isCategory={isCategory}
-              onCardClick={onProductClick}
               productData={product}
             />
           </SwiperSlide>

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // Import useLocation
 import { useDispatch, useSelector } from 'react-redux'; // Import Redux hooks
 import { HeroSection } from '../../public/components/home-page';
 import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMessage} from '../features/shop/index.js';
@@ -51,6 +52,7 @@ const getImageUrlBySize = (imgData, desiredSize = 'medium') => {
 
 export const ShopPage = () => {
   const dispatch = useDispatch();
+  const location = useLocation(); // Obtener objeto location
 
   // --- Select state from Redux store ---
   const products = useSelector(selectPaginatedProducts);
@@ -96,24 +98,24 @@ export const ShopPage = () => {
     dispatch(fetchInitialShopData());
   }, [dispatch]);
 
-  // Remove banner loading logic
-  /*
+  // Efecto para preseleccionar categoría desde el estado de navegación (sin logs)
   useEffect(() => {
-    const loadBannerConfig = async () => { ... };
-    loadBannerConfig();
-  }, []);
-
-  const loadCollectionImages = async (collectionId) => { ... };
-  */
+    const categoryNameToSelect = location.state?.preselectCategoryName;
+    if (categoryNameToSelect && filters.selectedCategory !== categoryNameToSelect) {
+      dispatch(setSelectedCategory(categoryNameToSelect));
+    }
+    if (location.state?.preselectCategoryName) {
+        window.history.replaceState({}, document.title);
+    }
+  }, [location.state, dispatch]); 
 
   // --- Event Handlers using Redux Actions ---
   const handleSearchChange = (term) => {
     dispatch(setSearchTerm(term));
   };
 
-  const handleCategoryChange = (categoryId) => {
-    // categoryId will be null for 'All Categories'
-    dispatch(setSelectedCategory(categoryId)); 
+  const handleCategoryChange = (categoryName) => {
+    dispatch(setSelectedCategory(categoryName)); 
   };
 
   const handlePriceOrderChange = (order) => {

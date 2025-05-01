@@ -143,7 +143,7 @@ export const HomePage = () => {
         >
             <ProductCarousel 
               products={categories} 
-              isCategories={true} 
+              isCategory={true}
             />
         </HomeSection>
     );
