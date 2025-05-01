@@ -1,4 +1,4 @@
-import { useEffect, useCallback, lazy, Suspense } from 'react'
+import React, { useEffect, useCallback, lazy, Suspense } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { HomeCarousel, HomeSection } from '../components/home-page/index.js'
 import { SkeletonHero, SkeletonCarousel } from '../components/skeletons/index.js'
@@ -34,11 +34,13 @@ import { openProductModal } from "../../../store/slices/uiSlice.js";
  * - Utiliza Redux (`homepageSlice`) para la obtención y gestión del estado.
  */
 
-// --- Definición de Componentes Lazy ---
-const LazyHeroSection = lazy(() => import('../components/home-page/HeroSection.jsx'));
-const LazyProductCarousel = lazy(() => import('../components/home-page/ProductCarousel.jsx'));
-// HomeCarousel y HomeSection podrían hacerse lazy también si son complejos, pero empezamos con los más probables.
+// --- Importar los nuevos Componentes Renderizadores de Sección ---
+import HeroSectionRenderer from '../components/home-page/sections/HeroSectionRenderer.jsx';
+import FeaturedProductsSectionRenderer from '../components/home-page/sections/FeaturedProductsSectionRenderer.jsx';
+import FarmCarouselSectionRenderer from '../components/home-page/sections/FarmCarouselSectionRenderer.jsx';
+import FeaturedCategoriesSectionRenderer from '../components/home-page/sections/FeaturedCategoriesSectionRenderer.jsx';
 
+// --- Componente Principal --- 
 export const HomePage = () => {
   const dispatch = useDispatch()
 
@@ -49,7 +51,6 @@ export const HomePage = () => {
   const collectionImages = useSelector(selectHomepageCollectionImages)
   const isLoading = useSelector(selectHomepageIsLoading)
   const error = useSelector(selectHomepageError)
-  const lastFetchTimestamp = useSelector(selectHomepageLastFetchTimestamp);
 
   // ---------------------- EFECTOS ----------------------
   // Carga los datos al montar el componente. El thunk decidirá si usar caché o buscar
@@ -70,102 +71,6 @@ export const HomePage = () => {
 
   // ---------------------- FUNCIONES AUXILIARES DE RENDERIZADO DE SECCIONES ----------------------
 
-  const _renderHeroSection = (sectionConfig) => {
-    const heroImagesData = (sectionConfig.useCollection && collectionImages?.[sectionConfig.collectionId]?.length > 0)
-        ? collectionImages[sectionConfig.collectionId]
-        : sectionConfig.images;
-
-    const heroImagesProcessed = Array.isArray(heroImagesData)
-        ? heroImagesData.map(img => ({
-            id: img.id || Math.random(),
-            src: getImageUrlBySize(img, 'large'),
-            alt: img.alt || 'Hero image'
-        }))
-        : [];
-
-    return (
-      // Envolver con Suspense y usar el componente Lazy
-      <Suspense key="hero-suspense" fallback={<SkeletonHero />}>
-        <LazyHeroSection
-            title={sectionConfig.title || 'Bienvenido a Cactilia'}
-            subtitle={sectionConfig.subtitle || 'Descubre nuestros productos naturales'}
-            ctaText={sectionConfig.ctaText || 'Ver productos'}
-            ctaLink={sectionConfig.ctaLink || '/shop'}
-            images={heroImagesProcessed.length > 0 ? heroImagesProcessed : [{ id: 'fallback', src: '/public/images/placeholder.jpg', alt: 'Placeholder' }]}
-        />
-      </Suspense>
-    );
-  };
-
-  const _renderFeaturedProductsSection = (sectionConfig, products) => {
-    return (
-        <HomeSection
-            key="featuredProducts"
-            title={sectionConfig.title || 'Productos destacados'}
-            subtitle={sectionConfig.subtitle || 'Descubre nuestra selección'}
-            bgColor={sectionConfig.bgColor || 'var(--bg-light)'}
-            link={sectionConfig.link || '/shop'}
-            linkText={sectionConfig.linkText || 'Ver todos los productos'}
-        >
-          {/* Envolver con Suspense y usar el componente Lazy */}
-          <Suspense key="fp-carousel-suspense" fallback={<SkeletonCarousel />}>
-            <LazyProductCarousel 
-              products={products} 
-              onProductClick={handleProductCardClick} 
-            />
-          </Suspense>
-        </HomeSection>
-    );
-  };
-
-  const _renderFarmCarouselSection = (sectionConfig) => {
-    const farmImagesData = (sectionConfig.useCollection && collectionImages?.[sectionConfig.collectionId]?.length > 0)
-        ? collectionImages[sectionConfig.collectionId]
-        : (sectionConfig.images || sampleImages); // Fallback a sampleImages
-
-    const farmImagesProcessed = Array.isArray(farmImagesData)
-        ? farmImagesData.map(img => ({
-            id: img.id || Math.random(),
-            src: getImageUrlBySize(img, 'medium'),
-            alt: img.alt || 'Farm image'
-        }))
-        : [];
-
-    return (
-        <HomeSection
-            key="farmCarousel"
-            title={sectionConfig.title || 'Nuestra Granja'}
-            subtitle={sectionConfig.subtitle || 'Conoce de dónde vienen nuestros productos'}
-            bgColor={sectionConfig.bgColor}
-        >
-            <HomeCarousel images={farmImagesProcessed.length > 0 ? farmImagesProcessed : sampleImages} />
-        </HomeSection>
-    );
-  };
-
-  const _renderFeaturedCategoriesSection = (sectionConfig, categories) => {
-    return (
-        <HomeSection
-            key="featuredCategories"
-            title={sectionConfig.title || 'Explora categorías'}
-            subtitle={sectionConfig.subtitle || 'Encuentra lo que buscas'}
-            bgColor={sectionConfig.bgColor}
-            link={sectionConfig.link || '/shop'}
-            linkText={sectionConfig.linkText || 'Ver todas las categorías'}
-        >
-          {/* Envolver con Suspense y usar el componente Lazy */}
-          <Suspense key="fc-carousel-suspense" fallback={<SkeletonCarousel />}>
-            <LazyProductCarousel 
-              products={categories} 
-              isCategory={true}
-            />
-           </Suspense>
-        </HomeSection>
-    );
-  };
-
-  // ---------------------- LÓGICA PRINCIPAL DE RENDERIZADO ----------------------
-  
   // --- Renderizado de Skeletons ---
   // Muestra skeletons solo durante la carga inicial (cuando pageData aún no existe)
   if (isLoading && !pageData) { 
@@ -188,7 +93,7 @@ export const HomePage = () => {
     );
   }
 
-  // --- Renderizado del Contenido Principal (Solo si pageData está listo y no hay error) ---
+  // --- Renderizado del Contenido Principal ---
    
   // Usar datos del store de Redux, o los datos de muestra como fallback.
   const productsToShow = featuredProducts?.length > 0 ? featuredProducts : sampleProducts;
@@ -197,50 +102,49 @@ export const HomePage = () => {
   // Determinar orden de secciones (usando pageData o un orden por defecto)
   const sectionOrder = pageData?.blockOrder || ['hero', 'featuredProducts', 'farmCarousel', 'productCategories']; 
 
-  // Función principal para renderizar secciones
-  const renderSections = () => {
-    return sectionOrder.map(sectionKey => {
-      const sectionConfig = pageData?.sections?.[sectionKey] || {};
-      
-      if (sectionConfig.visible === false) return null;
-
-      switch (sectionKey) {
-        case 'hero':
-          // Llama a la función auxiliar correspondiente
-          return _renderHeroSection(sectionConfig);
-        case 'featuredProducts':
-          // Llama a la función auxiliar correspondiente
-          return _renderFeaturedProductsSection(sectionConfig, productsToShow);
-        case 'farmCarousel':
-          // Llama a la función auxiliar correspondiente
-          return _renderFarmCarouselSection(sectionConfig);
-        case 'productCategories': {
-          // Obtener la configuración específica y las categorías
-          const categoriesSource = featuredCategories?.length > 0 ? featuredCategories : sampleCategories;
-          
-          // Obtener el límite y asegurarse de que es un número válido
-          const categoryLimit = sectionConfig?.limit;
-          const isValidLimit = typeof categoryLimit === 'number' && categoryLimit > 0;
-          
-          // Aplicar el límite SOLO si es válido
-          const limitedCategories = isValidLimit 
-              ? categoriesSource.slice(0, categoryLimit) 
-              : categoriesSource; // Usar la fuente completa si el límite no es válido
-
-          // Renderizar la sección con las categorías (limitadas o no)
-          return _renderFeaturedCategoriesSection(sectionConfig, limitedCategories);
-        }
-        default:
-          console.warn(`HomePage: Tipo de sección desconocido encontrado en sectionOrder: ${sectionKey}`);
-          return null;
-      }
-    });
+  // --- Mapeo de Claves de Sección a COMPONENTES --- 
+  // Ahora todos los renderers son componentes importados
+  const sectionRenderersMap = {
+    hero: HeroSectionRenderer,
+    featuredProducts: FeaturedProductsSectionRenderer, 
+    farmCarousel: FarmCarouselSectionRenderer,
+    productCategories: FeaturedCategoriesSectionRenderer, // Usamos el componente importado
   };
 
   // --- Renderizado del Componente --- 
   return (
     <div className="homepage-container">
-      {renderSections()} 
+      {sectionOrder.map(sectionKey => {
+        const sectionConfig = pageData?.sections?.[sectionKey];
+        if (!sectionConfig || sectionConfig.visible === false) {
+          return null;
+        }
+
+        // Obtener el Componente del mapeo
+        const SectionRendererComponent = sectionRenderersMap[sectionKey];
+
+        if (SectionRendererComponent) {
+          // Determinar las props para este componente renderer específico
+          let componentProps = { sectionConfig }; 
+          if (sectionKey === 'hero' || sectionKey === 'farmCarousel') {
+            componentProps.collectionImages = collectionImages;
+          }
+          if (sectionKey === 'featuredProducts') {
+            componentProps.products = productsToShow;
+            componentProps.handleProductCardClick = handleProductCardClick;
+          }
+          if (sectionKey === 'productCategories') {
+             componentProps.categories = categoriesToShow;
+          }
+          
+          // Renderizar el componente directamente
+          return <SectionRendererComponent key={sectionKey} {...componentProps} />;
+          
+        } else {
+          console.warn(`HomePage: No renderer component found for section key: ${sectionKey}`);
+          return null;
+        }
+      })}
       {/* El Footer será renderizado por el layout principal (PublicLayout) */}
     </div>
   );
