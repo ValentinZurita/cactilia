@@ -18,68 +18,87 @@ const initialState = {
 
 // Tiempo de vida del caché (Time-To-Live) en milisegundos
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 horas
+const DEFAULT_FEATURED_PRODUCT_LIMIT = 10; // Definir default como constante
 
 // --- Thunk Asíncrono --- 
 // Carga todos los datos necesarios para la HomePage (contenido, productos, categorías, imágenes)
 export const fetchHomepageData = createAsyncThunk(
-  'homepage/fetchData', // Nombre de la acción
+  'homepage/fetchData',
   async (_, { getState, rejectWithValue }) => {
-    // Obtener estado actual para verificar el caché
     const { pageData: existingPageData, lastFetchTimestamp } = getState().homepage;
     
-    // Verificar validez del caché basado en tiempo
-    // Si tenemos un timestamp, no ha pasado el TTL y ya tenemos pageData, saltamos el fetch.
+    // Comprobación del caché (re-habilitada)
     if (lastFetchTimestamp && (Date.now() - lastFetchTimestamp < CACHE_TTL) && existingPageData) {
       console.log('Homepage data is fresh in store (persisted), skipping fetch.');
-      return { skipped: true }; // Devolvemos un objeto indicando que se saltó
+      return { skipped: true }; 
     }
 
     console.log('Fetching homepage data from Firestore...');
     try {
-       // Ejecutar todas las promesas de carga de datos en paralelo para eficiencia
-       const results = await Promise.allSettled([
-        getFeaturedProductsForHome().catch(err => ({ ok: false, error: err, data: [] })), // Productos destacados
-        getFeaturedCategoriesForHome().catch(err => ({ ok: false, error: err, data: [] })), // Categorías destacadas
-        ContentService.getPageContent('home', 'published').catch(err => ({ ok: false, error: err, data: null })), // Contenido/configuración de la página
+      // 1. Obtener el contenido de la página PRIMERO (para leer la configuración)
+      const contentResult = await ContentService.getPageContent('home', 'published')
+                                   .catch(err => ({ ok: false, error: err, data: null }));
+      
+      // 2. Determinar el límite de productos destacados a partir de la configuración
+      let featuredProductLimit = DEFAULT_FEATURED_PRODUCT_LIMIT; // Empezar con el default
+      if (contentResult.status === 'fulfilled' && contentResult.value?.ok && contentResult.value?.data) {
+        const configuredLimit = contentResult.value.data.sections?.featuredProducts?.maxItems;
+        // Usar el límite configurado si es un número válido >= 1, sino mantener el default
+        if (typeof configuredLimit === 'number' && configuredLimit >= 1) {
+            featuredProductLimit = configuredLimit;
+            console.log(`[fetchHomepageData] Using configured featured product limit: ${featuredProductLimit}`);
+        } else if (configuredLimit === null) {
+            // Si es null (campo vacío en admin), podríamos interpretarlo como sin límite.
+            // Por ahora, lo mantendremos usando el default. Podríamos cambiarlo a un número muy alto (e.g., 999) 
+            // o quitar el limit() en getFeaturedProductsForHome si el valor es null.
+            // De momento, usamos el default si es null.
+             console.log(`[fetchHomepageData] Configured limit is null, using default: ${featuredProductLimit}`);
+        } else {
+            console.log(`[fetchHomepageData] Invalid or missing configured limit (${configuredLimit}), using default: ${featuredProductLimit}`);
+        }
+      } else {
+        console.warn('[fetchHomepageData] Could not fetch page content, using default featured product limit.');
+      }
+
+      // 3. Ejecutar las otras llamadas (productos, categorías, colecciones) en paralelo
+      const otherResults = await Promise.allSettled([
+        // Pasar el límite determinado a la función
+        getFeaturedProductsForHome(featuredProductLimit).catch(err => ({ ok: false, error: err, data: [] })), 
+        getFeaturedCategoriesForHome().catch(err => ({ ok: false, error: err, data: [] })), 
+        // Ya no necesitamos obtener pageContent aquí de nuevo
       ]);
 
-      // Procesar resultados individuales
-      const productsResult = results[0];
-      const categoriesResult = results[1];
-      const contentResult = results[2];
+      const productsResult = otherResults[0];
+      const categoriesResult = otherResults[1];
+      // El resultado del contenido ya lo tenemos en contentResult
 
-      // Objeto para acumular los datos fetcheados
       const fetchedData = {
         products: [],
         categories: [],
-        pageData: null,
+        pageData: contentResult.value?.data || null, // Usar el pageData ya obtenido
         collectionImages: {},
-        timestamp: null, // Se añadirá si el fetch es exitoso
+        timestamp: null, 
       };
 
-      // Guardar productos si el fetch fue exitoso
+      // Procesar productos (sin cambios)
       if (productsResult.status === 'fulfilled' && productsResult.value.ok) {
         fetchedData.products = productsResult.value.data;
       } else {
          console.error('Error fetching featured products:', productsResult.reason || productsResult.value?.error);
       }
 
-      // Guardar categorías si el fetch fue exitoso
+      // Procesar categorías (sin cambios)
       if (categoriesResult.status === 'fulfilled' && categoriesResult.value.ok) {
         fetchedData.categories = categoriesResult.value.data;
       } else {
          console.error('Error fetching featured categories:', categoriesResult.reason || categoriesResult.value?.error);
       }
 
-      // Procesar contenido de la página y cargar imágenes de colección si es necesario
-      if (contentResult.status === 'fulfilled' && contentResult.value?.ok && contentResult.value?.data) {
-        fetchedData.pageData = contentResult.value.data;
-
-        // --- Cargar Imágenes de Colecciones Dinámicamente ---
-        // Identificar qué colecciones se necesitan según la configuración de pageData
+      // Procesar imágenes de colección (usando el pageData ya obtenido en fetchedData.pageData)
+      if (fetchedData.pageData) {
         const heroSection = fetchedData.pageData.sections?.hero;
         const farmCarouselSection = fetchedData.pageData.sections?.farmCarousel;
-        const collectionsToLoad = new Map(); // Usar un Map para evitar IDs duplicados
+        const collectionsToLoad = new Map(); 
 
         if (heroSection?.useCollection && heroSection?.collectionId) {
           collectionsToLoad.set(heroSection.collectionId, null);
@@ -88,41 +107,34 @@ export const fetchHomepageData = createAsyncThunk(
           collectionsToLoad.set(farmCarouselSection.collectionId, null);
         }
         
-        // Si hay colecciones por cargar, hacer las llamadas en paralelo
         if (collectionsToLoad.size > 0) {
             console.log('Loading collection images for IDs:', [...collectionsToLoad.keys()]);
             const collectionPromises = Array.from(collectionsToLoad.keys()).map(id => 
-                getCollectionImages(id).catch(err => ({ ok: false, error: err, data: [] })) // Capturar errores individuales
+                getCollectionImages(id).catch(err => ({ ok: false, error: err, data: [] })) 
             );
             const collectionResults = await Promise.allSettled(collectionPromises);
 
-            // Procesar resultados de las imágenes de colección
             Array.from(collectionsToLoad.keys()).forEach((id, index) => {
                 const result = collectionResults[index];
                 if (result.status === 'fulfilled' && result.value.ok) {
-                    fetchedData.collectionImages[id] = result.value.data; // Guardar array de datos de imagen
+                    fetchedData.collectionImages[id] = result.value.data; 
                 } else {
                     console.error(`Failed to load collection ${id}:`, result.reason || result.value?.error);
-                    fetchedData.collectionImages[id] = []; // Guardar array vacío en caso de error
+                    fetchedData.collectionImages[id] = []; 
                 }
             });
         }
-        // --- Fin Carga Imágenes ---
-
-        // Añadir timestamp al payload si el contenido principal (pageData) se cargó correctamente
-        fetchedData.timestamp = Date.now();
+        fetchedData.timestamp = Date.now(); // Poner timestamp si pageData existe
       } else {
-         console.warn('Error fetching page content:', contentResult.reason || contentResult.value?.error);
-         // Considerar si se debe devolver error aquí o permitir carga parcial
+         // Si no hay pageData, no podemos cargar colecciones ni poner timestamp válido
+         console.warn('Page content failed to load, skipping collection image loading.');
       }
 
-      // Devolver todos los datos recopilados para la acción 'fulfilled'
       return fetchedData; 
 
     } catch (error) {
-      // Manejar errores inesperados en el thunk
       console.error('Unexpected error in fetchHomepageData thunk:', error);
-      return rejectWithValue(error.message); // Rechazar la promesa con mensaje de error
+      return rejectWithValue(error.message); 
     }
   }
 );
@@ -164,10 +176,6 @@ const homepageSlice = createSlice({
       .addCase(fetchHomepageData.rejected, (state, action) => {
         state.isLoading = false; // Termina la carga
         state.error = action.payload || 'Failed to fetch homepage data'; // Guardar mensaje de error
-        // Opcional: resetear datos en caso de error?
-        // state.pageData = null;
-        // state.featuredProducts = [];
-        // etc...
       });
   },
 });

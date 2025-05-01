@@ -47,6 +47,33 @@ export const FeaturedProductsEditor = ({ data = {}, onUpdate }) => {
           />
         </div>
 
+        {/* Número Máximo de Productos */}
+        <div className="mb-3">
+          <label htmlFor="featuredMaxItems" className="form-label">Número Máximo de Productos</label>
+          <input
+            type="number"
+            className="form-control"
+            id="featuredMaxItems"
+            value={data.maxItems ?? ''} // Usar string vacío si es null/undefined
+            onChange={(e) => {
+              const value = e.target.value;
+              // Permitir campo vacío (se interpretará como sin límite o usará default)
+              const numValue = value === '' ? null : parseInt(value, 10);
+              // Actualizar solo si es un número válido o null
+              if (!isNaN(numValue) || numValue === null) {
+                 // Asegurarse de que no sea negativo si se introduce manualmente
+                 const finalValue = (numValue !== null && numValue < 1) ? 1 : numValue;
+                 handleChange('maxItems', finalValue);
+              }
+            }}
+            placeholder="Ej: 10 (vacío usa el valor por defecto)"
+            min="1" // El input HTML permite valores negativos, el onChange lo corrige a 1
+          />
+           <div className="form-text">
+            Define cuántos productos destacados se mostrarán como máximo en el carrusel (mínimo 1).
+          </div>
+        </div>
+
         {/* Icono */}
         <div className="mb-3">
           <label htmlFor="featuredIcon" className="form-label">Icono</label>
@@ -64,7 +91,7 @@ export const FeaturedProductsEditor = ({ data = {}, onUpdate }) => {
             />
           </div>
           <div className="form-text">
-            Usa clases de <a href="https://icons.getbootstrap.com/" target="_blank">Bootstrap Icons</a>
+            Usa clases de <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener noreferrer">Bootstrap Icons</a>
           </div>
         </div>
       </div>

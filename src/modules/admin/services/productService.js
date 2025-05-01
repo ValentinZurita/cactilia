@@ -347,21 +347,26 @@ export const searchProducts = async (searchTerm, maxResults = 10) => {
   }
 };
 
-// --- NUEVA FUNCIÓN OPTIMIZADA ---
 /**
- * Obtiene productos activos y destacados para la HomePage, seleccionando campos mínimos.
- * @param {number} [count=10] - Número máximo de productos a obtener.
+ * Obtiene productos activos y destacados para la HomePage.
+ * @param {number} count - Número máximo de productos a obtener (requerido).
  * @returns {Promise<{ok: boolean, data: any[], error: null|string}>}
  */
-export const getFeaturedProductsForHome = async (count = 10) => {
+export const getFeaturedProductsForHome = async (count) => {
+  // Añadir validación para el parámetro count
+  if (typeof count !== 'number' || count < 1) {
+    console.error('getFeaturedProductsForHome: Se requiere un parámetro count numérico y positivo.');
+    // Devolver un error o un array vacío según se prefiera
+    return { ok: false, data: [], error: 'Parámetro count inválido' };
+  }
+  
   try {
     const productsRef = collection(FirebaseDB, 'products');
-    // Consulta optimizada
     const q = query(
       productsRef,
       where('active', '==', true),
       where('featured', '==', true),
-      limit(count)
+      limit(count) // Usar el count proporcionado
     );
 
     const querySnapshot = await getDocs(q);
@@ -386,10 +391,7 @@ export const getFeaturedProductsForHome = async (count = 10) => {
     return { ok: true, data: productsData, error: null };
 
   } catch (error) {
-    // Manejo de errores (incluyendo posible error de permisos)
     console.error('Error obteniendo productos destacados para Home:', error);
-    // Considera devolver datos de muestra si falla, similar a getProducts
-    // Por ahora, devolvemos error.
     return { ok: false, data: [], error: error.message };
   }
 };
