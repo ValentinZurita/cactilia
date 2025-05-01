@@ -1,13 +1,13 @@
-import React, { useEffect, Suspense, lazy, useCallback, useMemo } from 'react'; // Import React, Suspense, lazy, useCallback, useMemo
-import { useLocation } from 'react-router-dom'; // Import useLocation
-import { useDispatch, useSelector } from 'react-redux'; // Import Redux hooks
+import React, { useEffect, Suspense, lazy, useCallback, useMemo } from 'react'; // useState ya no es necesario
+import { useLocation } from 'react-router-dom'; 
+import { useDispatch, useSelector } from 'react-redux'; 
 import { HeroSection } from '../../public/components/home-page';
-import { SearchBar, FilterBar, ProductList, Pagination, StatusMessage} from '../features/shop/index.js'; // Import other components
+import { SearchBar, FilterBar, ProductList, Pagination, StatusMessage} from '../features/shop/index.js'; 
 import { heroImages } from '../../../shared/constants';
 import { useModal } from '../hooks/index.js' 
 import { useCart } from '../features/cart/hooks/useCart.js'
 
-// Import actions and selectors from shopPageSlice
+// Acciones y Selectores del Slice
 import {
   fetchInitialShopData,
   setSearchTerm,
@@ -21,18 +21,17 @@ import {
   selectShopError,
   selectShopFilters,
   selectShopPagination,
-  // Import banner selectors
   selectShopBannerConfig,
   selectShopBannerCollectionImages,
 } from '../../../store/slices/shopPageSlice.js';
 
-// Lazy load ProductModal, selecting the named export
+// Carga diferida del Modal
 const ProductModal = lazy(() => 
   import('../features/shop/ProductModal.jsx')
     .then(module => ({ default: module.ProductModal }))
 );
 
-// Re-introduce or import the helper function
+// Helper para obtener URL de imagen por tamaño
 const getImageUrlBySize = (imgData, desiredSize = 'medium') => {
   if (!imgData) return null;
   const resized = imgData.resizedUrls;
@@ -42,107 +41,96 @@ const getImageUrlBySize = (imgData, desiredSize = 'medium') => {
   const smallKey = '200x200';
 
   switch (desiredSize) {
-    case 'original':
-      return originalUrl;
-    case 'large':
-      return (resized && resized[largeKey]) || originalUrl;
-    case 'medium':
-      return (resized && resized[mediumKey]) || (resized && resized[largeKey]) || originalUrl;
-    case 'small':
-      return (resized && resized[smallKey]) || (resized && resized[mediumKey]) || originalUrl;
-    default:
-      console.warn(`Tamaño de imagen no reconocido o no especificado: '${desiredSize}'. Usando tamaño mediano por defecto.`);
-      return (resized && resized[mediumKey]) || (resized && resized[largeKey]) || originalUrl;
+    case 'original': return originalUrl;
+    case 'large': return (resized && resized[largeKey]) || originalUrl;
+    case 'medium': return (resized && resized[mediumKey]) || (resized && resized[largeKey]) || originalUrl;
+    case 'small': return (resized && resized[smallKey]) || (resized && resized[mediumKey]) || originalUrl;
+    default: return (resized && resized[mediumKey]) || (resized && resized[largeKey]) || originalUrl;
   }
 };
 
 export const ShopPage = () => {
   const dispatch = useDispatch();
-  const location = useLocation(); // Obtener objeto location
+  const location = useLocation();
 
-  // --- Select state from Redux store ---
+  // --- Selección de Estado desde Redux ---
   const products = useSelector(selectPaginatedProducts);
-  const categories = useSelector(selectCategoryFilterOptions); // Use selector for filter options
+  const categories = useSelector(selectCategoryFilterOptions); 
   const totalPages = useSelector(selectShopTotalPages);
   const isLoading = useSelector(selectShopIsLoading);
   const error = useSelector(selectShopError);
   const filters = useSelector(selectShopFilters);
   const { currentPage } = useSelector(selectShopPagination);
-  // Select banner data
   const bannerConfig = useSelector(selectShopBannerConfig);
   const bannerCollectionImages = useSelector(selectShopBannerCollectionImages);
 
-  // Remove local state for banner and products
-  // const [bannerConfig, setBannerConfig] = useState(null);
-  // const [collectionImages, setCollectionImages] = useState([]);
-  /* 
-  const {
-    loading,
-    error,
-    searchTerm,
-    setSearchTerm,
-    selectedCategory,
-    setSelectedCategory,
-    priceOrder,
-    setPriceOrder,
-    products,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    categories,
-  } = useProducts();
-  */
-
-  // Modal logic (remains the same)
+  // Lógica del Modal
   const { isOpen, selectedProduct, openModal, closeModal } = useModal();
-
-  // Cart logic (remains the same)
+  // Lógica del Carrito
   const { handleAddToCart } = useCart();
 
-  // --- Memoized Handlers ---
+  // --- Manejadores Memoizados ---
   const handleProductClick = useCallback((product) => {
     openModal(product);
-  }, [openModal]); // Dependency: openModal from useModal
-
-  // --- Event Handlers using Redux Actions --- (using useCallback for consistency, though maybe less critical here)
-  const handleSearchChange = useCallback((term) => {
-    dispatch(setSearchTerm(term));
+  }, [openModal]); 
+  
+  // Manejador para envío explícito de búsqueda
+  const handleSearchSubmit = useCallback((term) => {
+      // Establecer el nuevo término de búsqueda
+      dispatch(setSearchTerm(term));
+      // LIMPIAR TAMBIÉN OTROS FILTROS para asegurar una búsqueda fresca
+      dispatch(setSelectedCategory(""));
+      dispatch(setPriceOrder(""));
   }, [dispatch]);
 
+  // Manejadores de Eventos usando Acciones de Redux
   const handleCategoryChange = useCallback((categoryName) => {
     dispatch(setSelectedCategory(categoryName)); 
+    // Limpiar término de búsqueda al seleccionar categoría explícitamente
+    dispatch(setSearchTerm("")); 
   }, [dispatch]);
 
   const handlePriceOrderChange = useCallback((order) => {
     dispatch(setPriceOrder(order));
+    // Si se limpia el orden (ej: "Sin filtros" resulta en order === ""), 
+    // limpiar también búsqueda y categoría
+    if (order === "") { 
+        dispatch(setSearchTerm(""));
+        dispatch(setSelectedCategory("")); 
+    } else {
+        // Si se aplica orden específico, solo limpiar búsqueda previa
+        dispatch(setSearchTerm(""));
+    }
   }, [dispatch]);
 
   const handlePageChange = useCallback((page) => {
     dispatch(setCurrentPage(page));
   }, [dispatch]);
 
-  // Fetch initial data on component mount
+  // --- Efectos ---
+
+  // Cargar datos iniciales al montar
   useEffect(() => {
     dispatch(fetchInitialShopData());
   }, [dispatch]);
 
-  // Efecto para preseleccionar categoría desde el estado de navegación (sin logs)
+  // Efecto para preseleccionar categoría desde estado de navegación
   useEffect(() => {
     const categoryNameToSelect = location.state?.preselectCategoryName;
     if (categoryNameToSelect && filters.selectedCategory !== categoryNameToSelect) {
       dispatch(setSelectedCategory(categoryNameToSelect));
     }
+    // Limpiar el estado de navegación para evitar re-aplicación
     if (location.state?.preselectCategoryName) {
         window.history.replaceState({}, document.title);
     }
-  }, [location.state, dispatch, filters.selectedCategory]); // Added filters.selectedCategory dependency if used inside
+  }, [location.state, dispatch, filters.selectedCategory]); 
 
-  // --- Render Logic --- 
+  // --- Lógica de Renderizado ---
   
-  // Function to prepare banner props dynamically
-  // Let's memoize the result of getBannerProps
+  // Calcular props del banner dinámicamente y memoizar
   const bannerProps = useMemo(() => {
-    let imagesToShow = heroImages; // Default fallback
+    let imagesToShow = heroImages; 
     const title = bannerConfig?.title || "Tienda de Cactilia";
     const subtitle = bannerConfig?.subtitle || "Encuentra productos frescos y naturales";
     const showLogo = bannerConfig?.showLogo !== false;
@@ -157,19 +145,19 @@ export const ShopPage = () => {
           .map(imgData => ({
               id: imgData.id || `banner-img-${Math.random()}`,
               src: getImageUrlBySize(imgData, desiredSize),
-              alt: imgData.alt || bannerConfig.title || 'Banner Image'
+              alt: imgData.alt || bannerConfig.title || 'Imagen de Banner' // Traducido
           }))
           .filter(img => img.src);
       } else if (bannerConfig.backgroundImage) {
          imagesToShow = [{
              id: 'single-banner-img',
              src: bannerConfig.backgroundImage,
-             alt: bannerConfig.title || 'Banner Image' 
+             alt: bannerConfig.title || 'Imagen de Banner' // Traducido
          }];
       }
     }
     if (!imagesToShow || imagesToShow.length === 0) {
-      imagesToShow = heroImages;
+      imagesToShow = heroImages; // Fallback
     }
 
     return {
@@ -180,56 +168,51 @@ export const ShopPage = () => {
       showSubtitle,
       height,
       autoRotate,
-      showButton: false,
+      showButton: false, // El banner de la tienda usualmente no lleva botón principal
     };
-    // Dependencies for banner props calculation
   }, [bannerConfig, bannerCollectionImages, heroImages]); 
 
   return (
     <>
-      {/* Hero Banner - Dynamic based on Redux state */}
+      {/* Banner Hero - Dinámico basado en estado Redux */}
       <HeroSection {...bannerProps} />
       
-      {/* SearchBar - Pass current filter value and handler */}
-      <SearchBar 
-        searchTerm={filters.searchTerm} 
-        setSearchTerm={handleSearchChange} // Pass memoized handler
-      />
+      {/* Barra de Búsqueda - Props actualizadas para búsqueda explícita */}
+      <SearchBar onSearchSubmit={handleSearchSubmit} />
 
-      {/* FilterBar - Pass current filter values and handlers */}
+      {/* Barra de Filtros - Pasar valores y manejadores */}
       <FilterBar
         selectedCategory={filters.selectedCategory} 
-        setSelectedCategory={handleCategoryChange} // Pass memoized handler
+        setSelectedCategory={handleCategoryChange} 
         priceOrder={filters.priceOrder}
-        setPriceOrder={handlePriceOrderChange} // Pass memoized handler
+        setPriceOrder={handlePriceOrderChange} 
         categories={categories} 
       />
 
-      {/* StatusMessage - Uses Redux state */}
+      {/* Mensaje de Estado - Usa estado Redux */}
       <StatusMessage loading={isLoading} error={error} />
 
-      {/* ProductList & Pagination - Use Redux state */}
+      {/* Lista de Productos y Paginación - Usa estado Redux */}
       {!isLoading && !error && (
         <>
-          {/* Pass the memoized handleProductClick callback */}
-          <ProductList products={products} onProductClick={handleProductClick} /> 
+          <ProductList products={products} onProductClick={handleProductClick} />
           {totalPages > 1 && (
              <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onPageChange={handlePageChange} // Pass memoized handler
+                onPageChange={handlePageChange} 
              />
           )}
         </>
       )}
 
-      {/* ProductModal - Use Suspense for lazy loading */}
+      {/* Modal de Producto - Usa Suspense para carga diferida */}
       <Suspense fallback={<div className="text-center my-4">Cargando detalles del producto...</div>}> 
         <ProductModal
           product={selectedProduct}
           isOpen={isOpen}
           onClose={closeModal}
-          onAddToCart={handleAddToCart} // Pass the function from useCart
+          onAddToCart={handleAddToCart} 
         />
       </Suspense>
     </>
