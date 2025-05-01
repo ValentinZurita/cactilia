@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react'; // Import React, Suspense, lazy
 import { useLocation } from 'react-router-dom'; // Import useLocation
 import { useDispatch, useSelector } from 'react-redux'; // Import Redux hooks
 import { HeroSection } from '../../public/components/home-page';
-import { SearchBar, FilterBar, ProductList, Pagination, ProductModal, StatusMessage} from '../features/shop/index.js';
+import { SearchBar, FilterBar, ProductList, Pagination, StatusMessage} from '../features/shop/index.js'; // Import other components
 import { heroImages } from '../../../shared/constants';
 import { useModal } from '../hooks/index.js' 
 import { useCart } from '../features/cart/hooks/useCart.js'
@@ -25,6 +25,12 @@ import {
   selectShopBannerConfig,
   selectShopBannerCollectionImages,
 } from '../../../store/slices/shopPageSlice.js';
+
+// Lazy load ProductModal, selecting the named export
+const ProductModal = lazy(() => 
+  import('../features/shop/ProductModal.jsx')
+    .then(module => ({ default: module.ProductModal }))
+);
 
 // Re-introduce or import the helper function
 const getImageUrlBySize = (imgData, desiredSize = 'medium') => {
@@ -215,13 +221,15 @@ export const ShopPage = () => {
         </>
       )}
 
-      {/* ProductModal - No changes needed */}
-      <ProductModal
-        product={selectedProduct}
-        isOpen={isOpen}
-        onClose={closeModal}
-        onAddToCart={handleAddToCart}
-      />
+      {/* ProductModal - Use Suspense for lazy loading */}
+      <Suspense fallback={<div className="text-center my-4">Cargando detalles del producto...</div>}> 
+        <ProductModal
+          product={selectedProduct}
+          isOpen={isOpen}
+          onClose={closeModal}
+          onAddToCart={handleAddToCart} // Pass the function from useCart
+        />
+      </Suspense>
     </>
   );
 };
