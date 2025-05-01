@@ -229,56 +229,68 @@ export const selectFilteredProducts = createSelector(
       const normalizedSearch = filters.searchTerm.toLowerCase().trim();
       filtered = filtered.filter(prod =>
         prod.name?.toLowerCase().includes(normalizedSearch) ||
-        prod.category?.toLowerCase().includes(normalizedSearch) // Assumes category name is added
+        prod.category?.toLowerCase().includes(normalizedSearch)
       );
     }
 
-    // Filter by category (use ID from filter state)
-    if (filters.selectedCategory) { // Assuming selectedCategory holds the category ID
-      filtered = filtered.filter(prod => prod.categoryId === filters.selectedCategory);
+    // Filter by category NAME
+    if (filters.selectedCategory) {
+      const selectedCategoryName = filters.selectedCategory.toLowerCase();
+      filtered = filtered.filter(prod => 
+        prod.category?.toLowerCase() === selectedCategoryName
+      );
     }
 
-    // Sort by price
-    if (filters.priceOrder === 'asc') {
+    // --- Price Filtering/Sorting --- 
+
+    // Filter by featured status if selected
+    if (filters.priceOrder === 'Destacados') {
+      filtered = filtered.filter((prod) => {
+        const isFeatured = prod.featured === true;
+        return isFeatured;
+      });
+    }
+
+    // Then, sort by price if requested (applied to remaining items)
+    if (filters.priceOrder === 'Menor a Mayor') {
       filtered.sort((a, b) => a.price - b.price);
-    } else if (filters.priceOrder === 'desc') {
+    } else if (filters.priceOrder === 'Mayor a Menor') {
       filtered.sort((a, b) => b.price - a.price);
     }
-    
+
     return filtered;
   }
 );
 
-export const selectPaginatedProducts = createSelector(
-  [selectFilteredProducts, selectShopPagination],
-  (filteredProducts, pagination) => {
-    const { currentPage, pageSize } = pagination;
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredProducts.slice(startIndex, endIndex);
+// Selector for category options formatted for the Dropdown
+export const selectCategoryFilterOptions = createSelector(
+  [selectShopCategories], // Input selector: get the raw category objects [{id: '...', name: '...'}, ...]
+  (categories) => {
+    // Transform into an array of names for the FilterBar Dropdown
+    return categories.map(cat => cat.name);
   }
 );
 
-// Selector for total pages, derived from filtered products
+// Selector for total pages based on filtered products
 export const selectShopTotalPages = createSelector(
-    [selectFilteredProducts, selectShopPagination],
-    (filteredProducts, pagination) => {
-        return Math.ceil(filteredProducts.length / pagination.pageSize);
-    }
+  [selectFilteredProducts, selectShopPagination],
+  (filteredProducts, pagination) => {
+    return Math.ceil(filteredProducts.length / pagination.pageSize);
+  }
+);
+
+// Selector for paginated products based on filtered products and current page
+export const selectPaginatedProducts = createSelector(
+  [selectFilteredProducts, selectShopPagination],
+  (filteredProducts, pagination) => {
+    const start = (pagination.currentPage - 1) * pagination.pageSize;
+    const end = start + pagination.pageSize;
+    return filteredProducts.slice(start, end);
+  }
 );
 
 // Selector for total number of filtered products
 export const selectTotalFilteredProducts = createSelector(
     [selectFilteredProducts],
     (filteredProducts) => filteredProducts.length
-);
-
-// Selector to get category names for the filter bar
-// Returns an array of { id: string, name: string }
-export const selectCategoryFilterOptions = createSelector(
-    [selectShopCategories],
-    (categories) => {
-        // Add an "All Categories" option
-        return [{ id: null, name: 'Todas las categorías' }, ...categories];
-    }
 ); 

@@ -350,10 +350,10 @@ export const searchProducts = async (searchTerm, maxResults = 10) => {
 // --- NUEVA FUNCIÓN OPTIMIZADA ---
 /**
  * Obtiene productos activos y destacados para la HomePage, seleccionando campos mínimos.
- * @param {number} [count=6] - Número máximo de productos a obtener.
+ * @param {number} [count=10] - Número máximo de productos a obtener.
  * @returns {Promise<{ok: boolean, data: any[], error: null|string}>}
  */
-export const getFeaturedProductsForHome = async (count = 6) => {
+export const getFeaturedProductsForHome = async (count = 10) => {
   try {
     const productsRef = collection(FirebaseDB, 'products');
     // Consulta optimizada
@@ -362,9 +362,6 @@ export const getFeaturedProductsForHome = async (count = 6) => {
       where('active', '==', true),
       where('featured', '==', true),
       limit(count)
-      // No seleccionamos campos aquí porque parece que necesitas varios
-      // para formatear el objeto en HomePage (price, category, stock)
-      // Si pudieras simplificar lo que necesita ProductCard, podríamos añadir .select()
     );
 
     const querySnapshot = await getDocs(q);
@@ -375,13 +372,14 @@ export const getFeaturedProductsForHome = async (count = 6) => {
       productsData.push({
         id: docSnapshot.id,
         name: data.name || 'Producto sin nombre',
-        image: data.mainImage || '/public/images/placeholder.jpg',
-        mainImage: data.mainImage, 
+        mainImage: data.mainImage || '/public/images/placeholder.jpg',
         price: data.price || 0,
         category: data.category, 
         stock: data.stock || 0,
         description: data.description || '', 
         images: data.images || [], 
+        featured: data.featured, 
+        active: data.active, 
       });
     });
 
