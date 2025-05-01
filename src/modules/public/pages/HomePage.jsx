@@ -54,15 +54,8 @@ export const HomePage = () => {
 
     // Despachar si está cargando, si faltan datos, si hay error, o si los datos son obsoletos
     if (!isLoading && (!pageData || error || isDataStale)) {
-      console.log(`>>> HomePage useEffect: Dispatching fetchHomepageData (Initial: ${!pageData}, Error: ${!!error}, Stale: ${isDataStale})`);
       dispatch(fetchHomepageData())
     }
-    // Código original comentado:
-    // if (!isLoading && !pageData && !error) { 
-    //   console.log(\'>>> HomePage useEffect: Dispatching fetchHomepageData (data missing or error)...\');
-    //   dispatch(fetchHomepageData())
-    // }
-
   }, [dispatch, isLoading, pageData, error, lastFetchTimestamp]); // <-- Añadir lastFetchTimestamp a dependencias
 
   // --- Función para manejar clic en tarjeta de producto/categoría ---
@@ -224,10 +217,6 @@ export const HomePage = () => {
           const limitedCategories = isValidLimit 
               ? categoriesSource.slice(0, categoryLimit) 
               : categoriesSource; // Usar la fuente completa si el límite no es válido
-
-          // --- DEBUGGING: Verificar el limit leído por el componente ---
-          console.log(`>>> HomePage render - Read config limit: ${categoryLimit}, Is Valid: ${isValidLimit}, Passed Count: ${limitedCategories.length}`);
-          // --- FIN DEBUGGING ---
 
           // Renderizar la sección con las categorías (limitadas o no)
           return _renderFeaturedCategoriesSection(sectionConfig, limitedCategories);

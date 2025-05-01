@@ -233,3 +233,30 @@
 .carousel-indicators .active {
     opacity: 1;
 }
+
+/*
+  🎠 NEW: HomeCarousel Bootstrap Control Icons Override
+  Estilos para aplicar color personalizado a los iconos de control del carrusel Bootstrap.
+*/
+
+/*  Ocultar el fondo SVG original de los botones */
+#farmCarousel .carousel-control-prev,
+#farmCarousel .carousel-control-next {
+    background-image: none;
+}
+
+#farmCarousel .carousel-control-prev i,
+#farmCarousel .carousel-control-next i {
+    /* Aplicar el color primario */
+    color: var(--green-1);
+    font-size: 2.5rem; 
+    font-weight: bold;
+    line-height: 1;
+}
+
+/* hover */
+#farmCarousel .carousel-control-prev:hover i,
+#farmCarousel .carousel-control-next:hover i {
+    color: var(--green-3); 
+    transition: color 0.2s ease-in-out; 
+}

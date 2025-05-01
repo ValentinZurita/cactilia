@@ -73,13 +73,15 @@ export const HomeCarousel = React.memo(({ images }) => {
 
         {/* Previous Navigation Button */}
         <button className="carousel-control-prev" type="button" data-bs-target="#farmCarousel" data-bs-slide="prev">
-          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+          {/* Usar Bootstrap Icon para poder aplicar color */}
+          <i className="bi bi-chevron-left" aria-hidden="true"></i> 
           <span className="visually-hidden">Anterior</span>
         </button>
 
         {/* Next Navigation Button */}
         <button className="carousel-control-next" type="button" data-bs-target="#farmCarousel" data-bs-slide="next">
-          <span className="carousel-control-next-icon" aria-hidden="true"></span>
+          {/* Usar Bootstrap Icon para poder aplicar color */}
+          <i className="bi bi-chevron-right" aria-hidden="true"></i>
           <span className="visually-hidden">Siguiente</span>
         </button>
       </div>
