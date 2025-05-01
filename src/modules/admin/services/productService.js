@@ -372,17 +372,16 @@ export const getFeaturedProductsForHome = async (count = 6) => {
     const productsData = [];
     querySnapshot.forEach((docSnapshot) => {
       const data = docSnapshot.data();
-      // Formatear directamente aquí si es posible, o devolver los datos crudos
-      // necesarios para que HomePage los formatee.
       productsData.push({
         id: docSnapshot.id,
         name: data.name || 'Producto sin nombre',
-        image: data.mainImage || '/public/images/placeholder.jpg', // Para ProductCarousel
-        mainImage: data.mainImage, // Para ProductCard fallback
+        image: data.mainImage || '/public/images/placeholder.jpg',
+        mainImage: data.mainImage, 
         price: data.price || 0,
-        category: data.category || 'Sin categoría', // ¿Se usa este campo?
-        stock: data.stock || 0, // ¿Se usa este campo en Home?
-        // No necesitamos traer description, images array, etc.
+        category: data.category, 
+        stock: data.stock || 0,
+        description: data.description || '', 
+        images: data.images || [], 
       });
     });
 
@@ -396,4 +395,3 @@ export const getFeaturedProductsForHome = async (count = 6) => {
     return { ok: false, data: [], error: error.message };
   }
 };
-// --- FIN NUEVA FUNCIÓN ---

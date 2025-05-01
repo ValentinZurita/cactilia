@@ -5,8 +5,7 @@ import { SkeletonHero, SkeletonCarousel } from '../components/skeletons/index.js
 import '../../../styles/global.css'
 import './../../public/styles/homepage.css'
 import './../../public/styles/skeletons.css'
-// import { heroImages } from '../../../shared/constants/images.js' // Ya no se usa aquí directamente, el fallback usa placeholder
-import { sampleImages, sampleProducts, sampleCategories } from '../data/sampleHomepageData.js'; // Datos de muestra para fallbacks
+import { sampleImages, sampleProducts, sampleCategories } from '../data/sampleHomepageData.js'; 
 import { 
   fetchHomepageData, 
   selectHomepagePageData,
@@ -17,6 +16,7 @@ import {
   selectHomepageError
 } from '../../../store/slices/homepageSlice.js'
 import { getImageUrlBySize } from "../../../utils/imageUtils.js";
+import { openProductModal } from "../../../store/slices/uiSlice.js"; 
 
 /**
  * HomePage
@@ -51,6 +51,15 @@ export const HomePage = () => {
     }
     // Dependencias aseguran que el fetch solo ocurra cuando sea necesario
   }, [dispatch, isLoading, pageData, error]) 
+
+  // --- Función para manejar clic en tarjeta de producto/categoría ---
+  const handleProductCardClick = (productData) => {
+    if (productData && productData.id) {
+        dispatch(openProductModal(productData)); 
+    } else {
+        console.error("[HomePage] No se pudo abrir el modal: faltan datos del producto.");
+    }
+  };
 
   // ---------------------- FUNCIONES AUXILIARES DE RENDERIZADO DE SECCIONES ----------------------
 
@@ -89,7 +98,10 @@ export const HomePage = () => {
             link={sectionConfig.link || '/shop'}
             linkText={sectionConfig.linkText || 'Ver todos los productos'}
         >
-            <ProductCarousel products={products} />
+            <ProductCarousel 
+              products={products} 
+              onProductClick={handleProductCardClick} 
+            />
         </HomeSection>
     );
   };
@@ -129,7 +141,10 @@ export const HomePage = () => {
             link={sectionConfig.link || '/shop'}
             linkText={sectionConfig.linkText || 'Ver todas las categorías'}
         >
-            <ProductCarousel products={categories} isCategories={true} />
+            <ProductCarousel 
+              products={categories} 
+              isCategories={true} 
+            />
         </HomeSection>
     );
   };
@@ -154,7 +169,6 @@ export const HomePage = () => {
       <div className="container text-center py-5">
         <h2 className="text-danger">Error al cargar la página</h2>
         <p>{typeof error === 'string' ? error : 'Ocurrió un problema inesperado.'}</p>
-        {/* TODO: Opcionalmente añadir un botón de reintento */}
       </div>
     );
   }

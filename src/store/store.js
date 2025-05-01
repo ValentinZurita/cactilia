@@ -1,8 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
-import storage from 'redux-persist/lib/storage'
+import storage from 'redux-persist/lib/storage' // Almacenamiento por defecto (localStorage)
 import { registerSlice } from '../modules/auth/store/registerSlice.js'
-import { persistReducer, persistStore } from 'redux-persist'
-import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'
+import { persistReducer, persistStore } from 'redux-persist' // Utilidades para persistencia
+// Constantes de acciones de redux-persist para ignorar en el chequeo de serialización
+import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist' 
 import { authSlice } from './auth/authSlice.js'
 import messagesReducer from './messages/messageSlice.js'
 import ordersReducer from '../modules/admin/components/orders/slices/ordersSlice.js';
@@ -10,121 +11,132 @@ import { cartSlice } from '../modules/shop/features/cart/store/index.js'
 import homepageReducer from './slices/homepageSlice.js'
 import siteConfigReducer from './slices/siteConfigSlice.js'
 import shopPageReducer from './slices/shopPageSlice.js'
+import uiReducer from './slices/uiSlice.js' // Reducer para estado de UI (ej. modales)
 
-// Config persistence for auth
+// --- Configuración de Persistencia por Slice --- 
+
+// Configuración de persistencia para 'auth'
 const authPersistConfig = {
-  key: 'auth',
-  storage,
-  whitelist: ['auth']
+  key: 'auth', // Clave en el storage
+  storage,     // Adaptador de almacenamiento (localStorage)
+  whitelist: ['auth'] // Campos específicos a persistir dentro del slice 'auth'
 }
 
-// Config persistence for cart
+// Configuración de persistencia para 'cart'
 const cartPersistConfig = {
   key: 'cart',
   storage,
-  whitelist: ['items']
+  whitelist: ['items'] // Solo persistir los items del carrito
 }
 
-// Config persistence for orders
-// Solo persistimos filtros y algunas configuraciones, no los datos completos
+// Configuración de persistencia para 'orders' (Admin)
 const ordersPersistConfig = {
   key: 'orders',
   storage,
-  whitelist: ['filters'] // Solo persistimos los filtros aplicados
+  // Solo persistimos los filtros aplicados, no la lista completa de órdenes
+  whitelist: ['filters'] 
 }
 
-// Create the persisted reducers
-const persistedAuthReducer = persistReducer(authPersistConfig, authSlice.reducer)
-const persistedCartReducer = persistReducer(cartPersistConfig, cartSlice.reducer)
-const persistedOrdersReducer = persistReducer(ordersPersistConfig, ordersReducer)
-
-// Config persistence for shopPage
+// Configuración de persistencia para 'shopPage'
 const shopPagePersistConfig = {
   key: 'shopPage',
   storage,
-  // Persist core data and timestamp, exclude filters/pagination/loading/error
+  // Persistir datos principales y timestamp, excluir filtros, paginación, carga, errores
   whitelist: ['allProducts', 'categories', 'categoriesMap', 'bannerConfig', 'bannerCollectionImages', 'lastFetchTimestamp'] 
 };
-const persistedShopPageReducer = persistReducer(shopPagePersistConfig, shopPageReducer);
 
-// Config persistence for homepage
+// Configuración de persistencia para 'homepage'
 const homepagePersistConfig = {
   key: 'homepage',
   storage,
-  // Persist core data and timestamp
   whitelist: ['pageData', 'featuredProducts', 'featuredCategories', 'collectionImages', 'lastFetchTimestamp'] 
 };
-const persistedHomepageReducer = persistReducer(homepagePersistConfig, homepageReducer);
 
-// Config persistence for siteConfig
+// Configuración de persistencia para 'siteConfig'
 const siteConfigPersistConfig = {
   key: 'siteConfig',
   storage,
-  // Persist core info and timestamp
   whitelist: ['companyInfo', 'lastFetchTimestamp'] 
 };
+
+// --- Creación de Reducers Persistidos ---
+// Envolvemos los reducers que queremos persistir con persistReducer
+const persistedAuthReducer = persistReducer(authPersistConfig, authSlice.reducer)
+const persistedCartReducer = persistReducer(cartPersistConfig, cartSlice.reducer)
+const persistedOrdersReducer = persistReducer(ordersPersistConfig, ordersReducer)
+const persistedShopPageReducer = persistReducer(shopPagePersistConfig, shopPageReducer);
+const persistedHomepageReducer = persistReducer(homepagePersistConfig, homepageReducer);
 const persistedSiteConfigReducer = persistReducer(siteConfigPersistConfig, siteConfigReducer);
 
-// Crear un customSerializer para manejar objetos de Firestore
+// --- Verificación de Serialización Personalizada (Middleware) ---
+// Redux requiere que todo el estado sea serializable.
+// Firestore devuelve objetos (como Timestamps) que no son serializables por defecto.
+// Este chequeo personalizado permite explícitamente ciertos tipos no serializables 
+// relacionados con Firestore, asumiendo que se manejan adecuadamente en otro lugar
+// (o se transforman antes de guardarlos, aunque aquí no se ve transformación).
 const firestoreSerializableCheck = {
   isSerializable: (value) => {
-    // Verificar si es un objeto de Firestore o un Timestamp, en cuyo caso lo consideramos serializable
-    // porque lo vamos a transformar antes de guardarlo en el store
+    // Permite objetos de Firestore y Timestamps
     if (
       value &&
       typeof value === 'object' &&
-      (value._firestore ||
-        value._key ||
-        value._converter ||
-        (value.seconds !== undefined && value.nanoseconds !== undefined))
+      (value._firestore || // Objeto Firestore
+        value._key ||      // Clave interna Firestore?
+        value._converter ||// Convertidor Firestore?
+        (value.seconds !== undefined && value.nanoseconds !== undefined)) // Timestamp Firestore
     ) {
       return true;
     }
-
-    // Para otros valores, usar la verificación predeterminada
-    // Esto no es el código completo, solo una indicación
-    return typeof value === 'undefined' ||
-      value === null ||
-      typeof value === 'boolean' ||
-      typeof value === 'number' ||
-      typeof value === 'string' ||
-      Array.isArray(value) ||
-      Object.prototype.toString.call(value) === '[object Object]';
+    // Usa la verificación por defecto para otros tipos
+    const defaultCheck = typeof value === 'undefined' ||
+                        value === null ||
+                        typeof value === 'boolean' ||
+                        typeof value === 'number' ||
+                        typeof value === 'string' ||
+                        Array.isArray(value) ||
+                        Object.prototype.toString.call(value) === '[object Object]';
+    return defaultCheck;
   },
-
-  // Puedes definir getEntries si necesitas personalizar cómo se extraen las entradas de objetos
+  // Función opcional para extraer entradas de objetos (usamos la predeterminada)
   getEntries: (value) => {
     return Object.entries(value);
   },
 };
 
-// Create the store with the reducers and the middleware to ignore some actions for the persistence
-export const store = configureStore({
-  reducer: {
-    auth: persistedAuthReducer,
-    register: registerSlice.reducer,
-    cart: persistedCartReducer,
-    messages: messagesReducer,
-    orders: persistedOrdersReducer, // Añadimos el reducer de orders
-    homepage: persistedHomepageReducer, // Use persisted homepage reducer
-    siteConfig: persistedSiteConfigReducer, // Use persisted site config reducer
-    shopPage: persistedShopPageReducer, // Use persisted shop page reducer
-  },
+// --- Combinación de Reducers --- 
+// Mapeo de los nombres de estado a sus respectivos reducers.
+// Usamos los reducers persistidos donde corresponda.
+const rootReducer = {
+  auth: persistedAuthReducer,       // Estado de autenticación (persistido)
+  register: registerSlice.reducer,  // Estado de registro (no persistido)
+  cart: persistedCartReducer,         // Estado del carrito (persistido)
+  messages: messagesReducer,        // Estado de mensajes globales (no persistido)
+  orders: persistedOrdersReducer,       // Estado de órdenes (filtros persistidos)
+  homepage: persistedHomepageReducer,   // Estado de la página de inicio (persistido)
+  siteConfig: persistedSiteConfigReducer, // Estado de configuración del sitio (persistido)
+  shopPage: persistedShopPageReducer,   // Estado de la página de tienda (persistido)
+  ui: uiReducer,                    // Estado de UI (ej. modal, no persistido)
+}
 
-  // Add the middleware to ignore some actions for the persistence
+// --- Creación del Store --- 
+export const store = configureStore({
+  reducer: rootReducer, // El objeto que combina todos nuestros reducers
+
+  // Configuración del Middleware
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
+      // Configuración para el chequeo de serialización
       serializableCheck: {
-        // Usar nuestra verificación personalizada
+        // Usar nuestra función personalizada para permitir ciertos tipos de Firestore
         isSerializable: firestoreSerializableCheck.isSerializable,
         getEntries: firestoreSerializableCheck.getEntries,
 
-        // Acciones a ignorar
+        // Ignorar acciones específicas (principalmente de redux-persist y thunks con datos no serializables)
         ignoredActions: [
-          // Redux Persist actions
+          // Acciones de Redux Persist
           FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER,
 
-          // Orders actions que manejan datos de Firestore
+          // Acciones de Órdenes que pueden manejar Timestamps de Firestore
           'orders/fetchOrders/pending',
           'orders/fetchOrders/fulfilled',
           'orders/fetchOrderById/pending',
@@ -145,5 +157,6 @@ export const store = configureStore({
     }),
 })
 
-// Export the store
+// --- Exportación del Persistor --- 
+// Necesario para envolver la aplicación y rehidratar el estado persistido
 export const persistor = persistStore(store);

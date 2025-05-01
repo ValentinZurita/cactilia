@@ -1,3 +1,4 @@
+import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import { ProductCard } from './ProductCard.jsx';
@@ -15,9 +16,10 @@ import '../../styles/homepage.css';
  * - Ahora identifica si los elementos son productos o categorías para su redirección
  *
  * @param {Array} products - Lista de productos o categorías a mostrar.
- * @param {boolean} isCategory - Indica si los elementos son categorías (true) o productos (false)
+ * @param {boolean} [isCategory=false] - Indica si los elementos son categorías.
+ * @param {function} [onProductClick] - Función a ejecutar cuando se hace clic en una tarjeta, recibe el objeto producto/categoría.
  */
-export const ProductCarousel = ({ products, isCategory = false }) => {
+export const ProductCarousel = React.memo(({ products, isCategory = false, onProductClick }) => {
   /**
    * Verifica si no hay productos y retorna un mensaje amigable.
    */
@@ -106,10 +108,12 @@ export const ProductCarousel = ({ products, isCategory = false }) => {
         {displayProducts.map((product) => (
           <SwiperSlide key={product.id} className="home-product-slide">
             <ProductCard
-              id={product.id.split('_duplicate_')[0]} // Usamos el ID original sin sufijo de duplicado
+              id={product.id.split('_duplicate_')[0]}
               name={product.name}
               image={product.image || product.mainImage}
               isCategory={isCategory}
+              onCardClick={onProductClick}
+              productData={product}
             />
           </SwiperSlide>
         ))}
@@ -124,4 +128,7 @@ export const ProductCarousel = ({ products, isCategory = false }) => {
       </button>
     </div>
   );
-};
+});
+
+// Optional: Add display name
+ProductCarousel.displayName = 'ProductCarousel';

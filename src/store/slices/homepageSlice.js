@@ -148,19 +148,17 @@ const homepageSlice = createSlice({
       })
       // Acción completada (cuando el thunk termina exitosamente)
       .addCase(fetchHomepageData.fulfilled, (state, action) => {
-        // Poner isLoading a false siempre que el thunk termine (éxito o skipped)
         state.isLoading = false; 
-        // Si el fetch se saltó (payload tiene skipped: true), no hacemos nada más
         if (action.payload?.skipped) {
           return;
         }
-        // Si el fetch se ejecutó, actualizamos el estado con los datos del payload
+        // Actualizar estado
         state.pageData = action.payload.pageData;
         state.featuredProducts = action.payload.products;
         state.featuredCategories = action.payload.categories;
         state.collectionImages = action.payload.collectionImages;
-        state.lastFetchTimestamp = action.payload.timestamp; // Actualizar el timestamp del caché
-        state.error = null; // Limpiar error en caso de éxito
+        state.lastFetchTimestamp = action.payload.timestamp;
+        state.error = null;
       })
       // Acción rechazada (cuando el thunk falla)
       .addCase(fetchHomepageData.rejected, (state, action) => {

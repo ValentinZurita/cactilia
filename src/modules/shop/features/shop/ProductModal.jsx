@@ -7,6 +7,7 @@ import '../../styles/productModal.css';
 
 // Componente Principal Refactorizado
 export const ProductModal = ({ product, isOpen, onClose }) => {
+
   const [currentImage, setCurrentImage] = useState(null);
   const modalVisible = useModalVisibility(isOpen, product);
   const {
@@ -23,16 +24,21 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen && product) {
-      setCurrentImage(product.mainImage);
+      // Revertido: Usa mainImage directamente como antes
+      setCurrentImage(product.mainImage); 
     }
   }, [isOpen, product]);
 
   if (!isOpen || !product) return null;
 
   const modalClass = modalVisible ? 'prod-modal--visible' : 'prod-modal--hidden';
-  const hasMultipleImages = product.images?.length > 1;
 
-  // Funciones auxiliares re-añadidas basadas en el código anterior, usando estado del hook
+  const hasMultipleImages = product && Array.isArray(product.images) && product.images.length > 1;
+
+  const handleThumbnailSelect = (img) => {
+    setCurrentImage(img);
+  };
+
   const getButtonText = () => {
     if (isOutOfStock || quantity <= 0) return 'Sin stock';
     if (added) return 'Producto agregado';
@@ -67,9 +73,10 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
           {/* Columna de Imagen */}
           <div className="prod-modal__image-wrap">
             <ImageComponent 
+              // Revertido: Usa mainImage como fallback si currentImage es null
               src={currentImage || product.mainImage} 
               alt={product.name} 
-              className="prod-modal__image" // Eliminadas img-fluid y rounded
+              className="prod-modal__image"
             />
             {/* Badges de stock mantenidos como estaban en el estado intermedio */}
             {isOutOfStock && (
@@ -101,12 +108,12 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
               <p className="prod-modal__price">${product.price.toFixed(2)}</p>
               <p className="prod-modal__desc">{product.description || 'Sin descripción disponible'}</p>
 
-              {/* Carrusel movido aquí y envuelto */} 
+              {/* Carrusel: Revertido a pasar product.images directamente */}
               {hasMultipleImages && (
                 <div className="prod-modal__carousel-container">
                   <ProductImageCarousel
-                    images={product.images}
-                    onSelectImage={setCurrentImage} // ¿Mantener la prop alt?
+                    images={product.images} // Pasa el array original
+                    onSelectImage={handleThumbnailSelect} // Pasa la función original
                   />
                 </div>
               )}

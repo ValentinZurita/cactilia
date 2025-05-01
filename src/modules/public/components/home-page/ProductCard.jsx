@@ -1,32 +1,50 @@
-import { Link } from 'react-router-dom';
+import React from 'react'; // Import React
 import { ImageComponent } from '../../../../shared/components/images/ImageComponent.jsx';
 
 /**
  * ProductCard Component
  *
- * Un componente reutilizable que muestra una imagen y nombre de producto/categoría
- * con funcionalidad de navegación al hacer clic y efecto hover sutil.
- *
- * Features:
- * - Muestra una imagen con proporción cuadrada
- * - Al hacer clic, navega a la página de tienda con los filtros apropiados
- * - Efecto hover sutil sin etiquetas adicionales
- * - Soporta tanto productos como categorías con la misma interfaz visual
+ * Muestra imagen y nombre de producto/categoría.
+ * Si se proporciona onCardClick, lo ejecuta al hacer clic.
  *
  * Props:
  * @param {string} name - Nombre del producto o categoría
  * @param {string} image - URL de la imagen
  * @param {string} id - ID único del producto o categoría
- * @param {boolean} isCategory - Indica si es una categoría (true) o un producto (false)
+ * @param {boolean} [isCategory=false] - Indica si es una categoría
+ * @param {function} [onCardClick] - Función a llamar al hacer clic, recibe el objeto producto/categoría.
+ * @param {object} [productData] - Objeto completo con los datos del producto/categoría (para pasar a onCardClick)
  */
-export const ProductCard = ({ name, image, id, isCategory = false }) => {
-  // Determinar la URL de destino en función de si es producto o categoría
-  const linkTo = isCategory
-    ? `/shop?category=${id}`
-    : `/shop?product=${id}`;
+export const ProductCard = React.memo(({
+                              name,
+                              image,
+                              id,
+                              isCategory = false,
+                              onCardClick,
+                              productData // Recibe el objeto completo
+                            }) => {
 
+  const handleCardClick = () => {
+    if (onCardClick && productData) {
+      // Llama a la función pasada como prop con todos los datos disponibles
+      onCardClick(productData);
+    } else {
+      // Comportamiento por defecto si no hay onCardClick (o no hay productData)
+      // Podría ser no hacer nada, o registrar un aviso.
+      console.warn('ProductCard clicked without onCardClick handler or productData.');
+    }
+  };
+
+  // Ya no se usa Link, ahora es un div clickeable si onCardClick existe
   return (
-    <Link to={linkTo} className="text-decoration-none">
+    <div 
+      className="text-decoration-none" 
+      onClick={onCardClick ? handleCardClick : undefined} // Añade onClick solo si existe la prop
+      style={{ cursor: onCardClick ? 'pointer' : 'default' }} // Cambia cursor si es clickeable
+      role={onCardClick ? 'button' : undefined} // Rol semántico
+      tabIndex={onCardClick ? 0 : undefined} // Hacer enfocable si es clickeable
+      onKeyPress={onCardClick ? (e) => e.key === 'Enter' && handleCardClick() : undefined} // Permitir activación con teclado
+    >
       <div className="border-0 text-center p-2 mx-2 bg-transparent product-card-container">
         {/* Contenedor de imagen con efecto hover */}
         <div
@@ -58,6 +76,9 @@ export const ProductCard = ({ name, image, id, isCategory = false }) => {
           <p className="text-muted text-green my-2">{name}</p>
         </div>
       </div>
-    </Link>
+    </div>
   );
-};
+});
+
+// Optional: Add display name for React DevTools
+ProductCard.displayName = 'ProductCard';

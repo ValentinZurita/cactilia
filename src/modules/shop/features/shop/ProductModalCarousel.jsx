@@ -4,6 +4,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import '../../styles/productModalCarousel.css';
 import { ImageComponent } from '../../../../shared/components/images/ImageComponent.jsx';
+import React from 'react';
 
 /**
  * ProductImageCarousel Component - Versión optimizada
@@ -15,13 +16,12 @@ import { ImageComponent } from '../../../../shared/components/images/ImageCompon
  * @param {Function} onSelectImage - Función para seleccionar una imagen
  */
 export const ProductImageCarousel = ({ images, onSelectImage }) => {
-  // Validación de imágenes
-  if (!images || images.length === 0) {
-    return null;
-  }
+  // Log mantenido temporalmente para verificar prop
+  console.log('[ProductImageCarousel] Received images prop:', images);
 
-  // Si solo hay una imagen, mostrar un diseño simplificado
-  if (images.length === 1) {
+  if (!images || images.length <= 1) {
+    if (!images || images.length === 0) return null;
+    // Lógica para 1 imagen:
     return (
       <div className="prod-carousel__single-image">
         <div

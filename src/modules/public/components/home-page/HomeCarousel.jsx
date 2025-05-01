@@ -1,4 +1,4 @@
-import { ImageComponent } from "../../../../shared/components/images/ImageComponent.jsx";
+import React from 'react';
 
 /**
  * HomeCarousel Component
@@ -8,7 +8,7 @@ import { ImageComponent } from "../../../../shared/components/images/ImageCompon
  *
  * @param {Array} images - Array de objetos de imagen con `id`, `src`, y `alt`.
  */
-export const HomeCarousel = ({ images }) => {
+export const HomeCarousel = React.memo(({ images }) => {
   // Si no hay imágenes, mostrar mensaje
   if (!images || images.length === 0) {
     return (
@@ -25,7 +25,7 @@ export const HomeCarousel = ({ images }) => {
         className="carousel slide carousel-fade mx-auto"
         data-bs-ride="carousel"
       >
-        {/* Carousel Indicators */}
+        {/* Carousel Indicadores */}
         <div className="carousel-indicators">
           {images.map((_, index) => (
             <button
@@ -85,4 +85,6 @@ export const HomeCarousel = ({ images }) => {
       </div>
     </div>
   );
-};
+});
+
+HomeCarousel.displayName = 'HomeCarousel';
