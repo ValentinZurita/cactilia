@@ -9,7 +9,6 @@ import { EditorActionBar } from '../shared/EditorActionBar.jsx'
 import { EditorToolbar } from '../shared/EditorToolbar.jsx'
 import { AlertMessage } from '../shared/AlertMessage.jsx'
 
-
 /**
  * Editor principal para la página de inicio - Versión rediseñada
  * Enfoque mobile-first con sistema de cards y UX mejorada

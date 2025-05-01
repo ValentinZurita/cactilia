@@ -49,7 +49,7 @@ const shopPagePersistConfig = {
 const homepagePersistConfig = {
   key: 'homepage',
   storage,
-  whitelist: ['pageData', 'featuredProducts', 'featuredCategories', 'collectionImages', 'lastFetchTimestamp'] 
+  blacklist: ['pageData', 'isLoading', 'error']
 };
 
 // Configuración de persistencia para 'siteConfig'

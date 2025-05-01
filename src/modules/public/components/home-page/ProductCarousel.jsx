@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
@@ -14,7 +14,6 @@ import '../../styles/homepage.css';
  * Muestra un carrusel de productos o categorías utilizando Swiper.js.
  * - Soporta loop infinito, autoplay y botones de navegación personalizados.
  * - Ajusta el número de slides visibles según el tamaño de la pantalla.
- * - Ahora identifica si los elementos son productos o categorías para su redirección
  *
  * @param {Array} products - Lista de productos o categorías a mostrar.
  * @param {boolean} [isCategory=false] - Indica si los elementos son categorías.
@@ -23,46 +22,41 @@ import '../../styles/homepage.css';
 export const ProductCarousel = React.memo(({ products, isCategory = false, onProductClick }) => {
   const navigate = useNavigate();
 
+  // --- Optimización con useMemo para displayProducts ---
+  const displayProducts = useMemo(() => {
+    if (!products || products.length === 0) {
+      return []; // Devolver array vacío si no hay productos
+    }
+
+    let calculatedProducts = [...products];
+    const largestSlidesPerView = 4; // Basado en tus breakpoints (1024px y 1400px)
+    const requiredSlidesForLoop = largestSlidesPerView * 2; // Apuntamos a 8 como mínimo
+
+    if (products.length > 0 && products.length < requiredSlidesForLoop) {
+      const originalProducts = [...products];
+      while (calculatedProducts.length < requiredSlidesForLoop) {
+        // Añadimos copias con IDs únicos para evitar problemas de key en React/Swiper
+        const duplicates = originalProducts.map((product, idx) => ({
+          ...product,
+          // Crear un ID único para cada duplicado en cada iteración
+          id: `${product.id}_duplicate_${calculatedProducts.length + idx}`
+        }));
+        calculatedProducts = [...calculatedProducts, ...duplicates];
+      }
+    }
+    return calculatedProducts;
+  }, [products]); // <-- Dependencia: solo recalcula si 'products' cambia
+  // --- Fin de useMemo ---
+
   /**
    * Verifica si no hay productos y retorna un mensaje amigable.
    */
-  if (!products || products.length === 0) {
+  if (displayProducts.length === 0) {
     return (
       <div className="text-center py-4">
         <p className="text-muted">No hay {isCategory ? 'categorías' : 'productos'} disponibles</p>
       </div>
     );
-  }
-
-  /**
-   * Dado que para un carrusel más lleno se necesitan al menos 4 productos,
-   * se duplican los productos si la lista inicial es menor a 4.
-   *
-   * - Si tras duplicar sigue habiendo menos de 6 slides, se duplican de nuevo.
-   * - El objetivo es ofrecer una mejor experiencia visual en pantallas grandes.
-   */
-  let displayProducts = [...products];
-
-  if (products.length < 4) {
-    // Primera duplicación
-    const duplicates = products.map((product, idx) => ({
-      ...product,
-      id: `${product.id}_duplicate_${idx}`
-    }));
-
-    displayProducts = [...products, ...duplicates];
-
-    // Segunda duplicación si sigue habiendo pocos
-    if (displayProducts.length < 6) {
-      const moreDuplicates = displayProducts
-        .slice(0, products.length)
-        .map((product, idx) => ({
-          ...product,
-          id: `${product.id}_duplicate_2_${idx}`
-        }));
-
-      displayProducts = [...displayProducts, ...moreDuplicates];
-    }
   }
 
   /**
@@ -121,7 +115,6 @@ export const ProductCarousel = React.memo(({ products, isCategory = false, onPro
           pauseOnMouseEnter: true,
         }}
         spaceBetween={15}
-        loopAdditionalSlides={displayProducts.length}
         breakpoints={swiperBreakpoints}
       >
         {/* Render de slides basado en la lista de productos procesada */}

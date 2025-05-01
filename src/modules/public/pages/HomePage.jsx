@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { HeroSection, HomeCarousel, HomeSection, ProductCarousel } from '../components/home-page/index.js'
 import { SkeletonHero, SkeletonCarousel } from '../components/skeletons/index.js'
@@ -13,7 +13,8 @@ import {
   selectHomepageFeaturedCategories,
   selectHomepageCollectionImages,
   selectHomepageIsLoading,
-  selectHomepageError
+  selectHomepageError,
+  selectHomepageLastFetchTimestamp
 } from '../../../store/slices/homepageSlice.js'
 import { getImageUrlBySize } from "../../../utils/imageUtils.js";
 import { openProductModal } from "../../../store/slices/uiSlice.js"; 
@@ -42,24 +43,36 @@ export const HomePage = () => {
   const collectionImages = useSelector(selectHomepageCollectionImages)
   const isLoading = useSelector(selectHomepageIsLoading)
   const error = useSelector(selectHomepageError)
+  const lastFetchTimestamp = useSelector(selectHomepageLastFetchTimestamp);
 
   // ---------------------- EFECTOS ----------------------
-  // Carga los datos al montar el componente si no están ya cargando o cargados.
+  // Carga los datos al montar el componente O si los datos rehidratados son obsoletos
   useEffect(() => {
-    if (!isLoading && !pageData && !error) { 
+    const now = Date.now();
+    const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 horas (mismo valor que en slice)
+    const isDataStale = !lastFetchTimestamp || (now - lastFetchTimestamp > CACHE_TTL);
+
+    // Despachar si está cargando, si faltan datos, si hay error, o si los datos son obsoletos
+    if (!isLoading && (!pageData || error || isDataStale)) {
+      console.log(`>>> HomePage useEffect: Dispatching fetchHomepageData (Initial: ${!pageData}, Error: ${!!error}, Stale: ${isDataStale})`);
       dispatch(fetchHomepageData())
     }
-    // Restore original dependencies
-  }, [dispatch, isLoading, pageData, error]) 
+    // Código original comentado:
+    // if (!isLoading && !pageData && !error) { 
+    //   console.log(\'>>> HomePage useEffect: Dispatching fetchHomepageData (data missing or error)...\');
+    //   dispatch(fetchHomepageData())
+    // }
+
+  }, [dispatch, isLoading, pageData, error, lastFetchTimestamp]); // <-- Añadir lastFetchTimestamp a dependencias
 
   // --- Función para manejar clic en tarjeta de producto/categoría ---
-  const handleProductCardClick = (productData) => {
+  const handleProductCardClick = useCallback((productData) => {
     if (productData && productData.id) {
         dispatch(openProductModal(productData)); 
     } else {
         console.error("[HomePage] No se pudo abrir el modal: faltan datos del producto.");
     }
-  };
+  }, [dispatch]);
 
   // ---------------------- FUNCIONES AUXILIARES DE RENDERIZADO DE SECCIONES ----------------------
 
@@ -173,19 +186,20 @@ export const HomePage = () => {
     );
   }
 
-  // --- Renderizado del Contenido Principal ---
-  
+  // --- Renderizado del Contenido Principal (Solo si pageData está listo y no hay error) ---
+   
   // Usar datos del store de Redux, o los datos de muestra como fallback.
   const productsToShow = featuredProducts?.length > 0 ? featuredProducts : sampleProducts;
   const categoriesToShow = featuredCategories?.length > 0 ? featuredCategories : sampleCategories;
 
   // Determinar orden de secciones (usando pageData o un orden por defecto)
-  const sectionOrder = pageData?.sectionOrder || ['hero', 'featuredProducts', 'farmCarousel', 'featuredCategories']; 
+  const sectionOrder = pageData?.blockOrder || ['hero', 'featuredProducts', 'farmCarousel', 'productCategories']; 
 
   // Función principal para renderizar secciones
   const renderSections = () => {
     return sectionOrder.map(sectionKey => {
       const sectionConfig = pageData?.sections?.[sectionKey] || {};
+      
       if (sectionConfig.visible === false) return null;
 
       switch (sectionKey) {
@@ -198,15 +212,26 @@ export const HomePage = () => {
         case 'farmCarousel':
           // Llama a la función auxiliar correspondiente
           return _renderFarmCarouselSection(sectionConfig);
-        case 'featuredCategories':
-          // Obtener el límite desde la configuración de la sección
+        case 'productCategories': {
+          // Obtener la configuración específica y las categorías
+          const categoriesSource = featuredCategories?.length > 0 ? featuredCategories : sampleCategories;
+          
+          // Obtener el límite y asegurarse de que es un número válido
           const categoryLimit = sectionConfig?.limit;
-          // Aplicar el límite a las categorías
-          const limitedCategories = categoryLimit > 0 
-            ? categoriesToShow.slice(0, categoryLimit) 
-            : categoriesToShow;
-          // Llama a la función auxiliar correspondiente con las categorías limitadas
+          const isValidLimit = typeof categoryLimit === 'number' && categoryLimit > 0;
+          
+          // Aplicar el límite SOLO si es válido
+          const limitedCategories = isValidLimit 
+              ? categoriesSource.slice(0, categoryLimit) 
+              : categoriesSource; // Usar la fuente completa si el límite no es válido
+
+          // --- DEBUGGING: Verificar el limit leído por el componente ---
+          console.log(`>>> HomePage render - Read config limit: ${categoryLimit}, Is Valid: ${isValidLimit}, Passed Count: ${limitedCategories.length}`);
+          // --- FIN DEBUGGING ---
+
+          // Renderizar la sección con las categorías (limitadas o no)
           return _renderFeaturedCategoriesSection(sectionConfig, limitedCategories);
+        }
         default:
           console.warn(`HomePage: Tipo de sección desconocido encontrado en sectionOrder: ${sectionKey}`);
           return null;

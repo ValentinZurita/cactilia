@@ -214,7 +214,7 @@ export const deleteCategory = async (categoryId) => {
   }
 };
 
-// --- NUEVA FUNCIÓN OPTIMIZADA ---
+
 /**
  * Obtiene categorías activas y destacadas para la HomePage, seleccionando campos mínimos.
  * @param {number} [count=6] - Número máximo de categorías a obtener.
@@ -256,4 +256,3 @@ export const getFeaturedCategoriesForHome = async (count = 6) => {
     return { ok: false, data: [], error: error.message };
   }
 };
-// --- FIN NUEVA FUNCIÓN ---
