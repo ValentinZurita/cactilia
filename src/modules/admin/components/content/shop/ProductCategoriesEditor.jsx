@@ -3,9 +3,11 @@
  * Versión actualizada con toggles unificados
  */
 export const ProductCategoriesEditor = ({ data = {}, onUpdate }) => {
-  // Manejador para cambios en campos de texto
+  // Manejador para cambios en campos de texto y número
   const handleChange = (field, value) => {
-    onUpdate({ [field]: value });
+    // Si el campo es \'limit\', convertir a número
+    const updatedValue = field === 'limit' ? parseInt(value, 10) || 0 : value;
+    onUpdate({ [field]: updatedValue });
   };
 
   // Manejador para cambios en campos booleanos (toggles)
@@ -82,6 +84,25 @@ export const ProductCategoriesEditor = ({ data = {}, onUpdate }) => {
           <label className="form-check-label" htmlFor="categoriesShowBg">
             Mostrar fondo claro
           </label>
+        </div>
+
+        {/* Límite de categorías a mostrar */}
+        <div className="mb-3">
+          <label htmlFor="categoriesLimit" className="form-label">
+            Número máximo de categorías a mostrar
+          </label>
+          <input
+            type="number"
+            className="form-control"
+            id="categoriesLimit"
+            value={data.limit || ''}
+            onChange={(e) => handleChange('limit', e.target.value)}
+            min="1"
+            placeholder="Dejar vacío para mostrar todas"
+          />
+          <div className="form-text">
+            Controla cuántas categorías aparecen en el carrusel de la página principal.
+          </div>
         </div>
       </div>
 

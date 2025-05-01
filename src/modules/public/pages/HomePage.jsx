@@ -199,8 +199,14 @@ export const HomePage = () => {
           // Llama a la función auxiliar correspondiente
           return _renderFarmCarouselSection(sectionConfig);
         case 'featuredCategories':
-          // Llama a la función auxiliar correspondiente
-          return _renderFeaturedCategoriesSection(sectionConfig, categoriesToShow);
+          // Obtener el límite desde la configuración de la sección
+          const categoryLimit = sectionConfig?.limit;
+          // Aplicar el límite a las categorías
+          const limitedCategories = categoryLimit > 0 
+            ? categoriesToShow.slice(0, categoryLimit) 
+            : categoriesToShow;
+          // Llama a la función auxiliar correspondiente con las categorías limitadas
+          return _renderFeaturedCategoriesSection(sectionConfig, limitedCategories);
         default:
           console.warn(`HomePage: Tipo de sección desconocido encontrado en sectionOrder: ${sectionKey}`);
           return null;
