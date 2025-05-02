@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react'
 import { ShippingPackage } from './ShippingPackage.jsx'
 import { checkoutShippingService } from './checkoutShippingService.js'
-import { useShippingRules } from './useShippingRules.js'
+// import { useShippingRules } from './useShippingRules.js' // Eliminado ya que no se usa activamente
 import '@modules/checkout/shipping/ShippingOptions.css'
 
 /**
@@ -48,9 +48,6 @@ export const ShippingOptions = ({
   // Loading state
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-
-  // Obtener reglas de envío para el depurador
-  const { rules } = useShippingRules()
 
   // Verificar si todos los productos tienen una opción de envío asignada
   const allProductsCovered = () => {

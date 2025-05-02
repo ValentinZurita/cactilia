@@ -30,4 +30,62 @@ export const RULE_CONFIG_FALLBACKS = {
     minDays: 3,
     maxDays: 7
   }
-}; 
+};
+
+/**
+ * Mapeo de nombres de estados a sus abreviaciones
+ * Se usa para convertir nombres completos (de addresses) a formato abreviado (de zonas_envio)
+ */
+export const STATE_ABBREVIATIONS = {
+  'Aguascalientes': 'AGS',
+  'Baja California': 'BC',
+  'Baja California Sur': 'BCS',
+  'Campeche': 'CAM',
+  'Chiapas': 'CHIS',
+  'Chihuahua': 'CHIH',
+  'Ciudad de México': 'CDMX',
+  'Coahuila': 'COAH',
+  'Colima': 'COL',
+  'Durango': 'DGO',
+  'Estado de México': 'MEX',
+  'Guanajuato': 'GTO',
+  'Guerrero': 'GRO',
+  'Hidalgo': 'HGO',
+  'Jalisco': 'JAL',
+  'Michoacán': 'MICH',
+  'Morelos': 'MOR',
+  'Nayarit': 'NAY',
+  'Nuevo León': 'NL',
+  'Oaxaca': 'OAX',
+  'Puebla': 'PUE',
+  'Querétaro': 'QRO',
+  'Quintana Roo': 'QROO',
+  'San Luis Potosí': 'SLP',
+  'Sinaloa': 'SIN',
+  'Sonora': 'SON',
+  'Tabasco': 'TAB',
+  'Tamaulipas': 'TAMPS',
+  'Tlaxcala': 'TLAX',
+  'Veracruz': 'VER',
+  'Yucatán': 'YUC',
+  'Zacatecas': 'ZAC'
+};
+
+/**
+ * Nombres de colecciones en Firestore usadas en el checkout/shipping
+ */
+export const FIRESTORE_COLLECTIONS = {
+  SHIPPING_RULES: 'zonas_envio',
+  // PRODUCTS: 'products', // Probablemente definido en otro lugar globalmente
+  // ADDRESSES: 'addresses' // Probablemente definido en otro lugar globalmente
+};
+
+/**
+ * Prefijo para reglas de estado en zonas_envio
+ */
+export const STATE_PREFIX = 'estado_';
+
+/**
+ * Palabra clave para cobertura nacional
+ */
+export const NATIONAL_KEYWORD = 'nacional'; 

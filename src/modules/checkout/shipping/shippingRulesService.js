@@ -3,7 +3,7 @@
  */
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
 import { FirebaseDB } from '@config/firebase/firebaseConfig.js'
-import { FIRESTORE_COLLECTIONS } from '../constants/index.js'
+import { FIRESTORE_COLLECTIONS } from '../constants/shippingConstants.js'
 
 /**
  * Obtiene todas las reglas de envío activas

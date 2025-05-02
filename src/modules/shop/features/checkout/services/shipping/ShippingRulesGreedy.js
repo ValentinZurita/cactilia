@@ -11,7 +11,9 @@
 import { v4 as uuidv4 } from 'uuid'
 
 // Importar el mapeo de abreviaciones
-import { STATE_ABBREVIATIONS } from '../../../../../checkout/constants/index.js' // Ruta corregida
+import { STATE_ABBREVIATIONS } from '../../../../../../modules/checkout/constants/shippingConstants.js'
+// import { RuleFormatNormalizer } from '../../../../../../modules/checkout/shipping/RuleFormatNormalizer.js'
+import { fetchAllShippingRules } from '../../../../../../modules/checkout/shipping/shippingRulesService.js'
 
 /**
  * Determina si una regla de envío es válida para la dirección proporcionada
