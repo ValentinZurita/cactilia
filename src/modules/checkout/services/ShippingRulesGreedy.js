@@ -17,59 +17,7 @@ import { fetchAllShippingRules } from './shippingRulesService.js'
 import { calculatePackaging } from '../utils/packagingUtils.js'
 import { calculateGroupCost } from '../utils/costUtils.js'
 import { getDeliveryTimeInfo } from '../utils/deliveryTimeUtils.js'
-
-/**
- * Determina si una regla de envío es válida para la dirección proporcionada
- * @param {Object} rule - Regla de envío desde Firebase
- * @param {Object} address - Dirección del usuario
- * @returns {boolean} - true si la regla es válida
- */
-export const isRuleValidForAddress = (rule, address) => {
-  if (!rule || !address) return false
-
-  const postalCode = (address.postalCode || address.zip || '').toString().trim()
-  const fullStateName = (address.state || address.provincia || '').toString()
-  const stateAbbreviation = STATE_ABBREVIATIONS[fullStateName]?.toLowerCase().trim() || fullStateName.toLowerCase().trim()
-  const country = (address.country || 'MX').toString().toLowerCase().trim()
-  const coverageType = (rule.coverage_type || rule.tipo_cobertura || '').trim().toLowerCase()
-
-  // 1. Chequeo explícito de cobertura nacional vía coverage_type (usando constante)
-  if (coverageType === NATIONAL_KEYWORD) {
-    return true
-  }
-
-  // 2. Chequeo basado en coverage_type y coverage_values (nuevo formato)
-  switch (coverageType) {
-    case 'zip':
-      return Array.isArray(rule.coverage_values) && rule.coverage_values.some(cp => cp.toString().trim() === postalCode)
-    case 'state':
-      return Array.isArray(rule.coverage_values) && rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation)
-    case 'country':
-      return rule.coverage_country?.toLowerCase().trim() === country
-    // Casos redundantes eliminados para claridad
-  }
-
-  // --- NUEVO CHEQUEO --- 
-  // 3. Chequeo de cobertura nacional vía zipcode/zipcodes (estructura observada en datos reales)
-  if (
-    rule.zipcode === NATIONAL_KEYWORD ||
-    (Array.isArray(rule.zipcodes) && rule.zipcodes.includes(NATIONAL_KEYWORD))
-  ) {
-    return true // Si zipcode o zipcodes indican 'nacional', es válida
-  }
-  // --- FIN NUEVO CHEQUEO ---
-
-  // 4. Chequeos de fallback para campos antiguos (cobertura_cp, cobertura_estados)
-  if (Array.isArray(rule.cobertura_cp) && rule.cobertura_cp.some(cp => cp.toString().trim() === postalCode)) {
-    return true
-  }
-  if (Array.isArray(rule.cobertura_estados) && rule.cobertura_estados.some(s => s.toString().toLowerCase().trim() === stateAbbreviation)) {
-    return true
-  }
-
-  // 5. Si ninguno de los anteriores coincide
-  return false
-}
+import { isRuleValidForAddress } from '../utils/shippingRuleUtils.js'
 
 /**
  * Verifica si se puede añadir un producto a un grupo de envío existente
@@ -200,7 +148,7 @@ const assignProductToShippingGroup = (
  * @param {Array} shippingRules - Reglas de envío desde Firebase
  * @returns {Object} Resultado con opciones de envío
  */
-export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules) => {
+export const calculateGreedyShippingOptions = (cartItems, address, shippingRules) => {
   // 1. Validación de entradas
   if (!cartItems || cartItems.length === 0) return { success: false, error: 'No hay productos en el carrito' }
   if (!address) return { success: false, error: 'No se proporcionó dirección de envío' }
@@ -209,29 +157,26 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
     error: 'No hay reglas de envío disponibles',
   }
 
-  console.log(`[Greedy] 🔍 Iniciando cálculo para ${cartItems.length} productos con ${shippingRules.length} reglas.`)
+  console.log(`[Greedy] 🔍 Iniciando cálculo para ${cartItems.length} productos con ${shippingRules.length} reglas.`);
 
   // 2. Paso 1: Encontrar reglas válidas por producto
-  const validRulesByProduct = {}
-  const productsWithoutRules = []
+  const validRulesByProduct = {};
+  const productsWithoutRules = [];
   cartItems.forEach(item => {
-    const product = item.product || item
-    const productId = product.id
-    const assignedRuleIds = product.shippingRuleIds || []
+    const product = item.product || item;
+    const productId = product.id;
+    const assignedRuleIds = product.shippingRuleIds || [];
     if (!assignedRuleIds.length) {
-      productsWithoutRules.push(product)
-      return
+      productsWithoutRules.push(product);
+      return;
     }
-    const validRules = shippingRules.filter(rule => assignedRuleIds.includes(rule.id) && isRuleValidForAddress(rule, address))
+    const validRules = shippingRules.filter(rule => assignedRuleIds.includes(rule.id) && isRuleValidForAddress(rule, address));
     if (validRules.length > 0) {
-      validRulesByProduct[productId] = validRules
+      validRulesByProduct[productId] = validRules;
     } else {
-      productsWithoutRules.push(product)
+      productsWithoutRules.push(product);
     }
-  })
-
-  console.log(`[Greedy] Productos CON reglas válidas: ${Object.keys(validRulesByProduct).length}`)
-  console.log(`[Greedy] Productos SIN reglas válidas: ${productsWithoutRules.length}`)
+  });
 
   // 3. Manejar caso donde NINGÚN producto tiene reglas válidas
   const productsWithValidRulesIds = Object.keys(validRulesByProduct)
@@ -263,15 +208,15 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
 
   // 6. Bucle ÚNICO de Agrupación
   itemsToProcess.forEach(item => {
-    const product = item.product || item
-    const productId = product.id
-    const validRules = validRulesByProduct[productId] // Ya sabemos que existen y tienen longitud > 0
-    assignProductToShippingGroup(product, validRules, shippingGroups, productAssignments)
-  })
+    const product = item.product || item;
+    const productId = product.id;
+    const validRules = validRulesByProduct[productId]; 
+    assignProductToShippingGroup(product, validRules, shippingGroups, productAssignments);
+  });
 
   // 7. Mapeo ÚNICO de Grupos a Opciones
-  const shippingOptions = shippingGroups.map(group => {
-    const rule = group.rule
+  const shippingOptions = shippingGroups.map((group, groupIndex) => {
+    const rule = group.rule;
 
     // Obtener info de tiempo
     const { minDays, maxDays, deliveryTimeText } = getDeliveryTimeInfo(rule)
@@ -284,8 +229,8 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
     } = calculatePackaging(group.products, ruleConfig, group.id)
 
     // Calcular costo
-    const { totalOptionCost, updatedPackagesInfo } = calculateGroupCost(initialPackagesInfo, rule)
-    const finalIsFree = totalOptionCost === 0
+    const { totalOptionCost, updatedPackagesInfo } = calculateGroupCost(initialPackagesInfo, rule);
+    const finalIsFree = totalOptionCost === 0;
 
     // Construir el objeto option
     const option = {
@@ -299,7 +244,7 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
       rule_id: rule.id,
       minDays, maxDays, deliveryTime: deliveryTimeText,
       isNational: (rule.coverage_type === NATIONAL_KEYWORD || rule.tipo === NATIONAL_KEYWORD || rule.zipcode === NATIONAL_KEYWORD || (Array.isArray(rule.zipcodes) && rule.zipcodes.includes(NATIONAL_KEYWORD))),
-      zoneType: rule.coverage_type || rule.tipo || (rule.zipcode === NATIONAL_KEYWORD ? NATIONAL_KEYWORD : 'standard'), // Ajustar zoneType para nacional si se detecta por zipcode
+      zoneType: rule.coverage_type || rule.tipo || (rule.zipcode === NATIONAL_KEYWORD ? NATIONAL_KEYWORD : 'standard'),
       precio_base: parseFloat(rule.precio_base || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].precio : 0) || 0),
       envio_gratis_monto_minimo: parseFloat(rule.envio_gratis_monto_minimo) > 0 ? parseFloat(rule.envio_gratis_monto_minimo) : undefined,
       configuracion_paquetes: ruleConfig,
@@ -309,11 +254,7 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
       packagesWithPrices: true,
     }
 
-    // Generar descripción detallada (esta función también podría moverse a utils)
     option.description = generateDetailedDescription(option, group.products)
-
-    // Log (podríamos diferenciar el log si es parcial o no)
-    // console.log(`[Greedy]   ✅ Opción ${isPartialShipping ? 'Parcial ' : ''}Calculada: ...`);
 
     return option
   })
@@ -420,15 +361,4 @@ export const generateDetailedDescription = (option, products = []) => {
   }
 
   return description
-}
-
-/**
- * Función principal que encuentra las mejores opciones de envío
- * @param {Array} cartItems - Productos en el carrito
- * @param {Object} address - Dirección del usuario
- * @param {Array} shippingRules - Reglas de envío disponibles
- * @returns {Object} - Resultado con opciones de envío
- */
-export const findBestShippingOptions = (cartItems, address, shippingRules) => {
-  return findBestShippingOptionsGreedy(cartItems, address, shippingRules)
 }

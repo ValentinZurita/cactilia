@@ -2,7 +2,7 @@
  * Utilidades para validar la cobertura de las reglas de envío
  * Permite determinar si una regla de envío es aplicable para una dirección
  */
-import { COVERAGE_TYPES, NATIONAL_KEYWORD, STATE_ABBREVIATIONS, STATE_PREFIX } from '../constants/index.js'
+import { COVERAGE_TYPES, NATIONAL_KEYWORD, STATE_ABBREVIATIONS, STATE_PREFIX } from '../constants/shippingConstants.js'
 
 /**
  * Convierte un nombre de estado completo a su abreviación

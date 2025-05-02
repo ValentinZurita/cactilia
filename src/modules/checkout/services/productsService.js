@@ -3,7 +3,7 @@
  */
 import { doc, getDoc } from 'firebase/firestore'
 import { FirebaseDB } from '@config/firebase/firebaseConfig.js'
-import { FIRESTORE_COLLECTIONS } from '../constants/index.js'
+import { FIRESTORE_COLLECTIONS } from '../constants/shippingConstants.js'
 
 /**
  * Obtiene un producto específico por ID
@@ -52,25 +52,4 @@ export const fetchProductsByIds = async (productIds) => {
     console.error('Error al obtener múltiples productos:', error)
     return []
   }
-}
-
-/**
- * Extrae los IDs de reglas de envío de un producto
- * @param {Object} product - Producto
- * @returns {Array<string>} - Lista de IDs de reglas de envío
- */
-export const extractShippingRuleIds = (product) => {
-  if (!product) return []
-
-  // Verificar si el producto tiene shippingRuleIds como array
-  if (product.shippingRuleIds && Array.isArray(product.shippingRuleIds)) {
-    return [...product.shippingRuleIds]
-  }
-
-  // Verificar si el producto tiene un solo ID de regla de envío
-  if (product.shippingRuleId && typeof product.shippingRuleId === 'string') {
-    return [product.shippingRuleId]
-  }
-
-  return []
 }

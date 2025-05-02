@@ -1,7 +1,7 @@
 /**
  * Utility functions for working with shipping rules
  */
-import { COVERAGE_TYPES } from '../../constants/shippingConstants.js'
+import { COVERAGE_TYPES, STATE_ABBREVIATIONS } from '../constants/shippingConstants.js'
 
 /**
  * Checks if a shipping rule is valid for a specific address
@@ -13,12 +13,14 @@ import { COVERAGE_TYPES } from '../../constants/shippingConstants.js'
 export const isRuleValidForAddress = (rule, address) => {
   if (!rule || !address) return false
 
-  // If rule has no zipcodes, it can't be applied
-  if (!rule.zipcodes || rule.zipcodes.length === 0) return false
+  // If rule has no zipcodes, it might be incorrectly configured, but we rely on specific values now.
+  // Let's assume rules MUST have zipcodes array for coverage.
+  if (!rule.zipcodes || !Array.isArray(rule.zipcodes) || rule.zipcodes.length === 0) return false
 
-  // Extract address data, handling different property names
-  const zipCode = address.zip || address.zipCode || address.postalCode || ''
-  const state = address.state || ''
+  // Extract address data, handling different property names robustly
+  const zipCode = (address.zip || address.zipCode || address.postalCode || '').toString().trim()
+  // Consider multiple possible fields for state
+  const state = (address.state || address.provincia || address.estado || '').toString().trim()
 
   // Check if rule has national coverage
   if (rule.zipcodes.includes(COVERAGE_TYPES.NATIONAL)) {
@@ -30,11 +32,14 @@ export const isRuleValidForAddress = (rule, address) => {
     return true
   }
 
-  // Check state coverage (formato: "estado_XXX")
-  const stateCode = state.toUpperCase()
-  if (stateCode && rule.zipcodes.some(code =>
-    code.startsWith(`${COVERAGE_TYPES.STATE_PREFIX}${stateCode}`),
-  )) {
+  // Check state coverage (formato: "estado_XXX") - Case Insensitive using STATE ABBREVIATION
+  const stateAbbreviation = STATE_ABBREVIATIONS[state]?.toLowerCase() // Obtener abreviatura y convertir a minúsculas
+  const statePrefix = COVERAGE_TYPES.STATE_PREFIX.toLowerCase() // Prefijo en minúsculas ('estado_')
+
+  if (stateAbbreviation && rule.zipcodes.some(code => {
+    // Asegurarse que 'code' es string y comparar en minúsculas usando la ABREVIATURA
+    return typeof code === 'string' && code.toLowerCase().startsWith(`${statePrefix}${stateAbbreviation}`)
+  })) {
     return true
   }
 

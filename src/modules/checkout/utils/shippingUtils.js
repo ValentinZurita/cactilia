@@ -3,59 +3,6 @@
  */
 
 /**
- * Verifica si una regla de envío aplica para una dirección específica
- * @param {Object} rule - Regla de envío
- * @param {Object} address - Dirección del usuario
- * @returns {boolean} Si la regla aplica o no
- */
-export const isRuleValidForAddress = (rule, address) => {
-  if (!rule || !address) return false;
-
-  // Obtener código postal de la dirección
-  const zipCode = address.zipCode || address.postalCode;
-  if (!zipCode) return false;
-
-  // Si la regla no tiene códigos postales, se asume nacional
-  if (!rule.zipcodes || rule.zipcodes.length === 0) {
-    return true;
-  }
-
-  // Si la regla incluye cobertura nacional
-  if (rule.zipcodes.includes('nacional')) {
-    return true;
-  }
-
-  // Si la regla incluye el código postal específico
-  if (rule.zipcodes.includes(zipCode)) {
-    return true;
-  }
-
-  // Verificar si la regla incluye el estado
-  const stateCode = address.state;
-  if (stateCode && rule.zipcodes.some(z => z.startsWith(`estado_${stateCode}`))) {
-    return true;
-  }
-
-  // Verificar rangos de códigos postales
-  if (rule.zipcodes.some(zipCodeRange => {
-    if (zipCodeRange.includes('-')) {
-      const [start, end] = zipCodeRange.split('-');
-      const zipNum = parseInt(zipCode);
-      const startNum = parseInt(start);
-      const endNum = parseInt(end);
-
-      return !isNaN(zipNum) && !isNaN(startNum) && !isNaN(endNum) &&
-        zipNum >= startNum && zipNum <= endNum;
-    }
-    return false;
-  })) {
-    return true;
-  }
-
-  return false;
-};
-
-/**
  * Calcula el subtotal de un grupo de productos
  * @param {Array} items - Productos en el grupo
  * @returns {number} Subtotal
@@ -230,12 +177,11 @@ const identifyShippingType = (name, description) => {
 }
 
 /**
- * Agrupa las opciones de envío por tipo para mostrarlas mejor organizadas en la UI
- * @param {Array} options - Opciones de envío a agrupar (salida de findBestShippingOptionsGreedy)
- * @returns {Array} - Grupos de opciones de envío
+ * Agrupa las opciones de envío por tipo (e.g., Standard, Express).
+ * @param {Array} options - Opciones de envío a agrupar (salida de calculateGreedyShippingOptions)
+ * @returns {Object} - Opciones agrupadas por tipo: { tipo: [opciones] }
  */
 export const calculateShippingOptionsGroups = (options) => {
-  // Return empty array if no options provided
   if (!options || !Array.isArray(options) || options.length === 0) {
     console.warn('⚠️ No hay opciones de envío para agrupar');
     return [];

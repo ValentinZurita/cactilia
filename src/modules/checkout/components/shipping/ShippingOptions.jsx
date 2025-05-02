@@ -4,7 +4,12 @@
  */
 import React, { useEffect, useState } from 'react'
 import { ShippingPackage } from './ShippingPackage.jsx'
-import { checkoutShippingService } from '../../services/checkoutShippingService.js'
+// Eliminar importación del servicio intermedio
+// import { checkoutShippingService } from '../../services/checkoutShippingService.js'
+
+// Importar directamente desde el índice centralizado
+import { getShippingOptions } from '../../checkout/services/shipping/index.js'
+
 // import { useShippingRules } from './useShippingRules.js' // Eliminado ya que no se usa activamente
 import '@modules/checkout/styles/ShippingOptions.css'
 
@@ -340,32 +345,54 @@ export const ShippingOptions = ({
       }
 
       try {
-        // Obtener opciones de envío
-        const options = await checkoutShippingService.getShippingOptions(address, cartItems)
+        console.log('🔄 Recalculando opciones de envío con dirección:', address);
+        console.log('🛒 Productos en el carrito:', cartItems);
 
-        if (!isMounted) return
+        // Llamar directamente a la función importada
+        // const options = await checkoutShippingService.getShippingOptions(address, cartItems);
+        const optionsResult = await getShippingOptions(cartItems, address); // Cambiado el orden de los args según la definición
+        
+        console.log('✅ Resultado de getShippingOptions:', optionsResult);
 
-        console.log(`📦 Opciones de envío cargadas: ${options.length}`, options)
-        options.forEach(option => {
-          console.log(`- Opción "${option.name}" (ID: ${option.id}):`)
-          console.log(`  - Tipo: ${option.zoneType || 'desconocido'}`)
-          console.log(`  - Es Nacional: ${option.isNational ? 'Sí' : 'No'}`)
-          console.log(`  - Productos: ${(option.products || []).length}`)
-          console.log(`  - Costo: ${option.totalCost}`)
-        })
+        if (optionsResult && optionsResult.success) {
+          const validOptions = optionsResult.options || [];
+          const unavailable = optionsResult.unavailableProductsInfo || null;
 
-        setShippingOptions(options)
+          // Log de las opciones válidas obtenidas
+          if (validOptions.length > 0) {
+            console.log('🚚 Opciones de envío válidas encontradas:', validOptions);
+            validOptions.forEach((opt, index) => {
+              console.log(`   Opción ${index + 1}: ${opt.name}, Costo: ${opt.totalCost || opt.price || 'N/A'}, Productos: ${opt.products ? opt.products.length : 0}`);
+            });
+          } else {
+            console.log('🚫 No se encontraron opciones de envío válidas.');
+          }
 
-        // Verificar productos sin envío disponible
-        const unavailable = checkUnavailableProducts(options)
-        setUnavailableInfo(unavailable)
+          // Log de productos no disponibles
+          if (unavailable && unavailable.products && unavailable.products.length > 0) {
+            console.log('⚠️ Productos sin opciones de envío disponibles:', unavailable.products.map(p => p.name));
+          } else {
+            console.log('✅ Todos los productos tienen opciones de envío.');
+          }
 
-        setLoading(false)
+          setShippingOptions(validOptions);
+          setUnavailableInfo(unavailable);
+          setError(null); // Limpiar error si fue exitoso
+
+        } else {
+          console.error('❌ Error al obtener opciones de envío:', optionsResult?.error || 'Error desconocido');
+          setError(optionsResult?.error || 'No se pudieron cargar las opciones de envío.');
+          setShippingOptions([]);
+          setUnavailableInfo(null);
+        }
       } catch (err) {
-        if (!isMounted) return
-        console.error('Error al obtener opciones de envío:', err)
-        setError(`No se pudieron cargar las opciones de envío: ${err.message || 'Error desconocido'}`)
-        setLoading(false)
+        console.error('💥 Excepción al obtener opciones de envío:', err);
+        setError('Ocurrió un error inesperado al calcular el envío.');
+        setShippingOptions([]);
+        setUnavailableInfo(null);
+      } finally {
+        setLoading(false);
+        console.log('🏁 Carga de opciones de envío finalizada.');
       }
     }
 

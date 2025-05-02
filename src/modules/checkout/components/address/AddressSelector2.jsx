@@ -2,8 +2,9 @@
  * Componente para seleccionar dirección de envío
  */
 import React, { useEffect, useState } from 'react'
-import { fetchAddressesByUserId } from '../../services/addressesService.js'
+import { getUserAddresses } from '../../services/addressService.js'
 import '@modules/checkout/styles/AddressSelector.css'
+import Select from 'react-select'
 
 /**
  * Formatea una dirección para mostrar
@@ -52,7 +53,7 @@ export const AddressSelector2 = ({
         setLoading(true)
         setError(null)
 
-        const userAddresses = await fetchAddressesByUserId(userId)
+        const userAddresses = await getUserAddresses(userId)
 
         setAddresses(userAddresses)
 

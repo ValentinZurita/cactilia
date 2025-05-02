@@ -2,9 +2,10 @@ import React, { lazy, Suspense, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { SectionTitle } from '../ui/SectionTitle.jsx'
 import { useCart } from '../../../shop/features/cart/hooks/useCart.js'
-import { allProductsCovered } from '../../checkout/services/shipping/index.js'
+import { areAllItemsCovered } from '../../checkout/services/shipping/index.js'
 import { EmptyState } from '../ui/EmptyState.jsx'
 import Spinner from '../common/Spinner.jsx'
+import { formatShippingCost } from '../../utils/shippingUtils.js'
 
 // Lazy load del componente pesado
 const ShippingSelector = lazy(() => import('../shipping/ShippingSelector.jsx'))
@@ -70,15 +71,15 @@ export const ShippingOptionsSection = ({
     }
     // Para opciones de nuestro nuevo servicio
     else if (option && option.combination && option.combination.options) {
-      covered = allProductsCovered(option.combination.options, cartItems)
+      covered = areAllItemsCovered(cartItems, option.combination.options)
     }
     // Para opciones del sistema original
     else if (option && (option.productIds || option.covered_products)) {
-      covered = allProductsCovered([option], cartItems)
+      covered = areAllItemsCovered(cartItems, [option])
     }
     // Selecciones explícitas
     else if (option && option.selections) {
-      covered = allProductsCovered(option.selections, cartItems)
+      covered = areAllItemsCovered(cartItems, option.selections)
     }
 
     // Imprimir información sobre los productos cubiertos

@@ -9,7 +9,8 @@
 // import { findBestShippingOptions } from '../../../shop/features/checkout/services/shipping/ShippingRulesGreedy';
 
 // Import the original validation function
-import { isRuleValidForAddress } from '@modules/checkout/services/ShippingRulesGreedy.js' // Correct path needed
+// import { isRuleValidForAddress } from '@modules/checkout/services/ShippingRulesGreedy.js'; // Ruta antigua
+import { isRuleValidForAddress } from './shippingRuleUtils.js'; // Usar la ubicación canónica
 
 /**
  * Función que imprime información detallada sobre el estado actual del checkout

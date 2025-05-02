@@ -5,8 +5,10 @@
  * opciones de envío basadas en el carrito y la dirección del usuario.
  */
 
-import { getActiveShippingZones } from '@modules/checkout/services/ShippingZonesService.js'
-import { findBestShippingOptions } from '@modules/checkout/services/ShippingRulesGreedy.js'
+// Importar el servicio correcto para obtener REGLAS, no ZONAS
+// import { getActiveShippingZones } from '@modules/checkout/services/ShippingZonesService.js';
+import { fetchAllShippingRules } from '@modules/checkout/services/shippingRulesService.js';
+import { calculateGreedyShippingOptions } from '@modules/checkout/services/ShippingRulesGreedy.js';
 
 /**
  * Obtiene todas las opciones de envío disponibles para un carrito y una dirección
@@ -47,8 +49,9 @@ export const getShippingOptions = async (cartItems, addressInfo, customRules = n
       console.log(`📦 Usando ${customRules.length} reglas personalizadas proporcionadas`)
       shippingRules = customRules
     } else {
-      // Obtener reglas de envío activas desde Firebase
-      shippingRules = await getActiveShippingZones()
+      // Obtener reglas de envío activas desde Firebase (usando el servicio correcto)
+      // shippingRules = await getActiveShippingZones(); 
+      shippingRules = await fetchAllShippingRules();
     }
 
     if (!shippingRules || shippingRules.length === 0) {
@@ -72,8 +75,8 @@ export const getShippingOptions = async (cartItems, addressInfo, customRules = n
     console.log(`📦 Calculando opciones de envío para ${normalizedCartItems.length} productos`)
     console.log(`📍 Dirección de envío: CP ${normalizedAddress.postalCode}, ${normalizedAddress.state}`)
 
-    // Utilizar el algoritmo Greedy para encontrar las mejores opciones
-    const result = await findBestShippingOptions(normalizedCartItems, normalizedAddress, shippingRules)
+    // Use the specific greedy calculation function
+    const result = await calculateGreedyShippingOptions(normalizedCartItems, normalizedAddress, shippingRules)
 
     // Verificar resultado
     if (!result?.success) {
@@ -115,5 +118,5 @@ export const shippingService = new ShippingService()
 // Exportación por defecto
 export default ShippingService
 
-// Exportar funciones auxiliares
-export { getActiveShippingZones }
+// Eliminar exportación incorrecta
+// export { getActiveShippingZones };

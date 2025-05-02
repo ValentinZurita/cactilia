@@ -13,7 +13,8 @@ export const usePackageDisplayData = (packageData, cartItems = []) => {
   // Extraer datos necesarios de packageData
   const {
     products: productIds = [], // IDs de productos en este paquete
-    totalCost,
+    price, // <-- Añadir price (costo calculado por Greedy)
+    totalCost, // Mantener como posible fallback
     estimatedDelivery,
     deliveryTime,
     tiempo_entrega,
@@ -91,7 +92,9 @@ export const usePackageDisplayData = (packageData, cartItems = []) => {
 
   // Calcular costo (memoizado)
   const { calculatedTotalCost, isFreeShipping, formattedTotalCost } = useMemo(() => {
-    const cost = totalCost || 0;
+    // Usar packageData.price (el calculado por Greedy) como fuente principal
+    // Usar totalCost solo como fallback si price no está definido
+    const cost = price !== undefined && price !== null ? price : totalCost || 0;
     const free = cost === 0;
     const formatted = free
       ? 'GRATIS'
@@ -105,7 +108,8 @@ export const usePackageDisplayData = (packageData, cartItems = []) => {
       isFreeShipping: free,
       formattedTotalCost: formatted,
     };
-  }, [totalCost]);
+  // Depender de 'price' y 'totalCost'
+  }, [price, totalCost]);
 
   // Calcular tiempo de entrega (memoizado)
   const displayDeliveryTime = useMemo(() => {
