@@ -11,7 +11,7 @@
 import { v4 as uuidv4 } from 'uuid'
 
 // Importar el mapeo de abreviaciones
-import { STATE_ABBREVIATIONS } from '../../../../../../modules/checkout/constants/shippingConstants.js'
+import { STATE_ABBREVIATIONS, NATIONAL_KEYWORD } from '../../../../../../modules/checkout/constants/shippingConstants.js'
 // import { RuleFormatNormalizer } from '../../../../../../modules/checkout/shipping/RuleFormatNormalizer.js'
 import { fetchAllShippingRules } from '../../../../../../modules/checkout/shipping/shippingRulesService.js'
 
@@ -30,10 +30,12 @@ export const isRuleValidForAddress = (rule, address) => {
   const country = (address.country || 'MX').toString().toLowerCase().trim()
   const coverageType = (rule.coverage_type || rule.tipo_cobertura || '').trim().toLowerCase()
 
-  if (coverageType === 'national') {
+  // 1. Chequeo explícito de cobertura nacional vía coverage_type (usando constante)
+  if (coverageType === NATIONAL_KEYWORD) {
     return true
   }
 
+  // 2. Chequeo basado en coverage_type y coverage_values (nuevo formato)
   switch (coverageType) {
     case 'zip':
       return Array.isArray(rule.coverage_values) && rule.coverage_values.some(cp => cp.toString().trim() === postalCode)
@@ -41,15 +43,20 @@ export const isRuleValidForAddress = (rule, address) => {
       return Array.isArray(rule.coverage_values) && rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation)
     case 'country':
       return rule.coverage_country?.toLowerCase().trim() === country
-    case 'por_codigo_postal':
-    case 'postal_code':
-      return Array.isArray(rule.coverage_values) && rule.coverage_values.some(cp => cp.toString().trim() === postalCode)
-    case 'por_estado':
-      return Array.isArray(rule.coverage_values) && rule.coverage_values.some(s => s.toString().toLowerCase().trim() === stateAbbreviation)
-    case 'por_pais':
-      return rule.coverage_country?.toLowerCase().trim() === country
+    // Casos redundantes eliminados para claridad
   }
 
+  // --- NUEVO CHEQUEO --- 
+  // 3. Chequeo de cobertura nacional vía zipcode/zipcodes (estructura observada en datos reales)
+  if (
+    rule.zipcode === NATIONAL_KEYWORD || 
+    (Array.isArray(rule.zipcodes) && rule.zipcodes.includes(NATIONAL_KEYWORD))
+  ) {
+    return true; // Si zipcode o zipcodes indican 'nacional', es válida
+  }
+  // --- FIN NUEVO CHEQUEO ---
+
+  // 4. Chequeos de fallback para campos antiguos (cobertura_cp, cobertura_estados)
   if (Array.isArray(rule.cobertura_cp) && rule.cobertura_cp.some(cp => cp.toString().trim() === postalCode)) {
     return true
   }
@@ -57,6 +64,7 @@ export const isRuleValidForAddress = (rule, address) => {
     return true
   }
 
+  // 5. Si ninguno de los anteriores coincide
   return false
 }
 
