@@ -157,9 +157,17 @@ export const CheckoutContent = () => {
         checkout.newAddressData?.zip)
     )
 
-    if (!hasValidAddress) return true
+    if (!hasValidAddress) { console.log('🚫 Button disabled: Invalid address.'); return true; }
 
-    if (!selectedShippingOption) return true
+    if (!selectedShippingOption) {
+        console.log('🚫 Button disabled: No shipping option selected (should be rare).');
+        return true;
+    } 
+
+    if (!selectedShippingOption.coveredProductIds || selectedShippingOption.coveredProductIds.length === 0) {
+        console.log('🚫 Button disabled: Selected option covers 0 products (placeholder or invalid state).');
+        return true;
+    }
 
     switch (checkout.selectedPaymentType) {
       case 'card':
