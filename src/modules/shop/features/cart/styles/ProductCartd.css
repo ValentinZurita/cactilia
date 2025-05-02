@@ -96,7 +96,9 @@
 
 /* Badge de agotado con más estilo */
 .status-badge {
-    color: white;
+    /* Estado Normal: Sutil */
+    color: #6c757d; /* Color de texto grisáceo sutil */
+    background-color: rgba(255, 255, 255, 0.5); /* Fondo blanco muy transparente por defecto */
     font-size: .5rem;
     border-radius: 12px;
     backdrop-filter: blur(2px);
@@ -105,7 +107,9 @@
 }
 
 .product-card:hover .status-badge {
-    background-color: rgba(161, 161, 161, 0.60);
+    /* Estado Hover: Rojo elegante */
+    color: white; /* Texto blanco en hover */
+    background-color: rgba(220, 53, 69, 0.7); /* Rojo danger semitransparente en hover */
     transform: scale(1.05);
 }
 

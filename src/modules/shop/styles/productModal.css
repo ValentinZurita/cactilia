@@ -464,15 +464,16 @@
 
 /* Etiqueta para stock limitado */
 .prod-modal__stock-limited {
-    background-color: #fff3cd;
-    color: #856404;
-    font-size: 0.8rem;
-    padding: 3px 8px;
-    border-radius: 4px;
-    margin-left: 10px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
+    /* Estilos añadidos para que parezca una etiqueta */
+    display: inline-block; /* Necesario para aplicar padding/background */
+    background-color: rgba(255, 193, 7, 0.6); /* Amarillo warning semitransparente */
+    color: white; /* Texto blanco */
+    padding: 0.3rem 0.6rem; /* Padding similar a .prod-modal__category */
+    border-radius: 30px; /* Mismo borde que otras etiquetas del modal */
+    font-size: 0.7rem; /* Mismo tamaño que otras etiquetas */
+    font-weight: 500; /* Mismo peso */
+    letter-spacing: 0.5px; /* Mismo espaciado */
+    box-shadow: 0 2px 5px rgba(255, 193, 7, 0.2); /* Sombra sutil */
 }
 
 /* Información del carrito */

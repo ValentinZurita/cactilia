@@ -17,12 +17,12 @@ const ModalImageColumnContent = ({ currentImage, productName, isOutOfStock, avai
       alt={productName} 
       className="prod-modal__image"
     />
-    {/* Badges de Stock */}
+    {/* Badges de Stock - ACTUALIZADO */}
     {isOutOfStock && (
-      <span className="position-absolute top-0 start-0 m-2 badge bg-danger">Agotado</span>
+      <span className="position-absolute top-0 start-0 m-2 badge status-badge">Sin stock</span>
     )}
     {!isOutOfStock && availableStock > 0 && availableStock <= 5 && (
-      <span className="position-absolute top-0 start-0 m-2 badge bg-warning text-dark">¡Solo {availableStock} disponibles!</span>
+      <span className="position-absolute top-0 start-0 m-2 badge low-stock-badge">Últimas piezas</span>
     )}
   </>
 );
@@ -56,7 +56,7 @@ const ModalDetailsContent = ({
       )}
       {!isOutOfStock && availableStock > 0 && availableStock <= 5 && (
         <span className="prod-modal__stock-limited">
-          ¡Quedan solo {availableStock}!
+          Últimas piezas
         </span>
       )}
     </div>
