@@ -14,6 +14,9 @@ import { v4 as uuidv4 } from 'uuid'
 import { STATE_ABBREVIATIONS, NATIONAL_KEYWORD } from '../../../../../../modules/checkout/constants/shippingConstants.js'
 // import { RuleFormatNormalizer } from '../../../../../../modules/checkout/shipping/RuleFormatNormalizer.js'
 import { fetchAllShippingRules } from '../../../../../../modules/checkout/shipping/shippingRulesService.js'
+import { calculatePackaging } from './packagingUtils.js'
+import { calculateGroupCost } from './costUtils.js'
+import { getDeliveryTimeInfo } from './deliveryTimeUtils.js'
 
 /**
  * Determina si una regla de envío es válida para la dirección proporcionada
@@ -66,177 +69,6 @@ export const isRuleValidForAddress = (rule, address) => {
 
   // 5. Si ninguno de los anteriores coincide
   return false
-}
-
-/**
- * Calcula el costo de envío basado en datos reales
- * @param {Object} rule - Regla de envío
- * @param {Array} products - Productos a enviar
- * @returns {Object} - Información de costo y tiempo de entrega
- */
-const calculateShippingDetails = (rule, products) => {
-  if (!rule || !products || products.length === 0) {
-    return { cost: 0, minDays: null, maxDays: null, isFree: false }
-  }
-
-  // Calcular subtotal para validar envío gratis por monto mínimo
-  const subtotal = products.reduce((sum, item) => {
-    const product = item.product || item
-    const price = parseFloat(product.price || 0)
-    const quantity = parseInt(item.quantity || 1, 10)
-    return sum + (price * quantity)
-  }, 0)
-
-  // Por defecto, tomar datos de la regla
-  let cost = parseFloat(rule.precio_base || rule.base_price || 0)
-  let isFree = rule.envio_gratis === true || rule.free_shipping === true
-
-  // Calcular peso total de los productos
-  const pesoTotal = products.reduce((sum, product) => {
-    return sum + parseFloat(product.weight || 0)
-  }, 0)
-
-  // Aplicar reglas de configuración de paquetes si existen
-  if (rule.configuracion_paquetes) {
-    const config = rule.configuracion_paquetes
-
-    // Verificar si aplica cargo por peso extra
-    if (config.peso_maximo_paquete !== undefined && config.costo_por_kg_extra !== undefined) {
-      const pesoMaximo = parseFloat(config.peso_maximo_paquete)
-      const costoPorKgExtra = parseFloat(config.costo_por_kg_extra)
-
-      if (!isNaN(pesoMaximo) && !isNaN(costoPorKgExtra) && pesoTotal > pesoMaximo) {
-        const pesoExtra = pesoTotal - pesoMaximo
-        const costoExtra = pesoExtra * costoPorKgExtra
-
-        cost += costoExtra
-      }
-    }
-
-    // Verificar si aplica cargo por producto extra
-    if (config.maximo_productos_por_paquete !== undefined && config.costo_por_producto_extra !== undefined) {
-      const maxProductos = parseInt(config.maximo_productos_por_paquete, 10)
-      const costoPorProductoExtra = parseFloat(config.costo_por_producto_extra)
-
-      if (!isNaN(maxProductos) && !isNaN(costoPorProductoExtra) && products.length > maxProductos) {
-        const productosExtra = products.length - maxProductos
-        const costoExtra = productosExtra * costoPorProductoExtra
-
-        cost += costoExtra
-      }
-    }
-  }
-
-  // Leer los tiempos de entrega SOLO de la regla sin valores por defecto
-  let minDays = null
-  let maxDays = null
-
-  // Intentar obtener valores de tiempo de entrega directamente de la regla
-  if (rule.tiempo_minimo !== undefined && rule.tiempo_minimo !== null) {
-    minDays = parseInt(rule.tiempo_minimo, 10)
-  } else if (rule.min_days !== undefined && rule.min_days !== null) {
-    minDays = parseInt(rule.min_days, 10)
-  } else if (rule.minDays !== undefined && rule.minDays !== null) {
-    minDays = parseInt(rule.minDays, 10)
-  }
-
-  if (rule.tiempo_maximo !== undefined && rule.tiempo_maximo !== null) {
-    maxDays = parseInt(rule.tiempo_maximo, 10)
-  } else if (rule.max_days !== undefined && rule.max_days !== null) {
-    maxDays = parseInt(rule.max_days, 10)
-  } else if (rule.maxDays !== undefined && rule.maxDays !== null) {
-    maxDays = parseInt(rule.maxDays, 10)
-  }
-
-  // Si tiene opciones de mensajería, usar datos de la opción preferida
-  if (Array.isArray(rule.opciones_mensajeria) && rule.opciones_mensajeria.length > 0) {
-    const bestOption = rule.opciones_mensajeria[0]
-    cost = parseFloat(bestOption.precio || 0)
-
-    // Aplicar reglas de configuración de paquetes para la opción de mensajería
-    if (bestOption.configuracion_paquetes) {
-      const config = bestOption.configuracion_paquetes
-
-      // Verificar si aplica cargo por peso extra
-      if (config.peso_maximo_paquete !== undefined && config.costo_por_kg_extra !== undefined) {
-        const pesoMaximo = parseFloat(config.peso_maximo_paquete)
-        const costoPorKgExtra = parseFloat(config.costo_por_kg_extra)
-
-        if (!isNaN(pesoMaximo) && !isNaN(costoPorKgExtra) && pesoTotal > pesoMaximo) {
-          const pesoExtra = pesoTotal - pesoMaximo
-          const costoExtra = pesoExtra * costoPorKgExtra
-
-          cost += costoExtra
-        }
-      }
-
-      // Verificar si aplica cargo por producto extra
-      if (config.maximo_productos_por_paquete !== undefined && config.costo_por_producto_extra !== undefined) {
-        const maxProductos = parseInt(config.maximo_productos_por_paquete, 10)
-        const costoPorProductoExtra = parseFloat(config.costo_por_producto_extra)
-
-        if (!isNaN(maxProductos) && !isNaN(costoPorProductoExtra) && products.length > maxProductos) {
-          const productosExtra = products.length - maxProductos
-          const costoExtra = productosExtra * costoPorProductoExtra
-
-          cost += costoExtra
-        }
-      }
-    }
-
-    // Actualizar tiempos solo si están definidos en la opción
-    if (bestOption.tiempo_minimo !== undefined && bestOption.tiempo_minimo !== null) {
-      minDays = parseInt(bestOption.tiempo_minimo, 10)
-    } else if (bestOption.min_days !== undefined && bestOption.min_days !== null) {
-      minDays = parseInt(bestOption.min_days, 10)
-    } else if (bestOption.minDays !== undefined && bestOption.minDays !== null) {
-      minDays = parseInt(bestOption.minDays, 10)
-    }
-
-    if (bestOption.tiempo_maximo !== undefined && bestOption.tiempo_maximo !== null) {
-      maxDays = parseInt(bestOption.tiempo_maximo, 10)
-    } else if (bestOption.max_days !== undefined && bestOption.max_days !== null) {
-      maxDays = parseInt(bestOption.max_days, 10)
-    } else if (bestOption.maxDays !== undefined && bestOption.maxDays !== null) {
-      maxDays = parseInt(bestOption.maxDays, 10)
-    }
-
-    // Extraer tiempos desde el campo tiempo_entrega (formato "1-3 días")
-    if ((minDays === null || maxDays === null) && bestOption.tiempo_entrega) {
-      const tiempoMatch = bestOption.tiempo_entrega.match(/(\d+)[-\s]*(\d+)/)
-      if (tiempoMatch && tiempoMatch.length >= 3) {
-        if (minDays === null) minDays = parseInt(tiempoMatch[1], 10)
-        if (maxDays === null) maxDays = parseInt(tiempoMatch[2], 10)
-      } else if (bestOption.tiempo_entrega.match(/(\d+)/)) {
-        const singleMatch = bestOption.tiempo_entrega.match(/(\d+)/)
-        const days = parseInt(singleMatch[1], 10)
-        if (minDays === null) minDays = days
-        if (maxDays === null) maxDays = days
-      }
-    }
-  }
-
-  // Verificar si aplica envío gratis por monto mínimo
-  if (!isFree && rule.envio_gratis_monto_minimo && subtotal >= parseFloat(rule.envio_gratis_monto_minimo)) {
-    isFree = true
-  }
-
-  // Si es gratis, costo cero
-  if (isFree) {
-    cost = 0
-  }
-
-  // Asegurar que maxDays nunca sea menor que minDays si ambos existen
-  if (minDays !== null && maxDays !== null && maxDays < minDays) {
-    maxDays = minDays
-  }
-
-  return {
-    cost,
-    minDays,
-    maxDays,
-    isFree,
-  }
 }
 
 /**
@@ -396,152 +228,15 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
       })
 
       const shippingOptions = shippingGroups.map(group => {
-        let minDays = null
-        let maxDays = null
-        let deliveryTimeText = ''
-        const rule = group.rule
-
-        if (rule.tiempo_minimo !== undefined && rule.tiempo_minimo !== null) minDays = parseInt(rule.tiempo_minimo, 10)
-        else if (rule.min_days !== undefined && rule.min_days !== null) minDays = parseInt(rule.min_days, 10)
-        else if (rule.minDays !== undefined && rule.minDays !== null) minDays = parseInt(rule.minDays, 10)
-
-        if (rule.tiempo_maximo !== undefined && rule.tiempo_maximo !== null) maxDays = parseInt(rule.tiempo_maximo, 10)
-        else if (rule.max_days !== undefined && rule.max_days !== null) maxDays = parseInt(rule.max_days, 10)
-        else if (rule.maxDays !== undefined && rule.maxDays !== null) maxDays = parseInt(rule.maxDays, 10)
-
-        if (Array.isArray(rule.opciones_mensajeria) && rule.opciones_mensajeria.length > 0) {
-          const bestOption = rule.opciones_mensajeria[0]
-
-          if (bestOption.tiempo_minimo !== undefined && bestOption.tiempo_minimo !== null) minDays = parseInt(bestOption.tiempo_minimo, 10)
-          else if (bestOption.min_days !== undefined && bestOption.min_days !== null) minDays = parseInt(bestOption.min_days, 10)
-          else if (bestOption.minDays !== undefined && bestOption.minDays !== null) minDays = parseInt(bestOption.minDays, 10)
-
-          if (bestOption.tiempo_maximo !== undefined && bestOption.tiempo_maximo !== null) maxDays = parseInt(bestOption.tiempo_maximo, 10)
-          else if (bestOption.max_days !== undefined && bestOption.max_days !== null) maxDays = parseInt(bestOption.max_days, 10)
-          else if (bestOption.maxDays !== undefined && bestOption.maxDays !== null) maxDays = parseInt(bestOption.maxDays, 10)
-
-          if (bestOption.tiempo_entrega) {
-            deliveryTimeText = bestOption.tiempo_entrega
-            if ((minDays === null || maxDays === null)) {
-              const tiempoMatch = bestOption.tiempo_entrega.match(/(\d+)[-\s]*(\d+)/)
-              if (tiempoMatch && tiempoMatch.length >= 3) {
-                if (minDays === null) minDays = parseInt(tiempoMatch[1], 10)
-                if (maxDays === null) maxDays = parseInt(tiempoMatch[2], 10)
-              } else if (bestOption.tiempo_entrega.match(/(\d+)/)) {
-                const singleMatch = bestOption.tiempo_entrega.match(/(\d+)/)
-                const days = parseInt(singleMatch[1], 10)
-                if (minDays === null) minDays = days
-                if (maxDays === null) maxDays = days
-              }
-            }
-          }
-        }
-
-        if (!deliveryTimeText && minDays !== null && maxDays !== null) {
-          if (minDays === maxDays) {
-            deliveryTimeText = minDays === 1 ? `Entrega en 1 día hábil` : `Entrega en ${minDays} días hábiles`
-          } else {
-            deliveryTimeText = `Entrega en ${minDays}-${maxDays} días hábiles`
-          }
-        }
-
-        let packagesCount = 1
-        let packagesInfo = []
+        const rule = group.rule;
+        
+        const { minDays, maxDays, deliveryTimeText } = getDeliveryTimeInfo(rule);
+        
         const ruleConfig = rule.configuracion_paquetes || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].configuracion_paquetes : {})
-        const hasPackageConfig = !!ruleConfig
-        const maxProductsPerPackage = hasPackageConfig ? parseInt(ruleConfig.maximo_productos_por_paquete, 10) : NaN
-        const maxWeightPerPackage = hasPackageConfig ? parseFloat(ruleConfig.peso_maximo_paquete) : NaN
-
-        if (!isNaN(maxProductsPerPackage) && maxProductsPerPackage > 0 && group.products.length > maxProductsPerPackage) {
-          packagesCount = Math.ceil(group.products.length / maxProductsPerPackage)
-          for (let i = 0; i < packagesCount; i++) {
-            const startIdx = i * maxProductsPerPackage
-            const endIdx = Math.min(startIdx + maxProductsPerPackage, group.products.length)
-            const packageProducts = group.products.slice(startIdx, endIdx)
-            packagesInfo.push({
-              id: `pkg_${group.id}_${i + 1}`,
-              products: packageProducts,
-              productCount: packageProducts.length,
-              weight: packageProducts.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0),
-            })
-          }
-        } else if (!isNaN(maxWeightPerPackage) && maxWeightPerPackage > 0) {
-          let currentPackageProducts = []
-          let currentPackageWeight = 0
-          packagesInfo = []
-
-          for (const product of group.products) {
-            const productWeight = parseFloat(product.weight || 0)
-            if (currentPackageWeight + productWeight > maxWeightPerPackage && currentPackageProducts.length > 0) {
-              packagesInfo.push({
-                id: `pkg_${group.id}_${packagesInfo.length + 1}`,
-                products: currentPackageProducts,
-                productCount: currentPackageProducts.length,
-                weight: currentPackageWeight,
-              })
-              currentPackageProducts = [product]
-              currentPackageWeight = productWeight
-            } else {
-              currentPackageProducts.push(product)
-              currentPackageWeight += productWeight
-            }
-          }
-          if (currentPackageProducts.length > 0) {
-            packagesInfo.push({
-              id: `pkg_${group.id}_${packagesInfo.length + 1}`,
-              products: currentPackageProducts,
-              productCount: currentPackageProducts.length,
-              weight: currentPackageWeight,
-            })
-          }
-          packagesCount = packagesInfo.length
-          if (packagesCount > 1) {
-          } else {
-            packagesInfo = [{
-              id: `pkg_${group.id}_1`,
-              products: group.products,
-              productCount: group.products.length,
-              weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0),
-            }]
-          }
-        } else {
-          packagesInfo = [{
-            id: `pkg_${group.id}_1`,
-            products: group.products,
-            productCount: group.products.length,
-            weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0),
-          }]
-          packagesCount = 1
-        }
-
-        let totalOptionCost = 0
-        const freeShippingMinAmount = parseFloat(rule.envio_gratis_monto_minimo)
-        const basePrice = parseFloat(rule.precio_base || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].precio : 0) || 0)
-        const costPerKgExtra = hasPackageConfig ? parseFloat(ruleConfig.costo_por_kg_extra || 0) : 0
-
-        packagesInfo.forEach((pkg, index) => {
-          pkg.subtotal = pkg.products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * (p.quantity || 1)), 0)
-          pkg.isFree = false
-          if (!isNaN(freeShippingMinAmount) && freeShippingMinAmount > 0 && pkg.subtotal >= freeShippingMinAmount) {
-            pkg.isFree = true
-          }
-
-          if (pkg.isFree) {
-            pkg.packagePrice = 0
-          } else {
-            let currentPackagePrice = basePrice
-            if (costPerKgExtra > 0 && !isNaN(maxWeightPerPackage) && pkg.weight > maxWeightPerPackage) {
-              const extraWeight = pkg.weight - maxWeightPerPackage
-              const extraKgsRoundedUp = Math.ceil(extraWeight)
-              const extraCost = extraKgsRoundedUp * costPerKgExtra
-              currentPackagePrice += extraCost
-            }
-            pkg.packagePrice = currentPackagePrice
-          }
-          totalOptionCost += pkg.packagePrice
-        })
-
-        const finalIsFree = totalOptionCost === 0
+        const { packagesCount, packagesInfo: initialPackagesInfo } = calculatePackaging(group.products, ruleConfig, group.id);
+        
+        const { totalOptionCost, updatedPackagesInfo } = calculateGroupCost(initialPackagesInfo, rule);
+        const finalIsFree = totalOptionCost === 0;
 
         const option = {
           id: `ship_${group.id}_${uuidv4()}`,
@@ -557,12 +252,12 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
           isNational: (rule.coverage_type === 'nacional' || rule.tipo === 'nacional'),
           zoneType: rule.coverage_type || rule.tipo || 'standard',
           deliveryTime: deliveryTimeText,
-          precio_base: basePrice,
-          envio_gratis_monto_minimo: freeShippingMinAmount > 0 ? freeShippingMinAmount : undefined,
+          precio_base: parseFloat(rule.precio_base || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].precio : 0) || 0),
+          envio_gratis_monto_minimo: parseFloat(rule.envio_gratis_monto_minimo) > 0 ? parseFloat(rule.envio_gratis_monto_minimo) : undefined,
           configuracion_paquetes: ruleConfig,
           opciones_mensajeria: rule.opciones_mensajeria,
           packagesCount,
-          packagesInfo,
+          packagesInfo: updatedPackagesInfo,
           packagesWithPrices: true,
         }
 
@@ -642,152 +337,15 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
   })
 
   const shippingOptions = shippingGroups.map(group => {
-    let minDays = null
-    let maxDays = null
-    let deliveryTimeText = ''
-    const rule = group.rule
-
-    if (rule.tiempo_minimo !== undefined && rule.tiempo_minimo !== null) minDays = parseInt(rule.tiempo_minimo, 10)
-    else if (rule.min_days !== undefined && rule.min_days !== null) minDays = parseInt(rule.min_days, 10)
-    else if (rule.minDays !== undefined && rule.minDays !== null) minDays = parseInt(rule.minDays, 10)
-
-    if (rule.tiempo_maximo !== undefined && rule.tiempo_maximo !== null) maxDays = parseInt(rule.tiempo_maximo, 10)
-    else if (rule.max_days !== undefined && rule.max_days !== null) maxDays = parseInt(rule.max_days, 10)
-    else if (rule.maxDays !== undefined && rule.maxDays !== null) maxDays = parseInt(rule.maxDays, 10)
-
-    if (Array.isArray(rule.opciones_mensajeria) && rule.opciones_mensajeria.length > 0) {
-      const bestOption = rule.opciones_mensajeria[0]
-
-      if (bestOption.tiempo_minimo !== undefined && bestOption.tiempo_minimo !== null) minDays = parseInt(bestOption.tiempo_minimo, 10)
-      else if (bestOption.min_days !== undefined && bestOption.min_days !== null) minDays = parseInt(bestOption.min_days, 10)
-      else if (bestOption.minDays !== undefined && bestOption.minDays !== null) minDays = parseInt(bestOption.minDays, 10)
-
-      if (bestOption.tiempo_maximo !== undefined && bestOption.tiempo_maximo !== null) maxDays = parseInt(bestOption.tiempo_maximo, 10)
-      else if (bestOption.max_days !== undefined && bestOption.max_days !== null) maxDays = parseInt(bestOption.max_days, 10)
-      else if (bestOption.maxDays !== undefined && bestOption.maxDays !== null) maxDays = parseInt(bestOption.maxDays, 10)
-
-      if (bestOption.tiempo_entrega) {
-        deliveryTimeText = bestOption.tiempo_entrega
-        if ((minDays === null || maxDays === null)) {
-          const tiempoMatch = bestOption.tiempo_entrega.match(/(\d+)[-\s]*(\d+)/)
-          if (tiempoMatch && tiempoMatch.length >= 3) {
-            if (minDays === null) minDays = parseInt(tiempoMatch[1], 10)
-            if (maxDays === null) maxDays = parseInt(tiempoMatch[2], 10)
-          } else if (bestOption.tiempo_entrega.match(/(\d+)/)) {
-            const singleMatch = bestOption.tiempo_entrega.match(/(\d+)/)
-            const days = parseInt(singleMatch[1], 10)
-            if (minDays === null) minDays = days
-            if (maxDays === null) maxDays = days
-          }
-        }
-      }
-    }
-
-    if (!deliveryTimeText && minDays !== null && maxDays !== null) {
-      if (minDays === maxDays) {
-        deliveryTimeText = minDays === 1 ? `Entrega en 1 día hábil` : `Entrega en ${minDays} días hábiles`
-      } else {
-        deliveryTimeText = `Entrega en ${minDays}-${maxDays} días hábiles`
-      }
-    }
-
-    let packagesCount = 1
-    let packagesInfo = []
+    const rule = group.rule;
+    
+    const { minDays, maxDays, deliveryTimeText } = getDeliveryTimeInfo(rule);
+    
     const ruleConfig = rule.configuracion_paquetes || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].configuracion_paquetes : {})
-    const hasPackageConfig = !!ruleConfig
-    const maxProductsPerPackage = hasPackageConfig ? parseInt(ruleConfig.maximo_productos_por_paquete, 10) : NaN
-    const maxWeightPerPackage = hasPackageConfig ? parseFloat(ruleConfig.peso_maximo_paquete) : NaN
-
-    if (!isNaN(maxProductsPerPackage) && maxProductsPerPackage > 0 && group.products.length > maxProductsPerPackage) {
-      packagesCount = Math.ceil(group.products.length / maxProductsPerPackage)
-      for (let i = 0; i < packagesCount; i++) {
-        const startIdx = i * maxProductsPerPackage
-        const endIdx = Math.min(startIdx + maxProductsPerPackage, group.products.length)
-        const packageProducts = group.products.slice(startIdx, endIdx)
-        packagesInfo.push({
-          id: `pkg_${group.id}_${i + 1}`,
-          products: packageProducts,
-          productCount: packageProducts.length,
-          weight: packageProducts.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0),
-        })
-      }
-    } else if (!isNaN(maxWeightPerPackage) && maxWeightPerPackage > 0) {
-      let currentPackageProducts = []
-      let currentPackageWeight = 0
-      packagesInfo = []
-
-      for (const product of group.products) {
-        const productWeight = parseFloat(product.weight || 0)
-        if (currentPackageWeight + productWeight > maxWeightPerPackage && currentPackageProducts.length > 0) {
-          packagesInfo.push({
-            id: `pkg_${group.id}_${packagesInfo.length + 1}`,
-            products: currentPackageProducts,
-            productCount: currentPackageProducts.length,
-            weight: currentPackageWeight,
-          })
-          currentPackageProducts = [product]
-          currentPackageWeight = productWeight
-        } else {
-          currentPackageProducts.push(product)
-          currentPackageWeight += productWeight
-        }
-      }
-      if (currentPackageProducts.length > 0) {
-        packagesInfo.push({
-          id: `pkg_${group.id}_${packagesInfo.length + 1}`,
-          products: currentPackageProducts,
-          productCount: currentPackageProducts.length,
-          weight: currentPackageWeight,
-        })
-      }
-      packagesCount = packagesInfo.length
-      if (packagesCount > 1) {
-      } else {
-        packagesInfo = [{
-          id: `pkg_${group.id}_1`,
-          products: group.products,
-          productCount: group.products.length,
-          weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0),
-        }]
-      }
-    } else {
-      packagesInfo = [{
-        id: `pkg_${group.id}_1`,
-        products: group.products,
-        productCount: group.products.length,
-        weight: group.products.reduce((sum, p) => sum + parseFloat(p.weight || 0), 0),
-      }]
-      packagesCount = 1
-    }
-
-    let totalOptionCost = 0
-    const freeShippingMinAmount = parseFloat(rule.envio_gratis_monto_minimo)
-    const basePrice = parseFloat(rule.precio_base || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].precio : 0) || 0)
-    const costPerKgExtra = hasPackageConfig ? parseFloat(ruleConfig.costo_por_kg_extra || 0) : 0
-
-    packagesInfo.forEach((pkg, index) => {
-      pkg.subtotal = pkg.products.reduce((sum, p) => sum + (parseFloat(p.price || 0) * (p.quantity || 1)), 0)
-      pkg.isFree = false
-      if (!isNaN(freeShippingMinAmount) && freeShippingMinAmount > 0 && pkg.subtotal >= freeShippingMinAmount) {
-        pkg.isFree = true
-      }
-
-      if (pkg.isFree) {
-        pkg.packagePrice = 0
-      } else {
-        let currentPackagePrice = basePrice
-        if (costPerKgExtra > 0 && !isNaN(maxWeightPerPackage) && pkg.weight > maxWeightPerPackage) {
-          const extraWeight = pkg.weight - maxWeightPerPackage
-          const extraKgsRoundedUp = Math.ceil(extraWeight)
-          const extraCost = extraKgsRoundedUp * costPerKgExtra
-          currentPackagePrice += extraCost
-        }
-        pkg.packagePrice = currentPackagePrice
-      }
-      totalOptionCost += pkg.packagePrice
-    })
-
-    const finalIsFree = totalOptionCost === 0
+    const { packagesCount, packagesInfo: initialPackagesInfo } = calculatePackaging(group.products, ruleConfig, group.id);
+    
+    const { totalOptionCost, updatedPackagesInfo } = calculateGroupCost(initialPackagesInfo, rule);
+    const finalIsFree = totalOptionCost === 0;
 
     const option = {
       id: `ship_${group.id}_${uuidv4()}`,
@@ -803,12 +361,12 @@ export const findBestShippingOptionsGreedy = (cartItems, address, shippingRules)
       isNational: (rule.coverage_type === 'nacional' || rule.tipo === 'nacional'),
       zoneType: rule.coverage_type || rule.tipo || 'standard',
       deliveryTime: deliveryTimeText,
-      precio_base: basePrice,
-      envio_gratis_monto_minimo: freeShippingMinAmount > 0 ? freeShippingMinAmount : undefined,
+      precio_base: parseFloat(rule.precio_base || (rule.opciones_mensajeria && rule.opciones_mensajeria.length > 0 ? rule.opciones_mensajeria[0].precio : 0) || 0),
+      envio_gratis_monto_minimo: parseFloat(rule.envio_gratis_monto_minimo) > 0 ? parseFloat(rule.envio_gratis_monto_minimo) : undefined,
       configuracion_paquetes: ruleConfig,
       opciones_mensajeria: rule.opciones_mensajeria,
       packagesCount,
-      packagesInfo,
+      packagesInfo: updatedPackagesInfo,
       packagesWithPrices: true,
     }
 
