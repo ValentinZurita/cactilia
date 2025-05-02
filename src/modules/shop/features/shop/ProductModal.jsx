@@ -5,9 +5,11 @@ import { useModalVisibility } from '../../hooks/useModalVisibility';
 import { useProductModal } from '../../hooks/useProductModal';
 import '../../styles/productModal.css';
 
-// --- Subcomponentes Internos (Contenido) --- 
+// ============================================================================
+// Subcomponentes Internos (Solo Contenido)
+// ============================================================================
 
-// Devuelve el contenido para la columna de imagen
+/** Contenido de la columna de imagen */
 const ModalImageColumnContent = ({ currentImage, productName, isOutOfStock, availableStock }) => (
   <>
     <ImageComponent 
@@ -15,6 +17,7 @@ const ModalImageColumnContent = ({ currentImage, productName, isOutOfStock, avai
       alt={productName} 
       className="prod-modal__image"
     />
+    {/* Badges de Stock */}
     {isOutOfStock && (
       <span className="position-absolute top-0 start-0 m-2 badge bg-danger">Agotado</span>
     )}
@@ -24,7 +27,7 @@ const ModalImageColumnContent = ({ currentImage, productName, isOutOfStock, avai
   </>
 );
 
-// Devuelve el contenido de los detalles (sin el div prod-modal__details)
+/** Contenido principal de los detalles del producto */
 const ModalDetailsContent = ({
   product,
   hasMultipleImages,
@@ -32,20 +35,20 @@ const ModalDetailsContent = ({
   stockError,
   isOutOfStock,
   availableStock,
-  quantity, // Necesario para el control de cantidad
-  handleDecrement, // Necesario para el control de cantidad
-  handleIncrement, // Necesario para el control de cantidad
-  totalPrice, // Necesario para el control de cantidad
-  added, // Necesario para el botón
-  handleAddToCartClick, // Necesario para el botón
-  isButtonDisabled, // Necesario para el botón
-  getButtonText, // Necesario para el botón
+  quantity, 
+  handleDecrement, 
+  handleIncrement, 
+  totalPrice, 
+  added, 
+  handleAddToCartClick, 
+  isButtonDisabled, 
+  getButtonText, 
 }) => (
   <>
-    {/* Título del producto */}
+    {/* Título */}
     <h3 id="product-modal-title" className="prod-modal__title">{product.name}</h3>
     
-    {/* Categoría y stock */}
+    {/* Categoría y Etiqueta de Stock */}
     <div className="prod-modal__category-wrap">
       <span className="prod-modal__category">{product.category || 'Sin categoría'}</span>
       {isOutOfStock && (
@@ -64,7 +67,7 @@ const ModalDetailsContent = ({
     {/* Descripción */}
     <p className="prod-modal__desc">{product.description || 'Sin descripción disponible'}</p>
 
-    {/* Carrusel */}
+    {/* Carrusel de Imágenes (si aplica) */}
     {hasMultipleImages && (
       <div className="prod-modal__carousel-container">
         <ProductImageCarousel
@@ -74,7 +77,7 @@ const ModalDetailsContent = ({
       </div>
     )}
 
-    {/* Visualización de error de stock */} 
+    {/* Mensaje de Error de Stock (si aplica) */} 
     {stockError && (
       <div className="prod-modal__stock-error">
         <i className="bi bi-exclamation-triangle me-2"></i> 
@@ -82,7 +85,7 @@ const ModalDetailsContent = ({
       </div>
     )}
 
-    {/* Fila de cantidad (Control de cantidad ahora como subcomponente) */}
+    {/* Control de Cantidad */}
     <ModalQuantityControlContent 
         quantity={quantity}
         isOutOfStock={isOutOfStock}
@@ -92,7 +95,7 @@ const ModalDetailsContent = ({
         totalPrice={totalPrice}
     />
 
-    {/* Botón de carrito (ahora como subcomponente) */}
+    {/* Botón Añadir al Carrito */}
     <ModalAddToCartButtonContent
         added={added}
         onClick={handleAddToCartClick}
@@ -102,7 +105,7 @@ const ModalDetailsContent = ({
   </>
 );
 
-// Devuelve el contenido de la fila de cantidad
+/** Control para ajustar la cantidad y ver total */
 const ModalQuantityControlContent = ({
   quantity,
   isOutOfStock,
@@ -135,7 +138,7 @@ const ModalQuantityControlContent = ({
   </div>
 );
 
-// Devuelve solo el botón del carrito
+/** Botón para añadir al carrito */
 const ModalAddToCartButtonContent = ({ added, onClick, disabled, buttonText }) => (
   <button
     className={`prod-modal__cart-btn ${added ? 'prod-modal__cart-btn--added' : ''}`}
@@ -148,11 +151,16 @@ const ModalAddToCartButtonContent = ({ added, onClick, disabled, buttonText }) =
 );
 
 
-// --- Componente Principal Refactorizado (Conservando Estructura DOM) --- 
+// ============================================================================
+// Componente Principal: ProductModal
+// ============================================================================
 export const ProductModal = ({ product, isOpen, onClose }) => {
 
+  // --- Estado Local ---
   const [currentImage, setCurrentImage] = useState(null);
-  const modalVisible = useModalVisibility(isOpen, product);
+  
+  // --- Hooks Personalizados ---
+  const modalVisible = useModalVisibility(isOpen, product); // Hook para animación/visibilidad
   const {
     quantity,
     added,
@@ -163,43 +171,51 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
     handleIncrement,
     handleDecrement,
     handleAddToCartClick,
-  } = useProductModal(product, isOpen, onClose);
+  } = useProductModal(product, isOpen, onClose); // Hook para lógica de cantidad y carrito
 
+  // --- Efectos Secundarios ---
   useEffect(() => {
+    // Establecer imagen inicial al abrir/cambiar producto
     if (isOpen && product) {
-      // Usa mainImage o la primera de la galería
       setCurrentImage(product.mainImage || (product.images && product.images[0]));
     }
   }, [isOpen, product]);
 
+  // --- Renderizado Condicional Temprano ---
   if (!isOpen || !product) return null;
 
+  // --- Variables y Lógica de Renderizado --- 
   const modalClass = modalVisible ? 'prod-modal--visible' : 'prod-modal--hidden';
   const hasMultipleImages = product.images && Array.isArray(product.images) && product.images.length > 1;
 
+  // Manejador para seleccionar imagen desde el carrusel
   const handleThumbnailSelect = (img) => {
     setCurrentImage(img);
   };
 
+  // Texto dinámico para el botón de añadir
   const getButtonText = () => {
     if (isOutOfStock || quantity <= 0) return 'Sin stock';
     if (added) return 'Producto agregado';
     return `Agregar ($${totalPrice})`;
   };
-
   const isButtonDisabled = added || isOutOfStock || quantity <= 0;
-  const displayImage = currentImage; // Usar el estado local que se actualiza
+  
+  // Imagen a mostrar (estado o fallback)
+  const displayImage = currentImage; 
 
+  // --- JSX Principal --- 
   return (
     <div
       className={`prod-modal__backdrop ${modalClass}`}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} // Cierre al click en fondo
       role="dialog"
       aria-modal="true"
       aria-labelledby="product-modal-title"
       aria-hidden={!isOpen}
     >
       <div className="prod-modal__container">
+        {/* Botón Cerrar */}
         <button 
           className="prod-modal__close" 
           onClick={onClose} 
@@ -208,9 +224,10 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
           ✕
         </button>
 
+        {/* Contenedor Interno (Layout Flex/Grid) */}
         <div className="prod-modal__inner-container">
 
-          {/* Columna de Imagen */}
+          {/* Columna Imagen (Renderiza contenido con subcomponente) */}
           <div className="prod-modal__image-wrap">
             {displayImage && (
               <ModalImageColumnContent
@@ -222,11 +239,9 @@ export const ProductModal = ({ product, isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Columna de Detalles (Mantiene divs originales) */}
+          {/* Columna Detalles (Renderiza contenido con subcomponente) */}
           <div className="prod-modal__content">
             <div className="prod-modal__details">
-              
-              {/* Renderiza el contenido de los detalles usando el subcomponente */}
               <ModalDetailsContent
                 product={product}
                 hasMultipleImages={hasMultipleImages}
