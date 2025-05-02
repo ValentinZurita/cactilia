@@ -158,6 +158,30 @@ const shopPageSlice = createSlice({
     resetFilters: (state) => {
       state.filters = initialState.filters;
       state.pagination.currentPage = 1;
+    },
+    decrementShopProductStock: (state, action) => {
+      const { productId, quantityToDecrement } = action.payload;
+      const productIndex = state.allProducts.findIndex(p => p.id === productId);
+
+      if (productIndex !== -1) {
+        const currentStock = state.allProducts[productIndex].stock;
+        // Asegurarse de no bajar el stock de 0
+        state.allProducts[productIndex].stock = Math.max(0, currentStock - quantityToDecrement);
+        console.log(`Stock optimista actualizado para ${productId} en shopPageSlice. Nuevo stock: ${state.allProducts[productIndex].stock}`);
+      } else {
+        console.warn(`Producto ${productId} no encontrado en shopPageSlice para actualizar stock optimista.`);
+      }
+    },
+    incrementShopProductStock: (state, action) => {
+      const { productId, quantityToAddBack } = action.payload;
+      const productIndex = state.allProducts.findIndex(p => p.id === productId);
+
+      if (productIndex !== -1) {
+        state.allProducts[productIndex].stock += quantityToAddBack;
+        console.log(`Stock optimista RE-incrementado para ${productId} en shopPageSlice. Nuevo stock: ${state.allProducts[productIndex].stock}`);
+      } else {
+        console.warn(`Producto ${productId} no encontrado en shopPageSlice para re-incrementar stock optimista.`);
+      }
     }
   },
   // ExtraReducers: Manejan acciones de otros slices o acciones de createAsyncThunk
@@ -202,7 +226,9 @@ export const {
     setSelectedCategory,
     setPriceOrder,
     setCurrentPage,
-    resetFilters
+    resetFilters,
+    decrementShopProductStock,
+    incrementShopProductStock
 } = shopPageSlice.actions;
 
 export default shopPageSlice.reducer;

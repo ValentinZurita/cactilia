@@ -7,6 +7,7 @@ import {
   syncCartWithServer,
   removeItemAndSync
 } from '../store/index.js';
+import { decrementShopProductStock } from '@store/slices/shopPageSlice.js';
 import { getProductCurrentStock } from '../../../services/productServices.js';
 import { fetchShippingRuleById } from '../../../../admin/shipping/api/shippingApi.js';
 
@@ -260,6 +261,12 @@ export const useCartOperations = (items, uid) => {
         },
         quantity,
         shouldIncrement: incrementExistente // Pasar el valor recibido como parámetro
+      }));
+
+      // Despachar actualización optimista para la UI de la tienda
+      dispatch(decrementShopProductStock({
+        productId: productWithRules.id,
+        quantityToDecrement: quantity
       }));
 
       // Sincronizar con el servidor si hay usuario
