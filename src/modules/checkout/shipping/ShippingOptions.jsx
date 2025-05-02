@@ -2,15 +2,11 @@
  * Componente principal de opciones de envío
  * Muestra paquetes y productos no enviables
  */
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ShippingPackage } from './ShippingPackage.jsx'
-import { UnshippableProducts } from './UnshippableProducts.jsx'
-import { useShippingOptions } from '../hooks/useShippingOptions.js'
-import { checkoutShippingService } from '../services/checkoutShippingService.js'
-import debugShipping from '../utils/ShippingDebugger.js'
-import { useShippingRules } from '../hooks/useShippingRules.js'
-import '../styles/ShippingOptions.css'
-import { CheckoutSection } from '../../../shop/features/checkout/components/sections/CheckoutSection'
+import { checkoutShippingService } from '../../shipping/checkoutShippingService.js'
+import { useShippingRules } from '../../shipping/useShippingRules.js'
+import '@modules/checkout/shipping/styles/ShippingOptions.css'
 
 /**
  * Componente principal para mostrar opciones de envío en el checkout
