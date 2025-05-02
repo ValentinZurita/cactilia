@@ -13,9 +13,10 @@ import { v4 as uuidv4 } from 'uuid'
 // Importar el mapeo de abreviaciones
 import { NATIONAL_KEYWORD, STATE_ABBREVIATIONS } from '../constants/shippingConstants.js'
 // import { RuleFormatNormalizer } from '../../../../../../modules/checkout/shipping/RuleFormatNormalizer.js'
-import { calculatePackaging } from '../utils/packagingUtils_.js'
-import { calculateGroupCost } from '../utils/costUtils_.js'
-import { getDeliveryTimeInfo } from '../utils/deliveryTimeUtils_.js'
+import { fetchAllShippingRules } from './shippingRulesService.js'
+import { calculatePackaging } from '../utils/packagingUtils.js'
+import { calculateGroupCost } from '../utils/costUtils.js'
+import { getDeliveryTimeInfo } from '../utils/deliveryTimeUtils.js'
 
 /**
  * Determina si una regla de envío es válida para la dirección proporcionada

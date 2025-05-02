@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import Collapse from '../common/Collapse.jsx'
 import '../../styles/shipping.css'
 import { GROUP_PRIORITIES, SHIPPING_ICONS } from '../../constants/ShippingConstants2.js'
-import { formatShippingCost, hasValidOptions } from '../../utils/shippingUtils_.js'
+import { formatShippingCost, hasValidOptions } from '../../utils/shippingUtils.js'
 
 /**
  * DiagnosticInfo component for debugging shipping group information

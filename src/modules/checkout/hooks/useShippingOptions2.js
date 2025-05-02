@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { getShippingOptions } from '../checkout/services/shipping/index.js'
-import { calculateShippingOptionsGroups } from '../utils/shippingUtils_.js'
+import { calculateShippingOptionsGroups } from '../utils/shippingUtils.js'
 
 /**
  * Hook for loading and processing shipping options

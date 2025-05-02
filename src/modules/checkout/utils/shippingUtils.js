@@ -173,3 +173,123 @@ export const getStateFromZipCode = (zipCode) => {
 
   return stateMap[prefix] || null;
 };
+
+// ¿Deberíamos importar estas constantes de shippingConstants.js o definirlas aquí?
+// Por ahora, las definimos localmente como fallback, asumiendo que ShippingConstants2.js no existe o no es accesible
+const SHIPPING_TYPES = {
+  EXPRESS: 'express',
+  LOCAL: 'local',
+  NATIONAL: 'national',
+  INTERNATIONAL: 'international',
+  STANDARD: 'standard',
+};
+const GROUP_PRIORITIES = {
+  express: 10,
+  local: 20,
+  national: 30,
+  international: 40,
+  standard: 50,
+};
+const EXPRESS_TERMS = ['express', 'rápido', 'urgente', '24h'];
+const LOCAL_TERMS = ['local', 'ciudad', 'pickup', 'recogida'];
+const NATIONAL_TERMS = ['nacional', 'estándar', 'normal'];
+
+/**
+ * Identifica el tipo de envío basado en el nombre y descripción
+ * (Función auxiliar para calculateShippingOptionsGroups)
+ * @param {string} name - Nombre de la opción de envío
+ * @param {string} description - Descripción de la opción
+ * @returns {string} - Tipo identificado
+ */
+const identifyShippingType = (name, description) => {
+  // Convert to lowercase string for comparison
+  const searchText = `${name || ''} ${description || ''}`.toLowerCase();
+
+  // Check for express terms
+  if (EXPRESS_TERMS.some(term => searchText.includes(term))) {
+    return SHIPPING_TYPES.EXPRESS;
+  }
+  // Check for local terms
+  if (LOCAL_TERMS.some(term => searchText.includes(term))) {
+    return SHIPPING_TYPES.LOCAL;
+  }
+  // Check for national terms
+  if (NATIONAL_TERMS.some(term => searchText.includes(term))) {
+    return SHIPPING_TYPES.NATIONAL;
+  }
+  // Si incluye gratis, podría ser local o un tipo especial
+  if (searchText.includes('gratis') || searchText.includes('free')) {
+    // Podríamos necesitar más lógica aquí, por ahora asumimos LOCAL si es gratis y no express/national
+    return SHIPPING_TYPES.LOCAL; 
+  }
+  // Default to standard
+  // En el código original de Greedy, usamos option.zoneType o option.isNational,
+  // esta función identifyShippingType parece ser una alternativa basada en texto.
+  // Podríamos necesitar refinarla o usar la lógica de Greedy directamente si es más fiable.
+  return SHIPPING_TYPES.STANDARD; // O NATIONAL como fallback?
+}
+
+/**
+ * Agrupa las opciones de envío por tipo para mostrarlas mejor organizadas en la UI
+ * @param {Array} options - Opciones de envío a agrupar (salida de findBestShippingOptionsGreedy)
+ * @returns {Array} - Grupos de opciones de envío
+ */
+export const calculateShippingOptionsGroups = (options) => {
+  // Return empty array if no options provided
+  if (!options || !Array.isArray(options) || options.length === 0) {
+    console.warn('⚠️ No hay opciones de envío para agrupar');
+    return [];
+  }
+
+  console.log('🚚 Agrupando opciones de envío:', options.length);
+
+  try {
+    // Map options by type (express, local, national)
+    const typeMap = {};
+
+    options.forEach(option => {
+      // Usar el zoneType calculado por Greedy si existe, sino identificar por texto
+      const type = option.zoneType || identifyShippingType(option.name, option.description);
+
+      if (!typeMap[type]) {
+        typeMap[type] = [];
+      }
+      typeMap[type].push(option);
+    });
+
+    // Sort options in each group by price, free options first
+    Object.keys(typeMap).forEach(type => {
+      typeMap[type].sort((a, b) => {
+        const isAFree = a.isFree || a.price === 0;
+        const isBFree = b.isFree || b.price === 0;
+        if (isAFree && !isBFree) return -1;
+        if (!isAFree && isBFree) return 1;
+        return (a.price || 0) - (b.price || 0); // Sort by price (lowest first)
+      });
+    });
+
+    // Convert map to array of groups
+    const groups = Object.keys(typeMap).map(type => ({
+      type,
+      label: type.charAt(0).toUpperCase() + type.slice(1), // Poner primera letra en mayúscula como label simple
+      priority: GROUP_PRIORITIES[type] || 100, // Usar prioridad definida
+      options: typeMap[type],
+    }));
+
+    // Sort groups by priority
+    groups.sort((a, b) => a.priority - b.priority);
+
+    console.log('✅ Grupos de envío calculados:', groups.length);
+    return groups;
+
+  } catch (error) {
+    console.error('❌ Error al agrupar opciones de envío:', error);
+    // Fallback: devolver un solo grupo con todas las opciones
+    return [{
+      type: 'all',
+      label: 'Todas las opciones',
+      priority: 1,
+      options: [...options].sort((a,b) => (a.price || 0) - (b.price || 0)), // Ordenar por precio al menos
+    }];
+  }
+}

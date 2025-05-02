@@ -3,7 +3,11 @@ import PropTypes from 'prop-types'
 import ProductDetails from './ProductDetails.jsx'
 import CostBreakdown from './CostBreakdown.jsx'
 import { Shimmer } from '../common/index.js'
-import { calculateDeliveryTime, formatPrice, getDisplayName, isFreeShipping } from '../../utils/shippingUtils_.js'
+import { calculateDeliveryTime, formatPrice, getDisplayName, isFreeShipping } from '../../utils/shippingUtils.js'
+import { Tooltip } from 'react-bootstrap'
+import { OverlayTrigger } from 'react-bootstrap'
+import { SHIPPING_ICONS } from '../../constants/ShippingConstants2.js'
+import '../../styles/shipping.css'
 
 /**
  * Componente que renderiza una opción individual de envío

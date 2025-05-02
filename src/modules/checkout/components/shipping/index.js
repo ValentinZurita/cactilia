@@ -25,7 +25,7 @@ export {
   coversAllProducts,
   calculateEstimatedDelivery,
   filterShippingOptions,
-} from '../../utils/shippingUtils_.js'
+} from '../../utils/shippingUtils.js'
 
 // Constants
 export * from '../../constants/ShippingConstants2.js'
