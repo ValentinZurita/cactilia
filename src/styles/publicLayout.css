@@ -1,5 +1,18 @@
-
 .public-layout{
   margin-top: 56px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.public-layout > main,
+.public-layout > .main-content,
+.public-layout > div:has(> .cart-page),
+.public-layout > :nth-child(3) {
+  flex-grow: 1;
+}
+
+.public-layout > footer {
+  flex-shrink: 0;
 }
 
