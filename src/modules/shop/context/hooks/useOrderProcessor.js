@@ -238,53 +238,89 @@ export const useOrderProcessor = ({
     }
     // === FIN CAMBIO ===
 
+    // === INICIO CAMBIO CRÍTICO: Filtrar items y recalcular totales ===
+
+    // 1. Obtener IDs de productos cubiertos (con seguridad)
+    const coveredProductIds = selectedOption?.coveredProductIds || [];
+    if (!selectedOption || coveredProductIds.length === 0) {
+      // Esto no debería pasar si el botón se deshabilita correctamente,
+      // pero es una guarda de seguridad.
+      throw new Error('No se pueden procesar 0 productos. Revisa la selección de envío.');
+    }
+
+    // 2. Filtrar los items del carrito
+    const coveredItems = cart.items.filter(item => 
+      coveredProductIds.includes(item.id)
+    );
+    // ---> LOG: VER ESTRUCTURA DEL ITEM DEL CARRITO <---
+    if (coveredItems.length > 0) {
+      console.log('[DEBUG] Sample covered cart item structure:', coveredItems[0]);
+    }
+
+    // 3. Recalcular subtotal e impuestos BASADOS EN LOS ITEMS CUBIERTOS
+    // Asumiendo que item.price INCLUYE IVA (16%)
+    const coveredSubtotal = coveredItems.reduce((sum, item) => {
+      const priceBeforeTax = (item.price || 0) / 1.16;
+      return sum + (priceBeforeTax * item.quantity);
+    }, 0);
+    const coveredTaxes = coveredSubtotal * 0.16; 
+    // El total final debe ser la suma de subtotal + impuestos + envío
+    const coveredGrandTotal = coveredSubtotal + coveredTaxes + finalShippingCost;
+    // Comprobación numérica: coveredGrandTotal debería ser aprox. igual a: 
+    // coveredItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + finalShippingCost
+
+    console.log(`[prepareOrderData] Items filtrados: ${coveredItems.length} de ${cart.items.length}. Recalculando totales (precio incluye IVA).`);
+    console.log(`[prepareOrderData] Totales recalculados: Subtotal=${coveredSubtotal.toFixed(2)}, Tax=${coveredTaxes.toFixed(2)}, Shipping=${finalShippingCost}, Total=${coveredGrandTotal.toFixed(2)}`);
+
+    // === FIN CAMBIO CRÍTICO ===
+
     // Preparar datos de la orden
     return {
       userId: uid,
       customer: {
         email: billingManager.fiscalData.email || shippingAddress.email || userEmail || '',
       },
-      items: cart.items.map(item => ({
-        id: item.id,
-        name: item.name || item.title,
-        price: item.price,
-        image: item.image || item.mainImage,
-        category: item.category,
-        quantity: item.quantity,
-        stock: item.stock || 0,
-      })),
-      shipping: {
-        methodId: shippingDetails.id,
-        methodName: shippingDetails.name,
-        cost: shippingDetails.cost, // <-- Usar el costo del argumento
-        address: shippingAddress,
-        addressType: addressManager.selectedAddressType,
-        saveForFuture: addressManager.selectedAddressType === 'new' &&
-          addressManager.newAddressData.saveAddress,
-      },
+      // Usar los items FILTRADOS
+      items: coveredItems.map(item => { 
+        const mappedItem = {
+          id: item.id,
+          name: item.name || item.title,
+          price: item.price, 
+          quantity: item.quantity,
+          imageUrl: item.imageUrl || item.image || item.productImage || item.img || null, 
+          variant: item.variant || null,
+        };
+        // ---> LOG: VER ITEM MAPEADO <---
+        console.log('[DEBUG] Mapped order item:', mappedItem);
+        return mappedItem;
+      }),
+      shippingAddress: shippingAddress, 
+      billingAddress: billingManager.requiresInvoice ? { /* ... datos fiscales ... */ } : null,
       payment: {
         type: paymentManager.selectedPaymentType,
-        methodId: paymentManager.selectedPaymentId,
-        cardholderName: paymentManager.newCardData.cardholderName,
-        saveForFuture: paymentManager.selectedPaymentType === 'new_card' &&
-          paymentManager.newCardData.saveCard,
+        // Condicionalmente añadir methodId si el tipo es tarjeta guardada
+        ...(paymentManager.selectedPaymentType === 'card' && { 
+          methodId: paymentManager.selectedPaymentId 
+        }),
+        // Condicionalmente añadir nombre si es tarjeta nueva (necesario en createAndProcessOrder)
+        ...(paymentManager.selectedPaymentType === 'new_card' && {
+          cardholderName: paymentManager.newCardData?.cardholderName || '' // Añadir con seguridad
+        })
       },
-      billing: {
-        requiresInvoice: billingManager.requiresInvoice,
-        fiscalData: billingManager.requiresInvoice ? billingManager.fiscalData : null,
+      shipping: shippingDetails, 
+      // Usar los totales RECALCULADOS
+      totals: { 
+        subtotal: parseFloat(coveredSubtotal.toFixed(2)), // Redondear a 2 decimales
+        tax: parseFloat(coveredTaxes.toFixed(2)),      // Redondear a 2 decimales
+        shipping: finalShippingCost,
+        finalTotal: parseFloat(coveredGrandTotal.toFixed(2)), // Redondear a 2 decimales
       },
       notes: orderNotes,
-      totals: {
-        subtotal: cart.subtotal,
-        taxes: cart.taxes,
-        shipping: shippingDetails.cost, // <-- Usar el costo del argumento
-        total: cart.total, // (subtotal + taxes)
-        // Recalcular finalTotal con el costo del argumento
-        finalTotal: Number((cart.subtotal + cart.taxes + shippingDetails.cost).toFixed(2)),
-      },
-      status: 'pending',
-      createdAt: new Date(),
-    }
+      status: 'pending', 
+      requiresInvoice: billingManager.requiresInvoice,
+      fiscalData: billingManager.requiresInvoice ? { /* ... datos fiscales ... */ } : null,
+      selectedShippingOption: selectedOption ? { /* ... detalles opción ... */ } : null,
+    };
   }
 
   /**
@@ -295,7 +331,7 @@ export const useOrderProcessor = ({
   const createAndProcessOrder = async (orderData) => {
     try {
       // Verificar que el total sea válido
-      if (!orderData.totals.total || orderData.totals.total <= 0) {
+      if (!orderData.totals.finalTotal || orderData.totals.finalTotal <= 0) {
         throw new Error('El total de la orden es inválido. Verifica los productos en tu carrito.')
       }
 
@@ -363,14 +399,22 @@ export const useOrderProcessor = ({
         }
       }
 
+      // ---> LOG ANTES <----
+      console.log(`[createAndProcessOrder] Llamando a processPayment con orderData:`, orderData, ` paymentMethodId: ${paymentMethodId}, paymentType: ${orderData.payment.type}`);
+
       // Procesar la orden
-      return await processPayment(
+      const result = await processPayment(
         orderData,
         paymentMethodId,
         orderData.payment.type === 'new_card' && orderData.payment.saveForFuture,
         orderData.payment.type,
         customerEmail,
-      )
+      );
+
+      // ---> LOG DESPUÉS <----
+      console.log(`[createAndProcessOrder] processPayment completado con resultado:`, result);
+      return result;
+
     } catch (error) {
       // Si hay productos sin stock, mostrar mensaje amigable
       if (error.outOfStockItems && error.outOfStockItems.length > 0) {

@@ -80,8 +80,9 @@ export const getShippingOptions = async (cartItems, addressInfo, customRules = n
 
     // Verificar resultado
     if (!result?.success) {
-      console.warn(`⚠️ Error en cálculo de envío: ${result?.error || 'Error desconocido'}`)
-      return []
+      console.warn(`⚠️ Error en cálculo de envío: ${result?.error || 'Error desconocido'}`);
+      // PROPAGAR EL OBJETO DE ERROR COMPLETO
+      return result; // <-- Devolver el objeto de error, no un array vacío
     }
 
     // Obtener y retornar opciones de envío

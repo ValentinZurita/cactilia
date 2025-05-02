@@ -162,7 +162,7 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
       <div className="order-details-section">
         <h3>Dirección de Envío</h3>
         <OrderAddressCard
-          address={orderDetails.shipping?.address}
+          address={orderDetails.shippingAddress}
           estimatedDelivery={orderDetails.shipping?.estimatedDelivery}
         />
       </div>

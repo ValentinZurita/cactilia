@@ -26,8 +26,8 @@ export const OrderProductItem = ({ item }) => {
   return (
     <div className="order-product-item">
       <div className="order-product-image">
-        {item.image ? (
-          <img src={item.image} alt={item.name} />
+        {item.imageUrl ? (
+          <img src={item.imageUrl} alt={item.name} />
         ) : (
           <div className="no-image">
             <i className="bi bi-box"></i>

@@ -18,7 +18,7 @@ export const OrderTotals = ({ totals }) => {
       </div>
       <div className="totals-row">
         <span>IVA (16%):</span>
-        <span>{formatPrice(safeTotals.taxes)}</span>
+        <span>{formatPrice(safeTotals.tax)}</span>
       </div>
       <div className="totals-row">
         <span>Envío:</span>
