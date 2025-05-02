@@ -1,28 +1,28 @@
-import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { RequireAuth } from "../../auth/components/RequireAuth";
-import { ProfileLayout } from '../components/profile/index.js';
-import { Spinner } from "../../../shared/components/spinner";
+import { lazy, Suspense } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { RequireAuth } from '../../auth/components/RequireAuth'
+import { ProfileLayout } from '../components/profile/index.js'
+import { Spinner } from '../../../shared/components/spinner'
 
 // --- Lazy Load Pages ---
 const LazyCheckoutPage = lazy(() =>
-  import('../../shop/pages/CheckoutPage').then(module => ({ default: module.CheckoutPage }))
-);
+  import('../../checkout/shipping/CheckoutPage.jsx').then(module => ({ default: module.CheckoutPage })),
+)
 const LazyOrdersPage = lazy(() =>
-  import('../pages/OrdersPage').then(module => ({ default: module.OrdersPage }))
-);
+  import('../pages/OrdersPage').then(module => ({ default: module.OrdersPage })),
+)
 const LazyOrderDetailPage = lazy(() =>
-  import('../pages/OrderDetailPage').then(module => ({ default: module.OrderDetailPage }))
-);
+  import('../pages/OrderDetailPage').then(module => ({ default: module.OrderDetailPage })),
+)
 const LazyAddressesPage = lazy(() =>
-  import('../pages/AdressesPage').then(module => ({ default: module.AddressesPage })) // Corrected filename potentially? Assuming 'AdressesPage' might be a typo for 'AddressesPage'
-);
+  import('../pages/AdressesPage').then(module => ({ default: module.AddressesPage })), // Corrected filename potentially? Assuming 'AdressesPage' might be a typo for 'AddressesPage'
+)
 const LazyPaymentsPage = lazy(() =>
-  import('../pages/PaymentsPage').then(module => ({ default: module.PaymentsPage }))
-);
+  import('../pages/PaymentsPage').then(module => ({ default: module.PaymentsPage })),
+)
 const LazySettingsPage = lazy(() =>
-  import('../pages/SettingsPage').then(module => ({ default: module.SettingsPage }))
-);
+  import('../pages/SettingsPage').then(module => ({ default: module.SettingsPage })),
+)
 
 export const UserRoutes = () => {
   return (
@@ -75,5 +75,5 @@ export const UserRoutes = () => {
 
     </Suspense>
 
-  );
-};
+  )
+}

@@ -5,7 +5,7 @@
 import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { ShippingOptions } from './ShippingOptions.jsx'
-import '@modules/checkout/shipping/styles/ShippingManager.css'
+import '@modules/checkout/shipping/ShippingManager.css'
 
 /**
  * Componente para gestionar el envío dentro del checkout

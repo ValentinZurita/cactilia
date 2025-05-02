@@ -5,7 +5,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from '../../../../auth/hooks/useAuth';
-import { ShippingManagerForCheckout } from '../../../../checkout/NewShipping3';
+// import { ShippingManagerForCheckout } from '../../../../checkout/NewShipping3'; 
+import { ShippingManagerForCheckout } from '../../../../checkout/shipping/ShippingManagerForCheckout.jsx';
 
 /**
  * Componente que integra el nuevo módulo de envío dentro del checkout

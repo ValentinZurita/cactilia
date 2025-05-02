@@ -6,7 +6,6 @@ import { ProfileLayout } from '../modules/user/components/profile/index.js'
 
 // --- Stripe --- ADDED
 import { StripeProvider } from '../contexts/StripeContext.jsx'
-import { Elements } from '@stripe/react-stripe-js'
 
 // Componente de carga
 import { Spinner } from '../shared/components/spinner/Spinner.jsx'
@@ -30,7 +29,7 @@ const ContactPage = lazyLoadNamed(() => import('../modules/public/pages/ContactP
 const FaqPage = lazyLoadNamed(() => import('@modules/public/components/faq/pages/FaqPage.jsx'), 'FaqPage')
 const CookiesPolicyPage = lazyLoadNamed(() => import('@modules/public/components/cookies-policy/pages/CookiesPolicyPage.jsx'), 'CookiesPolicyPage')
 const CartPage = lazyLoadNamed(() => import('../modules/shop/pages/CartPage.jsx'), 'CartPage')
-const CheckoutPage = lazyLoadNamed(() => import('../modules/shop/pages/CheckoutPage.jsx'), 'CheckoutPage')
+const CheckoutPage = lazyLoadNamed(() => import('@modules/checkout/shipping/CheckoutPage.jsx'), 'CheckoutPage')
 
 // Lazy loading de páginas de perfil con exportaciones nombradas
 const OrdersPage = lazyLoadNamed(() => import('../modules/user/pages/OrdersPage.jsx'), 'OrdersPage')

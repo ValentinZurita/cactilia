@@ -4,7 +4,7 @@
  * Convierte reglas de envío al formato esperado por el algoritmo Greedy
  * Solución permanente para la discrepancia de formatos entre nuestro sistema y el algoritmo
  */
-import { STATE_PREFIX, NATIONAL_KEYWORD, COVERAGE_TYPES } from '../constants/index.js'
+import { COVERAGE_TYPES, NATIONAL_KEYWORD, STATE_PREFIX } from '../constants/index.js'
 
 /**
  * Normaliza una regla de envío al formato esperado por el algoritmo Greedy

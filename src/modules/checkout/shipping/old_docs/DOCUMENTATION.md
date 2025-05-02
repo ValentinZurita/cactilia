@@ -2,35 +2,37 @@
 
 ## 📋 Descripción General
 
-El sistema de envío de Cactilia implementa un flujo complejo para calcular opciones de envío basadas en la ubicación del cliente, disponibilidad de productos, y reglas de envío configuradas. Este documento detalla la arquitectura actual, los parches implementados para resolver problemas específicos, y sugerencias para mejoras futuras.
+El sistema de envío de Cactilia implementa un flujo complejo para calcular opciones de envío basadas en la ubicación del
+cliente, disponibilidad de productos, y reglas de envío configuradas. Este documento detalla la arquitectura actual, los
+parches implementados para resolver problemas específicos, y sugerencias para mejoras futuras.
 
 ## 🏗️ Arquitectura Actual
 
 ### Componentes Principales
 
-1. **NewShippingIntegration**  
-   - Punto de entrada desde el checkout
-   - Puente entre el sistema de checkout y el módulo de envío
-   - Maneja notificaciones de cambios en costos y disponibilidad
+1. **NewShippingIntegration**
+    - Punto de entrada desde el checkout
+    - Puente entre el sistema de checkout y el módulo de envío
+    - Maneja notificaciones de cambios en costos y disponibilidad
 
-2. **ShippingManagerForCheckout**  
-   - Gestiona la interfaz de usuario de envío dentro del checkout
-   - Procesa los datos de dirección del usuario
-   - Comunica opciones de envío al componente padre
+2. **ShippingManagerForCheckout**
+    - Gestiona la interfaz de usuario de envío dentro del checkout
+    - Procesa los datos de dirección del usuario
+    - Comunica opciones de envío al componente padre
 
-3. **ShippingOptions**  
-   - Presenta las opciones de envío disponibles
-   - Calcula y muestra productos cubiertos/no cubiertos
+3. **ShippingOptions**
+    - Presenta las opciones de envío disponibles
+    - Calcula y muestra productos cubiertos/no cubiertos
 
-4. **CheckoutSummaryPanel**  
-   - Procesa los datos de envío para mostrarlos en el resumen
-   - Gestiona la lógica de envío gratuito y costos
-   - Pasa datos formateados al CheckoutSummary
+4. **CheckoutSummaryPanel**
+    - Procesa los datos de envío para mostrarlos en el resumen
+    - Gestiona la lógica de envío gratuito y costos
+    - Pasa datos formateados al CheckoutSummary
 
-5. **CheckoutSummary**  
-   - Muestra el resumen final con lista de productos
-   - Separa productos disponibles y no disponibles
-   - Calcula subtotales ajustados
+5. **CheckoutSummary**
+    - Muestra el resumen final con lista de productos
+    - Separa productos disponibles y no disponibles
+    - Calcula subtotales ajustados
 
 ### Flujo de Datos
 
@@ -52,7 +54,8 @@ CheckoutSummary muestra el resumen final
 
 ### Utilidades de Empaquetado
 
-Las funciones en `packagingUtils.js` implementan un algoritmo "greedy" para:
+Las funciones en `packagingUtils2.js` implementan un algoritmo "greedy" para:
+
 - Agrupar productos en paquetes óptimos
 - Calcular pesos y dimensiones
 - Determinar costos por paquete
@@ -69,9 +72,11 @@ const pendingCostRef = useRef(null);
 const waitingForCoverageRef = useRef(false);
 ```
 
-**Problema:** La información de cobertura (productos disponibles/no disponibles) y los costos de envío pueden llegar en momentos diferentes, causando estados inconsistentes.
+**Problema:** La información de cobertura (productos disponibles/no disponibles) y los costos de envío pueden llegar en
+momentos diferentes, causando estados inconsistentes.
 
-**Solución temporal:** Se implementaron refs para almacenar costos pendientes y esperar a que la información de cobertura esté disponible antes de notificar cambios.
+**Solución temporal:** Se implementaron refs para almacenar costos pendientes y esperar a que la información de
+cobertura esté disponible antes de notificar cambios.
 
 ### 2. Aseguramiento de Propiedades (CheckoutContent)
 
@@ -88,11 +93,13 @@ const enhancedSelectedOption = selectedShippingOption ? {
 
 **Problema:** Inconsistencia en las propiedades de las opciones de envío entre componentes.
 
-**Solución temporal:** Se crea un objeto mejorado que garantiza que todas las propiedades necesarias estén presentes antes de pasarlo a los componentes descendientes.
+**Solución temporal:** Se crea un objeto mejorado que garantiza que todas las propiedades necesarias estén presentes
+antes de pasarlo a los componentes descendientes.
 
 ### 3. Nombres de Propiedades Inconsistentes
 
 **Problema:** Existen múltiples propiedades para representar el mismo concepto:
+
 - `isFree` vs `isFreeShipping`
 - `hasPartialCoverage` vs `isPartial`
 
@@ -100,7 +107,9 @@ const enhancedSelectedOption = selectedShippingOption ? {
 
 ```javascript
 isFree: validCost === 0,
-isFreeShipping: validCost === 0,
+  isFreeShipping
+:
+validCost === 0,
 ```
 
 ### 4. Cálculos Redundantes
@@ -155,10 +164,14 @@ interface ShippingOption {
 ```javascript
 // Antes
 isFree: validCost === 0,
-isFreeShipping: validCost === 0,
+  isFreeShipping
+:
+validCost === 0,
 
 // Después
-isFreeShipping: validCost === 0,
+  isFreeShipping
+:
+validCost === 0,
 ```
 
 ### 4. Creación de Custom Hooks
@@ -174,9 +187,9 @@ function useShippingCoverage(cartItems, selectedAddress) {
     unavailableProductIds: [],
     hasPartialCoverage: false
   });
-  
+
   // Lógica para calcular cobertura...
-  
+
   return coverageInfo;
 }
 ```
@@ -189,7 +202,8 @@ function useShippingCoverage(cartItems, selectedAddress) {
 ### 6. Mejora de Logging
 
 - **Problema:** Exceso de logs de depuración que dificultan el mantenimiento.
-- **Solución:** Implementar un sistema de logging nivelado (error, warn, info, debug) que pueda activarse/desactivarse según el entorno.
+- **Solución:** Implementar un sistema de logging nivelado (error, warn, info, debug) que pueda activarse/desactivarse
+  según el entorno.
 
 ```javascript
 const logger = {
@@ -221,34 +235,36 @@ test('calculateItemWeight returns correct weight for item', () => {
 ## 🚧 Plan de Implementación
 
 1. **Fase 1: Estabilización**
-   - Documentar todos los parches actuales
-   - Añadir pruebas para validar el comportamiento actual
-   - Reducir logs redundantes
+    - Documentar todos los parches actuales
+    - Añadir pruebas para validar el comportamiento actual
+    - Reducir logs redundantes
 
 2. **Fase 2: Refactorización**
-   - Implementar TypeScript gradualmente
-   - Extraer lógica a custom hooks
-   - Dividir componentes grandes
+    - Implementar TypeScript gradualmente
+    - Extraer lógica a custom hooks
+    - Dividir componentes grandes
 
 3. **Fase 3: Mejoras**
-   - Unificar nombres de propiedades
-   - Simplificar flujo de datos
-   - Mejorar UX para escenarios de envío parcial
+    - Unificar nombres de propiedades
+    - Simplificar flujo de datos
+    - Mejorar UX para escenarios de envío parcial
 
 ## 📊 Métricas de Éxito
 
 1. **Mantenibilidad**
-   - Reducción de la longitud de los componentes (<120 líneas)
-   - Eliminación de duplicación de código
+    - Reducción de la longitud de los componentes (<120 líneas)
+    - Eliminación de duplicación de código
 
 2. **Estabilidad**
-   - Reducción de bugs relacionados con envío
-   - Cobertura de pruebas >80%
+    - Reducción de bugs relacionados con envío
+    - Cobertura de pruebas >80%
 
 3. **Experiencia de Usuario**
-   - Tiempo de carga reducido
-   - Claridad en las opciones de envío y productos no disponibles
+    - Tiempo de carga reducido
+    - Claridad en las opciones de envío y productos no disponibles
 
 ## 📝 Conclusión
 
-El sistema actual de envío cumple su función pero requiere mejoras significativas para su mantenibilidad a largo plazo. Siguiendo las guías de desarrollo del proyecto y aplicando las mejoras sugeridas, se puede transformar en un sistema más modular, testeable y fácil de mantener. 
+El sistema actual de envío cumple su función pero requiere mejoras significativas para su mantenibilidad a largo plazo.
+Siguiendo las guías de desarrollo del proyecto y aplicando las mejoras sugeridas, se puede transformar en un sistema más
+modular, testeable y fácil de mantener. 

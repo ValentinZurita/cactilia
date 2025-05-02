@@ -1,15 +1,6 @@
 /**
- * Constants for the shipping module
+ * Constants shared across the checkout and shipping modules
  */
-
-/**
- * Collection names in Firestore
- */
-export const FIRESTORE_COLLECTIONS = {
-  SHIPPING_RULES: 'zonas_envio',
-  PRODUCTS: 'products',
-  ADDRESSES: 'addresses'
-};
 
 /**
  * Coverage types in shipping rules

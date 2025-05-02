@@ -1,2 +1,2 @@
-export { default as ShippingCalculator } from './ShippingCalculator';
-export { default as ShippingGroupsCalculator } from './ShippingGroupsCalculator'; 
+export { default as ShippingCalculator } from '../../shipping/ShippingCalculator.jsx'
+export { default as ShippingGroupsCalculator } from '../../shipping/ShippingGroupsCalculator.jsx'

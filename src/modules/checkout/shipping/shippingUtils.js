@@ -3,8 +3,8 @@
  * Filtrado de productos enviables y obtención de opciones
  */
 import { isRuleApplicableForAddress } from './coverageUtils.js'
-import { extractShippingRuleIds } from '../services/productsService.js'
-import { groupIntoPackages, calculateTotalShippingCost } from './packagingUtils.js'
+import { extractShippingRuleIds } from './productsService.js'
+import { calculateTotalShippingCost, groupIntoPackages } from './packagingUtils.js'
 
 /**
  * Filtra reglas de envío aplicables para un producto y dirección

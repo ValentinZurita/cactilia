@@ -1,8 +1,8 @@
 /**
  * Servicios para interactuar con la colección de reglas de envío (zonas_envio) en Firestore
  */
-import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore'
-import { FirebaseDB } from '../../../../config/firebase/firebaseConfig'
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
+import { FirebaseDB } from '@config/firebase/firebaseConfig.js'
 import { FIRESTORE_COLLECTIONS } from '../constants/index.js'
 
 /**

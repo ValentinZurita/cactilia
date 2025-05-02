@@ -2,7 +2,7 @@
  * Servicios para interactuar con la colección de productos en Firestore
  */
 import { doc, getDoc } from 'firebase/firestore'
-import { FirebaseDB } from '../../../../config/firebase/firebaseConfig'
+import { FirebaseDB } from '@config/firebase/firebaseConfig.js'
 import { FIRESTORE_COLLECTIONS } from '../constants/index.js'
 
 /**

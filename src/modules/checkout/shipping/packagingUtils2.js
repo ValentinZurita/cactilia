@@ -1,7 +1,8 @@
 /**
  * Utilities for package creation and shipping cost calculations
  */
-import { RULE_CONFIG_FALLBACKS } from '../constants/index.js'
+import { calculateItemWeight, calculateTotalWeight } from './shippingUtils.js'
+import { RULE_CONFIG_FALLBACKS } from '../../constants/shippingConstants.js'
 
 /**
  * Calculate the total weight of a cart item (product * quantity)

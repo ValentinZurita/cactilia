@@ -2,9 +2,9 @@
  * Hook principal para gestionar opciones de envío
  * Integra todos los demás hooks y utilidades
  */
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShippingRules } from './useShippingRules.js'
-import { prepareShippingOptions } from '../utils/shippingUtils.js'
+import { prepareShippingOptions } from './shippingUtils.js'
 
 /**
  * Normaliza un objeto de dirección para hacerlo compatible con nuestro módulo

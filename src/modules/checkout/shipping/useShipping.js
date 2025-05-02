@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { fetchShippingRules } from '../../../admin/shipping/api/shippingApi'
-import { RULE_CONFIG_FALLBACKS } from '../constants/index.js'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { fetchShippingRules } from '../../admin/shipping/api/shippingApi.js'
+import { RULE_CONFIG_FALLBACKS } from '../../constants/shippingConstants.js'
 import {
-  filterShippableProducts,
   calculateItemPrice,
-  groupIntoPackages,
   calculateTotalShippingCost,
-} from '../utils/index.js'
+  groupIntoPackages,
+} from './packagingUtils2.js'
+import {
+  filterShippableProducts
+} from './shippingRuleUtils.js'
 
 /**
  * Custom hook to handle shipping calculations and options

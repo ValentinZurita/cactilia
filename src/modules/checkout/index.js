@@ -4,35 +4,35 @@
  */
 
 // Componentes
-export { default as ShippingCalculator } from './components/shipping/ShippingCalculator';
-export { default as ShippingOptionSelector } from './components/shipping/ShippingOptionSelector';
+export { default as ShippingCalculator } from './shipping/ShippingCalculator.jsx'
+export { default as ShippingOptionSelector } from './shipping/ShippingOptionSelector.jsx'
 
 // Servicios
 export {
   groupProductsByShippingRules,
-  prepareShippingOptionsForCheckout
-} from './services/shippingGroupingService';
+  prepareShippingOptionsForCheckout,
+} from './services/shippingGroupingService'
 
 // API
 export {
   fetchShippingRules,
   fetchShippingRuleById,
   fetchShippingRulesByZipCode,
-  fetchDefaultNationalRule
-} from '../../modules/admin/shipping/api/shippingApi';
+  fetchDefaultNationalRule,
+} from '../../modules/admin/shipping/api/shippingApi'
 
 // Utilidades
 export {
   groupProductsIntoPackages,
   calculatePackageCost,
   calculateTotalShippingCost,
-  shouldApplyFreeShipping
-} from './utils/shippingCalculator';
+  shouldApplyFreeShipping,
+} from './shipping/shippingCalculator.js'
 
 export {
   isRuleValidForAddress,
   calculateGroupSubtotal,
   calculateGroupWeight,
   formatShippingCost,
-  createDefaultShippingRule
-} from './utils/shippingUtils';
+  createDefaultShippingRule,
+} from './utils/shippingUtils'

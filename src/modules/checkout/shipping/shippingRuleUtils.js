@@ -1,7 +1,8 @@
 /**
  * Utility functions for working with shipping rules
  */
-import { COVERAGE_TYPES } from '../constants/index.js'
+import { isAddressInState } from './coverageUtils.js'
+import { COVERAGE_TYPES } from '../../constants/shippingConstants.js'
 
 /**
  * Checks if a shipping rule is valid for a specific address

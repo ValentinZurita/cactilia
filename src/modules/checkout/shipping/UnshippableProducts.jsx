@@ -1,8 +1,8 @@
 /**
  * Componente para mostrar productos que no se pueden enviar a la dirección seleccionada
  */
-import React from 'react';
-import '../styles/UnshippableProducts.css';
+import React from 'react'
+import '@modules/checkout/shipping/UnshippableProducts.css'
 
 /**
  * Componente para mostrar productos no enviables
@@ -12,13 +12,14 @@ import '../styles/UnshippableProducts.css';
  * @param {Function} props.onToggleExpand - Función para alternar expansión
  * @returns {JSX.Element} - Componente de productos no enviables
  */
-export const UnshippableProducts = ({ 
-  products = [],
-  expanded = false,
-  onToggleExpand = () => {}
-}) => {
+export const UnshippableProducts = ({
+                                      products = [],
+                                      expanded = false,
+                                      onToggleExpand = () => {
+                                      },
+                                    }) => {
   if (!products || products.length === 0) {
-    return null;
+    return null
   }
 
   return (
@@ -38,13 +39,13 @@ export const UnshippableProducts = ({
       {expanded && (
         <div className="unshippable-details">
           <p className="unshippable-message">
-            Los siguientes productos no pueden ser enviados a la dirección que seleccionaste. 
+            Los siguientes productos no pueden ser enviados a la dirección que seleccionaste.
             Te recomendamos elegir otra dirección o eliminarlos de tu carrito.
           </p>
-          
+
           <ul className="unshippable-list">
             {products.map((item, index) => {
-              const product = item.product || item;
+              const product = item.product || item
               return (
                 <li key={`unshippable-${product.id || index}`} className="unshippable-item">
                   <div className="product-info">
@@ -54,11 +55,11 @@ export const UnshippableProducts = ({
                     )}
                   </div>
                 </li>
-              );
+              )
             })}
           </ul>
         </div>
       )}
     </div>
-  );
-}; 
+  )
+}

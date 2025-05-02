@@ -1,39 +1,39 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import styles from '../styles/shipping.module.css';
+import React from 'react'
+import PropTypes from 'prop-types'
+import styles from './shipping.module.css'
 
 /**
  * Component to display a single shipping option
  */
 const ShippingOption = ({
-  option,
-  isSelected,
-  onSelect,
-  showDetails = false
-}) => {
-  if (!option) return null;
+                          option,
+                          isSelected,
+                          onSelect,
+                          showDetails = false,
+                        }) => {
+  if (!option) return null
 
   const {
     name,
     calculatedCost,
     isFree,
     deliveryTime,
-    packages = []
-  } = option;
+    packages = [],
+  } = option
 
   // Handle option selection
   const handleClick = () => {
-    onSelect && onSelect(option);
-  };
+    onSelect && onSelect(option)
+  }
 
   // Format the price display
-  const formattedPrice = isFree 
+  const formattedPrice = isFree
     ? <span className={styles.freeShipping}>Gratis</span>
-    : <span>${calculatedCost.toFixed(2)}</span>;
+    : <span>${calculatedCost.toFixed(2)}</span>
 
   return (
-    <div 
-      className={`${styles.optionCard} ${isSelected ? styles.optionCardSelected : ''}`} 
+    <div
+      className={`${styles.optionCard} ${isSelected ? styles.optionCardSelected : ''}`}
       onClick={handleClick}
     >
       <div className={styles.optionHeader}>
@@ -43,7 +43,8 @@ const ShippingOption = ({
               type="radio"
               className={styles.radioButton}
               checked={isSelected}
-              onChange={() => {}}
+              onChange={() => {
+              }}
               onClick={(e) => e.stopPropagation()}
               id={`shipping-option-${option.id}`}
             />
@@ -68,27 +69,27 @@ const ShippingOption = ({
           {packages.map((pkg, index) => (
             <div key={pkg.id} className={styles.packageItem}>
               <div className={styles.packageTitle}>
-                Paquete {index + 1} 
+                Paquete {index + 1}
                 <span className="ms-2 text-muted">
                   ({pkg.totalWeight.toFixed(2)} kg - {pkg.totalQuantity} {pkg.totalQuantity === 1 ? 'artículo' : 'artículos'})
                 </span>
               </div>
               {pkg.items.map((item, idx) => {
-                const product = item.product || item;
+                const product = item.product || item
                 return (
                   <div key={`${product.id}-${idx}`} className={styles.productItem}>
                     <div>{product.name}</div>
                     <div>x{item.quantity}</div>
                   </div>
-                );
+                )
               })}
             </div>
           ))}
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 ShippingOption.propTypes = {
   option: PropTypes.shape({
@@ -97,11 +98,11 @@ ShippingOption.propTypes = {
     calculatedCost: PropTypes.number.isRequired,
     isFree: PropTypes.bool,
     deliveryTime: PropTypes.string,
-    packages: PropTypes.array
+    packages: PropTypes.array,
   }).isRequired,
   isSelected: PropTypes.bool,
   onSelect: PropTypes.func.isRequired,
-  showDetails: PropTypes.bool
-};
+  showDetails: PropTypes.bool,
+}
 
-export default ShippingOption; 
+export default ShippingOption

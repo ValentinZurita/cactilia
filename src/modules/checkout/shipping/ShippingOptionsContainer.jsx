@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import ShippingOption from './ShippingOption.jsx'
 import ShippingWarning from './ShippingWarning.jsx'
-import styles from '../styles/shipping.module.css'
+import styles from './shipping.module.css'
 
 /**
  * Container component to display all shipping options

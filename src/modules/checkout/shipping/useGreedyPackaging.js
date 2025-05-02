@@ -1,8 +1,8 @@
 /**
  * Hook para manejar el algoritmo de empaquetado greedy
  */
-import { useState, useCallback, useMemo } from 'react'
-import { groupIntoPackages, calculateTotalShippingCost } from '../utils/packagingUtils.js'
+import { useCallback, useMemo, useState } from 'react'
+import { calculateTotalShippingCost, groupIntoPackages } from './packagingUtils.js'
 
 /**
  * Hook para empaquetar productos utilizando el algoritmo greedy

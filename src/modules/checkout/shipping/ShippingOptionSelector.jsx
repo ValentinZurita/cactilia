@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import ShippingCalculator from './ShippingCalculator';
+import React, { useState } from 'react'
+import PropTypes from 'prop-types'
+import ShippingCalculator from './ShippingCalculator.jsx'
 
 /**
  * Componente simplificado para seleccionar opciones de envío en el checkout
@@ -10,29 +10,29 @@ const ShippingOptionSelector = ({
                                   cart,
                                   userAddress,
                                   onOptionSelected,
-                                  initialOption = null
+                                  initialOption = null,
                                 }) => {
-  const [selectedOption, setSelectedOption] = useState(initialOption);
-  const [availableOptions, setAvailableOptions] = useState([]);
+  const [selectedOption, setSelectedOption] = useState(initialOption)
+  const [availableOptions, setAvailableOptions] = useState([])
 
   // Manejar selección de opción
   const handleOptionChange = (option) => {
-    setSelectedOption(option);
+    setSelectedOption(option)
 
     if (onOptionSelected) {
-      onOptionSelected(option);
+      onOptionSelected(option)
     }
-  };
+  }
 
   // Manejar cambio en opciones disponibles
   const handleAvailableOptionsChange = (options) => {
-    setAvailableOptions(options);
+    setAvailableOptions(options)
 
     // Seleccionar automáticamente la primera opción si no hay selección
     if (!selectedOption && options.length > 0) {
-      handleOptionChange(options[0]);
+      handleOptionChange(options[0])
     }
-  };
+  }
 
   // Render del componente
   return (
@@ -90,14 +90,14 @@ const ShippingOptionSelector = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 ShippingOptionSelector.propTypes = {
   cart: PropTypes.object.isRequired,
   userAddress: PropTypes.object,
   onOptionSelected: PropTypes.func,
-  initialOption: PropTypes.object
-};
+  initialOption: PropTypes.object,
+}
 
-export default ShippingOptionSelector;
+export default ShippingOptionSelector

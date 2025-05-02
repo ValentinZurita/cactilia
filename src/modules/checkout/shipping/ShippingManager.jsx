@@ -2,9 +2,9 @@
  * Componente principal que integra todos los componentes del módulo de envío
  */
 import React, { useCallback, useState } from 'react'
-import { AddressSelector } from '../../shipping/AddressSelector.jsx'
+import { AddressSelector } from './AddressSelector.jsx'
 import { ShippingOptions } from './ShippingOptions.jsx'
-import '@modules/checkout/shipping/styles/ShippingManager.css'
+import '@modules/checkout/shipping/ShippingManager.css'
 
 /**
  * Componente principal para gestionar el envío en checkout

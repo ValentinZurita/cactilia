@@ -2,7 +2,7 @@
  * Componente para mostrar un paquete de envío individual
  */
 import React, { useState } from 'react'
-import '@modules/checkout/shipping/styles/ShippingPackage.css' // <-- Restaurar la importación
+import '@modules/checkout/shipping/ShippingPackage.css' // <-- Restaurar la importación
 
 /**
  * Componente que muestra un paquete de envío

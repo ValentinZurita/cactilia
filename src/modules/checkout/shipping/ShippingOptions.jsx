@@ -4,9 +4,9 @@
  */
 import React, { useEffect, useState } from 'react'
 import { ShippingPackage } from './ShippingPackage.jsx'
-import { checkoutShippingService } from '../../shipping/checkoutShippingService.js'
-import { useShippingRules } from '../../shipping/useShippingRules.js'
-import '@modules/checkout/shipping/styles/ShippingOptions.css'
+import { checkoutShippingService } from './checkoutShippingService.js'
+import { useShippingRules } from './useShippingRules.js'
+import '@modules/checkout/shipping/ShippingOptions.css'
 
 /**
  * Componente principal para mostrar opciones de envío en el checkout

@@ -1,8 +1,8 @@
 /**
  * Hook para obtener y gestionar reglas de envío
  */
-import { useState, useEffect, useCallback } from 'react'
-import { fetchAllShippingRules } from '../services/shippingRulesService.js'
+import { useCallback, useEffect, useState } from 'react'
+import { fetchAllShippingRules } from './shippingRulesService.js'
 
 /**
  * Hook para obtener y gestionar reglas de envío

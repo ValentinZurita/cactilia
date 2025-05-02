@@ -1,9 +1,9 @@
 /**
  * Componente para seleccionar dirección de envío
  */
-import React, { useState, useEffect } from 'react'
-import { fetchAddressesByUserId } from '../services/addressesService.js'
-import '../styles/AddressSelector.css'
+import React, { useEffect, useState } from 'react'
+import { fetchAddressesByUserId } from './addressesService.js'
+import '@modules/checkout/shipping/AddressSelector.css'
 
 /**
  * Formatea una dirección para mostrar

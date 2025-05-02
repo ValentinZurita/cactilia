@@ -1,11 +1,11 @@
-import { Navigate } from 'react-router-dom';
-import { Elements } from '@stripe/react-stripe-js';
-import { CheckoutProvider } from '../context/CheckoutContext';
-import { useAuth } from '../../auth/hooks/useAuth';
-import { useCart } from '../features/cart/hooks/useCart';
-import { useStripeLoader } from '../hooks/useStripeLoader';
-import { CheckoutContent } from '../features/checkout/components/CheckoutContent';
-import '../features/checkout/styles/checkout.css';
+import { Navigate } from 'react-router-dom'
+import { Elements } from '@stripe/react-stripe-js'
+import { CheckoutProvider } from '../../shop/context/CheckoutContext.jsx'
+import { useAuth } from '../../auth/hooks/useAuth.js'
+import { useCart } from '../../shop/features/cart/hooks/useCart.js'
+import { useStripeLoader } from '../../shop/hooks/useStripeLoader.js'
+import { CheckoutContent } from '../../shop/features/checkout/components/CheckoutContent.jsx'
+import '../../shop/features/checkout/styles/checkout.css'
 
 /**
  * Página principal de checkout
@@ -21,21 +21,21 @@ import '../features/checkout/styles/checkout.css';
 export const CheckoutPage = () => {
 
   // Verificar autenticación
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
 
   // Si está cargando la autenticación, mostrar mensaje de carga
   if (isAuthLoading) {
-    return <CheckoutLoadingState message="Verificando sesión..." />;
+    return <CheckoutLoadingState message="Verificando sesión..." />
   }
 
   // Si no está autenticado, redirigir al login
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login?redirect=checkout" replace />;
+    return <Navigate to="/auth/login?redirect=checkout" replace />
   }
 
-  return <AuthenticatedCheckout />;
+  return <AuthenticatedCheckout />
 
-};
+}
 
 
 /**
@@ -44,22 +44,22 @@ export const CheckoutPage = () => {
  */
 const AuthenticatedCheckout = () => {
 
-  const { items: cartItems, isLoading: isCartLoading } = useCart();
-  const { stripePromise, isLoading: isStripeLoading } = useStripeLoader();
+  const { items: cartItems, isLoading: isCartLoading } = useCart()
+  const { stripePromise, isLoading: isStripeLoading } = useStripeLoader()
 
   // Si está cargando el carrito, mostrar mensaje de carga
   if (isCartLoading) {
-    return <CheckoutLoadingState message="Cargando carrito..." />;
+    return <CheckoutLoadingState message="Cargando carrito..." />
   }
 
   // Verificar si el carrito está vacío
   if (!cartItems || cartItems.length === 0) {
-    return <Navigate to="/shop" replace />;
+    return <Navigate to="/shop" replace />
   }
 
   // Si está cargando Stripe, mostrar mensaje de carga
   if (isStripeLoading) {
-    return <CheckoutLoadingState message="Inicializando sistema de pagos..." />;
+    return <CheckoutLoadingState message="Inicializando sistema de pagos..." />
   }
 
   // Renderizar el contenido del checkout con los proveedores necesarios
@@ -69,19 +69,19 @@ const AuthenticatedCheckout = () => {
         <CheckoutContent />
       </CheckoutProvider>
     </Elements>
-  );
+  )
 
-};
+}
 
 
 /**
  * Componente para estados de carga
  */
-const CheckoutLoadingState = ({ message = "Cargando..." }) => (
+const CheckoutLoadingState = ({ message = 'Cargando...' }) => (
   <div className="container my-5 text-center">
     <div className="spinner-border text-primary" role="status">
       <span className="visually-hidden">Cargando...</span>
     </div>
     <p className="mt-3">{message}</p>
   </div>
-);
+)

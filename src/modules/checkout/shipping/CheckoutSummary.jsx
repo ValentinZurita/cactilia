@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import NewShipping from '../NewShipping2';
-import { useShipping } from '../NewShipping2/hooks';
+import React, { useEffect, useState } from 'react'
+import PropTypes from 'prop-types'
+import { formatPrice } from '../../../utils/formatting/formatPrice.js'
+import { useShipping } from './useShipping.js'
 
 /**
  * Componente de resumen del checkout que incluye selección de envío
@@ -13,9 +13,9 @@ const CheckoutSummary = ({ cart, userAddress, onCheckout, currentStep }) => {
     subtotal: 0,
     shipping: 0,
     tax: 0,
-    total: 0
-  });
-  const [isDebugMode, setIsDebugMode] = useState(false);
+    total: 0,
+  })
+  const [isDebugMode, setIsDebugMode] = useState(false)
 
   // Usar el hook de envío para obtener opciones basadas en el carrito y la dirección
   const {
@@ -27,33 +27,33 @@ const CheckoutSummary = ({ cart, userAddress, onCheckout, currentStep }) => {
     ineligibleProducts,
     hasShippingRestrictions,
     isAddressComplete,
-    orderSubtotal
-  } = useShipping(cart?.items || [], userAddress);
+    orderSubtotal,
+  } = useShipping(cart?.items || [], userAddress)
 
   // Verificar si se debe mostrar el modo de depuración (URL con debug=true)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    setIsDebugMode(urlParams.get('debug') === 'true');
-  }, []);
+    const urlParams = new URLSearchParams(window.location.search)
+    setIsDebugMode(urlParams.get('debug') === 'true')
+  }, [])
 
   // Calcular el resumen cuando cambia el carrito o la opción de envío
   useEffect(() => {
     if (!cart || !cart.items) {
-      return;
+      return
     }
 
     // Calcular subtotal
-    const subtotal = orderSubtotal;
+    const subtotal = orderSubtotal
 
     // Calcular impuesto (ejemplo: 16% IVA)
-    const taxRate = 0.16;
-    const tax = subtotal * taxRate;
+    const taxRate = 0.16
+    const tax = subtotal * taxRate
 
     // Calcular envío
-    const shipping = selectedOption ? selectedOption.calculatedCost || 0 : 0;
+    const shipping = selectedOption ? selectedOption.calculatedCost || 0 : 0
 
     // Calcular total
-    const total = subtotal + tax + shipping;
+    const total = subtotal + tax + shipping
 
     // Actualizar resumen
     const newSummary = {
@@ -61,40 +61,40 @@ const CheckoutSummary = ({ cart, userAddress, onCheckout, currentStep }) => {
       shipping,
       tax,
       total,
-      shippingOption: selectedOption
-    };
-    
-    setSummary(newSummary);
-    
+      shippingOption: selectedOption,
+    }
+
+    setSummary(newSummary)
+
     // Si estamos en el paso de envío o confirmación y hay una opción de envío seleccionada, 
     // actualizar el resumen en el componente padre
     if ((currentStep === 2 || currentStep === 3) && selectedOption) {
       onCheckout({
         ...newSummary,
-        shippingOption: selectedOption
-      });
+        shippingOption: selectedOption,
+      })
     }
-  }, [cart, selectedOption, orderSubtotal, currentStep, onCheckout]);
+  }, [cart, selectedOption, orderSubtotal, currentStep, onCheckout])
 
   // Manejar cambio en opción de envío
   const handleShippingChange = (option) => {
-    selectShippingOption(option);
-  };
+    selectShippingOption(option)
+  }
 
   // Función para cambiar a modo debug
   const toggleDebugMode = () => {
-    const newDebugMode = !isDebugMode;
-    setIsDebugMode(newDebugMode);
-    
+    const newDebugMode = !isDebugMode
+    setIsDebugMode(newDebugMode)
+
     // Actualizar URL sin recargar
-    const url = new URL(window.location);
+    const url = new URL(window.location)
     if (newDebugMode) {
-      url.searchParams.set('debug', 'true');
+      url.searchParams.set('debug', 'true')
     } else {
-      url.searchParams.delete('debug');
+      url.searchParams.delete('debug')
     }
-    window.history.pushState({}, '', url);
-  };
+    window.history.pushState({}, '', url)
+  }
 
   return (
     <div className="checkout-summary">
@@ -166,7 +166,7 @@ const CheckoutSummary = ({ cart, userAddress, onCheckout, currentStep }) => {
             className="btn btn-dark"
             onClick={() => onCheckout({
               ...summary,
-              shippingOption: selectedOption
+              shippingOption: selectedOption,
             })}
             disabled={!selectedOption || loading}
           >
@@ -185,7 +185,7 @@ const CheckoutSummary = ({ cart, userAddress, onCheckout, currentStep }) => {
             className="btn btn-success"
             onClick={() => onCheckout({
               ...summary,
-              shippingOption: selectedOption
+              shippingOption: selectedOption,
             })}
             disabled={!selectedOption}
           >
@@ -208,14 +208,14 @@ const CheckoutSummary = ({ cart, userAddress, onCheckout, currentStep }) => {
             <div><strong>Subtotal:</strong> ${orderSubtotal.toFixed(2)}</div>
             <div><strong>Productos no enviables:</strong> {ineligibleProducts.length}</div>
             <hr />
-            <button 
-              className="btn btn-sm btn-secondary" 
+            <button
+              className="btn btn-sm btn-secondary"
               onClick={() => console.log({
                 cartItems: cart?.items,
                 userAddress,
                 availableOptions,
                 selectedOption,
-                ineligibleProducts
+                ineligibleProducts,
               })}
             >
               Log datos en consola
@@ -224,14 +224,14 @@ const CheckoutSummary = ({ cart, userAddress, onCheckout, currentStep }) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 CheckoutSummary.propTypes = {
   cart: PropTypes.object,
   userAddress: PropTypes.object,
   onCheckout: PropTypes.func.isRequired,
-  currentStep: PropTypes.number.isRequired
-};
+  currentStep: PropTypes.number.isRequired,
+}
 
-export default CheckoutSummary; 
+export default CheckoutSummary

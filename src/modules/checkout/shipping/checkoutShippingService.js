@@ -2,10 +2,10 @@
  * Servicio para gestionar opciones de envío en el checkout
  * Se encarga de obtener las opciones de envío disponibles para una dirección y un carrito
  */
-import { shippingService } from '../../../shop/features/checkout/services/shipping/ShippingService'
-import debugShipping from '../utils/ShippingDebugger.js'
+import { shippingService } from '../../shop/features/checkout/services/shipping/ShippingService.js'
+import debugShipping from './ShippingDebugger.js'
 import { fetchAllShippingRules } from './shippingRulesService.js'
-import { normalizeShippingRules } from '../utils/RuleFormatNormalizer.js'
+import { normalizeShippingRules } from './RuleFormatNormalizer.js'
 
 /**
  * Obtiene un valor de configuración de paquete de una regla
