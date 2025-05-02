@@ -453,3 +453,15 @@
         padding: 18px;
     }
 }
+
+
+.cart-item-stock-warning {
+  color: #d9534f; 
+  font-weight: 300; 
+}
+
+.cart-item-actions .btn-remove-item:hover .bi-trash {
+  color: #d9534f; 
+  transition: color 0.2s ease-in-out; 
+}
+

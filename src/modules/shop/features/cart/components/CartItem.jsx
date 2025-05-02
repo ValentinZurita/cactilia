@@ -171,13 +171,21 @@ export const CartItem = ({ product, onIncrement, onDecrement, onRemove }) => {
             {/* Botón de eliminar */}
             <button
               type="button"
-              className="btn btn-sm btn-light ms-2"
+              className="btn btn-sm btn-light ms-2 btn-remove-item"
               onClick={handleRemove}
               aria-label="Eliminar del carrito"
             >
               <i className="bi bi-trash"></i>
             </button>
           </div>
+          
+          {/*Label de stock agotado */}
+          {hasStock && !stockSufficient && (
+            <span className="cart-item-stock-warning small ms-2 d-flex align-items-center" title={`Solo quedan ${product.stock} unidades disponibles.`}>
+              <i className="bi bi-exclamation-triangle-fill me-1"></i>
+              Stock insuficiente
+            </span>
+          )}
         </div>
       </div>
 
