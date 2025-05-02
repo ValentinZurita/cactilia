@@ -1,0 +1,105 @@
+/* Estilos para el componente UnshippableProducts */
+
+.unshippable-products-container {
+  margin-top: 20px;
+  border: 1px solid #ffcdd2;
+  border-radius: 6px;
+  background-color: #fff5f5;
+  overflow: hidden;
+}
+
+.unshippable-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: #ffebee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.unshippable-header:hover {
+  background-color: #ffe5e8;
+}
+
+.unshippable-title {
+  flex: 1;
+}
+
+.unshippable-title h4 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+  color: #c62828;
+}
+
+.unshippable-count {
+  font-size: 0.85rem;
+  color: #d32f2f;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #d32f2f;
+  font-size: 0.8rem;
+  padding: 5px;
+}
+
+/* Detalles expandidos */
+.unshippable-details {
+  padding: 15px;
+}
+
+.unshippable-message {
+  margin: 0 0 15px 0;
+  padding: 10px;
+  background-color: #ffebee;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #c62828;
+}
+
+/* Lista de productos */
+.unshippable-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.unshippable-item {
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #ffe0e0;
+  border-radius: 4px;
+  background-color: white;
+}
+
+.product-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-name {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.product-price {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .unshippable-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .expand-button {
+    margin-top: 8px;
+    align-self: flex-end;
+  }
+} 

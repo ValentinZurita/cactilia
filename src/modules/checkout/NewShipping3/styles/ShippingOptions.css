@@ -1,0 +1,471 @@
+/* Estilos para el componente ShippingOptions */
+
+/* Contenedor general (si es necesario, si no, se puede quitar) */
+.shipping-options-container {
+  margin: 0 0 24px;
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Título de la sección (manejado ahora por CheckoutSection) */
+/* .shipping-options-title { ... } */
+
+/* Lista de opciones */
+.shipping-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* margin-bottom: 16px; <-- Quitado, el margen está en .shipping-option */
+}
+
+/* === Estilos Finales para cada Opción (Replicando AddressOption) === */
+
+/* Contenedor Principal de cada opción */
+.shipping-option { 
+  display: flex; 
+  align-items: flex-start;
+  padding: 16px; 
+  border: 1px solid #eaeaea; 
+  border-radius: 10px; 
+  margin-bottom: 15px; 
+  position: relative; 
+  cursor: pointer;
+  transition: all 0.3s ease; 
+  background-color: #fff;
+  overflow: visible !important; /* MANTENER: Solución al corte del input */
+}
+
+.shipping-option:hover {
+    border-color: #d0d0d0;
+    background-color: #fafafa;
+}
+
+/* Estado Activo */
+.shipping-option.active-shipping-option { 
+    border-color: var(--green-3); 
+    background-color: rgba(52, 199, 73, 0.05); 
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1); 
+}
+
+/* Input Checkbox (estilizado como radio) */
+.shipping-option .form-check-input[type="checkbox"] {
+  /* Posicionamiento en flujo normal */
+  margin-right: 15px; 
+  margin-top: 0.3rem; 
+
+  /* Estilos visuales circulares */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 20px; 
+  height: 20px; 
+  border: 2px solid #c8c8c8; 
+  border-radius: 50%; 
+  display: inline-block; 
+  vertical-align: middle; 
+  position: relative; 
+  cursor: pointer;
+  flex-shrink: 0; 
+  background-color: #fff; 
+  transition: all 0.2s ease; 
+}
+
+/* Estado Checkeado */
+.shipping-option .form-check-input[type="checkbox"]:checked {
+  background-color: white !important; 
+  border-color: var(--green-3) !important; 
+  background-image: none; 
+  box-shadow: none !important; 
+}
+
+/* Punto interior */
+.shipping-option .form-check-input[type="checkbox"]:checked::before {
+  content: "";
+  display: block;
+  width: 10px; 
+  height: 10px; 
+  border-radius: 50%;
+  background-color: var(--green-3); 
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Foco */
+.shipping-option .form-check-input[type="checkbox"]:focus {
+  border-color: var(--green-3); 
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(52, 199, 73, 0.2); 
+}
+
+/* Wrapper form-check */
+.shipping-option .form-check {
+   padding-left: 0; /* Resetear padding */
+   /* Asegurar que ocupe todo el ancho si es necesario */
+   /* width: 100%; */
+   /* display: flex; align-items: flex-start; <-- Ya está en .shipping-option */
+}
+
+/* === FIN Estilos Finales === */
+
+/* --- Inicio Limpieza de Estilos Viejos/Redundantes --- */
+
+/* .shipping-option-container { ... } */
+/* .shipping-option-container.selected { ... } */
+/* .shipping-option-input-area { ... } */
+/* .shipping-option-content-area { ... } */
+
+/* Comentado o eliminado:
+.shipping-option-radio input[type="radio"] { ... }
+.shipping-option-radio input[type="radio"]:checked { ... }
+.shipping-option-radio input[type="radio"]:focus { ... }
+.shipping-option-radio input[type="checkbox"] { ... }
+.shipping-option-radio input[type="checkbox"]:checked { ... }
+.shipping-option-radio input[type="checkbox"]:checked::before { ... }
+.shipping-option-radio input[type="checkbox"]:focus { ... }
+*/
+
+/* Estilos de loading/error/empty (mantener si se usan fuera de CheckoutSection) */
+.shipping-options-loading,
+.shipping-options-error,
+.shipping-options-empty {
+  padding: 24px;
+  text-align: center;
+  color: #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+}
+
+.shipping-options-loading p {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #666666;
+}
+
+.shipping-options-loading:before {
+  content: '';
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(76, 175, 80, 0.1);
+  border-top-color: #4caf50;
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.shipping-options-error {
+  color: #e53935;
+  background-color: rgba(229, 57, 53, 0.05);
+  border: 1px solid rgba(229, 57, 53, 0.2);
+}
+
+.shipping-options-error p {
+  margin: 0 0 12px;
+}
+
+.shipping-options-retry-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.shipping-options-retry-btn:hover {
+  background-color: #388e3c;
+}
+
+.shipping-unavailable-warning {
+  margin-bottom: 16px;
+}
+
+.shipping-unavailable-warning .alert {
+  padding: 10px 14px;
+  background-color: #fff8e1;
+  border: 1px solid #ffecb3;
+  border-radius: 4px;
+  color: #664d03;
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.shipping-unavailable-warning .alert i {
+  font-size: 15px;
+  margin-right: 6px;
+  color: #ffc107;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .shipping-options-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+  
+  .shipping-options-loading,
+  .shipping-options-error,
+  .shipping-options-empty {
+    padding: 20px;
+    min-height: 80px;
+  }
+}
+
+/* Estilos para resumen de opciones seleccionadas */
+.shipping-selected-summary {
+  margin-bottom: 16px;
+}
+
+.shipping-selected-cost {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #555;
+}
+
+.shipping-selection-info {
+  margin-bottom: 16px;
+}
+
+/* Estilos para badges */
+.shipping-options-container .badge {
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Estilos para las alertas */
+.shipping-options-container .alert {
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+/* Estilos para el contenedor principal de cada opción */
+.shipping-option-container {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+  background-color: #fff;
+  position: relative;
+}
+
+/* Estilos para el área del input radio/checkbox */
+.shipping-option-input-area {
+  margin-right: 0.75rem;
+}
+
+/* Estilos para el área del contenido */
+.shipping-option-content-area {
+  flex-grow: 1;
+}
+
+/* Estilos para el estado seleccionado */
+.shipping-option-container.selected {
+  border-color: #198754 !important;
+  background-color: #e9f5ec !important;
+}
+
+/* NO aplicar fondo/borde directamente al input cuando el contenedor está seleccionado */
+.shipping-option-container.selected .form-check-input {
+  margin-top: 0.2em;
+}
+
+/* Ajustes generales al input - Intentar con transform */
+.shipping-option-container .form-check-input {
+  /* Mantener estilos visuales circulares */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 1.15em; 
+  height: 1.15em;
+  border: 1px solid #adb5bd; 
+  border-radius: 50%; 
+  display: inline-block; 
+  vertical-align: middle; 
+  position: relative; 
+  cursor: pointer;
+  flex-shrink: 0; 
+  background-color: #fff; 
+  transition: background-color .15s ease-in-out, border-color .15s ease-in-out;
+  
+  /* === INICIO POSICIONAMIENTO con Transform === */
+  margin-top: 0.2em; /* Mantener ajuste vertical */
+  margin-left: 0.5em; /* Añadir un poco de margen izquierdo inicial */
+  transform: translateX(-75%); /* Mover a la izquierda (ajustar % según sea necesario) */
+  /* === FIN POSICIONAMIENTO === */
+}
+
+/* Ajustar padding del label para compensar */
+.shipping-option-container .form-check {
+  padding-left: 1.5em; /* Ajustar este valor si es necesario */
+}
+
+/* Estilo cuando está seleccionado (checked) */
+.shipping-option-container .form-check-input[type="checkbox"]:checked {
+  background-color: #198754; 
+  border-color: #198754;
+  background-image: none; 
+}
+
+/* Pseudo-elemento para el punto interior */
+.shipping-option-container .form-check-input[type="checkbox"]:checked::before {
+  content: "";
+  display: block;
+  width: 0.5em; 
+  height: 0.5em;
+  border-radius: 50%;
+  background-color: white; 
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Estilo de foco */
+.shipping-option-container .form-check-input[type="checkbox"]:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25);
+}
+
+/* === INICIO ESTILOS CHECKBOX CIRCULAR === */
+
+/* Ocultar apariencia nativa y definir tamaño/forma */
+.shipping-option-container .form-check-input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 1.15em; /* Tamaño similar al radio por defecto */
+  height: 1.15em;
+  border: 1px solid #adb5bd; /* Borde gris como Bootstrap */
+  border-radius: 50%; /* Hacerlo circular */
+  display: inline-block;
+  vertical-align: middle; /* Alinear verticalmente */
+  position: relative; /* Para posicionar el punto interior */
+  cursor: pointer;
+  margin-top: 0.1em; /* Ajuste vertical fino */
+  flex-shrink: 0; /* Evitar que se encoja en flex */
+  background-color: #fff; /* Fondo blanco */
+  transition: background-color .15s ease-in-out, border-color .15s ease-in-out;
+}
+
+/* Estilo cuando está seleccionado (checked) */
+.shipping-option-container .form-check-input[type="checkbox"]:checked {
+  background-color: #198754; 
+  border-color: #198754;
+  /* Asegurar que no haya imagen de fondo (como la palomita por defecto) */
+  background-image: none; 
+}
+
+/* Pseudo-elemento para el punto interior cuando está seleccionado */
+.shipping-option-container .form-check-input[type="checkbox"]:checked::before {
+  content: "";
+  display: block;
+  width: 0.5em; 
+  height: 0.5em;
+  border-radius: 50%;
+  background-color: white; 
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* Opcional: Añadir un pequeño borde al punto si ayuda a la visibilidad */
+  /* border: 1px solid #198754; */ 
+}
+
+/* Estilo de foco (similar a Bootstrap) */
+.shipping-option-container .form-check-input[type="checkbox"]:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25);
+}
+
+/* === FIN ESTILOS CHECKBOX CIRCULAR === */
+
+/* Heredar o ajustar estilos existentes de .shipping-package si es necesario */
+.shipping-package-header {
+  /* ... */
+}
+.shipping-package-body {
+  /* ... */
+}
+/* ... etc ... */
+
+/* === INICIO: Replicar Estilos de AddressOption === */
+
+/* Input Checkbox (estilizado como radio) */
+.shipping-option .form-check-input[type="checkbox"] {
+  margin-right: 15px;
+  margin-top: 0.3rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #c8c8c8;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+/* Estado Checkeado - Usar variable */
+.shipping-option .form-check-input[type="checkbox"]:checked {
+  background-color: white !important;
+  border-color: var(--green-3) !important;
+  background-image: none;
+  box-shadow: none !important;
+}
+
+/* Punto interior - Usar variable */
+.shipping-option .form-check-input[type="checkbox"]:checked::before {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--green-3);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Foco - Replicar o ajustar */
+.shipping-option .form-check-input[type="checkbox"]:focus {
+  border-color: var(--green-3);
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(52, 199, 73, 0.2);
+}
+
+/* Asegurar que el form-check no tenga padding extra */
+.shipping-option .form-check {
+  padding-left: 0;
+}
+
+/* === FIN REPLICAR ESTILOS === */
+
+/* Eliminar estilos antiguos/redundantes si aún existen */
+/* .shipping-option-container { ... } */
+/* .shipping-option-container.selected { ... } */ 
