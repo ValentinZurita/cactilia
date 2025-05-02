@@ -154,27 +154,69 @@
 
 /* Botón de checkout */
 .btn-green-checkout {
-    background-color: var(--green-3);
+    /* Base styles from productModal.css */
+    width: 100%; /* Assuming full width is desired here too */
+    background-color: var(--green-3); /* Using variable */
     color: white;
     border: none;
-    padding: 12px 35px;
-    font-size: 1.05rem;
     border-radius: 8px;
-    transition: all 0.3s ease;
-    margin: 20px 0;
-    box-shadow: 0 4px 12px rgba(52, 199, 73, 0.2);
+    padding: 12px 35px; /* Keeping original cart padding */
+    font-size: 1.05rem; /* Keeping original cart font-size */
     font-weight: 500;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.5px;
+    display: inline-flex; /* Changed from flex for centering */
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease; /* Combined transition */
+    margin: 20px 0; /* Keeping original cart margin */
+    box-shadow: 0 4px 15px rgba(52, 199, 73, 0.3);
+    position: relative; /* Needed for ::before */
+    overflow: hidden; /* Needed for ::before */
 }
 
+/* Shimmer effect */
+.btn-green-checkout::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.2),
+            rgba(255, 255, 255, 0)
+    );
+    transition: left 0.6s ease; /* Only transition left */
+}
+
+/* Hover effect */
 .btn-green-checkout:hover {
-    background-color: var(--green-1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(52, 199, 73, 0.25);
+    background-color: var(--green-1); /* Using variable */
+    transform: translateY(-3px); /* Matched modal transform */
+    box-shadow: 0 6px 18px var(--green-1-shadow); /* Usando variable CSS */
+    color: white; /* Explicitly ensure white text */
+}
+
+/* Shimmer animation on hover */
+.btn-green-checkout:hover::before {
+    left: 100%;
 }
 
 .btn-green-checkout:active {
-    transform: translateY(1px);
+    transform: translateY(1px); /* Keep original active effect */
+}
+
+/* Disabled state (keeping original cart style for consistency) */
+.btn-green-checkout:disabled {
+    background-color: #e0e0e0;
+    color: #9e9e9e;
+    cursor: not-allowed;
+    opacity: 0.8;
+    transform: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Botón de seguir comprando */
@@ -463,5 +505,11 @@
 .cart-item-actions .btn-remove-item:hover .bi-trash {
   color: #d9534f; 
   transition: color 0.2s ease-in-out; 
+}
+
+
+.empty-cart-container .btn-green-checkout:hover {
+    color: white !important; 
+    background-color: var(--green-1); 
 }
 

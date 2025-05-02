@@ -51,6 +51,7 @@
     --shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.1);
     --shadow-md: 0px 4px 6px rgba(0, 0, 0, 0.15);
     --shadow-lg: 0px 6px 10px rgba(0, 0, 0, 0.2);
+    --green-1-shadow: rgba(40, 167, 69, 0.35); /* Sombra específica para hover de botón verde */
 }
 
 /*
