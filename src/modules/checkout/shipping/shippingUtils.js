@@ -4,6 +4,8 @@
  */
 import { isRuleApplicableForAddress } from './coverageUtils.js'
 import { extractShippingRuleIds } from './productsService.js'
+import { isRuleValidForAddress, getApplicableRulesForProduct } from './shippingRuleUtils.js'
+import { calculateItemPrice, calculateItemWeight } from './packagingUtils.js'
 import { calculateTotalShippingCost, groupIntoPackages } from './packagingUtils.js'
 
 /**

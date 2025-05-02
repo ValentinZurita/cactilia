@@ -5,7 +5,7 @@ import {
   calculateItemPrice,
   calculateTotalShippingCost,
   groupIntoPackages,
-} from './packagingUtils2.js'
+} from './packagingUtils.js'
 import {
   filterShippableProducts
 } from './shippingRuleUtils.js'
