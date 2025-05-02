@@ -19,6 +19,10 @@
     --black: #000000;
     --soft-black: #333333;
 
+    /* 🆘 Danger Colors */
+    --red-danger: #dc3545; /* Bootstrap's default danger color */
+    --red-soft: #d9534f;   /* Custom softer red for warnings */
+
     /* 🌗 Grayscale */
     --gray-100: #f8f9fa;
     --gray-200: #e9ecef;
