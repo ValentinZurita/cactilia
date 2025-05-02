@@ -67,13 +67,13 @@ export const ProductCard = React.memo(({ product, onProductClick }) => {
         />
         {/* Badges de Stock */}
         {isOutOfStock && (
-          <span className="position-absolute top-0 start-0 m-2 badge bg-danger status-badge">
-            Agotado
+          <span className="position-absolute top-0 start-0 m-2 badge status-badge">
+            Sin stock
           </span>
         )}
         {!isOutOfStock && currentStock <= 5 && (
-          <span className="position-absolute top-0 start-0 m-2 badge bg-warning text-dark low-stock-badge">
-            ¡Solo {currentStock} disponibles!
+          <span className="position-absolute top-0 start-0 m-2 badge low-stock-badge">
+            Últimas piezas
           </span>
         )}
       </div>
