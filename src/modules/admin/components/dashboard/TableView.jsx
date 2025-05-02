@@ -7,7 +7,7 @@
  * @param {boolean} loading - Whether data is loading.
  * @param {string} [tableClass] - Additional class names for the table.
  * @param {string} [theadClass] - Additional class names for the thead.
- * @param {{borderRadius: string, overflow: string}} [style] - Inline styles for the table wrapper.
+ * @param {{borderRadius: string, overflow: string}} [style] - Inline shipping for the table wrapper.
  * @returns {JSX.Element}
  *
  * @example
@@ -28,7 +28,7 @@
 export const TableView = ({ data, columns, loading, tableClass = '', theadClass = '', style = {} }) => {
 
   if (loading) {
-    return <p>Cargando...</p>;
+    return <p>Cargando...</p>
   }
 
   return (
@@ -61,6 +61,6 @@ export const TableView = ({ data, columns, loading, tableClass = '', theadClass 
 
       </table>
     </div>
-  );
+  )
 
-};
+}

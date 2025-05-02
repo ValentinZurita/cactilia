@@ -1,0 +1,218 @@
+/* Estilos mejorados para AddressSelector2 */
+
+/* Separador entre opciones de dirección */
+.address-separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+    margin: 20px 0;
+}
+
+.address-separator::before,
+.address-separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #eee;
+}
+
+.address-separator::before {
+    margin-right: 1em;
+}
+
+.address-separator::after {
+    margin-left: 1em;
+}
+
+.separator-text {
+    padding: 0 10px;
+    background-color: white;
+}
+
+/* Estilos para las opciones de dirección */
+.address-option {
+    padding: 16px;
+    border: 1px solid #eaeaea;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.address-option:hover {
+    border-color: #d0d0d0;
+    background-color: #fafafa;
+}
+
+/* Opción activa con borde destacado */
+.address-option.active-address-option {
+    border-color: var(--green-3);
+    background-color: rgba(52, 199, 73, 0.05);
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+}
+
+/* Estilo mejorado para el formulario */
+.address-option .form-check {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: flex-start;
+}
+
+.address-option .form-check-input {
+    margin-right: 15px;
+    margin-top: 0.3rem;
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid #c8c8c8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Estilo cuando está seleccionado - IMPORTANTE para el checkbox */
+.address-option .form-check-input:checked {
+    background-color: var(--green-3) !important;
+    border-color: var(--green-3) !important;
+    box-shadow: 0 0 0 2px rgba(52, 199, 73, 0.2) !important;
+}
+
+/* Cambio de color del nombre cuando está seleccionado */
+.address-option .form-check-input:checked + .form-check-label .address-name {
+    font-weight: 600;
+    color: var(--green-3);
+}
+
+.address-name {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 1.05rem;
+}
+
+.address-details {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.address-references {
+    font-style: italic;
+    color: #777;
+    font-size: 0.9rem;
+    display: inline-block;
+    margin-top: 5px;
+    background-color: #f7f7f7;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* Acciones de direcciones */
+.address-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.address-option .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Estado vacío y carga */
+.address-selector-empty {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+/* Cuando el formulario está dentro del selector vacío, aplicamos el mismo estilo que cuando está activo */
+.address-selector-empty .new-address-form {
+    padding: 20px;
+    background-color: rgba(52, 199, 73, 0.05);
+    border: 1px solid var(--green-3);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+}
+
+/* Contenedor para formulario de dirección activo cuando no hay direcciones */
+.active-address-form-container .new-address-form {
+    padding: 20px;
+    background-color: rgba(52, 199, 73, 0.05);
+    border: 1px solid var(--green-3);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.new-address-form-container {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Mejoras para móviles */
+@media (max-width: 576px) {
+    .address-option {
+        padding: 12px;
+    }
+
+    .address-name {
+        font-size: 0.95rem;
+    }
+
+    .address-details {
+        font-size: 0.85rem;
+    }
+
+    .address-actions {
+        flex-direction: column;
+    }
+
+    .address-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Estilo personalizado para garantizar que el radio button se vea seleccionado */
+.address-option input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    outline: none;
+    border: 2px solid #c8c8c8;
+    position: relative;
+    margin-right: 15px;
+    margin-top: 0.3rem;
+    cursor: pointer;
+}
+
+.address-option input[type="radio"]:checked {
+    border-color: var(--green-3);
+    background-color: white;
+}
+
+.address-option input[type="radio"]:checked::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--green-3);
+}

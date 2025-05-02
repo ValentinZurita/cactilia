@@ -12,20 +12,20 @@ export default defineConfig({
       open: true,
       gzipSize: true,
       brotliSize: true,
-    })
+    }),
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/shared/components'),
+      '@components': path.resolve(__dirname, './src/shared/package'),
       '@hooks': path.resolve(__dirname, './src/shared/hooks'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@modules': path.resolve(__dirname, './src/modules'),
-      '@styles': path.resolve(__dirname, './src/styles'),
+      '@styles': path.resolve(__dirname, './src/shipping'),
       '@store': path.resolve(__dirname, './src/store'),
       '@assets': path.resolve(__dirname, './src/shared/assets'),
       '@config': path.resolve(__dirname, './src/config'),
-      '@contexts': path.resolve(__dirname, './src/contexts')
-    }
-  }
+      '@contexts': path.resolve(__dirname, './src/contexts'),
+    },
+  },
 })

@@ -1,141 +1,141 @@
-// src/modules/user/components/payments/PaymentFormModal.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { useDispatch, useSelector } from 'react-redux';
-import { addMessage } from '../../../../store/messages/messageSlice';
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
-import '../../styles/paymentFormModal.css';
+// src/modules/user/package/payments/PaymentFormModal.jsx
+import React, { useEffect, useRef, useState } from 'react'
+import ReactDOM from 'react-dom'
+import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { useDispatch, useSelector } from 'react-redux'
+import { addMessage } from '../../../../store/messages/messageSlice'
+import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
+import '../../styles/paymentFormModal.css'
 
 /**
  * Modal simplificado para añadir métodos de pago con Stripe
  */
 export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
   // Local states
-  const [cardHolder, setCardHolder] = useState('');
-  const [isDefault, setIsDefault] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [cardComplete, setCardComplete] = useState(false);
+  const [cardHolder, setCardHolder] = useState('')
+  const [isDefault, setIsDefault] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [cardComplete, setCardComplete] = useState(false)
 
   // References for safe cleanup
-  const isSubmittingRef = useRef(false);
-  const formRef = useRef(null);
-  const { uid } = useSelector(state => state.auth);
+  const isSubmittingRef = useRef(false)
+  const formRef = useRef(null)
+  const { uid } = useSelector(state => state.auth)
 
   // Get Firebase Functions instance
-  const functionsRef = useRef(getFunctions());
-  const hasConnectedRef = useRef(false);
+  const functionsRef = useRef(getFunctions())
+  const hasConnectedRef = useRef(false)
 
   // Connect to emulator in development
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && !hasConnectedRef.current) {
       try {
-        connectFunctionsEmulator(functionsRef.current, "localhost", 5001);
-        console.log("Connected to Firebase Functions emulator in PaymentFormModal");
-        hasConnectedRef.current = true;
+        connectFunctionsEmulator(functionsRef.current, 'localhost', 5001)
+        console.log('Connected to Firebase Functions emulator in PaymentFormModal')
+        hasConnectedRef.current = true
       } catch (e) {
-        console.log("Emulator connection error (can be ignored if already connected):", e);
+        console.log('Emulator connection error (can be ignored if already connected):', e)
       }
     }
-  }, []);
+  }, [])
 
   // Stripe hooks
-  const stripe = useStripe();
-  const elements = useElements();
-  const dispatch = useDispatch();
+  const stripe = useStripe()
+  const elements = useElements()
+  const dispatch = useDispatch()
 
   // Clean form when opened
   useEffect(() => {
     if (isOpen) {
-      setCardHolder('');
-      setIsDefault(false);
-      setError(null);
-      setCardComplete(false);
-      isSubmittingRef.current = false;
+      setCardHolder('')
+      setIsDefault(false)
+      setError(null)
+      setCardComplete(false)
+      isSubmittingRef.current = false
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Handle Escape key to close
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen && !loading) {
-        onClose();
+        onClose()
       }
-    };
+    }
 
     if (isOpen) {
-      window.addEventListener('keydown', handleEscape);
+      window.addEventListener('keydown', handleEscape)
     }
 
     return () => {
-      window.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen, loading, onClose]);
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen, loading, onClose])
 
   // Prevent scroll when modal is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden'
     }
     return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [isOpen]);
+      document.body.style.overflow = 'auto'
+    }
+  }, [isOpen])
 
   // If modal is not open, render nothing
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   // Handle card element changes
   const handleCardChange = (event) => {
-    setCardComplete(event.complete);
-    setError(event.error ? event.error.message : null);
-  };
+    setCardComplete(event.complete)
+    setError(event.error ? event.error.message : null)
+  }
 
   // Handle form submission safely
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Avoid duplicate submissions
     if (isSubmittingRef.current || loading) {
-      return;
+      return
     }
 
     // Initial validations
     if (!stripe || !elements) {
-      setError("Stripe no está inicializado. Por favor, espera un momento e intenta de nuevo.");
-      return;
+      setError('Stripe no está inicializado. Por favor, espera un momento e intenta de nuevo.')
+      return
     }
 
     if (!cardComplete) {
-      setError("Por favor, completa los datos de tu tarjeta");
-      return;
+      setError('Por favor, completa los datos de tu tarjeta')
+      return
     }
 
     if (!cardHolder.trim()) {
-      setError("Por favor, ingresa el nombre del titular de la tarjeta");
-      return;
+      setError('Por favor, ingresa el nombre del titular de la tarjeta')
+      return
     }
 
     // Get the CardElement - must be done BEFORE changing state
-    const cardElement = elements.getElement(CardElement);
+    const cardElement = elements.getElement(CardElement)
 
     if (!cardElement) {
-      setError("Could not access card form. Please try again.");
-      return;
+      setError('Could not access card form. Please try again.')
+      return
     }
 
-    setLoading(true);
-    setError(null);
-    isSubmittingRef.current = true;
+    setLoading(true)
+    setError(null)
+    isSubmittingRef.current = true
 
     try {
       // Create SetupIntent via Cloud Function
-      const createSetupIntent = httpsCallable(functionsRef.current, 'createSetupIntent');
-      const setupResponse = await createSetupIntent({});
+      const createSetupIntent = httpsCallable(functionsRef.current, 'createSetupIntent')
+      const setupResponse = await createSetupIntent({})
 
       if (!setupResponse.data?.clientSecret) {
-        throw new Error("Error al crear la intención de configuración");
+        throw new Error('Error al crear la intención de configuración')
       }
 
       // Confirm the setup with Stripe
@@ -145,74 +145,74 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
           payment_method: {
             card: cardElement,
             billing_details: {
-              name: cardHolder
-            }
-          }
-        }
-      );
+              name: cardHolder,
+            },
+          },
+        },
+      )
 
       if (setupError) {
-        throw new Error(setupError.message);
+        throw new Error(setupError.message)
       }
 
       if (!setupIntent || !setupIntent.payment_method) {
-        throw new Error("La configuración falló. Por favor, intenta de nuevo.");
+        throw new Error('La configuración falló. Por favor, intenta de nuevo.')
       }
 
       // Save the payment method via Cloud Function
-      const savePaymentMethod = httpsCallable(functionsRef.current, 'savePaymentMethod');
+      const savePaymentMethod = httpsCallable(functionsRef.current, 'savePaymentMethod')
       await savePaymentMethod({
         setupIntentId: setupIntent.id,
         paymentMethodId: setupIntent.payment_method,
         isDefault: isDefault,
-        cardHolder: cardHolder
-      });
+        cardHolder: cardHolder,
+      })
 
       // Show success message
       dispatch(addMessage({
         type: 'success',
-        text: 'Método de pago añadido correctamente'
-      }));
+        text: 'Método de pago añadido correctamente',
+      }))
 
       // Clear the form
-      setCardHolder('');
-      setIsDefault(false);
+      setCardHolder('')
+      setIsDefault(false)
 
       // Call onSuccess and close modal
       if (onSuccess) {
-        onSuccess();
+        onSuccess()
       }
 
       // Safe to close now
-      onClose();
+      onClose()
     } catch (err) {
-      console.error('Error al añadir método de pago:', err);
-      setError(err.message || "Ocurrió un error al procesar la tarjeta");
+      console.error('Error al añadir método de pago:', err)
+      setError(err.message || 'Ocurrió un error al procesar la tarjeta')
 
       dispatch(addMessage({
         type: 'error',
-        text: 'Hubo un problema al añadir tu método de pago'
-      }));
+        text: 'Hubo un problema al añadir tu método de pago',
+      }))
 
       // Allow a new attempt
-      isSubmittingRef.current = false;
+      isSubmittingRef.current = false
     } finally {
       // Reset these states even if there's an error
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // Prevent modal from closing when clicking inside
   const handleModalContentClick = (e) => {
-    e.stopPropagation();
-  };
+    e.stopPropagation()
+  }
 
   // Only close if not in submission process
   const handleSafeClose = () => {
     if (!loading && !isSubmittingRef.current) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   // Enhanced options for card element
   const cardElementOptions = {
@@ -231,11 +231,11 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
         iconColor: '#fa755a',
       },
       complete: {
-        iconColor: '#66bb6a'
-      }
+        iconColor: '#66bb6a',
+      },
     },
-    hidePostalCode: true
-  };
+    hidePostalCode: true,
+  }
 
   return ReactDOM.createPortal(
     <div
@@ -327,7 +327,8 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
             {/* Test card info for development */}
             <div className="payment-test-cards">
               <p className="payment-text-muted">
-                <strong>Tarjeta de prueba:</strong> Usa 4242 4242 4242 4242, cualquier fecha futura y 3 dígitos para el CVC
+                <strong>Tarjeta de prueba:</strong> Usa 4242 4242 4242 4242, cualquier fecha futura y 3 dígitos para el
+                CVC
               </p>
             </div>
 
@@ -360,6 +361,6 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
       </div>
     </div>,
-    document.body
-  );
-};
+    document.body,
+  )
+}

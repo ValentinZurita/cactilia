@@ -1,9 +1,9 @@
-import React from 'react';
-import { useGenericContentManagement } from './useGenericContentManagement';
-import { GenericContentEditor } from './GenericContentEditor';
-import { AlertMessage } from './AlertMessage';
+import React from 'react'
+import { useGenericContentManagement } from './useGenericContentManagement'
+import { GenericContentEditor } from './GenericContentEditor'
+import { AlertMessage } from './AlertMessage'
 // Importar aquí un Spinner si se tiene uno genérico
-// import { Spinner } from '../../../../shared/components/spinner/Spinner';
+// import { Spinner } from '../../../../shared/package/spinner/Spinner';
 
 /**
  * Página genérica de administración para gestionar contenido estático simple.
@@ -16,12 +16,12 @@ import { AlertMessage } from './AlertMessage';
  * @param {string} [props.contentPlaceholder] - Placeholder opcional para el campo de contenido principal.
  */
 export const GenericContentPage = ({
-  pageId,
-  pageTitleAdmin,
-  defaultContent = {},
-  contentLabel, // Pasar estas props al editor si se proporcionan
-  contentPlaceholder 
-}) => {
+                                     pageId,
+                                     pageTitleAdmin,
+                                     defaultContent = {},
+                                     contentLabel, // Pasar estas props al editor si se proporcionan
+                                     contentPlaceholder,
+                                   }) => {
   const {
     pageData, // Este es el estado que maneja el hook
     status,
@@ -29,15 +29,15 @@ export const GenericContentPage = ({
     saveDraft,
     publishChanges,
     setPageData, // Para que el editor notifique cambios al hook
-    clearAlert
-  } = useGenericContentManagement(pageId, defaultContent);
+    clearAlert,
+  } = useGenericContentManagement(pageId, defaultContent)
 
-  const isLoading = ['loading', 'saving', 'publishing'].includes(status);
+  const isLoading = ['loading', 'saving', 'publishing'].includes(status)
 
   // Estado de carga inicial (mientras pageData es null y no hay error)
   if (status === 'loading' && !alertInfo.show) {
     // TODO: Reemplazar con un componente Spinner estándar
-    return <div className="container mt-4 text-center"><p>Cargando...</p></div>;
+    return <div className="container mt-4 text-center"><p>Cargando...</p></div>
   }
 
   return (
@@ -68,5 +68,5 @@ export const GenericContentPage = ({
         />
       )}
     </div>
-  );
-}; 
+  )
+}

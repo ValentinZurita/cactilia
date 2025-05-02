@@ -29,7 +29,7 @@ const ContactPage = lazyLoadNamed(() => import('../modules/public/pages/ContactP
 const FaqPage = lazyLoadNamed(() => import('@modules/public/components/faq/pages/FaqPage.jsx'), 'FaqPage')
 const CookiesPolicyPage = lazyLoadNamed(() => import('@modules/public/components/cookies-policy/pages/CookiesPolicyPage.jsx'), 'CookiesPolicyPage')
 const CartPage = lazyLoadNamed(() => import('../modules/shop/pages/CartPage.jsx'), 'CartPage')
-const CheckoutPage = lazyLoadNamed(() => import('@modules/checkout/shipping/CheckoutPage.jsx'), 'CheckoutPage')
+const CheckoutPage = lazyLoadNamed(() => import('@modules/checkout/pages/CheckoutPage.jsx'), 'CheckoutPage')
 
 // Lazy loading de páginas de perfil con exportaciones nombradas
 const OrdersPage = lazyLoadNamed(() => import('../modules/user/pages/OrdersPage.jsx'), 'OrdersPage')

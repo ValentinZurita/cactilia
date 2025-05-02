@@ -1,12 +1,12 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { CheckoutProvider, useCheckoutContext } from '../context/CheckoutContext.jsx';
-import { configureStore } from '@reduxjs/toolkit';
-import { processPayment } from '../features/checkout/services/index.js';
+import React from 'react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { Provider } from 'react-redux'
+import { BrowserRouter } from 'react-router-dom'
+import { Elements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+import { CheckoutProvider, useCheckoutContext } from '../context/CheckoutContext.jsx'
+import { configureStore } from '@reduxjs/toolkit'
+import { processPayment } from '@modules/checkout/checkout/services/index.js'
 import { cartReducer } from '../features/cart/store/index.js'
 import { authSlice } from '../../../store/auth/authSlice.js'
 
@@ -14,62 +14,62 @@ import { authSlice } from '../../../store/auth/authSlice.js'
 jest.mock('@stripe/stripe-js', () => ({
   loadStripe: jest.fn(() => Promise.resolve({
     elements: jest.fn(() => ({})),
-    createPaymentMethod: jest.fn(() => Promise.resolve({ paymentMethod: { id: 'pm_test' } }))
-  }))
-}));
+    createPaymentMethod: jest.fn(() => Promise.resolve({ paymentMethod: { id: 'pm_test' } })),
+  })),
+}))
 
 // Mock de servicios
 jest.mock('../../user/services/addressService', () => ({
   getUserAddresses: jest.fn(() => Promise.resolve({
     ok: true,
     data: [
-      { id: 'addr1', name: 'Casa', street: 'Calle 1', city: 'Ciudad', state: 'Estado', zip: '12345', isDefault: true }
-    ]
-  }))
-}));
+      { id: 'addr1', name: 'Casa', street: 'Calle 1', city: 'Ciudad', state: 'Estado', zip: '12345', isDefault: true },
+    ],
+  })),
+}))
 
 jest.mock('../../user/services/paymentService', () => ({
   getUserPaymentMethods: jest.fn(() => Promise.resolve({
     ok: true,
     data: [
-      { id: 'pay1', type: 'visa', cardNumber: '4242', stripePaymentMethodId: 'pm_123', isDefault: true }
-    ]
-  }))
-}));
+      { id: 'pay1', type: 'visa', cardNumber: '4242', stripePaymentMethodId: 'pm_123', isDefault: true },
+    ],
+  })),
+}))
 
 // Mock de servicios adicionales
-jest.mock('../features/checkout/services/index.js', () => ({
+jest.mock('@modules/checkout/checkout/services/index.js', () => ({
   processPayment: jest.fn(() => Promise.resolve({
     ok: true,
-    orderId: 'order123'
-  }))
-}));
+    orderId: 'order123',
+  })),
+}))
 
 jest.mock('../services/productServices.js', () => ({
   validateItemsStock: jest.fn(() => Promise.resolve({
     valid: true,
-    outOfStockItems: []
-  }))
-}));
+    outOfStockItems: [],
+  })),
+}))
 
 // Mock de hooks del carrito
 jest.mock('../features/cart/hooks/useCart.js', () => ({
   useCart: jest.fn(() => ({
     items: [
-      { id: 'prod1', name: 'Producto 1', price: 100, quantity: 2, stock: 10 }
+      { id: 'prod1', name: 'Producto 1', price: 100, quantity: 2, stock: 10 },
     ],
     subtotal: 100,
     taxes: 16,
     shipping: 50,
     finalTotal: 166,
     validateCheckout: jest.fn(() => ({ valid: true })),
-    forceStockValidation: jest.fn(() => Promise.resolve({ valid: true }))
-  }))
-}));
+    forceStockValidation: jest.fn(() => Promise.resolve({ valid: true })),
+  })),
+}))
 
 // Componente de prueba que usa el contexto
 const CheckoutTest = () => {
-  const checkout = useCheckoutContext();
+  const checkout = useCheckoutContext()
 
   return (
     <div>
@@ -131,101 +131,101 @@ const CheckoutTest = () => {
         <div data-testid="error">Error: {checkout.error}</div>
       )}
     </div>
-  );
-};
+  )
+}
 
 // Tests del contexto
 describe('CheckoutContext', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-  });
+    jest.clearAllMocks()
+  })
 
   test('should load addresses and payment methods on mount', async () => {
-    render(<CheckoutTest />, { wrapper });
+    render(<CheckoutTest />, { wrapper })
 
     await waitFor(() => {
-      expect(screen.getByTestId('addresses').textContent).toBe('Addresses: 1');
-      expect(screen.getByTestId('payment-methods').textContent).toBe('Payment Methods: 1');
-    });
-  });
+      expect(screen.getByTestId('addresses').textContent).toBe('Addresses: 1')
+      expect(screen.getByTestId('payment-methods').textContent).toBe('Payment Methods: 1')
+    })
+  })
 
   test('should handle invoice toggle', async () => {
-    render(<CheckoutTest />, { wrapper });
+    render(<CheckoutTest />, { wrapper })
 
     await waitFor(() => {
-      expect(screen.getByTestId('requires-invoice').textContent).toBe('Requires Invoice: No');
-    });
+      expect(screen.getByTestId('requires-invoice').textContent).toBe('Requires Invoice: No')
+    })
 
-    fireEvent.click(screen.getByTestId('invoice-toggle'));
+    fireEvent.click(screen.getByTestId('invoice-toggle'))
 
-    expect(screen.getByTestId('requires-invoice').textContent).toBe('Requires Invoice: Yes');
-  });
+    expect(screen.getByTestId('requires-invoice').textContent).toBe('Requires Invoice: Yes')
+  })
 
   test('should change to new address when selected', async () => {
-    render(<CheckoutTest />, { wrapper });
+    render(<CheckoutTest />, { wrapper })
 
     await waitFor(() => {
-      expect(screen.getByTestId('selected-address').textContent).toContain('saved');
-    });
+      expect(screen.getByTestId('selected-address').textContent).toContain('saved')
+    })
 
-    fireEvent.click(screen.getByTestId('select-new-address'));
+    fireEvent.click(screen.getByTestId('select-new-address'))
 
-    expect(screen.getByTestId('selected-address').textContent).toBe('Selected Address: new');
-  });
+    expect(screen.getByTestId('selected-address').textContent).toBe('Selected Address: new')
+  })
 
   test('should change to OXXO payment when selected', async () => {
-    render(<CheckoutTest />, { wrapper });
+    render(<CheckoutTest />, { wrapper })
 
     await waitFor(() => {
-      expect(screen.getByTestId('selected-payment').textContent).toContain('card');
-    });
+      expect(screen.getByTestId('selected-payment').textContent).toContain('card')
+    })
 
-    fireEvent.click(screen.getByTestId('select-oxxo'));
+    fireEvent.click(screen.getByTestId('select-oxxo'))
 
-    expect(screen.getByTestId('selected-payment').textContent).toBe('Selected Address: oxxo');
-  });
+    expect(screen.getByTestId('selected-payment').textContent).toBe('Selected Address: oxxo')
+  })
 
   test('should process order successfully', async () => {
-    render(<CheckoutTest />, { wrapper });
+    render(<CheckoutTest />, { wrapper })
 
     await waitFor(() => {
-      expect(screen.getByTestId('step').textContent).toBe('Step: 1');
-    });
+      expect(screen.getByTestId('step').textContent).toBe('Step: 1')
+    })
 
-    fireEvent.click(screen.getByTestId('process-order'));
+    fireEvent.click(screen.getByTestId('process-order'))
 
     await waitFor(() => {
-      expect(screen.getByTestId('step').textContent).toBe('Step: 2');
-      expect(processPayment).toHaveBeenCalled();
-    });
-  });
-});
+      expect(screen.getByTestId('step').textContent).toBe('Step: 2')
+      expect(processPayment).toHaveBeenCalled()
+    })
+  })
+})
 
 // Configurar el store para las pruebas
 const createTestStore = () => {
   return configureStore({
     reducer: {
       cart: cartReducer,
-      auth: authSlice.reducer
+      auth: authSlice.reducer,
     },
     preloadedState: {
       auth: {
         status: 'authenticated',
-        uid: 'user123'
+        uid: 'user123',
       },
       cart: {
         items: [
-          { id: 'prod1', name: 'Producto 1', price: 100, quantity: 2, stock: 10 }
-        ]
-      }
-    }
-  });
-};
+          { id: 'prod1', name: 'Producto 1', price: 100, quantity: 2, stock: 10 },
+        ],
+      },
+    },
+  })
+}
 
 // Wrapper para el contexto
 const wrapper = ({ children }) => {
-  const store = createTestStore();
-  const stripePromise = loadStripe('fake_key');
+  const store = createTestStore()
+  const stripePromise = loadStripe('fake_key')
 
   return (
     <Provider store={store}>
@@ -237,5 +237,5 @@ const wrapper = ({ children }) => {
         </Elements>
       </BrowserRouter>
     </Provider>
-  );
-};
+  )
+}

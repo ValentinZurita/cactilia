@@ -1,92 +1,92 @@
-/* src/modules/public/styles/skeletons.css */
+/* src/modules/public/shipping/skeletons.css */
 
 /* Estilo base para todos los elementos skeleton */
 .skeleton {
-  background-color: #e0e0e0; /* Gris claro */
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden; /* Necesario para la animación */
+    background-color: #e0e0e0; /* Gris claro */
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden; /* Necesario para la animación */
 }
 
 /* Animación de brillo (shimmer) */
 .skeleton::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: skeleton-shimmer 1.5s infinite linear;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: skeleton-shimmer 1.5s infinite linear;
 }
 
 @keyframes skeleton-shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
 }
 
 /* --- Estilos específicos --- */
 
 /* Skeleton Hero */
 .skeleton-hero {
-  width: 100%;
-  margin-bottom: 2rem; /* Espacio debajo del hero */
+    width: 100%;
+    margin-bottom: 2rem; /* Espacio debajo del hero */
 }
 
 /* Skeleton Carousel Container */
 .skeleton-carousel-container {
-  padding: 1rem 0;
-  margin-bottom: 2rem;
+    padding: 1rem 0;
+    margin-bottom: 2rem;
 }
 
 .skeleton-carousel-title-container {
-  margin-bottom: 1.5rem;
-  padding: 0 1rem; /* Alinear con el padding general */
+    margin-bottom: 1.5rem;
+    padding: 0 1rem; /* Alinear con el padding general */
 }
 
 .skeleton-section-title {
-  height: 24px;
-  width: 40%;
-  margin-bottom: 0.5rem;
+    height: 24px;
+    width: 40%;
+    margin-bottom: 0.5rem;
 }
 
 .skeleton-section-subtitle {
-  height: 16px;
-  width: 60%;
+    height: 16px;
+    width: 60%;
 }
 
 /* Pista del carrusel (contenedor flex) */
 .skeleton-carousel-track {
-  display: flex;
-  overflow-x: hidden; /* Ocultar scroll si los elementos se desbordan */
-  padding: 0 1rem; /* Espacio lateral */
-  gap: 15px; /* Espacio entre tarjetas, similar a Swiper */
+    display: flex;
+    overflow-x: hidden; /* Ocultar scroll si los elementos se desbordan */
+    padding: 0 1rem; /* Espacio lateral */
+    gap: 15px; /* Espacio entre tarjetas, similar a Swiper */
 }
 
 /* Skeleton Product Card */
 .skeleton-product-card {
-  flex: 0 0 auto; /* Evitar que se encojan/expandan */
-  width: 220px; /* Ancho similar al ProductCard real */
-  max-width: 220px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+    flex: 0 0 auto; /* Evitar que se encojan/expandan */
+    width: 220px; /* Ancho similar al ProductCard real */
+    max-width: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .skeleton-image {
-  width: 100%;
-  aspect-ratio: 1 / 1; /* Imagen cuadrada */
-  margin-bottom: 0.75rem;
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Imagen cuadrada */
+    margin-bottom: 0.75rem;
 }
 
 .skeleton-text {
-  height: 16px;
-  width: 80%;
-  margin-bottom: 0.5rem;
+    height: 16px;
+    width: 80%;
+    margin-bottom: 0.5rem;
 }
 
 /* Ajuste para que los skeletons de texto no tengan animación si se prefiere */

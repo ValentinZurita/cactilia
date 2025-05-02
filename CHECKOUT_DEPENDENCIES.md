@@ -37,7 +37,7 @@ estándar o dependencias implícitas.
 * `src/modules/shop/features/checkout/components/common/CheckoutError.jsx`
 * `src/modules/shop/features/checkout/components/common/OrderProcessing.jsx`
 * `src/modules/shop/features/checkout/hooks/useCheckoutSteps.js`
-* `src/modules/shop/features/checkout/hooks/useShippingOptions.js`
+* `src/modules/shop/features/checkout/hooks/useShippingOptions2.js`
 * `src/modules/shop/features/checkout/hooks/useShippingRules.js`
 * `src/modules/shop/features/checkout/services/orderService.js`
 * `src/modules/shop/features/checkout/services/shipping/ShippingGroupingService.js`
@@ -57,7 +57,7 @@ estándar o dependencias implícitas.
 * `src/modules/checkout/NewShipping2/components/constants.js` (y componentes internos)
 * `src/modules/checkout/NewShipping3/constants.js` (**¡Usado por `NewShippingIntegration.jsx`!**)
 * `src/modules/checkout/NewShipping3/components/ShippingManagerForCheckout.jsx`
-* `src/modules/checkout/NewShipping3/hooks/useShippingOptions.js` (¡Ojo! Duplicado con el de `shop/features`?)
+* `src/modules/checkout/NewShipping3/hooks/useShippingOptions2.js` (¡Ojo! Duplicado con el de `shop/features`?)
 * `src/modules/checkout/NewShipping3/hooks/useShippingRules.js` (¡Ojo! Duplicado?)
 * `src/modules/checkout/NewShipping3/hooks/useGreedyPackaging.js`
 * `src/modules/checkout/NewShipping3/services/shippingRulesService.js`
@@ -65,7 +65,7 @@ estándar o dependencias implícitas.
 * `src/modules/checkout/NewShipping3/services/addressesService.js`
 * `src/modules/checkout/NewShipping3/utils/coverageUtils.js`
 * `src/modules/checkout/NewShipping3/utils/packagingUtils2.js`
-* `src/modules/checkout/NewShipping3/utils/shippingUtils.js`
+* `src/modules/checkout/NewShipping3/utils/shippingUtils2.js`
 * `src/modules/checkout/NewShipping3/constants/constants.js` (**¡Usado por `ShippingRulesGreedy.js`!**)
 * `src/modules/checkout/components/shipping/ShippingCalculator.jsx` (Depende de `ShippingGroupingService`)
 * `src/modules/checkout/components/shipping/ShippingGroupsCalculator.jsx` (Depende de `ShippingGroupingService`, parece
@@ -125,7 +125,7 @@ estándar o dependencias implícitas.
     1. `NewShipping2` (Usado por `CheckoutView.jsx`)
     2. `NewShipping3` (Usado por `NewShippingIntegration.jsx`, que a su vez parece ser parte del flujo de
        `CheckoutPage.jsx`)
-    3. `shop/features/checkout/services/shipping` y `hooks/useShippingOptions`, `hooks/useShippingRules` (Usados por
+    3. `shop/features/checkout/services/shipping` y `hooks/useShippingOptions2`, `hooks/useShippingRules` (Usados por
        `ShippingStep.jsx` dentro de `CheckoutPage.jsx`).
 * **Dependencias Cruzadas:**
     * El servicio `ShippingRulesGreedy.js` (en `shop`) depende de constantes en `NewShipping3`.
@@ -197,7 +197,7 @@ nueva estructura consolidada en `src/modules/checkout/shipping/`.
 | Lógica de `useShipping.js`                          | `NewShipping2/hooks/`      | `src/modules/checkout/shipping/hooks/useShipping.js`                    |  `[x]`  |
 | **Components**                                      |                            |                                                                         |         |
 | `ShippingOptionsContainer.jsx`                      | `NewShipping2/components/` | `src/modules/checkout/shipping/components/ShippingOptionsContainer.jsx` |  `[x]`  |
-| `ShippingOption.jsx`                                | `NewShipping2/components/` | `src/modules/checkout/shipping/components/ShippingOption.jsx`           |  `[x]`  |
+| `ShippingOption2.jsx`                               | `NewShipping2/components/` | `src/modules/checkout/shipping/components/ShippingOption2.jsx`          |  `[x]`  |
 | `ShippingWarning.jsx`                               | `NewShipping2/components/` | `src/modules/checkout/shipping/components/ShippingWarning.jsx`          |  `[x]`  |
 
 ---
@@ -217,12 +217,12 @@ estructura consolidada, para asegurar que funcionan correctamente en su nueva ub
 | `hooks/useCheckoutShipping.js`              | Hook       |                 `[ ]`                  |
 | **Components**                              |            |                                        |
 | `components/ShippingOptionsContainer.jsx`   | Componente |                 `[ ]`                  |
-| `components/ShippingOption.jsx`             | Componente |                 `[ ]`                  |
+| `components/ShippingOption2.jsx`            | Componente |                 `[ ]`                  |
 | `components/ShippingWarning.jsx`            | Componente |                 `[ ]`                  |
 | `components/ShippingOptionsList.jsx`        | Componente |                 `[ ]`                  |
 | `components/ShippingManagerForCheckout.jsx` | Componente |                 `[x]`                  |
 | `components/ShippingOptions.jsx`            | Componente |                 `[ ]`                  |
-| `components/AddressSelector.jsx`            | Componente |                 `[x]`                  |
+| `components/AddressSelector2.jsx`           | Componente |                 `[x]`                  |
 | `services/shippingRulesService.js`          | Servicio   |                 `[x]`                  |
 | `services/productsService.js`               | Servicio   |                 `[x]`                  |
 | `services/addressesService.js`              | Servicio   |                 `[x]`                  |

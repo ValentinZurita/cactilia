@@ -1,8 +1,8 @@
-import React, { useMemo } from "react";
-import { Logo } from '../../../../shared/components/logo/Logo.jsx';
-import '../../../../styles/global.css';
-import './../../styles/homepage.css';
-import { useImageSlider } from '../../hooks/useImageSlider';
+import React, { useMemo } from 'react'
+import { Logo } from '../../../../shared/components/logo/Logo.jsx'
+import '../../../../styles/global.css'
+import './../../styles/homepage.css'
+import { useImageSlider } from '../../hooks/useImageSlider'
 
 /**
  * HeroSection Component con transiciones CSS puras
@@ -23,30 +23,30 @@ import { useImageSlider } from '../../hooks/useImageSlider';
  * @returns {JSX.Element}
  */
 const HeroSectionComponent = React.memo(({
-                              images,
-                              title,
-                              subtitle,
-                              showLogo = true,
-                              showSubtitle = true,
-                              showButton = true,
-                              buttonText = "Conoce Más",
-                              buttonLink = "#",
-                              height = "100vh",
-                              autoRotate = false,
-                              interval = 5000,
-                            }) => {
+                                           images,
+                                           title,
+                                           subtitle,
+                                           showLogo = true,
+                                           showSubtitle = true,
+                                           showButton = true,
+                                           buttonText = 'Conoce Más',
+                                           buttonLink = '#',
+                                           height = '100vh',
+                                           autoRotate = false,
+                                           interval = 5000,
+                                         }) => {
 
   // Use the hook to manage slider state and logic
-  const { currentIndex } = useImageSlider(images, autoRotate, interval);
+  const { currentIndex } = useImageSlider(images, autoRotate, interval)
 
   // Memoize image array processing (ensure it's always an array)
   const imageArray = useMemo(() => (
     Array.isArray(images) ? images.filter(img => img?.src) : []
-  ), [images]);
+  ), [images])
 
-  // Function to create styles remains the same, uses currentIndex from hook
+  // Function to create shipping remains the same, uses currentIndex from hook
   const createImageStyles = (index) => {
-    const imageUrl = imageArray[index]?.src; // Get the src URL from the processed array
+    const imageUrl = imageArray[index]?.src // Get the src URL from the processed array
     return {
       position: 'absolute',
       top: 0,
@@ -58,16 +58,16 @@ const HeroSectionComponent = React.memo(({
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       // Consider slightly longer transition for smoother effect
-      transition: 'opacity 0.8s ease-in-out', 
-      zIndex: index === currentIndex ? 1 : 0
-    };
-  };
-  
+      transition: 'opacity 0.8s ease-in-out',
+      zIndex: index === currentIndex ? 1 : 0,
+    }
+  }
+
   // Handle case where no valid images are available
   if (imageArray.length === 0) {
     // Optionally return a placeholder or null
     // For now, let's render the section without images but with content
-    console.warn('HeroSection: No valid images provided.');
+    console.warn('HeroSection: No valid images provided.')
     // return null; 
   }
 
@@ -104,25 +104,25 @@ const HeroSectionComponent = React.memo(({
       <div className="position-relative" style={{ zIndex: 3 }}>
         {showLogo && <Logo color="white" />}
         {/* Use heading levels appropriately */}
-        <h1 className="display-6 fw-bold">{title}</h1> 
+        <h1 className="display-6 fw-bold">{title}</h1>
         {showSubtitle && <p className="lead text-xs">{subtitle}</p>}
 
         {showButton && (
           <a
             href={buttonLink}
             className="btn btn-lg text-white btn-success text-xs"
-            style={{ backgroundColor: "var(--green-1)" }} // Consider moving to CSS class
+            style={{ backgroundColor: 'var(--green-1)' }} // Consider moving to CSS class
           >
             {buttonText}
           </a>
         )}
       </div>
     </section>
-  );
-});
+  )
+})
 
 // Add display name for React DevTools
-HeroSectionComponent.displayName = 'HeroSection';
+HeroSectionComponent.displayName = 'HeroSection'
 
 // Exportar por defecto
-export default HeroSectionComponent;
+export default HeroSectionComponent

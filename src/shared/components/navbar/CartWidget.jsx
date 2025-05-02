@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, memo } from 'react';
-import { Link } from 'react-router-dom';
-import { useCart } from '../../../modules/shop/features/cart/hooks/useCart.js';
-import { formatPrice } from '../../../modules/shop/utils/format.js';
+import { memo, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useCart } from '../../../modules/shop/features/cart/hooks/useCart.js'
+import { formatPrice } from '../../../modules/shop/utils/format.js'
 
 /**
  * CartItem component - Renders a single item in the cart preview
@@ -25,23 +25,23 @@ const CartItem = memo(({ item }) => (
       </div>
     </div>
   </article>
-));
+))
 
 /**
  * CartWidget component with dropdown
  */
 export const CartWidget = () => {
   // State & hooks
-  const [showPreview, setShowPreview] = useState(false);
-  const { items, finalTotal, itemsCount } = useCart();
-  const previewRef = useRef(null);
-  const timerRef = useRef(null);
+  const [showPreview, setShowPreview] = useState(false)
+  const { items, finalTotal, itemsCount } = useCart()
+  const previewRef = useRef(null)
+  const timerRef = useRef(null)
 
   // Derived values
-  const hasItems = items.length > 0;
-  const showCartPreview = showPreview && hasItems;
+  const hasItems = items.length > 0
+  const showCartPreview = showPreview && hasItems
 
-  // Badge styles for perfect circle
+  // Badge shipping for perfect circle
   const badgeStyles = {
     position: 'absolute',
     top: '-8px',
@@ -57,32 +57,32 @@ export const CartWidget = () => {
     fontSize: '0.7rem',
     fontWeight: 'bold',
     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-  };
+  }
 
   // Effect for clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (previewRef.current && !previewRef.current.contains(event.target)) {
-        setShowPreview(false);
+        setShowPreview(false)
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Event handlers
   const handleMouseEnter = () => {
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setShowPreview(true), 300);
-  };
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setShowPreview(true), 300)
+  }
 
   const handleMouseLeave = () => {
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setShowPreview(false), 500);
-  };
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setShowPreview(false), 500)
+  }
 
-  const closePreview = () => setShowPreview(false);
+  const closePreview = () => setShowPreview(false)
 
   // Render cart badge
   const renderBadge = () =>
@@ -90,7 +90,7 @@ export const CartWidget = () => {
       <span style={badgeStyles}>
         {itemsCount > 99 ? '99+' : itemsCount}
       </span>
-    );
+    )
 
   // Render cart preview content
   const renderPreviewItems = () => (
@@ -105,7 +105,7 @@ export const CartWidget = () => {
         </p>
       )}
     </>
-  );
+  )
 
   return (
     <nav
@@ -132,7 +132,7 @@ export const CartWidget = () => {
             top: '100%',
             width: '320px',
             zIndex: 1000,
-            marginTop: '10px'
+            marginTop: '10px',
           }}
         >
           {/* Header */}
@@ -188,5 +188,5 @@ export const CartWidget = () => {
         </section>
       )}
     </nav>
-  );
-};
+  )
+}

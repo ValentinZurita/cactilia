@@ -1,86 +1,89 @@
 # Código Fuente Frontend de Cactilia (src/)
 
-Este documento describe la organización y las convenciones del código fuente ubicado en el directorio `src/`, que corresponde al frontend de la aplicación Cactilia construida con React.
+Este documento describe la organización y las convenciones del código fuente ubicado en el directorio `src/`, que
+corresponde al frontend de la aplicación Cactilia construida con React.
 
 ## Visión General
 
-Este directorio contiene toda la lógica, componentes, estilos y configuración necesarios para la interfaz de usuario que interactúa con los servicios de backend (ubicados en el directorio `functions/` del proyecto raíz).
+Este directorio contiene toda la lógica, componentes, estilos y configuración necesarios para la interfaz de usuario que
+interactúa con los servicios de backend (ubicados en el directorio `functions/` del proyecto raíz).
 
 ## Tech Stack Principal
 
-*   **Framework:** React `^19.0.0`
-*   **Build Tool:** Vite `^6.0.5`
-*   **Routing:** React Router DOM `^7.1.3`
-*   **State Management:** Redux Toolkit `^2.5.1` con React Redux `^9.2.0` y Redux Persist `^6.0.0`
-*   **Styling:**
-    *   Bootstrap `^5.3.3` (Usado principalmente para layout y componentes base. **Regla Estricta:** Módulo `admin` debe usar solo clases de Bootstrap, sin CSS custom ni inline styles).
-    *   CSS (Archivos `.css` para estilos globales en `src/styles/` y estilos específicos de componentes).
-*   **Formularios:** React Hook Form `^7.55.0`
-*   **Lenguaje:** JavaScript (con adopción parcial/progresiva de **TypeScript** - ver sección abajo)
-*   **Testing:** Jest `^29.7.0` con React Testing Library (`@testing-library/react@^16.3.0`)
-*   **Integraciones Backend:**
-    *   Firebase Client SDK `^11.2.0` (Auth, Firestore, Storage)
-    *   Stripe React `^3.4.0` / Stripe.js `^6.0.0`
+* **Framework:** React `^19.0.0`
+* **Build Tool:** Vite `^6.0.5`
+* **Routing:** React Router DOM `^7.1.3`
+* **State Management:** Redux Toolkit `^2.5.1` con React Redux `^9.2.0` y Redux Persist `^6.0.0`
+* **Styling:**
+    * Bootstrap `^5.3.3` (Usado principalmente para layout y componentes base. **Regla Estricta:** Módulo `admin` debe
+      usar solo clases de Bootstrap, sin CSS custom ni inline styles).
+    * CSS (Archivos `.css` para estilos globales en `src/styles/` y estilos específicos de componentes).
+* **Formularios:** React Hook Form `^7.55.0`
+* **Lenguaje:** JavaScript (con adopción parcial/progresiva de **TypeScript** - ver sección abajo)
+* **Testing:** Jest `^29.7.0` con React Testing Library (`@testing-library/react@^16.3.0`)
+* **Integraciones Backend:**
+    * Firebase Client SDK `^11.2.0` (Auth, Firestore, Storage)
+    * Stripe React `^3.4.0` / Stripe.js `^6.0.0`
 
 ## Cómo Empezar
 
 Asegúrate de tener Node.js (v20 recomendado, ver `functions/package.json`) y Yarn instalados.
 
-1.  **Instalar Dependencias:**
-    ```bash
-    yarn install
-    ```
-    *(Nota: Si es la primera vez, también ejecuta `yarn install` dentro de la carpeta `functions/`)*
+1. **Instalar Dependencias:**
+   ```bash
+   yarn install
+   ```
+   *(Nota: Si es la primera vez, también ejecuta `yarn install` dentro de la carpeta `functions/`)*
 
-2.  **Configurar Variables de Entorno:**
-    Copia `.env.example` a `.env` y rellena las variables necesarias (claves de Firebase, Stripe, etc.).
-    ```bash
-    cp .env.example .env
-    # Edita .env con tus claves
-    ```
+2. **Configurar Variables de Entorno:**
+   Copia `.env.example` a `.env` y rellena las variables necesarias (claves de Firebase, Stripe, etc.).
+   ```bash
+   cp .env.example .env
+   # Edita .env con tus claves
+   ```
 
-3.  **Ejecutar Servidor de Desarrollo:**
-    Inicia la aplicación en modo desarrollo con HMR (Hot Module Replacement).
-    ```bash
-    yarn dev
-    ```
+3. **Ejecutar Servidor de Desarrollo:**
+   Inicia la aplicación en modo desarrollo con HMR (Hot Module Replacement).
+   ```bash
+   yarn dev
+   ```
 
-4.  **Ejecutar Emuladores de Firebase (Opcional pero Recomendado):**
-    Para probar la integración con Firebase localmente:
-    ```bash
-    yarn emulators
-    # O desde la carpeta functions/: firebase emulators:start --only functions,firestore
-    ```
+4. **Ejecutar Emuladores de Firebase (Opcional pero Recomendado):**
+   Para probar la integración con Firebase localmente:
+   ```bash
+   yarn emulators
+   # O desde la carpeta functions/: firebase emulators:start --only functions,firestore
+   ```
 
-5.  **Construir para Producción:**
-    Genera los archivos optimizados en la carpeta `dist/`.
-    ```bash
-    yarn build
-    ```
+5. **Construir para Producción:**
+   Genera los archivos optimizados en la carpeta `dist/`.
+   ```bash
+   yarn build
+   ```
 
-6.  **Ejecutar Linters:**
-    Verifica la calidad del código.
-    ```bash
-    yarn lint
-    ```
-    Para intentar arreglar automáticamente:
-    ```bash
-    yarn lint:fix
-    ```
+6. **Ejecutar Linters:**
+   Verifica la calidad del código.
+   ```bash
+   yarn lint
+   ```
+   Para intentar arreglar automáticamente:
+   ```bash
+   yarn lint:fix
+   ```
 
-7.  **Ejecutar Tests:**
-    *(Nota: Actualmente la carpeta `tests/` está ignorada en `.gitignore`. Si se revierte, este comando será relevante).*
-    ```bash
-    yarn test
-    ```
-    Para modo watch:
-    ```bash
-    yarn test:watch
-    ```
-    Para ver cobertura:
-    ```bash
-    yarn test:coverage
-    ```
+7. **Ejecutar Tests:**
+   *(Nota: Actualmente la carpeta `tests/` está ignorada en `.gitignore`. Si se revierte, este comando será relevante).*
+   ```bash
+   yarn test
+   ```
+   Para modo watch:
+   ```bash
+   yarn test:watch
+   ```
+   Para ver cobertura:
+   ```bash
+   yarn test:coverage
+   ```
 
 ## Estructura de Directorios `src/`
 
@@ -132,31 +135,35 @@ modules/nombre-modulo/
 
 ### Styling
 
-*   **Global:** Archivos CSS en `src/styles/`.
-*   **Componentes Compartidos:** Estilos asociados al componente, preferiblemente CSS Modules o archivos CSS importados.
-*   **Módulo Admin:** **OBLIGATORIO** usar únicamente clases de utilidad de Bootstrap 5. No se permiten archivos CSS customizados ni estilos inline (atributo `style={...}`).
-*   **Otros Módulos:** Pueden usar archivos CSS (idealmente locales al componente o dentro del `styles/` del módulo). Evitar estilos inline excesivos.
+* **Global:** Archivos CSS en `src/styles/`.
+* **Componentes Compartidos:** Estilos asociados al componente, preferiblemente CSS Modules o archivos CSS importados.
+* **Módulo Admin:** **OBLIGATORIO** usar únicamente clases de utilidad de Bootstrap 5. No se permiten archivos CSS
+  customizados ni estilos inline (atributo `style={...}`).
+* **Otros Módulos:** Pueden usar archivos CSS (idealmente locales al componente o dentro del `styles/` del módulo).
+  Evitar estilos inline excesivos.
 
 ### TypeScript
 
 El proyecto utiliza JavaScript pero está en proceso de adopción o uso parcial de TypeScript.
-*   Nuevos componentes/archivos idealmente deberían escribirse en `.ts` o `.tsx`.
-*   Usar interfaces para definir props y tipos de datos.
-*   Evitar el uso de `any`.
-*   Archivos de tipos (`.d.ts` o `.ts` con interfaces/types) son bienvenidos.
+
+* Nuevos componentes/archivos idealmente deberían escribirse en `.ts` o `.tsx`.
+* Usar interfaces para definir props y tipos de datos.
+* Evitar el uso de `any`.
+* Archivos de tipos (`.d.ts` o `.ts` con interfaces/types) son bienvenidos.
 
 ### Testing
 
-*   Se utiliza Jest y React Testing Library.
-*   Los archivos de test suelen ubicarse en carpetas `__tests__` dentro del directorio del componente/hook/utilidad que prueban.
-*   *(Nota: La carpeta raíz `tests/` está actualmente ignorada por Git).*
+* Se utiliza Jest y React Testing Library.
+* Los archivos de test suelen ubicarse en carpetas `__tests__` dentro del directorio del componente/hook/utilidad que
+  prueban.
+* *(Nota: La carpeta raíz `tests/` está actualmente ignorada por Git).*
 
 ### Importaciones (Alias)
 
 Gracias a Vite, se usan alias para importaciones limpias:
 
 ```javascript
-import Button from '@components/buttons-and-fields/Button'; // Desde shared/components
+import Button from '@package/buttons-and-fields/Button'; // Desde shared/package
 import { useAuth } from '@hooks/useAuth';         // Desde shared/hooks
 import { firestore } from '@config/firebase';     // Desde config/firebase
 import { loginUser } from '@modules/auth/services/authService'; // Desde un módulo
@@ -164,6 +171,7 @@ import store from '@store';                       // Desde store
 ```
 
 Aliases configurados:
+
 - `@`: `./src`
 - `@components`: `./src/shared/components`
 - `@hooks`: `./src/shared/hooks`
@@ -177,4 +185,6 @@ Aliases configurados:
 
 ### Backend (Cloud Functions)
 
-La lógica de backend (API, triggers de base de datos, tareas pesadas, lógica con privilegios de admin) reside en un directorio separado `functions/` en la raíz del proyecto, que se despliega como Cloud Functions de Firebase. El frontend interactúa con estas funciones a través del SDK de Firebase.
+La lógica de backend (API, triggers de base de datos, tareas pesadas, lógica con privilegios de admin) reside en un
+directorio separado `functions/` en la raíz del proyecto, que se despliega como Cloud Functions de Firebase. El frontend
+interactúa con estas funciones a través del SDK de Firebase.

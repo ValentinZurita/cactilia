@@ -1,6 +1,6 @@
-// src/modules/admin/components/contact-editor/ContactPageManagementPage.jsx
-import React from 'react';
-import ContactPageEditor from './ContactPageEditor.jsx';
+// src/modules/admin/package/contact-editor/ContactPageManagementPage.jsx
+import React from 'react'
+import ContactPageEditor from './ContactPageEditor.jsx'
 
 /**
  * Contact Page Management Page
@@ -25,7 +25,7 @@ const ContactPageManagementPage = () => {
       {/* The main editor component */}
       <ContactPageEditor />
     </div>
-  );
-};
+  )
+}
 
-export default ContactPageManagementPage;
+export default ContactPageManagementPage

@@ -7,13 +7,13 @@
  * los estados de carga y de error, y la paginación.
  */
 
-import React from 'react';
-import { SectionTitle } from '../components/shared/index.js';
-import '../styles/profileOrders.css';
-import { OrderFilterBar, OrdersList } from '../components/orders/index.js';
-import { useOrders } from '../hooks/userOrders.js';
+import React from 'react'
+import { SectionTitle } from '../components/shared/index.js'
+import '../styles/profileOrders.css'
+import { OrderFilterBar, OrdersList } from '../components/orders/index.js'
+import { useOrders } from '../hooks/userOrders.js'
 // Asumiendo que tienes un componente Spinner o similar
-// import { Spinner } from '../../shared/components/ui/Spinner'; 
+// import { Spinner } from '../../shared/package/ui/Spinner';
 
 export const OrdersPage = () => {
   // Obtener métodos y estado del hook personalizado, incluyendo los de paginación
@@ -26,11 +26,11 @@ export const OrdersPage = () => {
     getFormattedOrders, // <--- Usar esta función
     fetchNextPage,
     hasMore,
-    orders // <-- Necesitamos las órdenes crudas para verificar longitud antes de formatear
-  } = useOrders();
+    orders, // <-- Necesitamos las órdenes crudas para verificar longitud antes de formatear
+  } = useOrders()
 
   // Obtener las órdenes FORMATEADAS para mostrar
-  const formattedOrders = getFormattedOrders();
+  const formattedOrders = getFormattedOrders()
 
   // Manejo de error
   if (error) {
@@ -39,7 +39,7 @@ export const OrdersPage = () => {
         <i className="bi bi-exclamation-triangle-fill me-2"></i>
         {error}
       </div>
-    );
+    )
   }
 
   // Indicador de carga INICIAL
@@ -53,7 +53,7 @@ export const OrdersPage = () => {
         </div>
         <p className="mt-2">Cargando tus pedidos...</p>
       </div>
-    );
+    )
   }
 
   // Vista principal
@@ -94,9 +94,9 @@ export const OrdersPage = () => {
 
         {/* Botón para cargar más */}
         {hasMore && !loadingMore && (
-          <button 
+          <button
             className="profile-action-button mt-3"
-            onClick={fetchNextPage} 
+            onClick={fetchNextPage}
             disabled={loadingMore}
           >
             Cargar más pedidos
@@ -106,9 +106,9 @@ export const OrdersPage = () => {
         {/* Mensaje cuando no hay más páginas */}
         {/* Verificar usando las órdenes crudas del hook */}
         {!hasMore && orders.length > 0 && (
-           <p className="text-muted mt-2">Has llegado al final de tus pedidos.</p>
+          <p className="text-muted mt-2">Has llegado al final de tus pedidos.</p>
         )}
       </div>
     </div>
-  );
-};
+  )
+}

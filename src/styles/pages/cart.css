@@ -109,7 +109,7 @@
 .btn-group {
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Eliminar espacios entre botones */
@@ -154,7 +154,7 @@
 
 /* Botón de checkout */
 .btn-green-checkout {
-    /* Base styles from productModal.css */
+    /* Base shipping from productModal.css */
     width: 100%; /* Assuming full width is desired here too */
     background-color: var(--green-3); /* Using variable */
     color: white;
@@ -436,9 +436,15 @@
 
 /* Animación al agregar al carrito */
 @keyframes addToCartPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.12); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.12);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .cart-btn.adding {
@@ -447,8 +453,14 @@
 
 /* Animación para el dropdown */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ---------- RESPONSIVE STYLES ---------- */
@@ -498,13 +510,13 @@
 
 
 .cart-item-stock-warning {
-  color: var(--red-soft);
-  font-weight: 300;
+    color: var(--red-soft);
+    font-weight: 300;
 }
 
 .cart-item-actions .btn-remove-item:hover .bi-trash {
-   color: var(--red-soft); /* Usar rojo suave para el icono en hover */
-   transition: color 0.2s ease-in-out; 
+    color: var(--red-soft); /* Usar rojo suave para el icono en hover */
+    transition: color 0.2s ease-in-out;
 }
 
 

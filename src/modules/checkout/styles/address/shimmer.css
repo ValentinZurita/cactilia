@@ -1,0 +1,183 @@
+/* Shimmer Animation Effect for Loading States */
+
+.shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+.shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.2) 20%,
+            rgba(255, 255, 255, 0.5) 60%,
+            rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Variants for different background colors */
+.shimmer-light {
+    background-color: #f8f8f8;
+}
+
+.shimmer-dark {
+    background-color: #e0e0e0;
+}
+
+.shimmer-primary {
+    background-color: rgba(74, 144, 226, 0.1);
+}
+
+.shimmer-success {
+    background-color: rgba(52, 199, 73, 0.1);
+}
+
+/* Diagnostic banner shimmer effect */
+.shimmer-diagnostic {
+    background: linear-gradient(to right, #3b5998, #8b9dc3);
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.shimmer-diagnostic::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.3) 20%,
+            rgba(255, 255, 255, 0.5) 60%,
+            rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+/* Diagnostic banner states */
+.shimmer-diagnostic.error {
+    background: linear-gradient(to right, #d32f2f, #f44336);
+}
+
+.shimmer-diagnostic.warning {
+    background: linear-gradient(to right, #ff9800, #ffb74d);
+}
+
+.shimmer-diagnostic.success {
+    background: linear-gradient(to right, #2e7d32, #4caf50);
+}
+
+/* Diagnostic banner structure */
+.diagnostic-banner {
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.diagnostic-item {
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.diagnostic-item strong {
+    opacity: 0.9;
+}
+
+/* Spinner de carga */
+.shipping-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.spinner-container {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    margin: 0 auto;
+}
+
+.spinner {
+    width: 100%;
+    height: 100%;
+    border: 5px solid rgba(74, 144, 226, 0.2);
+    border-top-color: #4a90e2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Apply to specific elements */
+.shimmer-card {
+    border-radius: 8px;
+    height: 100px;
+    width: 100%;
+}
+
+.shimmer-text {
+    height: 16px;
+    width: 100%;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.shimmer-text-short {
+    width: 60%;
+}
+
+.shimmer-circle {
+    border-radius: 50%;
+    height: 40px;
+    width: 40px;
+}
+
+/* Shimmer for specific checkout package */
+.shimmer-shipping-option {
+    height: 120px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.shimmer-address {
+    height: 80px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.shimmer-payment-method {
+    height: 60px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+} 

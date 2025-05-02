@@ -21,7 +21,7 @@
 
     /* 🆘 Danger Colors */
     --red-danger: #dc3545; /* Bootstrap's default danger color */
-    --red-soft: #d9534f;   /* Custom softer red for warnings */
+    --red-soft: #d9534f; /* Custom softer red for warnings */
 
     /* 🌗 Grayscale */
     --gray-100: #f8f9fa;
@@ -40,11 +40,11 @@
     --spacing-xxl: 40px;
 
     /* 🔠 Font sizes */
-    --font-size-xs: 0.75rem;  /* 12px */
-    --font-size-sm: 0.875rem;  /* 14px */
-    --font-size-md: 1rem;      /* 16px */
-    --font-size-lg: 1.25rem;   /* 20px */
-    --font-size-xl: 1.5rem;    /* 24px */
+    --font-size-xs: 0.75rem; /* 12px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-md: 1rem; /* 16px */
+    --font-size-lg: 1.25rem; /* 20px */
+    --font-size-xl: 1.5rem; /* 24px */
 
     /* 📦 Border radius */
     --border-radius-sm: 4px;
@@ -76,7 +76,7 @@ body {
   Ajustes personalizados para el navbar
 */
 
-/* General navbar styles */
+/* General navbar shipping */
 .navbar-nav .nav-link:hover,
 .navbar .nav-link i:hover {
     color: var(--green-2) !important;
@@ -118,11 +118,12 @@ body {
 
 
 /*
-    ✅ Button styles
+    ✅ Button shipping
  */
 .submit-btn {
     transition: all 0.3s ease-in-out;
 }
+
 .submit-btn:hover {
     background-color: #228B3C !important; /* Un verde más oscuro */
     border-color: #1E7A32 !important;
@@ -132,7 +133,7 @@ body {
 
 /* Opcional: verde */
 .btn-primary:hover {
-    border-color: #1E7D1E ;
+    border-color: #1E7D1E;
 }
 
 /* Opcional: oscuros */
@@ -140,7 +141,6 @@ body {
     background-color: #333 !important; /* Negro más suave */
     border-color: #222 !important;
 }
-
 
 
 /*
@@ -177,55 +177,158 @@ body {
 */
 
 /* ✅ Text colors */
-.text-green-1 { color: var(--green-1) !important; }
-.text-green-2 { color: var(--green-2) !important; }
-.text-green-3 { color: var(--green-3) !important; }
-.text-blue-gray { color: var(--blue-gray) !important; }
-.text-soft-black {color: var(--soft-black) !important;}
+.text-green-1 {
+    color: var(--green-1) !important;
+}
+
+.text-green-2 {
+    color: var(--green-2) !important;
+}
+
+.text-green-3 {
+    color: var(--green-3) !important;
+}
+
+.text-blue-gray {
+    color: var(--blue-gray) !important;
+}
+
+.text-soft-black {
+    color: var(--soft-black) !important;
+}
 
 /* ✅ Background colors */
-.bg-green-1 { background-color: var(--green-1) !important; }
-.bg-green-2 { background-color: var(--green-2) !important; }
-.bg-green-3 { background-color: var(--green-3) !important; }
-.bg-blue-gray { background-color: var(--blue-gray) !important; }
-.bg-white { background-color: var(--white) !important; }
-.bg-black { background-color: var(--black) !important; }
+.bg-green-1 {
+    background-color: var(--green-1) !important;
+}
+
+.bg-green-2 {
+    background-color: var(--green-2) !important;
+}
+
+.bg-green-3 {
+    background-color: var(--green-3) !important;
+}
+
+.bg-blue-gray {
+    background-color: var(--blue-gray) !important;
+}
+
+.bg-white {
+    background-color: var(--white) !important;
+}
+
+.bg-black {
+    background-color: var(--black) !important;
+}
 
 /* ✅ Spacing utilities (Margins & Padding) */
-.mt-xs { margin-top: var(--spacing-xs) !important; }
-.mt-sm { margin-top: var(--spacing-sm) !important; }
-.mt-md { margin-top: var(--spacing-md) !important; }
-.mt-lg { margin-top: var(--spacing-lg) !important; }
-.mt-xl { margin-top: var(--spacing-xl) !important; }
+.mt-xs {
+    margin-top: var(--spacing-xs) !important;
+}
 
-.mb-xs { margin-bottom: var(--spacing-xs) !important; }
-.mb-sm { margin-bottom: var(--spacing-sm) !important; }
-.mb-md { margin-bottom: var(--spacing-md) !important; }
-.mb-lg { margin-bottom: var(--spacing-lg) !important; }
-.mb-xl { margin-bottom: var(--spacing-xl) !important; }
+.mt-sm {
+    margin-top: var(--spacing-sm) !important;
+}
 
-.pt-xs { padding-top: var(--spacing-xs) !important; }
-.pt-sm { padding-top: var(--spacing-sm) !important; }
-.pt-md { padding-top: var(--spacing-md) !important; }
-.pt-lg { padding-top: var(--spacing-lg) !important; }
-.pt-xl { padding-top: var(--spacing-xl) !important; }
+.mt-md {
+    margin-top: var(--spacing-md) !important;
+}
+
+.mt-lg {
+    margin-top: var(--spacing-lg) !important;
+}
+
+.mt-xl {
+    margin-top: var(--spacing-xl) !important;
+}
+
+.mb-xs {
+    margin-bottom: var(--spacing-xs) !important;
+}
+
+.mb-sm {
+    margin-bottom: var(--spacing-sm) !important;
+}
+
+.mb-md {
+    margin-bottom: var(--spacing-md) !important;
+}
+
+.mb-lg {
+    margin-bottom: var(--spacing-lg) !important;
+}
+
+.mb-xl {
+    margin-bottom: var(--spacing-xl) !important;
+}
+
+.pt-xs {
+    padding-top: var(--spacing-xs) !important;
+}
+
+.pt-sm {
+    padding-top: var(--spacing-sm) !important;
+}
+
+.pt-md {
+    padding-top: var(--spacing-md) !important;
+}
+
+.pt-lg {
+    padding-top: var(--spacing-lg) !important;
+}
+
+.pt-xl {
+    padding-top: var(--spacing-xl) !important;
+}
 
 /* ✅ Font sizes */
-.text-xs { font-size: var(--font-size-xs) !important; }
-.text-sm { font-size: var(--font-size-sm) !important; }
-.text-md { font-size: var(--font-size-md) !important; }
-.text-lg { font-size: var(--font-size-lg) !important; }
-.text-xl { font-size: var(--font-size-xl) !important; }
+.text-xs {
+    font-size: var(--font-size-xs) !important;
+}
+
+.text-sm {
+    font-size: var(--font-size-sm) !important;
+}
+
+.text-md {
+    font-size: var(--font-size-md) !important;
+}
+
+.text-lg {
+    font-size: var(--font-size-lg) !important;
+}
+
+.text-xl {
+    font-size: var(--font-size-xl) !important;
+}
 
 /* ✅ Border radius utilities */
-.rounded-sm { border-radius: var(--border-radius-sm) !important; }
-.rounded-md { border-radius: var(--border-radius-md) !important; }
-.rounded-lg { border-radius: var(--border-radius-lg) !important; }
+.rounded-sm {
+    border-radius: var(--border-radius-sm) !important;
+}
+
+.rounded-md {
+    border-radius: var(--border-radius-md) !important;
+}
+
+.rounded-lg {
+    border-radius: var(--border-radius-lg) !important;
+}
 
 /* ✅ Box shadows */
-.shadow-sm { box-shadow: var(--shadow-sm) !important; }
-.shadow-md { box-shadow: var(--shadow-md) !important; }
-.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+.shadow-sm {
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.shadow-md {
+    box-shadow: var(--shadow-md) !important;
+}
+
+.shadow-lg {
+    box-shadow: var(--shadow-lg) !important;
+}
 
 /*
   🔠 4) FONT IMPORTS

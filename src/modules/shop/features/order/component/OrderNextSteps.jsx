@@ -1,4 +1,4 @@
-import '../../checkout/styles/orderNextSteps.css';
+import '@modules/checkout/styles/orderNextSteps.css'
 
 export const OrderNextSteps = () => {
   return (
@@ -35,5 +35,5 @@ export const OrderNextSteps = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

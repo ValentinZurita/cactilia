@@ -1,38 +1,40 @@
-import React, { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import '../styles/orderDetail.css';
-import '../../shop/features/checkout/styles/orderSuccess.css';
-import { useOrders } from '../hooks/userOrders.js';
-import { OrderOverview } from '../../shop/features/order/component/index.js'
-import { OrderProductsList } from '../../shop/features/order/component/index.js'
-import { OrderTotals } from '../../shop/features/order/component/index.js'
-import { OrderAddressCard } from '../../shop/features/order/component/index.js'
-import { OrderPaymentInfo } from '../../shop/features/order/component/index.js'
-import { OrderNotes } from '../../shop/features/order/component/index.js'
-import { formatDate } from '../../../utils/formatting/formatters';
+import React, { useEffect } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import '../styles/orderDetail.css'
+import '@modules/checkout/styles/orderSuccess.css'
+import { useOrders } from '../hooks/userOrders.js'
+import {
+  OrderAddressCard,
+  OrderNotes,
+  OrderOverview,
+  OrderPaymentInfo,
+  OrderProductsList,
+  OrderTotals,
+} from '../../shop/features/order/component/index.js'
+import { formatDate } from '../../../utils/formatting/formatters'
 
-// Import components from shop module
+// Import package from shop module
 
 
 /**
  * OrderDetailPage - Página que muestra los detalles de una orden específica
  */
 export const OrderDetailPage = () => {
-  const { orderId } = useParams();
+  const { orderId } = useParams()
   const {
     order,
     orderLoading,
     orderError,
     fetchOrderById,
-    mapOrderStatusToDisplay
-  } = useOrders();
+    mapOrderStatusToDisplay,
+  } = useOrders()
 
   // Cargar detalles de la orden cuando cambia el ID
   useEffect(() => {
     if (orderId) {
-      fetchOrderById(orderId);
+      fetchOrderById(orderId)
     }
-  }, [orderId, fetchOrderById]);
+  }, [orderId, fetchOrderById])
 
   // Renderizar la página de carga
   if (orderLoading) {
@@ -43,7 +45,7 @@ export const OrderDetailPage = () => {
         </div>
         <p className="mt-3">Cargando detalles del pedido...</p>
       </div>
-    );
+    )
   }
 
   // Renderizar error si existe
@@ -53,7 +55,7 @@ export const OrderDetailPage = () => {
         <i className="bi bi-exclamation-triangle-fill me-2"></i>
         {orderError}
       </div>
-    );
+    )
   }
 
   // Si no hay orden, mostrar mensaje
@@ -63,7 +65,7 @@ export const OrderDetailPage = () => {
         <i className="bi bi-info-circle-fill me-2"></i>
         No se encontró el pedido solicitado.
       </div>
-    );
+    )
   }
 
   return (
@@ -117,8 +119,8 @@ export const OrderDetailPage = () => {
         {/* No action buttons needed */}
       </div>
     </div>
-  );
-};
+  )
+}
 
 /**
  * Obtener clase CSS para la badge de estado
@@ -126,15 +128,15 @@ export const OrderDetailPage = () => {
  * @returns {string} Clase CSS
  */
 const getStatusBadgeClass = (status) => {
-  const displayStatus = mapOrderStatusToDisplay(status);
+  const displayStatus = mapOrderStatusToDisplay(status)
   const statusClasses = {
     'delivered': 'success',
     'processing': 'warning',
-    'cancelled': 'danger'
-  };
+    'cancelled': 'danger',
+  }
 
-  return statusClasses[displayStatus] || 'info';
-};
+  return statusClasses[displayStatus] || 'info'
+}
 
 /**
  * Obtener icono para el estado del pedido
@@ -142,18 +144,18 @@ const getStatusBadgeClass = (status) => {
  * @returns {JSX.Element} Elemento de icono
  */
 const getStatusIcon = (status) => {
-  const displayStatus = mapOrderStatusToDisplay(status);
+  const displayStatus = mapOrderStatusToDisplay(status)
 
   if (displayStatus === 'delivered') {
-    return <i className="bi bi-check-circle-fill me-1"></i>;
+    return <i className="bi bi-check-circle-fill me-1"></i>
   } else if (displayStatus === 'processing') {
-    return <i className="bi bi-clock-fill me-1"></i>;
+    return <i className="bi bi-clock-fill me-1"></i>
   } else if (displayStatus === 'cancelled') {
-    return <i className="bi bi-x-circle-fill me-1"></i>;
+    return <i className="bi bi-x-circle-fill me-1"></i>
   }
 
-  return null;
-};
+  return null
+}
 
 /**
  * Obtener etiqueta para el estado del pedido
@@ -161,18 +163,18 @@ const getStatusIcon = (status) => {
  * @returns {string} Etiqueta traducida
  */
 const getStatusLabel = (status) => {
-  const displayStatus = mapOrderStatusToDisplay(status);
+  const displayStatus = mapOrderStatusToDisplay(status)
 
   if (displayStatus === 'delivered') {
-    return 'Entregado';
+    return 'Entregado'
   } else if (displayStatus === 'processing') {
-    return 'En proceso';
+    return 'En proceso'
   } else if (displayStatus === 'cancelled') {
-    return 'Cancelado';
+    return 'Cancelado'
   }
 
-  return status;
-};
+  return status
+}
 
 /**
  * Mapea el estado del pedido a un estado para mostrar
@@ -187,8 +189,8 @@ const mapOrderStatusToDisplay = (status) => {
     'shipped': 'delivered',
     'delivered': 'delivered',
     'cancelled': 'cancelled',
-    'completed': 'delivered'
-  };
+    'completed': 'delivered',
+  }
 
-  return statusMap[status] || status;
-};
+  return statusMap[status] || status
+}

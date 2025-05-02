@@ -6,7 +6,7 @@ import { Spinner } from '../../../shared/components/spinner'
 
 // --- Lazy Load Pages ---
 const LazyCheckoutPage = lazy(() =>
-  import('../../checkout/shipping/CheckoutPage.jsx').then(module => ({ default: module.CheckoutPage })),
+  import('../../checkout/pages/CheckoutPage.jsx').then(module => ({ default: module.CheckoutPage })),
 )
 const LazyOrdersPage = lazy(() =>
   import('../pages/OrdersPage').then(module => ({ default: module.OrdersPage })),

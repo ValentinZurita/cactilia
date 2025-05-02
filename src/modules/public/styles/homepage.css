@@ -2,7 +2,7 @@
    🏠 HOME PAGE CSS - Cactilia
 */
 
-/* 🔄 Import global styles to reuse variables */
+/* 🔄 Import global shipping to reuse variables */
 @import url('../../../../src/styles/global.css');
 
 /*
@@ -17,14 +17,34 @@
 }
 
 /* Custom section spacing */
-.home-section.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
-.home-section.py-5 { padding-top: 2rem; padding-bottom: 2rem; }
-.home-section.py-6 { padding-top: 3rem; padding-bottom: 3rem; }
+.home-section.py-4 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.home-section.py-5 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.home-section.py-6 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
 
 /* Custom section heights */
-.min-vh-50 { min-height: 50vh; } /* Half viewport height */
-.min-vh-60 { min-height: 60vh; }
-.min-vh-75 { min-height: 75vh; }
+.min-vh-50 {
+    min-height: 50vh;
+}
+
+/* Half viewport height */
+.min-vh-60 {
+    min-height: 60vh;
+}
+
+.min-vh-75 {
+    min-height: 75vh;
+}
 
 .hero-section {
     min-height: 10vh; /* Para que ocupe la mayor parte de la pantalla */
@@ -249,7 +269,7 @@
 #farmCarousel .carousel-control-next i {
     /* Aplicar el color primario */
     color: var(--green-1);
-    font-size: 2.5rem; 
+    font-size: 2.5rem;
     font-weight: bold;
     line-height: 1;
 }
@@ -257,6 +277,6 @@
 /* hover */
 #farmCarousel .carousel-control-prev:hover i,
 #farmCarousel .carousel-control-next:hover i {
-    color: var(--green-3); 
-    transition: color 0.2s ease-in-out; 
+    color: var(--green-3);
+    transition: color 0.2s ease-in-out;
 }

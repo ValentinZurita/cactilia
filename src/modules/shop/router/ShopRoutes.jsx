@@ -14,7 +14,7 @@ const lazyLoadNamed = (importFn, componentName) => {
 // Lazy loading de páginas de tienda
 const ShopPage = lazyLoadNamed(() => import('../pages/ShopPage'), 'ShopPage')
 const CartPage = lazyLoadNamed(() => import('../pages/CartPage'), 'CartPage')
-const CheckoutPage = lazyLoadNamed(() => import('../../checkout/shipping/CheckoutPage.jsx'), 'CheckoutPage')
+const CheckoutPage = lazyLoadNamed(() => import('../../checkout/pages/CheckoutPage.jsx'), 'CheckoutPage')
 // Para OrderSuccesPage ya no necesitamos el lazyLoadNamed porque ahora tiene export default
 const OrderSuccessPage = lazy(() => import('../pages/OrderSuccesPage.jsx'))
 

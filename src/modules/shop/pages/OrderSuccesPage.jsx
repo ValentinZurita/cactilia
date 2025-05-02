@@ -1,27 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { doc, getDoc } from 'firebase/firestore';
-import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js';
-import { addMessage } from '../../../store/messages/messageSlice.js';
-import { formatDate } from '../utils/date.js';
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { doc, getDoc } from 'firebase/firestore'
+import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js'
+import { formatDate } from '../utils/date.js'
 import {
-  OrderSummaryHeader,
-  OrderOverview,
-  OrderProductsList,
-  OrderTotals,
-  OrderAddressCard,
-  OrderPaymentInfo,
   OrderActions,
+  OrderAddressCard,
+  OrderNextSteps,
   OrderNotes,
-  OrderNextSteps
-} from '../features/order/component/index.js';
-import '../features/checkout/styles/oxxoVoucher.css';
-import '../features/checkout/styles/orderSuccess.css';
-import { OxxoVoucher } from '../features/checkout/components/payment/index.js'
+  OrderOverview,
+  OrderPaymentInfo,
+  OrderProductsList,
+  OrderSummaryHeader,
+  OrderTotals,
+} from '../features/order/component/index.js'
+import '@modules/checkout/styles/oxxoVoucher.css'
+import '@modules/checkout/styles/orderSuccess.css'
+import { OxxoVoucher } from '@modules/checkout/components/payment/index.js'
 import { clearCartWithSync } from '../features/cart/store/index.js'
 
-const ORDERS_COLLECTION = 'orders';
+const ORDERS_COLLECTION = 'orders'
 
 /**
  * Obtiene los detalles de un pedido desde Firestore.
@@ -30,36 +29,36 @@ const ORDERS_COLLECTION = 'orders';
  */
 const fetchOrderDetails = async (orderId) => {
   try {
-    console.log('OrderSuccessPage: Cargando detalles del pedido con ID:', orderId);
-    const orderRef = doc(FirebaseDB, ORDERS_COLLECTION, orderId);
-    const orderSnap = await getDoc(orderRef);
+    console.log('OrderSuccessPage: Cargando detalles del pedido con ID:', orderId)
+    const orderRef = doc(FirebaseDB, ORDERS_COLLECTION, orderId)
+    const orderSnap = await getDoc(orderRef)
 
     if (!orderSnap.exists()) {
-      console.error('OrderSuccessPage: No se encontró el pedido:', orderId);
-      return null;
+      console.error('OrderSuccessPage: No se encontró el pedido:', orderId)
+      return null
     }
 
     const orderData = {
       id: orderSnap.id,
       ...orderSnap.data(),
-    };
+    }
 
     // Aseguramos que los datos tengan los campos mínimos necesarios
     if (!orderData.status) {
-      orderData.status = 'pending';
+      orderData.status = 'pending'
     }
 
     if (!orderData.createdAt) {
-      orderData.createdAt = new Date();
+      orderData.createdAt = new Date()
     }
 
-    console.log('OrderSuccessPage: Datos del pedido cargados:', orderData);
-    return orderData;
+    console.log('OrderSuccessPage: Datos del pedido cargados:', orderData)
+    return orderData
   } catch (error) {
-    console.error('Error al obtener detalles del pedido:', error);
-    return null;
+    console.error('Error al obtener detalles del pedido:', error)
+    return null
   }
-};
+}
 
 /**
  * Componente para el estado de carga
@@ -72,7 +71,7 @@ const LoadingState = () => (
     <h3 className="mt-4">Cargando detalles del pedido...</h3>
     <p className="text-muted">Solo tomará unos segundos</p>
   </div>
-);
+)
 
 /**
  * Componente para mostrar mensajes de error
@@ -91,7 +90,7 @@ const ErrorState = ({ error }) => (
       </Link>
     </div>
   </div>
-);
+)
 
 /**
  * Componente para mostrar éxito sin detalles de pedido (backup)
@@ -117,24 +116,24 @@ const NoOrderDetailsState = () => (
       </div>
     </div>
   </div>
-);
+)
 
 /**
  * Muestra la confirmación final con los detalles del pedido.
  */
 const OrderSuccessContent = ({ orderId, orderDetails }) => {
-  const isFromCheckout = !window.location.pathname.includes('/profile/');
+  const isFromCheckout = !window.location.pathname.includes('/profile/')
   // Definir correctamente isOxxoPayment basado en el tipo de pago de la orden
-  const isOxxoPayment = orderDetails.payment?.type === 'oxxo';
+  const isOxxoPayment = orderDetails.payment?.type === 'oxxo'
 
   return (
     <div className="os-wrapper order-success-container">
       {/* Cabecera con animación de éxito */}
       <OrderSummaryHeader
-        title={isOxxoPayment ? "¡Pedido Registrado!" : "¡Pedido Confirmado!"}
+        title={isOxxoPayment ? '¡Pedido Registrado!' : '¡Pedido Confirmado!'}
         message={isOxxoPayment
-          ? "Tu pedido ha sido registrado. Por favor completa el pago en tu tienda OXXO más cercana."
-          : "Gracias por tu compra. Tu pedido ha sido procesado correctamente."
+          ? 'Tu pedido ha sido registrado. Por favor completa el pago en tu tienda OXXO más cercana.'
+          : 'Gracias por tu compra. Tu pedido ha sido procesado correctamente.'
         }
       />
       {/* Resumen principal del pedido */}
@@ -155,7 +154,7 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
           subtotal: 0,
           tax: 0,
           shipping: 0,
-          total: 0
+          total: 0,
         }} />
       </div>
 
@@ -233,8 +232,8 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
         showSupport={true}
       />
     </div>
-  );
-};
+  )
+}
 
 /**
  * Componente principal de la página de éxito de pedido.
@@ -243,58 +242,58 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
  * - Muestra la confirmación con los detalles o error si no se encuentra.
  */
 const OrderSuccessPage = () => {
-  const { orderId } = useParams();       // orderId desde la URL "/order-success/:orderId"
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const { orderId } = useParams()       // orderId desde la URL "/order-success/:orderId"
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   // Estado interno
-  const [orderDetails, setOrderDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [cartCleared, setCartCleared] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [cartCleared, setCartCleared] = useState(false)
 
   // Extraer parámetros de URL
-  const searchParams = new URLSearchParams(window.location.search);
-  const paymentType = searchParams.get('payment');
-  const isOxxoPayment = paymentType === 'oxxo';
+  const searchParams = new URLSearchParams(window.location.search)
+  const paymentType = searchParams.get('payment')
+  const isOxxoPayment = paymentType === 'oxxo'
 
   // Cargar detalles del pedido
   useEffect(() => {
     const getOrderData = async () => {
       if (!orderId) {
-        console.error('OrderSuccessPage: No se proporcionó un ID de pedido');
-        setError('No se proporcionó un ID de pedido válido');
-        setLoading(false);
-        return;
+        console.error('OrderSuccessPage: No se proporcionó un ID de pedido')
+        setError('No se proporcionó un ID de pedido válido')
+        setLoading(false)
+        return
       }
 
       try {
-        setLoading(true);
-        const data = await fetchOrderDetails(orderId);
+        setLoading(true)
+        const data = await fetchOrderDetails(orderId)
         if (!data) {
-          setError('No se encontró la información del pedido');
+          setError('No se encontró la información del pedido')
         } else {
-          setOrderDetails(data);
+          setOrderDetails(data)
 
           // Si no es pago OXXO y no hemos limpiado el carrito, hacerlo ahora
           if (data.payment?.type !== 'oxxo' && !cartCleared) {
             // Limpiar el carrito solo si venimos directamente del checkout
             if (!window.location.pathname.includes('/profile/')) {
-              dispatch(clearCartWithSync());
-              setCartCleared(true);
+              dispatch(clearCartWithSync())
+              setCartCleared(true)
             }
           }
         }
       } catch (err) {
-        console.error('OrderSuccessPage: Error al obtener detalles del pedido:', err);
-        setError('Ocurrió un error al cargar los detalles del pedido');
+        console.error('OrderSuccessPage: Error al obtener detalles del pedido:', err)
+        setError('Ocurrió un error al cargar los detalles del pedido')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    getOrderData();
-  }, [orderId, dispatch, cartCleared]);
+    getOrderData()
+  }, [orderId, dispatch, cartCleared])
 
   // Renderizado condicional con el wrapper principal
   return (
@@ -309,7 +308,7 @@ const OrderSuccessPage = () => {
         <OrderSuccessContent orderId={orderId} orderDetails={orderDetails} />
       )}
     </div>
-  );
-};
+  )
+}
 
-export default OrderSuccessPage;
+export default OrderSuccessPage
