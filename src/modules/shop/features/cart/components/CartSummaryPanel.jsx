@@ -13,6 +13,10 @@ export const CartSummaryPanel = ({
                                    isDisabled,
                                    isValidating
                                  }) => {
+
+  // Determine if the disabled state is specifically due to stock issues
+  const isDisabledByStock = isDisabled && !isValidating;
+
   return (
     <>
       {/* Resumen del carrito */}
@@ -40,6 +44,14 @@ export const CartSummaryPanel = ({
             </>
           )}
         </button>
+
+        {/* Mensaje de advertencia si está deshabilitado por stock */}
+        {isDisabledByStock && (
+          <div className="alert alert-warning text-center small mt-2 py-1 px-2" role="alert">
+            <i className="bi bi-exclamation-triangle me-1"></i>
+            Ajusta los productos que exceden el stock disponible para continuar.
+          </div>
+        )}
 
       </div>
     </>

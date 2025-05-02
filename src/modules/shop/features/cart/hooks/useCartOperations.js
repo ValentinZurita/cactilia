@@ -4,7 +4,8 @@ import {
   addToCart,
   removeFromCart,
   updateQuantity,
-  syncCartWithServer
+  syncCartWithServer,
+  removeItemAndSync
 } from '../store/index.js';
 import { getProductCurrentStock } from '../../../services/productServices.js';
 import { fetchShippingRuleById } from '../../../../admin/shipping/api/shippingApi.js';
@@ -287,14 +288,9 @@ export const useCartOperations = (items, uid) => {
    * @param {string} productId - ID del producto a eliminar
    */
   const handleRemoveFromCart = useCallback((productId) => {
-    if (!productId) {
-      console.error('ID de producto requerido para eliminar del carrito');
-      return;
-    }
-
-    dispatch(removeFromCart(productId));
-    if (uid) dispatch(syncCartWithServer());
-  }, [dispatch, uid]);
+    console.log('Dispatching removeItemAndSync for product:', productId);
+    dispatch(removeItemAndSync(productId));
+  }, [dispatch]);
 
   /**
    * Incrementa la cantidad de un producto en el carrito

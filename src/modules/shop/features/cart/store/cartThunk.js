@@ -1,6 +1,6 @@
 // src/store/cart/cartThunk.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { setCartItems, setSyncStatus, setSyncError, setLastSync, clearCart } from './cartSlice';
+import { setCartItems, setSyncStatus, setSyncError, setLastSync, clearCart, removeFromCart } from './cartSlice';
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig.js'
 
@@ -199,6 +199,55 @@ export const clearCartWithSync = createAsyncThunk(
       console.error('Error limpiando carrito:', error);
       dispatch(setSyncError(error.message));
       return null;
+    }
+  }
+);
+
+/**
+ * Elimina un item del carrito localmente y luego sincroniza con el servidor
+ */
+export const removeItemAndSync = createAsyncThunk(
+  'cart/removeItemAndSync',
+  async (productId, { dispatch, getState }) => {
+    try {
+      console.log(`Attempting to remove item ${productId} and sync...`);
+      
+      // 1. Eliminar localmente para UI optimista
+      dispatch(removeFromCart(productId));
+      
+      // 2. Obtener estado actualizado y UID
+      const { auth, cart } = getState();
+      if (!auth.uid) {
+        console.log('User not authenticated, skipping server sync after removal.');
+        return; // No sincronizar si no está autenticado
+      }
+
+      // 3. Forzar la sincronización INMEDIATA con Firestore (sin throttling)
+      //    Copiamos la lógica esencial de escritura de syncCartWithServer
+      console.log(`Forcing immediate Firestore sync after removing item ${productId}`);
+      dispatch(setSyncStatus('loading')); // Indicar que estamos sincronizando
+      
+      const cartRef = doc(FirebaseDB, 'carts', auth.uid);
+      
+      // Escribir directamente el estado actual del carrito (ya sin el item)
+      await setDoc(cartRef, {
+        items: cart.items, // Usar cart.items que ya fue actualizado por removeFromCart
+        updatedAt: new Date()
+      });
+      
+      dispatch(setLastSync(new Date().toISOString())); // Actualizar estado de sincronización
+      console.log(`Firestore sync complete after removing item ${productId}`);
+      
+      // Ya no llamamos a dispatch(syncCartWithServer()) aquí
+      // await dispatch(syncCartWithServer()); // <- Línea anterior eliminada
+
+      return productId; // Devolver el ID del producto eliminado
+    } catch (error) {
+      console.error('Error removing item and syncing cart:', error);
+      // Podríamos querer revertir la eliminación local aquí si falla la sincronización
+      // O simplemente registrar el error y confiar en la próxima sincronización
+      dispatch(setSyncError(error.message)); // Reusar el estado de error de sincronización
+      throw error; // Relanzar para que el componente pueda manejarlo si es necesario
     }
   }
 );
