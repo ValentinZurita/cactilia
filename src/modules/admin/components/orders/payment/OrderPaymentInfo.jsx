@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { InvoiceUploader } from './InvoiceUploader.jsx';
 import { capturePayment } from '../services/orderAdminService.js';
+import { getFriendlyPaymentStatus } from '../../../../../shared/utils/statusMapping.js';
 
 const IconCircle = ({ icon, className = '', ...props }) => (
   <div
@@ -46,8 +47,9 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
   const [captureError, setCaptureError] = useState(null);
 
   // --- LOG para Debug --- 
-  console.log('[OrderPaymentInfo] Datos de pago recibidos:', order?.payment);
-  console.log('[OrderPaymentInfo] Estado del pago:', order?.payment?.status);
+  // console.log('[OrderPaymentInfo] Datos de pago recibidos:', order?.payment);
+  // console.log('[OrderPaymentInfo] Estado del pago:', order?.payment?.status);
+  // Ya no necesitamos los logs específicos aquí
   // ---------------------
 
   if (!order.payment) {
@@ -100,9 +102,13 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
     }
   };
 
-  // Determinar si el pago se puede capturar
+  // --- Usar la función de mapeo para el estado del pago ---
+  const paymentStatusInfo = getFriendlyPaymentStatus(order.payment.status, 'admin');
+  // -----------------------------------------------------
+
+  // Determinar si el pago se puede capturar (usando el estado técnico original)
   const canCapture = order.payment.status === 'requires_capture';
-  console.log('[OrderPaymentInfo] ¿Se puede capturar? (status === \'requires_capture\'):', canCapture);
+  // console.log('[OrderPaymentInfo] ¿Se puede capturar? ...'); // Ya no es necesario
 
   return (
     <div className="row g-4">
@@ -138,8 +144,9 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
               <InfoRow
                 label="Estado del pago"
                 value={
-                  <span className={`badge px-2 py-1 mt-1 bg-${order.payment.status === 'succeeded' ? 'success' : order.payment.status === 'requires_capture' ? 'warning text-dark' : 'secondary'}`}>
-                    {order.payment.status}
+                  // Usar los valores de la función de mapeo
+                  <span className={`badge px-2 py-1 mt-1 ${paymentStatusInfo.badgeClass}`}>
+                    {paymentStatusInfo.label}
                   </span>
                 }
               />
