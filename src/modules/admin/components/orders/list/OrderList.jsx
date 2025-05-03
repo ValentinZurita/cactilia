@@ -76,7 +76,7 @@ export const OrderList = ({
                     </div>
                     <div className="d-flex align-items-center">
                       <i className="bi bi-currency-dollar me-2 text-secondary"></i>
-                      <span className="fw-medium fs-5">{formatPrice(order.totals.total)}</span>
+                      <span className="fw-medium fs-5">{formatPrice(order.totals.finalTotal)}</span>
                     </div>
                   </div>
 
