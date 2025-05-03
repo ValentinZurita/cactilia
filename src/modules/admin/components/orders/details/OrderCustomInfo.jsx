@@ -55,14 +55,35 @@ export const OrderCustomerInfo = ({ order }) => (
         <div className="d-flex align-items-start">
           <IconCircle icon="geo-alt" className="mt-1" />
           <address className="mb-0">
-            <span className="d-block fw-normal mb-1">{order.shippingAddress.name}</span>
-            <span className="d-block">
+            {/* Mostrar nombre completo (quien recibe) */}
+            {order.shippingAddress.fullName && (
+              <span className="d-block fw-semibold mb-2 text-dark">{order.shippingAddress.fullName}</span>
+            )}
+            {/* Mostrar teléfono de contacto */}
+            {order.shippingAddress.phone && (
+              <span className="d-block mb-2">
+                <i className="bi bi-telephone me-1 text-secondary"></i>
+                {order.shippingAddress.phone}
+              </span>
+            )}
+            
+            {/* --- Resto de la dirección (calle, etc.) con iconos y espaciado --- */}
+            <span className="d-block mb-2">
+              <i className="bi bi-house-door me-1 text-secondary"></i>
               {order.shippingAddress.street}
               {order.shippingAddress.numExt && ` #${order.shippingAddress.numExt}`}
               {order.shippingAddress.numInt && `, Int. ${order.shippingAddress.numInt}`}
             </span>
-            {order.shippingAddress.colonia && <span className="d-block">{order.shippingAddress.colonia}</span>}
-            <span className="d-block">{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}</span>
+            {order.shippingAddress.colonia && (
+              <span className="d-block mb-2">
+                <i className="bi bi-pin-map me-1 text-secondary"></i>
+                {order.shippingAddress.colonia}
+              </span>
+            )}
+            <span className="d-block mb-2">
+              <i className="bi bi-map me-1 text-secondary"></i>
+              {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}
+            </span>
 
             {order.shippingAddress.references && (
               <div className="mt-2 text-muted small">
