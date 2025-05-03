@@ -6,6 +6,7 @@ import { validateItemsStock } from '../../services/productServices.js'
 import { getAuth } from 'firebase/auth'
 import { CardElement } from '@stripe/react-stripe-js'
 import { apiService } from '../../services/api.js'
+import { addAddress } from '@modules/user/services/addressService.js'
 
 // Definir constante localmente
 const ORDERS_COLLECTION = 'orders';
@@ -77,12 +78,44 @@ export const useOrderProcessor = ({
       // 4. Preparar datos de la orden (pasando ambos argumentos)
       const orderData = prepareOrderData(selectedOption, shippingCost)
 
-      // 5. Procesar el pago
+      // 5. Procesar el pago y crear la orden
       const result = await createAndProcessOrder(orderData)
 
-      // 6. Establecer ID de la orden resultado
+      // 6. Si la orden se creó con éxito (tenemos orderId)
       if (result && result.orderId) {
         setOrderId(result.orderId)
+
+        // <<<--- INICIO: Lógica para guardar dirección nueva si se marcó el checkbox --->>>
+        // Log detallado ANTES de la condición
+        console.log('[useOrderProcessor] Verificando si guardar dirección:', {
+          selectedType: addressManager.selectedAddressType,
+          shouldSave: addressManager.saveNewAddress,
+          hasUid: !!uid,
+          hasNewData: !!addressManager.newAddressData
+        });
+
+        if (
+          addressManager.selectedAddressType === 'new' &&
+          addressManager.saveNewAddress && 
+          uid &&
+          addressManager.newAddressData
+        ) {
+          // Log DENTRO de la condición
+          console.log('[useOrderProcessor] CONDICIÓN CUMPLIDA: Intentando guardar dirección.');
+          try {
+            const dataToSave = { ...addressManager.newAddressData };
+            
+            console.log('[useOrderProcessor] Llamando a addAddress con:', uid, dataToSave);
+            await addAddress(uid, dataToSave);
+            console.log('[useOrderProcessor] Llamada a addAddress completada (sin error inmediato).');
+          } catch (saveError) {
+            console.error('[useOrderProcessor] Error DENTRO del bloque saveAddress:', saveError);
+          }
+        } else {
+            // Log si la condición NO se cumple
+            console.log('[useOrderProcessor] CONDICIÓN NO CUMPLIDA: No se intentará guardar dirección.');
+        }
+        // <<<--- FIN: Lógica para guardar dirección nueva --->>>
 
         // 7. Si es OXXO, no limpiar el carrito
         if (paymentManager.selectedPaymentType !== 'oxxo') {
@@ -115,6 +148,7 @@ export const useOrderProcessor = ({
     stripe, elements, cart,
     addressManager, paymentManager, billingManager,
     orderNotes, uid, dispatch,
+    setOrderId, setStep, setError, setIsProcessing
   ])
 
   /**

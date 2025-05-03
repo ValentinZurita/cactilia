@@ -28,8 +28,8 @@ export const useAddressManager = (userId) => {
     state: '',
     zip: '',
     references: '',
-    saveAddress: false
   });
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
 
   // Referencia para evitar múltiples llamadas durante el montaje
   const initialLoadComplete = useRef(false);
@@ -103,7 +103,12 @@ export const useAddressManager = (userId) => {
 
   // Manejar cambios en los datos de la nueva dirección
   const handleNewAddressDataChange = useCallback((data) => {
-    setNewAddressData(prev => ({ ...prev, ...data }));
+    if (typeof data.saveAddress === 'boolean') {
+      setSaveNewAddress(data.saveAddress);
+      console.log(`[useAddressManager] saveNewAddress flag set to: ${data.saveAddress}`);
+    } else {
+      setNewAddressData(prev => ({ ...prev, ...data }));
+    }
   }, []);
 
   // Handler para cuando se agrega una nueva dirección permanente
@@ -125,6 +130,7 @@ export const useAddressManager = (userId) => {
     loadingAddresses,
     newAddressData,
     selectedAddress,
+    saveNewAddress,
 
     // Métodos
     loadUserAddresses,
