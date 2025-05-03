@@ -99,7 +99,7 @@ export const OrderDetailPage = () => {
         <div className="order-details-section">
           <h3>Dirección de Envío</h3>
           <OrderAddressCard
-            address={order.shipping?.address}
+            address={order.shippingAddress}
             estimatedDelivery={order.shipping?.estimatedDelivery}
           />
         </div>

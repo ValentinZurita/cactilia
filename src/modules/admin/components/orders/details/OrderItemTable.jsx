@@ -18,9 +18,9 @@ export const OrderItemsTable = ({ order, formatPrice }) => (
         {order.items.map((item, index) => (
           <tr key={index}>
             <td>
-              {item.image ? (
+              {item.imageUrl ? (
                 <img
-                  src={item.image}
+                  src={item.imageUrl}
                   alt={item.name}
                   className="rounded"
                   style={{ width: '45px', height: '45px', objectFit: 'cover' }}
@@ -51,7 +51,7 @@ export const OrderItemsTable = ({ order, formatPrice }) => (
 
       <div className="row mb-2">
         <div className="col text-end text-secondary small">Impuestos:</div>
-        <div className="col-auto text-secondary">{formatPrice(order.totals?.taxes || 0)}</div>
+        <div className="col-auto text-secondary">{formatPrice(order.totals?.tax || 0)}</div>
       </div>
 
       <div className="row mb-2">
