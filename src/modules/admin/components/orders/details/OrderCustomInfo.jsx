@@ -51,23 +51,23 @@ export const OrderCustomerInfo = ({ order }) => (
     <div className="col-md-6">
       <h6 className="border-bottom pb-2 mb-3 text-secondary fw-normal">Dirección de envío</h6>
 
-      {order.shipping && order.shipping.address ? (
+      {order.shippingAddress ? (
         <div className="d-flex align-items-start">
           <IconCircle icon="geo-alt" className="mt-1" />
           <address className="mb-0">
-            <span className="d-block fw-normal mb-1">{order.shipping.address.name}</span>
+            <span className="d-block fw-normal mb-1">{order.shippingAddress.name}</span>
             <span className="d-block">
-              {order.shipping.address.street}
-              {order.shipping.address.numExt && ` #${order.shipping.address.numExt}`}
-              {order.shipping.address.numInt && `, Int. ${order.shipping.address.numInt}`}
+              {order.shippingAddress.street}
+              {order.shippingAddress.numExt && ` #${order.shippingAddress.numExt}`}
+              {order.shippingAddress.numInt && `, Int. ${order.shippingAddress.numInt}`}
             </span>
-            {order.shipping.address.colonia && <span className="d-block">{order.shipping.address.colonia}</span>}
-            <span className="d-block">{order.shipping.address.city}, {order.shipping.address.state} {order.shipping.address.zip}</span>
+            {order.shippingAddress.colonia && <span className="d-block">{order.shippingAddress.colonia}</span>}
+            <span className="d-block">{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}</span>
 
-            {order.shipping.address.references && (
+            {order.shippingAddress.references && (
               <div className="mt-2 text-muted small">
                 <i className="bi bi-info-circle me-1"></i>
-                Referencias: {order.shipping.address.references}
+                Referencias: {order.shippingAddress.references}
               </div>
             )}
           </address>

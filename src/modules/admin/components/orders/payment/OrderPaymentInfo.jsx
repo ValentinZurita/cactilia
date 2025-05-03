@@ -76,10 +76,21 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
             <IconCircle icon="credit-card" />
             <InfoRow
               label="Forma de pago"
-              value={order.payment.method?.brand
-                ? `${order.payment.method.brand} terminada en ${order.payment.method.last4}`
-                : 'Método de pago estándar'
-              }
+              value={(() => {
+                if (order.payment.type === 'oxxo') {
+                  return 'Pago en OXXO';
+                }
+                const brand = order.payment.brand;
+                const last4 = order.payment.last4;
+                let description = '';
+                if (brand) {
+                  description += `${brand.toUpperCase()}`;
+                }
+                if (last4) {
+                  description += description ? ` terminada en ${last4}` : `Tarjeta terminada en ${last4}`;
+                }
+                return description || 'Método de pago estándar';
+              })()}
             />
           </div>
 
