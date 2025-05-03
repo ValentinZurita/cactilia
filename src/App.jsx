@@ -3,7 +3,7 @@ import '../src/styles/global.css';
 import '../src/styles/scrollbar.css';
 
 // --- React y Redux ---
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 // --- Hooks Personalizados ---
@@ -22,6 +22,13 @@ import { fetchCompanyInfo, fetchSocialLinks, selectSiteConfigStatus } from './st
 
 // --- Router Principal ---
 import { AppRouter } from './routes/AppRouter';
+
+// Quitar imports que causan error o no se usan aquí
+// import { HelmetProvider } from 'react-helmet-async'
+// import { useAuth } from './modules/auth/hooks/useAuth.js' 
+// import { useSiteConfig } from './modules/public/hooks/useSiteConfig.js'
+// import { fetchInitialSiteConfig } from './store/slices/siteConfigSlice.js'
+
 
 /**
  * @component App
@@ -43,11 +50,9 @@ export const App = () => {
   const dispatch = useDispatch(); // Obtiene la función dispatch de Redux
   const siteConfigStatus = useSelector(selectSiteConfigStatus);
 
-
   // --- Hook para Metadatos Globales ---
   // Inicializa/actualiza <title>, favicon, <meta description>, JSON-LD, etc.
   useSiteMetadata(); 
-
 
   // --- Efecto para Cargar Carrito del Usuario ---
   useEffect(() => {
@@ -70,7 +75,6 @@ export const App = () => {
     }
     // Dependencia: solo se ejecuta si el estado de carga cambia a 'idle'
   }, [siteConfigStatus, dispatch]);
-
 
   // --- Renderizado Condicional: Spinner de Carga ---
   // Muestra un spinner mientras se determina el estado de autenticación

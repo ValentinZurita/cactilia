@@ -17,6 +17,7 @@ import PropTypes from 'prop-types';
  * @param {boolean} props.required - Si el campo es requerido
  * @param {React.ReactNode} props.children - Para tipo select (opciones)
  * @param {Object} props.rest - Propiedades adicionales para el input
+ * @param {string} props.infoText - Texto para el tooltip de información (opcional)
  * @returns {JSX.Element}
  */
 export const FormField = ({
@@ -30,6 +31,7 @@ export const FormField = ({
                             placeholder,
                             error,
                             helpText,
+                            infoText,
                             required = false,
                             children,
                             ...rest
@@ -41,8 +43,19 @@ export const FormField = ({
   return (
     <div className="mb-3">
       {label && (
-        <label htmlFor={id} className="form-label">
-          {label}{required && <span className="text-danger">*</span>}
+        <label htmlFor={id} className="form-label d-flex align-items-center">
+          <span>{label}{required && <span className="text-danger ms-1">*</span>}</span>
+          {infoText && (
+            <span 
+              className="ms-2 text-secondary" 
+              style={{ cursor: 'help' }} 
+              data-bs-toggle="tooltip" 
+              data-bs-placement="top" 
+              data-bs-title={infoText}
+            >
+              <i className="bi bi-info-circle"></i>
+            </span>
+          )}
         </label>
       )}
 
@@ -87,7 +100,7 @@ export const FormField = ({
       )}
 
       {error && <div className="invalid-feedback">{error}</div>}
-      {helpText && <small className="form-text text-muted">{helpText}</small>}
+      {helpText && !infoText && <small className="form-text text-muted">{helpText}</small>}
     </div>
   );
 };
@@ -103,6 +116,7 @@ FormField.propTypes = {
   placeholder: PropTypes.string,
   error: PropTypes.string,
   helpText: PropTypes.string,
+  infoText: PropTypes.string,
   required: PropTypes.bool,
   children: PropTypes.node
 };

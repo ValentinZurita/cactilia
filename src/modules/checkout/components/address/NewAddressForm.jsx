@@ -19,6 +19,8 @@ export const NewAddressForm = ({
                                  onSaveAddressChange,
                                  addressData = {
                                    name: '',
+                                   fullName: '',
+                                   phone: '',
                                    street: '',
                                    numExt: '',
                                    numInt: '',
@@ -67,10 +69,16 @@ export const NewAddressForm = ({
   // Manejar cambios en los inputs
   const handleChange = (e) => {
     const { name, value } = e.target
+    let processedValue = value;
+
+    // Limitar teléfono a 10 dígitos numéricos
+    if (name === 'phone') {
+      processedValue = value.replace(/\D/g, '').slice(0, 10);
+    }
 
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: processedValue,
     }))
 
     // Limpiar error específico
@@ -84,8 +92,12 @@ export const NewAddressForm = ({
 
   // Validación básica de campos requeridos
   const validateField = (name, value) => {
-    if (!value.trim() && ['name', 'street', 'city', 'state', 'zip'].includes(name)) {
+    if (!value.trim() && ['fullName', 'phone', 'street', 'city', 'state', 'zip'].includes(name)) {
       return 'Este campo es requerido'
+    }
+
+    if (name === 'phone' && !/^\d{10}$/.test(value)) {
+      return 'El teléfono debe tener 10 dígitos'
     }
 
     if (name === 'zip' && !/^\d{5}$/.test(value)) {
@@ -137,5 +149,17 @@ NewAddressForm.propTypes = {
   onAddressChange: PropTypes.func.isRequired,
   saveAddress: PropTypes.bool,
   onSaveAddressChange: PropTypes.func.isRequired,
-  addressData: PropTypes.object,
+  addressData: PropTypes.shape({
+    name: PropTypes.string,
+    fullName: PropTypes.string,
+    phone: PropTypes.string,
+    street: PropTypes.string,
+    numExt: PropTypes.string,
+    numInt: PropTypes.string,
+    colonia: PropTypes.string,
+    city: PropTypes.string,
+    state: PropTypes.string,
+    zip: PropTypes.string,
+    references: PropTypes.string,
+  }),
 }

@@ -21,16 +21,46 @@ export const AddressFormFields = ({
     <div className="row g-3">
       <div className="col-12">
         <FormField
+          id="address-fullName"
+          name="fullName"
+          label="Nombre completo (quien recibe)"
+          value={formData.fullName || ''}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="Nombre completo"
+          error={errors.fullName}
+          required
+        />
+      </div>
+
+      <div className="col-md-6">
+        <FormField
+          id="address-phone"
+          name="phone"
+          label="Teléfono de contacto"
+          type="tel"
+          value={formData.phone || ''}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="10 dígitos"
+          error={errors.phone}
+          maxLength="10"
+          pattern="[0-9]{10}"
+          required
+        />
+      </div>
+
+      <div className="col-md-6">
+        <FormField
           id="address-name"
           name="name"
-          label="Nombre de la dirección"
+          label="Alias de la dirección"
           value={formData.name}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Ej. Casa, Oficina, etc."
+          placeholder="Ej. Casa, Oficina"
           error={errors.name}
-          helpText="Un nombre para identificar esta dirección"
-          required
+          infoText="Asigna un nombre único (ej. Mi Casa, Oficina Mamá) para identificar esta dirección guardada más fácilmente en el futuro."
         />
       </div>
 
