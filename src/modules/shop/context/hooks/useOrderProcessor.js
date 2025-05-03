@@ -5,6 +5,10 @@ import { clearCartWithSync } from '../../features/cart/store/index.js'
 import { validateItemsStock } from '../../services/productServices.js'
 import { getAuth } from 'firebase/auth'
 import { CardElement } from '@stripe/react-stripe-js'
+import { apiService } from '../../services/api.js'
+
+// Definir constante localmente
+const ORDERS_COLLECTION = 'orders';
 
 /**
  * Hook personalizado para la lógica de procesamiento de órdenes
@@ -283,10 +287,10 @@ export const useOrderProcessor = ({
       // Usar los items FILTRADOS
       items: coveredItems.map(item => { 
         const mappedItem = {
-          id: item.id,
-          name: item.name || item.title,
-          price: item.price, 
-          quantity: item.quantity,
+        id: item.id,
+        name: item.name || item.title,
+        price: item.price,
+        quantity: item.quantity,
           imageUrl: item.imageUrl || item.image || item.productImage || item.img || null, 
           variant: item.variant || null,
         };
@@ -316,7 +320,7 @@ export const useOrderProcessor = ({
           // Extraer los últimos 4 dígitos de cardNumber si existe
           const lastFourDigits = card?.cardNumber?.slice(-4) || null;
           return {
-            methodId: paymentManager.selectedPaymentId, 
+        methodId: paymentManager.selectedPaymentId,
             brand: card?.brand || null, // Seguir usando null si no existe card.brand
             last4: lastFourDigits // Usar los dígitos extraídos o null
           };
@@ -334,7 +338,7 @@ export const useOrderProcessor = ({
         finalTotal: parseFloat(coveredGrandTotal.toFixed(2)), // Redondear a 2 decimales
       },
       notes: orderNotes,
-      status: 'pending', 
+      status: 'pending',
       requiresInvoice: billingManager.requiresInvoice,
       fiscalData: billingManager.requiresInvoice ? { /* ... datos fiscales ... */ } : null,
       selectedShippingOption: selectedOption ? { /* ... detalles opción ... */ } : null,
@@ -395,7 +399,7 @@ export const useOrderProcessor = ({
         paymentMethodId = paymentMethod.stripePaymentMethodId
       }
 
-      // Si es OXXO, asegurarnos de tener un email
+      // Obtener el email del cliente
       let customerEmail = null
       if (orderData.payment.type === 'oxxo') {
         // Intentar obtener el email en este orden:
@@ -420,8 +424,8 @@ export const useOrderProcessor = ({
       // ---> LOG ANTES <----
       console.log(`[createAndProcessOrder] Llamando a processPayment con orderData:`, orderData, ` paymentMethodId: ${paymentMethodId}, paymentType: ${orderData.payment.type}`);
 
-      // Procesar la orden
-      const result = await processPayment(
+      // Paso 1: Procesar la orden y crear el Payment Intent (obteniendo clientSecret)
+      const paymentResult = await processPayment(
         orderData,
         paymentMethodId,
         orderData.payment.type === 'new_card' && orderData.payment.saveForFuture,
@@ -429,9 +433,80 @@ export const useOrderProcessor = ({
         customerEmail
       );
 
-      // ---> LOG DESPUÉS <----
-      console.log(`[createAndProcessOrder] processPayment completado con resultado:`, result);
-      return result;
+      // ---> LOG DESPUÉS de processPayment <----
+      console.log(`[createAndProcessOrder] processPayment completado con resultado:`, paymentResult);
+
+      // Verificar si processPayment (creación de PI) fue exitoso y si tenemos clientSecret
+      if (!paymentResult.ok || !paymentResult.clientSecret) {
+        throw new Error(paymentResult.error || 'No se pudo obtener el clientSecret para confirmar el pago.');
+      }
+
+      // Desestructurar directamente desde paymentResult
+      const { clientSecret, orderId, paymentIntentId } = paymentResult;
+
+      // Paso 2: Confirmar/Autorizar el pago en el frontend con Stripe.js
+      if (orderData.payment.type === 'card' || orderData.payment.type === 'new_card') {
+        console.log(`[createAndProcessOrder] Confirmando/Autorizando pago con Stripe.js para PI: ${paymentIntentId}`);
+
+        // Asegurar que stripe y elements estén inicializados
+        if (!stripe || !elements) { throw new Error('Stripe o Elements no inicializados'); }
+
+        let confirmPromise;
+
+        if (orderData.payment.type === 'new_card') {
+          // --- Confirmación con NUEVA TARJETA --- 
+          const cardElement = elements.getElement(CardElement);
+          if (!cardElement) { throw new Error('Elemento CardElement no encontrado'); }
+          
+          console.log(`[createAndProcessOrder] Llamando a confirmCardPayment (nueva tarjeta)`);
+          confirmPromise = stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                name: orderData.payment.cardholderName || '',
+                // Podrías añadir más detalles de facturación si los tienes
+                // address: { ... }
+              },
+            },
+            // Opcional: si tienes un checkbox para guardar tarjeta
+            // setup_future_usage: orderData.payment.saveForFuture ? 'off_session' : undefined,
+          });
+
+        } else { // orderData.payment.type === 'card'
+          // --- Confirmación con TARJETA GUARDADA --- 
+          // Asegurarse de que paymentMethodId (el ID de Stripe, ej: pm_...) esté disponible
+          if (!paymentMethodId) { throw new Error('ID del método de pago guardado no encontrado'); }
+          
+          console.log(`[createAndProcessOrder] Llamando a confirmCardPayment (tarjeta guardada: ${paymentMethodId})`);
+          confirmPromise = stripe.confirmCardPayment(clientSecret, {
+            payment_method: paymentMethodId, // Pasar el ID de la tarjeta guardada
+          });
+        }
+        
+        // Ejecutar la promesa de confirmación
+        const { error: confirmError, paymentIntent: confirmedPaymentIntent } = await confirmPromise;
+
+        if (confirmError) {
+          console.error('[createAndProcessOrder] Error en confirmCardPayment:', confirmError);
+          try { await apiService.updateDocument(ORDERS_COLLECTION, orderId, { status: 'payment_failed', 'payment.status': 'failed' }); } catch (e) {}
+          throw new Error(confirmError.message || 'Error al confirmar el pago.');
+        }
+
+        // Verificar que el estado sea el esperado para captura manual
+        if (confirmedPaymentIntent.status !== 'requires_capture') {
+            console.warn(`[createAndProcessOrder] Estado inesperado tras confirmar: ${confirmedPaymentIntent.status}. Se esperaba 'requires_capture'.`);
+            try { await apiService.updateDocument(ORDERS_COLLECTION, orderId, { status: 'payment_failed', 'payment.status': confirmedPaymentIntent.status }); } catch (e) {}
+            throw new Error(`La autorización del pago falló o ya fue capturado. Estado: ${confirmedPaymentIntent.status}`);
+        }
+
+        console.log(`[createAndProcessOrder] Pago autorizado (requiere captura). Estado: ${confirmedPaymentIntent.status}`);
+
+      } else if (orderData.payment.type === 'oxxo') {
+        console.log('[createAndProcessOrder] Pago OXXO, no se requiere confirmación en frontend.');
+      }
+
+      // Si todo fue bien (creación de PI y autorización FE si aplica), retornar el resultado
+      return paymentResult;
 
     } catch (error) {
       // Si hay productos sin stock, mostrar mensaje amigable

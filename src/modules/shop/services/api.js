@@ -3,8 +3,13 @@ import {
   where, orderBy, addDoc, updateDoc, deleteDoc,
   serverTimestamp, writeBatch, setDoc, limit, startAfter
 } from 'firebase/firestore'
-import { getFunctions, httpsCallable } from 'firebase/functions';
+// Eliminamos imports de firebase/functions ya que usaremos fetch directamente
+// import { httpsCallable, getFunctions } from 'firebase/functions'
+import { FirebaseApp } from '../../../config/firebase/firebaseConfig.js' // Mantener si se usa en otras partes o para obtener Auth token si es necesario
 import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js'
+
+// Importar FirebaseAuth para obtener el token si es necesario
+import { getAuth, getIdToken } from 'firebase/auth';
 
 /**
  * Servicio base para operaciones con Firebase
@@ -226,23 +231,69 @@ export const apiService = {
   },
 
   /**
-   * Llama a una Cloud Function de Firebase
+   * Llama a una Cloud Function de Firebase usando fetch directamente.
    *
    * @param {string} functionName - Nombre de la función
    * @param {Object} data - Datos a enviar
    * @returns {Promise<Object>} - Resultado de la operación
    */
   async callCloudFunction(functionName, data = {}) {
+    // --- Prueba con fetch directo --- //
+    const projectId = 'cactilia-3678a'; // CONFIRMA ESTE ID
+    const region = 'us-central1'; // CONFIRMA ESTA REGIÓN
+    const functionUrl = `https://${region}-${projectId}.cloudfunctions.net/${functionName}`;
+
+    console.log(`Intentando llamar a Cloud Function via fetch: ${functionUrl}`);
+
     try {
-      const functions = getFunctions();
-      const callFunction = httpsCallable(functions, functionName);
+      // Obtener el token de autenticación del usuario actual (si es necesario por la función)
+      const auth = getAuth(FirebaseApp);
+      let idToken = null;
+      if (auth.currentUser) {
+        try {
+          idToken = await getIdToken(auth.currentUser);
+          console.log("Token de autenticación obtenido para la llamada fetch.");
+        } catch (tokenError) {
+          console.warn("No se pudo obtener el token de autenticación:", tokenError);
+          // Decide si continuar sin token o devolver error dependiendo de la función
+        }
+      }
 
-      const result = await callFunction(data);
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      // Añadir el token de autorización si se obtuvo
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
 
-      return { ok: true, data: result.data, error: null };
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ data: data }), // Las funciones HTTPS esperan un objeto { data: ... }
+        mode: 'cors' // Asegura que se maneje CORS
+      });
+
+      if (!response.ok) {
+        let errorBody = 'Error desconocido';
+        try {
+          errorBody = await response.text(); // Intenta obtener más detalles del error
+        } catch (e) {}
+        console.error(`Error en la respuesta fetch de ${functionName}:`, response.status, response.statusText, errorBody);
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}. Body: ${errorBody}`);
+      }
+
+      const result = await response.json();
+
+      // Las funciones HTTPS callable devuelven los datos dentro de una propiedad `result` o directamente.
+      // El objeto 'result' ya contiene los datos { clientSecret, paymentIntentId }.
+      return { ok: true, data: result, error: null }; // <-- Corregir: devolver 'result' directamente
+
     } catch (error) {
-      console.error(`Error al llamar a Cloud Function ${functionName}:`, error);
-      return { ok: false, error: error.message };
+      // Corregir el log de error y la estructura de retorno del catch
+      console.error(`Error al llamar a Cloud Function ${functionName} via fetch:`, error);
+      const errorMessage = error.message || 'Error desconocido al llamar la función via fetch.';
+      return { ok: false, data: null, error: errorMessage, errorCode: 'fetch-error' }; // Asegurar que data sea null en error
     }
-  }
+  },
 };

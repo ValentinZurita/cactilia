@@ -316,23 +316,47 @@ export const processPayment = async (
       paymentType,
     )
 
+    // ---> LOG DETALLADO DEL RESULTADO <----
+    console.log(`[processPayment] Resultado RECIBIDO de createPaymentIntent:`, JSON.stringify(paymentIntent, null, 2));
+
     if (!paymentIntent.ok) {
       // Si falla el pago, actualizar la orden a "cancelled"
-      await apiService.updateDocument(ORDERS_COLLECTION, orderId, {
-        status: 'cancelled',
-        'payment.status': 'failed',
-      })
+      // ---> LOG ANTES DE ACTUALIZAR A CANCELLED <----
+      console.log(`[processPayment] Intentando actualizar orden ${orderId} a CANCELLED por fallo en createPaymentIntent.`);
+      try {
+           await apiService.updateDocument(ORDERS_COLLECTION, orderId, {
+             status: 'cancelled',
+             'payment.status': 'failed',
+           });
+      } catch (cancelUpdateError) {
+           console.error(`[processPayment] Error al actualizar orden ${orderId} a CANCELLED:`, cancelUpdateError);
+           // No relanzar este error secundario, el primario es el importante
+      }
 
       console.error('Error en Payment Intent:', paymentIntent.error)
       throw new Error(paymentIntent.error || 'Error al procesar el pago')
     }
 
+    // ---> LOG ANTES DE CONSTRUIR UPDATE DATA <----
+    console.log(`[processPayment] Construyendo updateData. paymentIntent.data existe: ${!!paymentIntent.data}`);
+    console.log(`[processPayment] paymentIntent.data.result.paymentIntentId: ${paymentIntent.data?.result?.paymentIntentId}`);
+    console.log(`[processPayment] paymentIntent.data.result.clientSecret: ${paymentIntent.data?.result?.clientSecret}`);
+    console.log(`[processPayment] paymentIntent.data.result.voucherUrl (OXXO): ${paymentIntent.data?.result?.voucherUrl}`);
+
     // 4. Actualizar la orden con el ID del Payment Intent
+    
+    // Determinar el estado inicial basado en el tipo de pago
+    const initialPaymentStatus = paymentType === 'card' ? 'requires_capture' : 'pending';
+    console.log(`[processPayment] Estado inicial del pago para tipo ${paymentType}: ${initialPaymentStatus}`);
+
     const updateData = {
-      'payment.paymentIntentId': paymentIntent.data.paymentIntentId,
-      'payment.status': 'pending',
-      ...(paymentType === 'oxxo' && paymentIntent.data.voucherUrl ? { 'payment.voucherUrl': paymentIntent.data.voucherUrl } : {}),
+      'payment.paymentIntentId': paymentIntent.data.result.paymentIntentId,
+      'payment.status': initialPaymentStatus, // <--- Usar el estado determinado
+      ...(paymentType === 'oxxo' && paymentIntent.data.result?.voucherUrl ? { 'payment.voucherUrl': paymentIntent.data.result.voucherUrl } : {}),
     }
+
+    // ---> LOG ANTES DE ACTUALIZAR ORDEN <----
+    console.log(`[processPayment] Intentando actualizar orden ${orderId} con updateData:`, JSON.stringify(updateData, null, 2));
 
     await apiService.updateDocument(ORDERS_COLLECTION, orderId, updateData)
 
@@ -356,9 +380,9 @@ export const processPayment = async (
     return {
       ok: true,
       orderId,
-      clientSecret: paymentIntent.data.clientSecret,
-      paymentIntentId: paymentIntent.data.paymentIntentId,
-      ...(paymentType === 'oxxo' ? { voucherUrl: paymentIntent.data.voucherUrl } : {}),
+      clientSecret: paymentIntent.data.result.clientSecret,
+      paymentIntentId: paymentIntent.data.result.paymentIntentId,
+      ...(paymentType === 'oxxo' ? { voucherUrl: paymentIntent.data.result?.voucherUrl } : {}),
     }
   } catch (error) {
     console.error('Error al procesar el pago:', error)

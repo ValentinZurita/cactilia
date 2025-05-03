@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { InvoiceUploader } from './InvoiceUploader.jsx';
+import { capturePayment } from '../services/orderAdminService.js';
 
 const IconCircle = ({ icon, className = '', ...props }) => (
   <div
@@ -41,6 +42,14 @@ const formatDate = (timestamp) => {
 };
 
 export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [captureError, setCaptureError] = useState(null);
+
+  // --- LOG para Debug --- 
+  console.log('[OrderPaymentInfo] Datos de pago recibidos:', order?.payment);
+  console.log('[OrderPaymentInfo] Estado del pago:', order?.payment?.status);
+  // ---------------------
+
   if (!order.payment) {
     return (
       <div className="d-flex align-items-center justify-content-center py-4">
@@ -65,6 +74,35 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
   const hasXml = billing?.invoiceXmlUrl;
   const hasInvoice = hasPdf || hasXml;
   const invoiceEmailSent = billing?.invoiceEmailSent === true;
+
+  // Función para manejar la captura
+  const handleCapturePayment = async () => {
+    if (!order?.payment?.paymentIntentId) {
+      setCaptureError('No se encontró el ID de la transacción para capturar.');
+      return;
+    }
+    setIsCapturing(true);
+    setCaptureError(null);
+    try {
+      const result = await capturePayment(order.payment.paymentIntentId);
+      console.log('Capture successful:', result);
+      // Opcional: Mostrar mensaje de éxito
+      alert('¡Pago capturado exitosamente!');
+      // Llamar a onOrderUpdate para refrescar los datos de la orden si es necesario
+      if (onOrderUpdate) {
+        onOrderUpdate();
+      }
+    } catch (error) {
+      console.error('Capture failed:', error);
+      setCaptureError(error.message || 'Ocurrió un error al capturar el pago.');
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  // Determinar si el pago se puede capturar
+  const canCapture = order.payment.status === 'requires_capture';
+  console.log('[OrderPaymentInfo] ¿Se puede capturar? (status === \'requires_capture\'):', canCapture);
 
   return (
     <div className="row g-4">
@@ -100,7 +138,7 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
               <InfoRow
                 label="Estado del pago"
                 value={
-                  <span className="badge bg-success px-2 py-1 mt-1">
+                  <span className={`badge px-2 py-1 mt-1 bg-${order.payment.status === 'succeeded' ? 'success' : order.payment.status === 'requires_capture' ? 'warning text-dark' : 'secondary'}`}>
                     {order.payment.status}
                   </span>
                 }
@@ -115,6 +153,28 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
                 label="ID de transacción"
                 value={order.payment.paymentIntentId}
               />
+            </div>
+          )}
+
+          {canCapture && (
+            <div className="mt-4 border-top pt-3">
+              <button 
+                className="btn btn-primary w-100" 
+                onClick={handleCapturePayment}
+                disabled={isCapturing}
+              >
+                {isCapturing ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Capturando...
+                  </>
+                ) : (
+                  <><i className="bi bi-credit-card-2-front me-2"></i>Capturar Pago</>
+                )}
+              </button>
+              {captureError && (
+                <div className="alert alert-danger mt-3 mb-0 p-2 small">{captureError}</div>
+              )}
             </div>
           )}
         </InfoBlock>

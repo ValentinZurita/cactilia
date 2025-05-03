@@ -26,7 +26,7 @@ import { fetchAllShippingRules } from '../../../services/shippingRulesService.js
  */
 export const areAllItemsCovered = (cartItems, selectedOptions) => {
   const coveredProductIds = new Set();
-  selectedOptions.forEach(option => {
+    selectedOptions.forEach(option => {
     (option.products || []).forEach(productId => {
       coveredProductIds.add(productId);
     });

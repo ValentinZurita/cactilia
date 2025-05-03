@@ -1,29 +1,14 @@
 // src/utils/firebase/firebaseFunctions.js
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
-
-// Track if we've already connected to avoid "already connected" errors
-let isConnectedToEmulator = false;
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 /**
- * Get a configured Firebase Functions instance
- * Automatically connects to emulator in development
+ * Get a configured Firebase Functions instance.
+ * NOTE: Emulator connection should be handled during Firebase initialization (e.g., in src/config/firebase/index.js)
  *
  * @returns {Object} Firebase Functions instance
  */
 export const getFirebaseFunctions = () => {
   const functions = getFunctions();
-
-  // Only connect to emulator in development and only once
-  if (process.env.NODE_ENV !== 'production' && !isConnectedToEmulator) {
-    try {
-      connectFunctionsEmulator(functions, "localhost", 5001);
-      console.log("Connected to Firebase Functions emulator");
-      isConnectedToEmulator = true;
-    } catch (e) {
-      // Already connected or other error
-      console.log("Firebase Functions emulator connection note:", e.message);
-    }
-  }
 
   return functions;
 };

@@ -11,9 +11,8 @@ import {
   startAfter,
   serverTimestamp
 } from 'firebase/firestore';
-
-// Importación correcta de FirebaseDB
-import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig.js';
+import { FirebaseDB, FirebaseFunctions } from '../../../../../config/firebase/firebaseConfig.js';
+import { httpsCallable } from 'firebase/functions';
 
 // Colección de órdenes en Firestore
 const ORDERS_COLLECTION = 'orders';
@@ -434,5 +433,41 @@ export const getOrderWorkflowInfo = async (orderId) => {
       data: null,
       error: error.message
     };
+  }
+};
+
+/**
+ * Llama a la Cloud Function para capturar un Payment Intent.
+ * @param {string} paymentIntentId - El ID del Payment Intent a capturar.
+ * @returns {Promise<object>} - El resultado de la función. Espera { success: true, status: 'succeeded' } o lanza error.
+ */
+export const capturePayment = async (paymentIntentId) => {
+  if (!paymentIntentId) {
+    throw new Error('El ID del Payment Intent es requerido para capturar el pago.');
+  }
+  try {
+    console.log(`[orderAdminService] Calling capturePaymentIntent Cloud Function for PI: ${paymentIntentId}`);
+    
+    // Usar FirebaseFunctions (con F mayúscula) aquí
+    const captureFunction = httpsCallable(FirebaseFunctions, 'capturePaymentIntent'); 
+    
+    const result = await captureFunction({ paymentIntentId });
+    
+    console.log('[orderAdminService] capturePaymentIntent Cloud Function result:', result.data);
+    
+    // La Cloud Function ya devuelve un objeto con { success: true, status: ... } o lanza HttpsError
+    // Si la Cloud Function lanza HttpsError, httpsCallable lo convierte en un error que entra al catch.
+    // Si tiene éxito, result.data contiene lo que devolvió la Cloud Function.
+    if (result.data && result.data.success) {
+      return result.data; 
+    } else {
+      // Si la Cloud Function devolvió algo inesperado (sin success: true)
+      throw new Error('La función de captura no devolvió un resultado exitoso.');
+    }
+
+  } catch (error) {
+    console.error('[orderAdminService] Error calling capturePaymentIntent Cloud Function:', error);
+    // Re-lanzar el error para que el componente lo maneje, usando el mensaje del HttpsError si existe
+    throw new Error(error.message || 'Error al intentar capturar el pago desde el servicio.'); 
   }
 };

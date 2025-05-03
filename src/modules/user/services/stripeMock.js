@@ -42,8 +42,12 @@ export const mockConfirmOrderPayment = async (data) => {
 };
 
 /**
- * Determina si se debe usar mocks
+ * Determina si se debe usar mocks basándose en la variable de entorno
  */
 export const shouldUseMocks = () => {
-  return process.env.NODE_ENV !== 'production';
+  // Lee la variable de entorno VITE_USE_STRIPE_MOCKS
+  // Si la variable es exactamente la cadena 'true', devuelve true.
+  // En cualquier otro caso (undefined, 'false', etc.), devuelve false.
+  // console.log('VITE_USE_STRIPE_MOCKS:', import.meta.env.VITE_USE_STRIPE_MOCKS); // Descomenta para depurar
+  return import.meta.env.VITE_USE_STRIPE_MOCKS === 'true';
 };

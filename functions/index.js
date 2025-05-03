@@ -10,9 +10,11 @@ if (!admin.apps.length) {
 }
 
 // Import payment functions (v2 format)
-const paymentFunctions = require('./payment/paymentIntents');
+const paymentFunctions = require('./payment/createPaymentIntent');
 const paymentMethodFunctions = require('./payment/paymentMethods');
 const stripeService = require('./payment/stripeService');
+const stripeWebhookHandler = require('./payment/stripeWebhookHandler');
+const capturePaymentFunction = require('./payment/capturePaymentIntent');
 
 // Import resend email functions
 const resendEmails = require('./notifications/resendEmails');
@@ -46,6 +48,8 @@ exports.confirmOrderPayment = paymentFunctions.confirmOrderPayment;
 exports.createSetupIntent = paymentMethodFunctions.createSetupIntent;
 exports.savePaymentMethod = paymentMethodFunctions.savePaymentMethod;
 exports.detachPaymentMethod = paymentMethodFunctions.detachPaymentMethod;
+exports.handleStripeWebhook = stripeWebhookHandler.handleStripeWebhook;
+exports.capturePaymentIntent = capturePaymentFunction.capturePaymentIntent;
 
 // Export auth functions
 exports.setCustomClaims = authFunctions.setCustomClaims;

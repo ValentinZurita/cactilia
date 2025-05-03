@@ -4,6 +4,8 @@ const admin = require("firebase-admin");
 
 // Define Stripe secret key as a secret parameter
 const stripeSecretParam = defineSecret("STRIPE_SECRET_KEY");
+// Define Stripe webhook secret as a secret parameter
+const stripeWebhookSecretParam = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 /**
  * Get or create a Stripe customer for a user
@@ -86,6 +88,7 @@ async function updatePaymentIntentStatus(paymentIntentId, status) {
 
 module.exports = {
   stripeSecretParam,
+  stripeWebhookSecretParam,
   getOrCreateCustomer,
   logPaymentIntent,
   updatePaymentIntentStatus
