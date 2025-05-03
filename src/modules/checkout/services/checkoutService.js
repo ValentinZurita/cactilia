@@ -238,7 +238,7 @@ export const processPayment = async (
   paymentMethodId = null,
   savePaymentMethod = false,
   paymentType = 'card',
-  customerEmail = null,
+  customerEmail = null
 ) => {
   try {
     // Validar datos mínimos de la orden
@@ -258,7 +258,8 @@ export const processPayment = async (
       paymentMethodId: paymentMethodId ? '***' : null,
     })
 
-    // 1. Verificar stock de productos
+    // === 1. VERIFICAR STOCK ===
+    console.log(`📦 [processPayment] Verificando stock para ${orderData.items.length} productos...`);
     const stockResult = await verifyAndUpdateStock(orderData.items)
     if (!stockResult.ok) {
       return {

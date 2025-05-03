@@ -9,9 +9,21 @@ export const OrderPaymentInfo = ({ payment, billing }) => {
       {/* Método de pago */}
       <p className="d-flex align-items-center mb-2">
         <i className="bi bi-credit-card-2-front me-2" aria-hidden="true"></i>
-        {payment?.method?.brand
-          ? `${payment.method.brand.toUpperCase()} terminada en ${payment.method.last4}`
-          : 'Método de pago estándar'}
+        {(() => {
+          // Lógica mejorada para mostrar detalles de pago
+          if (payment?.type === 'oxxo') {
+            return 'Pago en OXXO';
+          }
+          let description = '';
+          if (payment?.brand) {
+            description += payment.brand.charAt(0).toUpperCase() + payment.brand.slice(1); // Capitalizar marca
+          }
+          if (payment?.last4) {
+            description += `${description ? ' terminada en' : 'Tarjeta terminada en'} ${payment.last4}`;
+          }
+          // Si no hay brand ni last4, mostrar texto genérico
+          return description || 'Método de pago estándar'; 
+        })()}
       </p>
 
       {/* Estado del pago */}

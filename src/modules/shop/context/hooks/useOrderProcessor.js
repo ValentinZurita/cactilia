@@ -298,13 +298,31 @@ export const useOrderProcessor = ({
       billingAddress: billingManager.requiresInvoice ? { /* ... datos fiscales ... */ } : null,
       payment: {
         type: paymentManager.selectedPaymentType,
-        // Condicionalmente añadir methodId si el tipo es tarjeta guardada
-        ...(paymentManager.selectedPaymentType === 'card' && { 
-          methodId: paymentManager.selectedPaymentId 
-        }),
-        // Condicionalmente añadir nombre si es tarjeta nueva (necesario en createAndProcessOrder)
+        // Reintroducir lógica para añadir detalles de tarjeta guardada
+        ...(paymentManager.selectedPaymentType === 'card' && (() => {
+          // Verificar si paymentMethods está cargado antes de buscar
+          if (!paymentManager.paymentMethods || paymentManager.loadingPayments) {
+              console.warn('[prepareOrderData] paymentMethods no está listo, usando null para brand/last4.');
+              return { 
+                  methodId: paymentManager.selectedPaymentId, 
+                  brand: null, 
+                  last4: null 
+              };
+          }
+          const card = paymentManager.paymentMethods.find(
+            c => c.id === paymentManager.selectedPaymentId
+          );
+          console.log(`[prepareOrderData] Buscando tarjeta ID: ${paymentManager.selectedPaymentId}. Encontrada:`, card);
+          // Extraer los últimos 4 dígitos de cardNumber si existe
+          const lastFourDigits = card?.cardNumber?.slice(-4) || null;
+          return {
+            methodId: paymentManager.selectedPaymentId, 
+            brand: card?.brand || null, // Seguir usando null si no existe card.brand
+            last4: lastFourDigits // Usar los dígitos extraídos o null
+          };
+        })()),
         ...(paymentManager.selectedPaymentType === 'new_card' && {
-          cardholderName: paymentManager.newCardData?.cardholderName || '' // Añadir con seguridad
+          cardholderName: paymentManager.newCardData?.cardholderName || ''
         })
       },
       shipping: shippingDetails, 
@@ -408,7 +426,7 @@ export const useOrderProcessor = ({
         paymentMethodId,
         orderData.payment.type === 'new_card' && orderData.payment.saveForFuture,
         orderData.payment.type,
-        customerEmail,
+        customerEmail
       );
 
       // ---> LOG DESPUÉS <----
