@@ -12,7 +12,11 @@ export function SimpleAddressForm({
                                     address = null,
                                     loading = false,
                                   }) {
-  const [formData, setFormData] = useState({ ...DEFAULT_FORM_DATA });
+  const [formData, setFormData] = useState({ 
+    ...DEFAULT_FORM_DATA,
+    fullName: '', 
+    phone: '' 
+  });
   const [errors, setErrors] = useState({});
 
   // Al abrir el modal, si se edita una dirección, parsea calle/nums.
@@ -24,6 +28,8 @@ export function SimpleAddressForm({
         const { street, numExt, numInt } = parseStreetData(st);
         setFormData({
           name: address.name || '',
+          fullName: address.fullName || '',
+          phone: address.phone || '',
           street,
           numExt: address.numExt || numExt || '',
           numInt: address.numInt || numInt || '',
@@ -35,14 +41,21 @@ export function SimpleAddressForm({
           isDefault: !!address.isDefault,
         });
       } else {
-        setFormData({ ...DEFAULT_FORM_DATA });
+        setFormData({ ...DEFAULT_FORM_DATA, fullName: '', phone: '' });
       }
     }
   }, [isOpen, address]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    let processedValue = type === 'checkbox' ? checked : value;
+
+    // Limitar teléfono a 10 dígitos numéricos
+    if (name === 'phone') {
+      processedValue = value.replace(/\D/g, '').slice(0, 10);
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: processedValue }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
@@ -99,7 +112,18 @@ export function SimpleAddressForm({
       size="md"
     >
       <div className="mb-3">
-        <label htmlFor="address-name" className="form-label">Nombre de la dirección</label>
+        <label htmlFor="address-name" className="form-label d-flex align-items-center">
+          <span>Nombre de la dirección</span>
+          <span 
+            className="ms-2 text-secondary" 
+            style={{ cursor: 'help' }} 
+            data-bs-toggle="tooltip" 
+            data-bs-placement="top" 
+            title='Asigna un nombre único para identificar esta dirección guardada más fácilmente. Ej. "Casa", "Oficina" '
+          >
+            <i className="bi bi-info-circle"></i>
+          </span>
+        </label>
         <input
           type="text"
           className={`form-control ${errors.name ? 'is-invalid' : ''}`}
@@ -112,6 +136,39 @@ export function SimpleAddressForm({
           autoComplete="off"
         />
         {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label htmlFor="address-fullName" className="form-label">Nombre completo (quien recibe)</label>
+        <input
+          type="text"
+          className={`form-control ${errors.fullName ? 'is-invalid' : ''}`}
+          id="address-fullName"
+          name="fullName"
+          value={formData.fullName}
+          onChange={handleChange}
+          disabled={loading}
+          placeholder="Nombre y Apellido(s)"
+          autoComplete="name"
+        />
+        {errors.fullName && <div className="invalid-feedback">{errors.fullName}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label htmlFor="address-phone" className="form-label">Teléfono de contacto</label>
+        <input
+          type="tel"
+          className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
+          id="address-phone"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          disabled={loading}
+          placeholder="10 dígitos"
+          maxLength="10"
+          autoComplete="tel"
+        />
+        {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
       </div>
 
       <div className="mb-3">
@@ -132,7 +189,9 @@ export function SimpleAddressForm({
 
       <div className="row">
         <div className="col-md-6 mb-3">
-          <label htmlFor="address-numExt" className="form-label">Número Exterior</label>
+          <label htmlFor="address-numExt" className="form-label">
+            Número Exterior <span className="text-danger">*</span>
+          </label>
           <input
             type="text"
             className={`form-control ${errors.numExt ? 'is-invalid' : ''}`}
@@ -165,7 +224,9 @@ export function SimpleAddressForm({
       </div>
 
       <div className="mb-3">
-        <label htmlFor="address-colonia" className="form-label">Colonia</label>
+        <label htmlFor="address-colonia" className="form-label">
+          Colonia <span className="text-danger">*</span>
+        </label>
         <input
           type="text"
           className={`form-control ${errors.colonia ? 'is-invalid' : ''}`}

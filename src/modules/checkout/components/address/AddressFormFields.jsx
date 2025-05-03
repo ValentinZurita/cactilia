@@ -60,7 +60,7 @@ export const AddressFormFields = ({
           onBlur={handleBlur}
           placeholder="Ej. Casa, Oficina"
           error={errors.name}
-          infoText="Asigna un nombre único (ej. Mi Casa, Oficina Mamá) para identificar esta dirección guardada más fácilmente en el futuro."
+          infoText='Asigna un nombre único para identificar esta dirección guardada más fácilmente. Ej. "Mi Casa", "Oficina Mamá", "Entrada Portón Negro"'
         />
       </div>
 
@@ -88,6 +88,7 @@ export const AddressFormFields = ({
           onBlur={handleBlur}
           placeholder="Ext."
           error={errors.numExt}
+          required
         />
       </div>
 
@@ -109,7 +110,10 @@ export const AddressFormFields = ({
           label="Colonia"
           value={formData.colonia}
           onChange={handleChange}
+          onBlur={handleBlur}
           placeholder="Colonia o fraccionamiento"
+          error={errors.colonia}
+          required
         />
       </div>
 
@@ -173,7 +177,7 @@ export const AddressFormFields = ({
           value={formData.references}
           onChange={handleChange}
           placeholder="Referencias para facilitar la entrega"
-          helpText='Ej. "Casa azul con portón negro", "Frente al parque"'
+          infoText='Ej. "Entre calles", "Frente al parque"'
           rows="2"
         />
       </div>

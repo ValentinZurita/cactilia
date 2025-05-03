@@ -2,7 +2,6 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useRef } from "react";
 import { DesktopSidebar, MobileNavbar, MobileSidebar } from '../modules/admin/components/dashboard/index.js'
 import '/src/styles/adminLayout.css';
-import { useBootstrapTooltips } from '../modules/admin/hooks/useBootstrapTooltips.js';
 
 /**
  *
@@ -13,8 +12,6 @@ import { useBootstrapTooltips } from '../modules/admin/hooks/useBootstrapTooltip
 
 
 export const AdminLayout = () => {
-  useBootstrapTooltips();
-
   const navigate = useNavigate(); // hook to navigate between routes
   const offcanvasRef = useRef(null); // reference to the offcanvas sidebar
 

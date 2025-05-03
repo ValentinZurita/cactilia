@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import '../../styles/newAddressForm.css'
 import { AddressFormFields } from './AddressFormFields.jsx'
+import { useBootstrapTooltips } from '../../../../shared/hooks/useBootstrapTooltips.js'
 
 /**
  * Componente que muestra un formulario para ingresar una nueva dirección
@@ -92,7 +93,7 @@ export const NewAddressForm = ({
 
   // Validación básica de campos requeridos
   const validateField = (name, value) => {
-    if (!value.trim() && ['fullName', 'phone', 'street', 'city', 'state', 'zip'].includes(name)) {
+    if (!value.trim() && ['fullName', 'phone', 'street', 'numExt', 'colonia', 'city', 'state', 'zip'].includes(name)) {
       return 'Este campo es requerido'
     }
 
@@ -117,6 +118,10 @@ export const NewAddressForm = ({
       [name]: error,
     }))
   }
+
+  // --- Usar el hook para inicializar Tooltips --- 
+  useBootstrapTooltips();
+  // ---------------------------------------------
 
   return (
     <div className="new-address-form">

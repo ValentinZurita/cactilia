@@ -14,7 +14,7 @@ import { useSiteMetadata } from './shared/hooks/useSiteMetadata.js';
 import { Spinner } from './shared/components/spinner/Spinner.jsx';
 
 // --- Contextos ---
-// import { StripeProvider } from './contexts/StripeContext.jsx'; // REMOVED
+// import { StripeProvider } from './contexts/StripeContext.jsx'; 
 
 // --- Lógica del Store (Redux) ---
 import { loadCartFromFirestore } from './modules/shop/features/cart/store/index.js'; // Asumiendo que mergeCartsOnLogin ya no se usa directamente aquí
@@ -22,13 +22,6 @@ import { fetchCompanyInfo, fetchSocialLinks, selectSiteConfigStatus } from './st
 
 // --- Router Principal ---
 import { AppRouter } from './routes/AppRouter';
-
-// Quitar imports que causan error o no se usan aquí
-// import { HelmetProvider } from 'react-helmet-async'
-// import { useAuth } from './modules/auth/hooks/useAuth.js' 
-// import { useSiteConfig } from './modules/public/hooks/useSiteConfig.js'
-// import { fetchInitialSiteConfig } from './store/slices/siteConfigSlice.js'
-
 
 /**
  * @component App

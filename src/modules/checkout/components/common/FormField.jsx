@@ -51,7 +51,7 @@ export const FormField = ({
               style={{ cursor: 'help' }} 
               data-bs-toggle="tooltip" 
               data-bs-placement="top" 
-              data-bs-title={infoText}
+              title={infoText}
             >
               <i className="bi bi-info-circle"></i>
             </span>
