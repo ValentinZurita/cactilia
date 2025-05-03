@@ -1,8 +1,14 @@
+// Importar la utilidad de mapeo
+import { getFriendlyPaymentStatus } from '../../../../../shared/utils/statusMapping.js';
+
 export const OrderPaymentInfo = ({ payment, billing }) => {
   // Detectar si hay facturas disponibles para descargar
   const hasPdf = billing?.invoicePdfUrl || billing?.invoiceUrl;
   const hasXml = billing?.invoiceXmlUrl;
   const hasInvoice = hasPdf || hasXml;
+
+  // Obtener la información del estado amigable para el usuario
+  const statusInfo = getFriendlyPaymentStatus(payment?.status, 'user');
 
   return (
     <section className="order-payment-card">
@@ -28,7 +34,8 @@ export const OrderPaymentInfo = ({ payment, billing }) => {
 
       {/* Estado del pago */}
       <p className="mb-3">
-        Estado: <span className="status-badge">{payment?.status || 'Procesado'}</span>
+        {/* Usar la etiqueta y la clase del mapeo */}
+        Estado: <span className={`badge ${statusInfo.badgeClass}`}>{statusInfo.label}</span>
       </p>
 
       {/* Facturas - Solo se muestra si el pedido requiere factura */}

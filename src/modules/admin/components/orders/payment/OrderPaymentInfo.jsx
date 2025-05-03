@@ -163,10 +163,11 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
             </div>
           )}
 
+          {/* --- Botón de Captura --- */}
           {canCapture && (
             <div className="mt-4 border-top pt-3">
               <button 
-                className="btn btn-primary w-100" 
+                className="btn btn-dark w-100"
                 onClick={handleCapturePayment}
                 disabled={isCapturing}
               >
@@ -184,6 +185,7 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
               )}
             </div>
           )}
+          {/* --- Fin Botón de Captura --- */}
         </InfoBlock>
       </div>
 
