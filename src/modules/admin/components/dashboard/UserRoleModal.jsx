@@ -59,6 +59,9 @@ export const UserRoleModal = ({ user, currentUserRole, onClose, onSave }) => {
   // Verificar que el usuario existe
   if (!user) return null;
 
+  // DEBUG: Inspeccionar el objeto user recibido
+  console.log("User object received by modal:", user);
+
   return ReactDOM.createPortal(
     // Usar un fragmento para renderizar backdrop y modal como hermanos
     <>

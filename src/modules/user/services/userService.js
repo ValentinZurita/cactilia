@@ -126,36 +126,49 @@ export const updateProfilePhoto = async (userId, file, options = {}) => {
     if (!userId) {
       return { ok: false, photoURL: null, error: 'ID de usuario no proporcionado' };
     }
+    console.log(`[userService] updateProfilePhoto called for userId: ${userId}, file: ${file?.name}`);
 
     // Validar la imagen antes de procesar
     const validation = validateProfileImage(file, options.maxSizeMB || 2);
     if (!validation.valid) {
+      console.error(`[userService] Image validation failed: ${validation.error}`);
       return { ok: false, photoURL: null, error: validation.error };
     }
 
-    // 1. Subir la imagen a Firebase Storage con la ruta específica para fotos de perfil
+    // 1. Subir la imagen a Firebase Storage
     const storagePath = `profile-photos/${userId}/${Date.now()}_profile`;
+    console.log(`[userService] Attempting to upload file to path: ${storagePath}`);
     const photoURL = await uploadFile(file, storagePath);
+    console.log(`[userService] Received photoURL from uploadFile: ${photoURL}`);
 
     if (!photoURL) {
+      console.error('[userService] uploadFile returned a falsy photoURL.');
       return { ok: false, photoURL: null, error: 'Error subiendo la imagen' };
     }
 
     // 2. Actualizar el perfil en Firebase Auth
     const currentUser = FirebaseAuth.currentUser;
     if (currentUser) {
+      console.log(`[userService] Attempting to update Auth profile for user ${currentUser.uid} with photoURL: ${photoURL}`);
       await updateProfile(currentUser, { photoURL });
+      console.log(`[userService] Auth profile update successful (or no error thrown).`);
     }
 
     // 3. Actualizar los datos en Firestore
     const userRef = doc(FirebaseDB, USERS_COLLECTION, userId);
+    const dataToUpdate = { photoURL, updatedAt: new Date() };
+    console.log(`[userService] Attempting to update Firestore doc (${USERS_COLLECTION}/${userId}) with data:`, dataToUpdate);
     await updateDoc(userRef, {
       photoURL,
       updatedAt: new Date()
     });
+    console.log(`[userService] Firestore update successful (or no error thrown).`);
 
+    const successResult = { ok: true, photoURL, error: null };
+    console.log(`[userService] Returning success result:`, successResult);
     return { ok: true, photoURL, error: null };
   } catch (error) {
+    console.error('[userService] CATCH block error in updateProfilePhoto:', error);
     console.error('Error actualizando foto de perfil:', error);
     return { ok: false, photoURL: null, error: error.message };
   }

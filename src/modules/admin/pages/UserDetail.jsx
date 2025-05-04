@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getUserById, deleteUser } from '../../services/userService.js';
+import { getUserDoc, deleteUser } from '../../services/userService.js';
 import { UserDetailsCard } from '../components/dashboard/UserDetailsCard.jsx';
 import { useAuth } from '../../../hooks/useAuth.js';
 import { LoadingIndicator } from '../common/components/LoadingIndicator.jsx';
@@ -18,7 +18,7 @@ export const UserDetail = () => {
     setLoading(true);
     setError(null);
     try {
-      const userData = await getUserById(userId);
+      const userData = await getUserDoc(userId);
       if (!userData) {
         throw new Error('Usuario no encontrado.');
       }
