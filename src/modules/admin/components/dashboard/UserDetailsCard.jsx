@@ -8,7 +8,7 @@ import { UserOrdersTable } from './UserOrdersTable.jsx'
 import NavigationTabs from '../../common/components/NavigationTabs.jsx'
 import { TabItem } from '../../common/components/TabItem.jsx'
 
-// *** RESTAURAR DEFINICIÓN LOCAL DE EmptyOrdersSection ***
+
 const EmptyOrdersSection = () => (
   <div className="text-center py-4 text-muted">
     <div className="p-4 bg-light rounded-4">
@@ -18,7 +18,6 @@ const EmptyOrdersSection = () => (
   </div>
 );
 
-// ESTOS SÍ SE QUEDAN LOCALES (formatDate)
 /**
  * Formatea fechas de diferentes tipos a un formato legible
  */
