@@ -107,9 +107,13 @@ export const OrderDetailPage = () => {
         {/* Información de Pago - Ahora en su propia fila */}
         <div className="order-details-section">
           <h3>Información de Pago</h3>
+          {/* Log para verificar las props antes de pasarlas */}
+          {console.log('[OrderDetailPage] Pasando a OrderPaymentInfo:', { payment: order.payment, billing: order.billing, requiresInvoice: order.requiresInvoice })}
+          {console.log('[OrderDetailPage] Valor de order.requiresInvoice (raíz):', order.requiresInvoice)}
           <OrderPaymentInfo
             payment={order.payment}
             billing={order.billing}
+            invoiceIsRequired={order.requiresInvoice}
           />
         </div>
 
