@@ -9,6 +9,10 @@ import {
 import { selectSendingInvoice } from '../thunks/orderSelectors.js'
 import { sendInvoiceEmailThunk } from '../thunks/orderThunks.js'
 import { addMessage } from '../../../../../store/messages/messageSlice.js'
+// Importar la utilidad de formato estándar
+import { formatDate } from '../../../../../utils/formatting/formatters.js';
+// Importar el botón de acción reutilizable
+import { ActionButton } from '../../../common/components/ActionButton.jsx';
 
 /**
  * Componente para subir facturas a un pedido (PDF y XML)
@@ -210,29 +214,14 @@ export const InvoiceUploader = ({
   };
 
   /**
-   * Función para obtener fecha formateada
-   * @param {Object|Date} timestamp - Timestamp
-   * @returns {string} - Fecha formateada
-   */
-  const getFormattedDate = (timestamp) => {
-    if (!timestamp) return 'Fecha no disponible';
-
-    if (timestamp.seconds) {
-      return new Date(timestamp.seconds * 1000).toLocaleString();
-    }
-
-    return 'Fecha no disponible';
-  };
-
-  /**
    * Renderiza el listado de archivos de factura
    */
   const renderInvoiceFiles = () => (
     <>
       <p className="text-muted small mb-4">
-        Subido: {getFormattedDate(billing?.invoiceUploadedAt)}
+        Subido: {formatDate(billing?.invoiceUploadedAt)}
         {invoiceEmailSent && billing?.invoiceEmailSentAt && (
-          <> • Email enviado: {getFormattedDate(billing.invoiceEmailSentAt)}</>
+          <> • Email enviado: {formatDate(billing.invoiceEmailSentAt)}</>
         )}
       </p>
 
@@ -250,13 +239,15 @@ export const InvoiceUploader = ({
               {billing.invoicePdfName || billing.invoiceFileName}
             </a>
           </div>
-          <button
-            className="btn btn-sm btn-outline-secondary invoice-delete-btn"
+          <ActionButton
+            iconClass="bi bi-trash"
+            title="Eliminar PDF"
             onClick={() => handleRemoveFile('pdf')}
             disabled={uploading}
-          >
-            <i className="bi bi-x"></i>
-          </button>
+            variant="light"
+            hoverTextColor="danger"
+            className="btn-sm"
+          />
         </div>
       )}
 
@@ -274,13 +265,15 @@ export const InvoiceUploader = ({
               {billing.invoiceXmlName}
             </a>
           </div>
-          <button
-            className="btn btn-sm btn-outline-secondary invoice-delete-btn"
+          <ActionButton
+            iconClass="bi bi-trash"
+            title="Eliminar XML"
             onClick={() => handleRemoveFile('xml')}
             disabled={uploading}
-          >
-            <i className="bi bi-x"></i>
-          </button>
+            variant="light"
+            hoverTextColor="danger"
+            className="btn-sm"
+          />
         </div>
       )}
 
@@ -327,15 +320,6 @@ export const InvoiceUploader = ({
           )}
         </div>
       )}
-
-      {/* Estilos específicos para el botón de eliminar */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .invoice-delete-btn:hover {
-          color: white;
-          background-color: #dc3545;
-          border-color: #dc3545;
-        }
-      `}} />
     </>
   );
 
