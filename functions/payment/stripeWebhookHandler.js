@@ -68,32 +68,103 @@ exports.handleStripeWebhook = onRequest({
       break;
     }
     case 'payment_intent.payment_failed': {
-      const paymentIntent = event.data.object;
-      console.log(`PaymentIntent ${paymentIntent.id} failed.`);
-      // TODO: Buscar la orden en Firestore usando paymentIntent.id
-      // TODO: Actualizar el estado de la orden a 'payment_failed'
-       try {
-        // Placeholder: Lógica para encontrar y actualizar la orden
-        const orderRef = db.collection('orders').where('payment.paymentIntentId', '==', paymentIntent.id).limit(1);
-        const orderSnapshot = await orderRef.get();
+      const paymentIntentFailed = event.data.object;
+      const paymentIntentId = paymentIntentFailed.id;
+      let orderId = paymentIntentFailed.metadata?.orderId; // Extraer de metadata
 
-        if (orderSnapshot.empty) {
-          console.error(`No order found for failed PaymentIntent ID: ${paymentIntent.id}`);
-          return res.status(200).send('Order not found, but webhook received.');
+      console.warn(`PaymentIntent ${paymentIntentId} failed.`);
+
+      if (!orderId) {
+        // Intentar buscar por paymentIntentId si no está en metadata (menos ideal)
+        console.warn(`No orderId in metadata for failed PI ${paymentIntentId}. Attempting lookup.`);
+        try {
+          const orderQuery = db.collection("orders").where("payment.paymentIntentId", "==", paymentIntentId).limit(1);
+          const orderSnapshot = await orderQuery.get();
+          if (!orderSnapshot.empty) {
+            orderId = orderSnapshot.docs[0].id;
+            console.log(`Found order ${orderId} via PI lookup.`);
+          } else {
+            console.error(`No order found matching failed PI ${paymentIntentId} via lookup.`);
+            // Si no encontramos la orden de ninguna forma, no podemos hacer nada más.
+            return res.status(200).send("Webhook received, but no matching order found for failed PI.");
+          }
+        } catch(lookupError) {
+          console.error(`Error looking up order for failed PI ${paymentIntentId}:`, lookupError);
+          return res.status(500).send("DB error during order lookup for failed PI.");
+        }
+      }
+
+      // Ahora tenemos orderId (de metadata o lookup)
+      console.info(`Processing failure for order ${orderId}. Attempting stock restore.`);
+      const orderRef = db.collection("orders").doc(orderId);
+
+      try {
+        const orderSnap = await orderRef.get();
+        if (!orderSnap.exists) {
+          console.error(`Order ${orderId} not found during failure processing.`);
+          return res.status(200).send("Webhook received, order not found.");
         }
 
-        const orderDoc = orderSnapshot.docs[0];
-         console.log(`Updating order ${orderDoc.id} status to payment_failed.`);
-        await orderDoc.ref.update({
-          status: 'payment_failed',
-          'payment.status': 'failed', // Actualizar también el estado del pago
-           updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-         console.log(`Order ${orderDoc.id} updated to payment_failed.`);
+        const orderData = orderSnap.data();
+        const itemsToRestore = orderData.items;
 
-      } catch (dbError) {
-        console.error(`Error updating order for failed PaymentIntent ${paymentIntent.id}:`, dbError);
-        return res.status(500).send('Database error processing webhook.');
+        // Validar items y proceder con la restauración
+        if (Array.isArray(itemsToRestore) && itemsToRestore.length > 0) {
+          console.info(`Restoring stock for ${itemsToRestore.length} item types in order ${orderId}.`);
+          await db.runTransaction(async (transaction) => {
+            const productUpdates = [];
+            for (const item of itemsToRestore) {
+              if (!item.id || !item.quantity || item.quantity <= 0) {
+                console.warn(`Skipping invalid item during stock restore: ${JSON.stringify(item)}`);
+                continue;
+              }
+              const productRef = db.collection("products").doc(item.id);
+              // Leer DENTRO de la transacción
+              const productDoc = await transaction.get(productRef);
+              if (!productDoc.exists) {
+                console.warn(`Product ${item.id} not found during stock restore for order ${orderId}.`);
+                continue;
+              }
+              const currentStock = productDoc.data().stock || 0;
+              const newStock = currentStock + item.quantity;
+              transaction.update(productRef, { 
+                stock: newStock,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(), 
+              });
+              productUpdates.push({ id: item.id, old: currentStock, new: newStock, restored: item.quantity });
+            }
+            console.info(`Stock restoration transaction prepared for order ${orderId}:`, productUpdates);
+            // La transacción se confirma automáticamente si no hay errores aquí
+          });
+          console.info(`Stock successfully restored for order ${orderId}.`);
+        } else {
+          console.warn(`No valid items found in order ${orderId} to restore stock.`);
+        }
+
+        // Siempre actualizar el estado de la orden a fallido
+        console.info(`Updating order ${orderId} status to failed.`);
+        await orderRef.update({
+          status: "failed",
+          "payment.status": "failed",
+          "payment.error": paymentIntentFailed.last_payment_error?.message || "Payment failed",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.info(`Order ${orderId} updated to failed.`);
+
+      } catch (error) {
+        console.error(`Error during stock restore/update for order ${orderId}:`, error);
+        // Intentar marcar como fallido si la transacción falló
+        try {
+          await orderRef.update({ 
+            status: "failed", 
+            "payment.status": "failed",
+            "payment.error": "Error during failure processing loop",
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        } catch (fallbackError) {
+          console.error(`Fallback status update failed for order ${orderId}:`, fallbackError);
+        }
+        return res.status(500).send("Error processing payment failure webhook.");
       }
       break;
     }

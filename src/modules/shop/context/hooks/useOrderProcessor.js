@@ -117,10 +117,10 @@ export const useOrderProcessor = ({
         }
         // <<<--- FIN: Lógica para guardar dirección nueva --->>>
 
-        // 7. Si es OXXO, no limpiar el carrito
-        if (paymentManager.selectedPaymentType !== 'oxxo') {
-          dispatch(clearCartWithSync())
-        }
+        // --- CORRECCIÓN: Limpiar el carrito SIEMPRE después de un procesamiento exitoso --- 
+        // Ya no se condiciona por tipo de pago
+        dispatch(clearCartWithSync());
+        console.log('[useOrderProcessor] Carrito limpiado después del procesamiento exitoso.');
 
         // 8. Redirigir a la página de éxito
         let redirectPath = `/shop/order-success/${result.orderId}`;
