@@ -21,7 +21,7 @@ exports.createOxxoPaymentIntent = onCall({
     );
   }
 
-  const { amount, description = "Compra en Cactilia", customer_email } = request.data;
+  const { amount, description = "Compra en Cactilia", customer_email, orderId } = request.data;
 
   // Validar datos
   if (!amount || amount <= 0) {
@@ -35,6 +35,13 @@ exports.createOxxoPaymentIntent = onCall({
     throw new HttpsError(
       "invalid-argument",
       "Se requiere un email de cliente para pagos con OXXO"
+    );
+  }
+
+  if (!orderId) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Se requiere un ID de orden para asociar al pago."
     );
   }
 
@@ -60,7 +67,8 @@ exports.createOxxoPaymentIntent = onCall({
       },
       metadata: {
         firebaseUserId: request.auth.uid,
-        paymentType: 'oxxo'
+        paymentType: 'oxxo',
+        orderId: orderId
       }
     });
 

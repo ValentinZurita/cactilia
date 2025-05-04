@@ -126,9 +126,10 @@ export const verifyAndUpdateStock = async (items) => {
  * @param {string} customerEmail - Email del cliente (para OXXO)
  * @param {string} paymentType - Tipo de pago ('card', 'oxxo')
  * @param {boolean} savePaymentMethod - Si se debe guardar el método
+ * @param {string} orderId - ID de la orden asociada
  * @returns {Promise<Object>} - Resultado de la operación
  */
-export const createPaymentIntent = async (amount, paymentMethodId = null, customerEmail = null, paymentType = 'card', savePaymentMethod = false) => {
+export const createPaymentIntent = async (amount, paymentMethodId = null, customerEmail = null, paymentType = 'card', savePaymentMethod = false, orderId = null) => {
   try {
     // Validar parámetros
     if (!amount || amount <= 0) {
@@ -178,12 +179,14 @@ export const createPaymentIntent = async (amount, paymentMethodId = null, custom
         amount,
         description: 'Compra en Cactilia',
         customer_email: customerEmail,
+        orderId: orderId
       }
       : {
         amount,
         paymentMethodId,
         description: 'Compra en Cactilia',
-        savePaymentMethod: !!savePaymentMethod
+        savePaymentMethod: !!savePaymentMethod,
+        orderId: orderId
       }
 
     // Llamar a la función correspondiente
@@ -243,6 +246,7 @@ export const processPayment = async (
   paymentType = 'card',
   customerEmail = null
 ) => {
+  let createdOrderId = null; // <-- Declarar FUERA del try
   try {
     // Validar datos mínimos de la orden
     if (!orderData || !orderData.userId || !orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
@@ -279,12 +283,11 @@ export const processPayment = async (
 
     // 2. Crear la orden
     const orderResult = await createOrder(orderData)
-
     if (!orderResult.ok) {
       throw new Error(orderResult.error || 'Error al crear la orden')
     }
-
-    const orderId = orderResult.id
+    createdOrderId = orderResult.id; // <-- Asignar valor
+    console.log(`✅ [processPayment] Orden creada con ID: ${createdOrderId}`);
 
     // 3. Crear el Payment Intent
     const amount = Math.round(orderData.totals.finalTotal * 100)
@@ -316,7 +319,8 @@ export const processPayment = async (
       paymentMethodId,
       emailForOxxo,
       paymentType,
-      savePaymentMethod
+      savePaymentMethod,
+      createdOrderId
     )
 
     // <<<--- INICIO CAMBIO: Procesar Nueva Estructura de Respuesta --->>>
@@ -389,8 +393,8 @@ export const processPayment = async (
       throw new Error(createOrderResult.error || 'No se pudo registrar la orden.');
     }
 
-    // Renombrar variable para evitar colisión
-    const createdOrderId = createOrderResult.id;
+    // --- CORRECCIÓN: Solo asignar, no redeclarar --- 
+    createdOrderId = createOrderResult.id;
     console.log(`✅ [processPayment] Orden creada con ID: ${createdOrderId}`);
 
     // Actualizar la orden con el ID del Payment Intent y estado inicial
@@ -440,6 +444,14 @@ export const processPayment = async (
 
   } catch (error) {
     console.error('Error al procesar el pago:', error)
+    // Ahora el chequeo if (createdOrderId) ES SEGURO
+    if (createdOrderId) { 
+       try {
+         await apiService.updateDocument(ORDERS_COLLECTION, createdOrderId, { status: 'failed', 'payment.status': 'failed', 'payment.error': error.message });
+       } catch (updateError) {
+         console.error(`Error al intentar marcar la orden ${createdOrderId} como fallida:`, updateError);
+       }
+    }
     return { ok: false, error: error.message }
   }
 }

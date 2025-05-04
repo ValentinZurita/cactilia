@@ -26,13 +26,24 @@ exports.createPaymentIntent = onCall({
     );
   }
 
+  // --> Recibir orderId
   const { 
     amount, 
     paymentMethodId, 
+    paymentType, // Se recibe, pero la lógica principal está aquí
     description = "Purchase at Cactilia", 
-    savePaymentMethod = false
+    savePaymentMethod = false,
+    orderId // <-- Recibir orderId
   } = request.data;
-  
+
+  // ... (validaciones como antes) ...
+  if (!orderId) { // <-- Validar orderId
+    throw new HttpsError(
+      "invalid-argument",
+      "Se requiere un ID de orden para asociar al pago."
+    );
+  }
+
   console.log("Received savePaymentMethod flag:", savePaymentMethod);
 
   // Validate data
@@ -74,7 +85,8 @@ exports.createPaymentIntent = onCall({
       confirmation_method: 'automatic',
       confirm: false,
       metadata: {
-        firebaseUserId: request.auth.uid
+        firebaseUserId: request.auth.uid,
+        orderId: orderId // <-- Añadir orderId a metadata
       }
     };
 
