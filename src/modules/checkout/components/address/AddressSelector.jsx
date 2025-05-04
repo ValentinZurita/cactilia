@@ -182,34 +182,6 @@ export const AddressSelector = ({
           />
         ))}
       </div>
-
-      {/* Acciones */}
-      <div className="address-actions mt-3">
-        <button
-          className="btn btn-outline-secondary btn-sm me-2"
-          onClick={() => setShowManageForm(true)}
-        >
-          <i className="bi bi-plus-circle me-1"></i>
-          Guardar Nueva Dirección
-        </button>
-
-        <Link
-          to="/profile/addresses"
-          className="btn btn-link btn-sm text-decoration-none"
-          target="_blank"
-        >
-          <i className="bi bi-pencil me-1"></i>
-          Administrar Direcciones
-        </Link>
-      </div>
-
-      {/* Modal para nueva dirección guardada */}
-      <SimpleAddressForm
-        isOpen={showManageForm}
-        onClose={() => setShowManageForm(false)}
-        onSave={handleSaveNewAddress}
-        loading={savingAddress}
-      />
     </div>
   )
 }

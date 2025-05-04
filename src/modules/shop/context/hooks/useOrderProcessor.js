@@ -336,7 +336,6 @@ export const useOrderProcessor = ({
       billingAddress: billingManager.requiresInvoice ? { /* ... datos fiscales ... */ } : null,
       payment: {
         type: paymentManager.selectedPaymentType,
-        // Reintroducir lógica para añadir detalles de tarjeta guardada
         ...(paymentManager.selectedPaymentType === 'card' && (() => {
           // Verificar si paymentMethods está cargado antes de buscar
           if (!paymentManager.paymentMethods || paymentManager.loadingPayments) {
@@ -360,7 +359,8 @@ export const useOrderProcessor = ({
           };
         })()),
         ...(paymentManager.selectedPaymentType === 'new_card' && {
-          cardholderName: paymentManager.newCardData?.cardholderName || ''
+          cardholderName: paymentManager.newCardData?.cardholderName || '',
+          saveForFuture: !!paymentManager.saveNewCard
         })
       },
       shipping: shippingDetails, 
@@ -498,12 +498,9 @@ export const useOrderProcessor = ({
               card: cardElement,
               billing_details: {
                 name: orderData.payment.cardholderName || '',
-                // Podrías añadir más detalles de facturación si los tienes
-                // address: { ... }
               },
             },
-            // Opcional: si tienes un checkbox para guardar tarjeta
-            // setup_future_usage: orderData.payment.saveForFuture ? 'off_session' : undefined,
+            setup_future_usage: orderData.payment.saveForFuture ? 'off_session' : undefined,
           });
 
         } else { // orderData.payment.type === 'card'

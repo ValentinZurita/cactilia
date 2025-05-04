@@ -169,9 +169,9 @@ export const PaymentMethodSelector = ({
         ))}
       </div>
 
-      {/* Acciones */}
+      {/* Acciones - Eliminar el botón y mantener solo el enlace */}
       <div className="payment-method-actions mt-3">
-        {/* Solo mostrar botón para guardar métodos de pago si no estamos en tarjeta nueva */}
+        {/* 
         {!isNewCardSelected && (
           <button
             className="btn btn-outline-secondary btn-sm me-2"
@@ -182,6 +182,7 @@ export const PaymentMethodSelector = ({
             Guardar Nuevo Método de Pago
           </button>
         )}
+        */}
 
         <Link
           to="/profile/payments"
@@ -193,12 +194,14 @@ export const PaymentMethodSelector = ({
         </Link>
       </div>
 
-      {/* Modal para guardar método de pago - Usamos el componente existente */}
+      {/* Modal para guardar método de pago - ELIMINAR ESTO */}
+      {/* 
       <PaymentFormModal
         isOpen={showForm && stripeReady}
         onClose={() => setShowForm(false)}
         onSuccess={handlePaymentMethodSuccess}
       />
+      */}
     </div>
   )
 }
