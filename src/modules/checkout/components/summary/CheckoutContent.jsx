@@ -334,6 +334,7 @@ export const CheckoutContent = () => {
           fiscalData={checkout.fiscalData}
           handleInvoiceChange={checkout.handleInvoiceChange}
           handleFiscalDataChange={checkout.handleFiscalDataChange}
+          fillFiscalAddressFromShipping={checkout.fillFiscalAddressFromShipping}
 
           orderNotes={checkout.orderNotes}
           handleNotesChange={checkout.handleNotesChange}

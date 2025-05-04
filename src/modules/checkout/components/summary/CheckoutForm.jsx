@@ -52,6 +52,7 @@ export const CheckoutForm = ({
                                fiscalData,
                                handleInvoiceChange,
                                handleFiscalDataChange,
+                               fillFiscalAddressFromShipping,
 
                                // Notas
                                orderNotes,
@@ -138,6 +139,7 @@ export const CheckoutForm = ({
         onRequiresInvoiceChange={handleInvoiceChange}
         fiscalData={fiscalData}
         onFiscalDataChange={handleFiscalDataChange}
+        onFillFromShipping={fillFiscalAddressFromShipping}
       />
 
       {/* Sección: Notas adicionales */}

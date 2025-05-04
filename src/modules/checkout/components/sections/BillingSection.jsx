@@ -9,6 +9,7 @@ import { BillingInfoForm } from '../billing/index.js'
  * @param {Function} props.onRequiresInvoiceChange - Función para cambiar requerimiento de factura
  * @param {Object} props.fiscalData - Datos fiscales
  * @param {Function} props.onFiscalDataChange - Función para actualizar datos fiscales
+ * @param {Function} props.onFillFromShipping - Función para llenar datos desde envío
  * @returns {JSX.Element} Sección de información fiscal
  */
 export const BillingSection = ({
@@ -16,6 +17,7 @@ export const BillingSection = ({
                                  onRequiresInvoiceChange,
                                  fiscalData,
                                  onFiscalDataChange,
+                                 onFillFromShipping,
                                }) => {
   return (
     <CheckoutSection title="Información Fiscal" stepNumber={3}>
@@ -24,6 +26,7 @@ export const BillingSection = ({
         onRequiresInvoiceChange={onRequiresInvoiceChange}
         fiscalData={fiscalData}
         onFiscalDataChange={onFiscalDataChange}
+        onFillFromShipping={onFillFromShipping}
       />
     </CheckoutSection>
   )

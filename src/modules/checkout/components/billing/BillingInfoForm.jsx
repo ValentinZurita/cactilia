@@ -10,12 +10,14 @@ import { isValidEmail, isValidRFC } from '../../../shop/utils/index.js'
  * @param {Function} props.onRequiresInvoiceChange - Función para actualizar requerimiento de factura
  * @param {Object} props.fiscalData - Datos fiscales actuales
  * @param {Function} props.onFiscalDataChange - Función para actualizar datos fiscales
+ * @param {Function} props.onFillFromShipping - Función para llenar datos fiscales con dirección de envío
  */
 export const BillingInfoForm = ({
                                   requiresInvoice,
                                   onRequiresInvoiceChange,
                                   fiscalData,
                                   onFiscalDataChange,
+                                  onFillFromShipping,
                                 }) => {
   // Estado local para los datos fiscales
   const [localFiscalData, setLocalFiscalData] = useState({
@@ -160,6 +162,20 @@ export const BillingInfoForm = ({
 
       {requiresInvoice && (
         <div className="fiscal-data-form">
+
+          {/* --- BOTÓN PARA COPIAR DIRECCIÓN --- */}
+          <div className="mb-3 text-end">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary"
+              onClick={onFillFromShipping}
+            >
+              <i className="bi bi-geo-alt me-2"></i> 
+              Usar dirección de envío
+            </button>
+          </div>
+          {/* ----------------------------------- */}
+
           <div className="row g-3">
             {/* RFC */}
             <div className="col-md-6">
