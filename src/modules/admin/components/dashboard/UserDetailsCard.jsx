@@ -1,16 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { BackButton } from '../../common/components/BackButton';
+import { ActionButton } from '../../common/components/ActionButton';
+import { LoadingIndicator } from '../../common/components/LoadingIndicator.jsx';
+import { getOrdersByUserId } from '../orders/services/userAdminService.js';
+import { UserOrdersTable } from './UserOrdersTable.jsx';
 
-// Componentes internos para mejorar la legibilidad
-const BackButton = ({ onClick }) => (
-  <button
-    className="btn btn-light rounded-circle shadow-sm p-2"
-    onClick={onClick}
-    title="Volver a la lista"
-  >
-    <i className="bi bi-chevron-left fs-5"></i>
-  </button>
-);
+// Componentes auxiliares locales ELIMINADOS (ya que se importan o son específicos) -> RESTAURADOS
 
+// Se mantienen las definiciones locales para estos helpers
 const UserAvatar = ({ user }) => (
   <div className="avatar-container mb-4">
     <img
@@ -46,17 +44,6 @@ const UserContact = ({ icon, text }) => (
   </p>
 );
 
-const ActionButton = ({ onClick, icon, text, variant }) => (
-  <button
-    className={`btn btn-outline-${variant} rounded-3 px-3`}
-    onClick={onClick}
-    title={text}
-  >
-    <i className={`bi bi-${icon} me-2`}></i>
-    {text}
-  </button>
-);
-
 const DetailField = ({ label, value, isMonospace = false }) => (
   <div className="detail-item">
     <h6 className="text-muted mb-1 small fw-bold">{label}</h6>
@@ -66,6 +53,12 @@ const DetailField = ({ label, value, isMonospace = false }) => (
   </div>
 );
 
+// --- Fin Componentes Helpers Restaurados ---
+
+// ESTOS SÍ SE QUEDAN LOCALES (EmptyOrdersSection, formatDate)
+/**
+ * Sección para cuando no hay pedidos
+ */
 const EmptyOrdersSection = () => (
   <div className="text-center py-4 text-muted">
     <div className="p-4 bg-light rounded-4">
@@ -117,6 +110,39 @@ const formatDate = (timestamp) => {
  * @returns {JSX.Element}
  */
 export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
+  // --- NUEVO: Estado para órdenes del usuario ---
+  const [userOrders, setUserOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [ordersError, setOrdersError] = useState(null);
+
+  // --- NUEVO: Efecto para cargar órdenes ---
+  useEffect(() => {
+    const fetchUserOrders = async () => {
+      if (!user || !user.id) {
+        setLoadingOrders(false);
+        return; // No hay ID de usuario
+      }
+      
+      setLoadingOrders(true);
+      setOrdersError(null);
+      try {
+        const result = await getOrdersByUserId(user.id);
+        if (result.ok) {
+          setUserOrders(result.data);
+        } else {
+          throw new Error(result.error || 'Error al cargar el historial de pedidos.');
+        }
+      } catch (error) {
+        console.error('Error fetching user orders:', error);
+        setOrdersError(error.message);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+
+    fetchUserOrders();
+  }, [user?.id]); // Dependencia: user.id
+
   // Validar que exista un usuario
   if (!user) {
     return (
@@ -234,14 +260,28 @@ export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
                   </div>
                 )}
 
-                {/* Pedidos */}
+                {/* Pedidos - MODIFICADO */}
                 <div className="col-12 mt-4">
                   <h5 className="border-bottom pb-2 mb-3 d-flex align-items-center">
                     <i className="bi bi-bag me-2 text-primary"></i>
                     Historial de pedidos
                   </h5>
 
-                  <EmptyOrdersSection />
+                  {/* Lógica de renderizado condicional */}
+                  {loadingOrders ? (
+                    <LoadingIndicator />
+                  ) : ordersError ? (
+                    <div className="alert alert-danger py-2 small">
+                      <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                      Error al cargar historial: {ordersError}
+                    </div>
+                  ) : userOrders.length > 0 ? (
+                    // Mostrar la tabla si hay órdenes
+                    <UserOrdersTable orders={userOrders} /> 
+                  ) : (
+                    // Mostrar sección vacía si no hay órdenes
+                    <EmptyOrdersSection /> 
+                  )}
                 </div>
               </div>
             </div>

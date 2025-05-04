@@ -12,6 +12,7 @@ import React, { useState } from 'react';
  *   variant?: string, // e.g., 'light', 'outline-secondary', 'danger' etc.
  *   textColor?: string, // e.g., 'secondary', 'danger'
  *   hoverTextColor?: string, // Color opcional para el icono en hover
+ *   text?: string, // NUEVO: Texto opcional para mostrar junto al icono
  *   disabled?: boolean,
  *   className?: string,
  *   isFirst?: boolean, // Para manejar redondeo izquierdo dentro del container
@@ -26,6 +27,7 @@ export const ActionButton = ({
   variant = 'light', // Estilo por defecto: fondo gris claro
   textColor = 'secondary', // Color de icono por defecto: gris secundario
   hoverTextColor, // Nueva prop
+  text, // Recibir la nueva prop
   disabled = false,
   className = '',
   isFirst = false, // No es el primero por defecto
@@ -82,6 +84,8 @@ export const ActionButton = ({
       onMouseLeave={() => setIsHovered(false)} // Actualizar estado al salir
     >
       <i className={iconClasses}></i>
+      {/* Mostrar texto si se proporciona */}
+      {text && <span className="ms-2">{text}</span>}
     </button>
   );
 }; 

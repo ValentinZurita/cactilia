@@ -6,7 +6,6 @@ import { InfoRow } from '../common/InfoRow.jsx';
 
 /**
  * Muestra la información del cliente y la dirección de envío en los detalles del pedido del admin.
- * *** ESTE ES EL ARCHIVO CORRECTO QUE SE ESTÁ USANDO ***
  */
 export const OrderCustomerInfo = ({ order, userData, loadingUser }) => {
   

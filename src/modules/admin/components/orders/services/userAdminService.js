@@ -1,5 +1,6 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { FirebaseDB } from '../../../../../config/firebase/firebaseConfig.js';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 
 // Colección de usuarios en Firestore
 const USERS_COLLECTION = 'users';
@@ -68,5 +69,36 @@ export const getMultipleUsers = async (userIds) => {
       data: [],
       error: error.message
     };
+  }
+};
+
+/**
+ * Obtiene todas las órdenes asociadas a un ID de usuario específico.
+ * Ordena por fecha de creación descendente.
+ * 
+ * @param {string} userId - El ID del usuario cuyas órdenes se quieren obtener.
+ * @returns {Promise<{ok: boolean, data: Array, error: string|null}>} - Resultado con las órdenes.
+ */
+export const getOrdersByUserId = async (userId) => {
+  if (!userId) {
+    return { ok: false, data: [], error: 'Se requiere el ID de usuario.' };
+  }
+
+  try {
+    const ordersRef = collection(FirebaseDB, 'orders');
+    const q = query(
+      ordersRef,
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc') // Ordenar por fecha, más recientes primero
+    );
+
+    const querySnapshot = await getDocs(q);
+    const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return { ok: true, data: orders, error: null };
+
+  } catch (error) {
+    console.error('Error obteniendo órdenes por userId:', error);
+    return { ok: false, data: [], error: error.message || 'Error al buscar las órdenes del usuario.' };
   }
 };
