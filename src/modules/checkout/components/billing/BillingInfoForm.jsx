@@ -98,7 +98,7 @@ export const BillingInfoForm = ({
     }
   }, [localFiscalData, requiresInvoice, onFiscalDataChange])
 
-  // --- NUEVO: Sincronizar estado local cuando la prop fiscalData cambia ---
+  // ---Sincronizar estado local cuando la prop fiscalData cambia ---
   useEffect(() => {
     // Comprobar si la prop fiscalData tiene datos de dirección que el estado local no tiene
     const propHasAddress = fiscalData?.postalCode || fiscalData?.street;
@@ -369,6 +369,8 @@ export const BillingInfoForm = ({
 
           </div>
 
+
+          {/* --- FOOTER --- */}
           <footer className="d-flex align-items-center my-4">
             <i className="bi bi-info-circle me-2 text-muted"></i>
             <p className="text-muted mb-0 small">Los campos marcados con * son obligatorios para la facturación.</p>

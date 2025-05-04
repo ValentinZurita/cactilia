@@ -54,13 +54,12 @@ export const CheckoutProvider = ({ children }) => {
     setOrderNotes(e.target.value);
   };
 
-  // --- MANEJADOR ORIGINAL PARA EL TOGGLE DE FACTURA (SIN PRE-LLENADO) ---
+
   const handleRequiresInvoiceToggle = useCallback((requires) => {
-    // 1. Llamar al manejador original de billingManager (que limpia si requires es false)
+    // 1. Llamar al manejador original de billingManager
     billingManager.handleInvoiceChange(requires);
-    // ¡Ya no hay lógica de pre-llenado automático aquí!
   }, [billingManager]);
-  // ------------------------------------------------------------------
+
 
   // --- NUEVA FUNCIÓN PARA PRE-LLENAR DATOS FISCALES DESDE ENVÍO ---
   const fillFiscalAddressFromShipping = useCallback(() => {

@@ -276,10 +276,8 @@ export const processPayment = async (
       }
     }
 
-    // === INICIO LOG ===
     // Loggear el objeto orderData COMPLETO justo antes de crearlo en Firestore
     console.log('📦 [processPayment] Datos FINALES de la orden ANTES de createOrder:', JSON.stringify(orderData, null, 2))
-    // === FIN LOG ===
 
     // 2. Crear la orden
     const orderResult = await createOrder(orderData)
@@ -323,7 +321,6 @@ export const processPayment = async (
       createdOrderId
     )
 
-    // <<<--- INICIO CAMBIO: Procesar Nueva Estructura de Respuesta --->>>
     // Verificar si la llamada a la Cloud Function fue exitosa
     if (!paymentIntent || !paymentIntent.ok) {
         console.error('[processPayment] Falló la llamada a la Cloud Function:', paymentIntent);
@@ -366,7 +363,6 @@ export const processPayment = async (
       console.error('[processPayment] No se pudo obtener clientSecret.');
       throw new Error('Error interno: No se recibió identificador de pago.');
     }
-    // <<<--- FIN CAMBIO: Procesar Nueva Estructura de Respuesta --->>>
 
     // Actualizar la orden (la ÚNICA que se creó) con el ID del Payment Intent y estado inicial
     // Usar piId extraído de la respuesta
