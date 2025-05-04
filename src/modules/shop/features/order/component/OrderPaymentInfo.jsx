@@ -1,14 +1,13 @@
 // Importar la utilidad de mapeo
 import { getFriendlyPaymentStatus } from '../../../../../shared/utils/statusMapping.js';
 
+/**
+ * Muestra la información de pago de una orden, incluyendo detalles de tarjeta/método,
+ * estado del pago y enlaces de descarga de facturas si aplica.
+ */
 export const OrderPaymentInfo = ({ payment, billing, invoiceIsRequired }) => {
-  // Limpiar logs de depuración
-  // console.log('--- [Shop OrderPaymentInfo] RENDERIZANDO --- ');
-  // console.log('[Shop OrderPaymentInfo] Prop billing recibida:', billing);
-  // console.log('[Shop OrderPaymentInfo] Valor de invoiceIsRequired (nueva prop):', invoiceIsRequired);
-
   // Determinar si hay URLs de factura disponibles
-  const pdfUrl = billing?.invoicePdfUrl || billing?.invoiceUrl; // invoiceUrl es legacy
+  const pdfUrl = billing?.invoicePdfUrl || billing?.invoiceUrl; // invoiceUrl es legacy, mantenido por compatibilidad
   const xmlUrl = billing?.invoiceXmlUrl;
   const hasInvoiceLinks = pdfUrl || xmlUrl;
 
@@ -21,19 +20,18 @@ export const OrderPaymentInfo = ({ payment, billing, invoiceIsRequired }) => {
       <p className="d-flex align-items-center mb-2">
         <i className="bi bi-credit-card-2-front me-2" aria-hidden="true"></i>
         {(() => {
-          // Lógica mejorada para mostrar detalles de pago
+          // Lógica para mostrar descripción del método de pago
           if (payment?.type === 'oxxo') {
             return 'Pago en OXXO';
           }
           let description = '';
           if (payment?.brand) {
-            description += payment.brand.charAt(0).toUpperCase() + payment.brand.slice(1); // Capitalizar marca
+            description += payment.brand.charAt(0).toUpperCase() + payment.brand.slice(1);
           }
           if (payment?.last4) {
             description += `${description ? ' terminada en' : 'Tarjeta terminada en'} ${payment.last4}`;
           }
-          // Si no hay brand ni last4, mostrar texto genérico
-          return description || 'Método de pago estándar'; 
+          return description || 'Método de pago estándar';
         })()}
       </p>
 
@@ -42,16 +40,18 @@ export const OrderPaymentInfo = ({ payment, billing, invoiceIsRequired }) => {
         Estado: <span className={`badge ${statusInfo.badgeClass}`}>{statusInfo.label}</span>
       </p>
 
-      {/* --- SECCIÓN DE FACTURA ELECTRÓNICA ACTUALIZADA --- */}
+      {/* --- SECCIÓN DE FACTURA ELECTRÓNICA --- */}
       {invoiceIsRequired && (
         <div className="invoice-section mt-4 pt-3 border-top">
           <h6 className="text-secondary fw-normal mb-3">
             <i className="bi bi-receipt me-2"></i>Factura Electrónica
           </h6>
 
-          {/* Condicional: Mostrar enlaces o placeholder */}
+          {/* Condicional: Mostrar enlaces de descarga o texto placeholder */}
           {hasInvoiceLinks ? (
             <div className="invoice-downloads d-flex flex-wrap gap-2">
+
+              {/* Botón PDF */}
               {pdfUrl && (
                 <a
                   href={pdfUrl}
@@ -63,20 +63,23 @@ export const OrderPaymentInfo = ({ payment, billing, invoiceIsRequired }) => {
                   <i className="bi bi-file-earmark-pdf me-1"></i> PDF
                 </a>
               )}
+              
+              {/* Botón XML*/}
               {xmlUrl && (
                 <a
                   href={xmlUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-outline-secondary btn-sm"
+                  className="btn btn-outline-success btn-sm" // Cambiado a success (verde)
                   aria-label="Descargar Factura XML"
                 >
                   <i className="bi bi-file-earmark-code me-1"></i> XML
                 </a>
               )}
+              
             </div>
           ) : (
-            // Placeholder si no hay enlaces aún
+            // Placeholder si aún no hay enlaces
             <p className="text-muted small mb-0">
               <i className="bi bi-info-circle me-2"></i>
               Aquí aparecerán los enlaces para descargar tu factura (PDF y XML) cuando esté lista.

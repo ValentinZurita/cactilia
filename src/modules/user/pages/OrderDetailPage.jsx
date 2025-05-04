@@ -95,7 +95,7 @@ export const OrderDetailPage = () => {
           <OrderTotals totals={order.totals} />
         </div>
 
-        {/* Dirección de Envío - Ahora en su propia fila */}
+        {/* Dirección de Envío */}
         <div className="order-details-section">
           <h3>Dirección de Envío</h3>
           <OrderAddressCard
@@ -104,12 +104,9 @@ export const OrderDetailPage = () => {
           />
         </div>
 
-        {/* Información de Pago - Ahora en su propia fila */}
+        {/* Información de Pago */}
         <div className="order-details-section">
           <h3>Información de Pago</h3>
-          {/* Log para verificar las props antes de pasarlas */}
-          {console.log('[OrderDetailPage] Pasando a OrderPaymentInfo:', { payment: order.payment, billing: order.billing, requiresInvoice: order.requiresInvoice })}
-          {console.log('[OrderDetailPage] Valor de order.requiresInvoice (raíz):', order.requiresInvoice)}
           <OrderPaymentInfo
             payment={order.payment}
             billing={order.billing}
@@ -120,7 +117,6 @@ export const OrderDetailPage = () => {
         {/* Notas del pedido */}
         <OrderNotes notes={order.notes} />
 
-        {/* No action buttons needed */}
       </div>
     </div>
   )
