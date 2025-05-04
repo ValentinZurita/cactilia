@@ -251,25 +251,24 @@ export const apiService = {
 
       console.log(`Respuesta recibida de ${functionName} (callable):`, JSON.stringify(result));
 
-      // httpsCallable desempaqueta la respuesta, devolviendo directamente el objeto 
-      // que retornó la función (en nuestro caso, { ok, data: { result: {...} }, error })
-      // Devolvemos directamente result.data porque ese es el payload útil.
-      // ¡IMPORTANTE! Asegurarse que el llamador (checkoutService) ahora espera esto.
-      // O, mejor, devolver el objeto completo 'result' y que el llamador lo procese.
-      
-      // Vamos a devolver el objeto completo como lo recibimos del SDK
-      // El SDK devuelve un objeto HttpsCallableResult cuya propiedad 'data' 
-      // contiene lo que la función retornó. 
-      return result.data; // <-- Devolver el contenido que la función retornó
+      // contiene lo que la función retornó.
+      // return result.data; // <-- NO devolver solo la data
+
+      // Devolver una estructura consistente { ok, data, error }
+      return {
+        ok: true,
+        data: result.data, // La data devuelta por la función va aquí
+        error: null
+      };
 
     } catch (error) {
-      console.error(`Error al llamar a Cloud Function ${functionName} via callable:`, error);
+      console.error(`Error al llamar a Cloud Function ${functionName} via callable:`, error); // <-- Corregir template literal
       // Mapear el error HttpsError a nuestra estructura { ok, error }
-      return { 
-        ok: false, 
-        error: error.message || 'Error desconocido al llamar la función.', 
+      return {
+        ok: false,
+        error: error.message || 'Error desconocido al llamar la función.',
         code: error.code // opcional: incluir el código de error HttpsError
       };
     }
   },
-};
+}; // <-- Asegurar que el objeto apiService cierre correctamente

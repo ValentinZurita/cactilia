@@ -320,27 +320,46 @@ export const processPayment = async (
     )
 
     // <<<--- INICIO CAMBIO: Procesar Nueva Estructura de Respuesta --->>>
-    // Verificar si la llamada a createPaymentIntent fue exitosa y si la estructura es la esperada
-    if (!paymentIntent || !paymentIntent.ok || !paymentIntent.data?.result) {
-      console.error('[processPayment] Falló la creación del Payment Intent o la respuesta no es válida:', paymentIntent);
-      throw new Error(paymentIntent?.error || 'No se pudo crear la intención de pago.');
+    // Verificar si la llamada a la Cloud Function fue exitosa
+    if (!paymentIntent || !paymentIntent.ok) {
+        console.error('[processPayment] Falló la llamada a la Cloud Function:', paymentIntent);
+        throw new Error(paymentIntent?.error || 'No se pudo contactar al servicio de pago.');
     }
 
-    // Extraer datos del resultado anidado
-    const { 
-      clientSecret, 
-      paymentIntentId: piId, 
-      cardBrand, 
-      cardLast4, 
-      paymentMethodIdUsed, 
-      voucherUrl, // Para OXXO
-      stripeCustomerId // <-- AÑADIR ESTA VARIABLE
-    } = paymentIntent.data.result;
-    console.log('[processPayment] Datos extraídos de paymentIntent.data.result:', { clientSecret, piId, cardBrand, cardLast4, paymentMethodIdUsed, voucherUrl, stripeCustomerId });
+    let clientSecret, piId, cardBrand, cardLast4, paymentMethodIdUsed, voucherUrl = null, stripeCustomerId;
 
-    // Verificar que tenemos el clientSecret (esencial para pagos con tarjeta)
-    if (paymentType !== 'oxxo' && !clientSecret) {
-      console.error('[processPayment] No se recibió clientSecret para pago con tarjeta.');
+    // Procesar respuesta según el tipo de pago
+    if (paymentType === 'oxxo') {
+        // OXXO devuelve datos directamente en .data
+        if (!paymentIntent.data || !paymentIntent.data.clientSecret || !paymentIntent.data.paymentIntentId) {
+            console.error('[processPayment] Respuesta inválida de createOxxoPaymentIntent:', paymentIntent.data);
+            throw new Error('Respuesta inválida del servicio de pago OXXO.');
+        }
+        clientSecret = paymentIntent.data.clientSecret;
+        piId = paymentIntent.data.paymentIntentId;
+        // stripeCustomerId puede no venir de createOxxoPaymentIntent, lo obtenemos luego si es necesario o lo pasamos
+        // Aquí asumimos que getOrCreateCustomer ya lo guardó y no lo necesitamos devolver explícitamente aquí.
+        // Si se necesitara, createOxxoPaymentIntent debería devolverlo.
+        console.log(`[processPayment] Datos OXXO extraídos: clientSecret=${clientSecret ? '***' : 'null'}, piId=${piId}`);
+    } else {
+        // Tarjeta devuelve datos anidados en .data.result
+        if (!paymentIntent.data?.result || !paymentIntent.data.result.clientSecret) {
+             console.error('[processPayment] Respuesta inválida de createPaymentIntent (tarjeta):', paymentIntent.data);
+             throw new Error('Respuesta inválida del servicio de pago con tarjeta.');
+        }
+        const resultData = paymentIntent.data.result;
+        clientSecret = resultData.clientSecret;
+        piId = resultData.paymentIntentId;
+        cardBrand = resultData.cardBrand;
+        cardLast4 = resultData.cardLast4;
+        paymentMethodIdUsed = resultData.paymentMethodIdUsed;
+        stripeCustomerId = resultData.stripeCustomerId; // Para guardar PM
+        console.log(`[processPayment] Datos Tarjeta extraídos: clientSecret=${clientSecret ? '***' : 'null'}, piId=${piId}, Brand=${cardBrand}, Last4=${cardLast4}, PM Used=${paymentMethodIdUsed}, CustID=${stripeCustomerId}`);
+    }
+
+    // Verificar que tenemos el clientSecret (esencial para AMBOS flujos ahora, OXXO lo usa para confirmOxxoPayment)
+    if (!clientSecret) {
+      console.error('[processPayment] No se pudo obtener clientSecret.');
       throw new Error('Error interno: No se recibió identificador de pago.');
     }
     // <<<--- FIN CAMBIO: Procesar Nueva Estructura de Respuesta --->>>
@@ -412,11 +431,11 @@ export const processPayment = async (
       orderId: createdOrderId, 
       clientSecret: clientSecret, 
       paymentIntentId: piId,      
-      voucherUrl: voucherUrl,     
-      cardBrand: cardBrand,
-      cardLast4: cardLast4,
-      paymentMethodIdUsed: paymentMethodIdUsed,
-      stripeCustomerId: stripeCustomerId
+      voucherUrl: null, // <-- Devolver null aquí, se obtiene después
+      cardBrand: cardBrand, // Será null para OXXO
+      cardLast4: cardLast4, // Será null para OXXO
+      paymentMethodIdUsed: paymentMethodIdUsed, // Será null para OXXO
+      stripeCustomerId: stripeCustomerId // <-- Incluirlo
     };
 
   } catch (error) {
