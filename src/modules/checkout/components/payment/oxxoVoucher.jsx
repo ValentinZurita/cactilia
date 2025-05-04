@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import oxxoLogo from '@assets/oxxo-logo.svg'
 
 
@@ -9,36 +10,71 @@ import oxxoLogo from '@assets/oxxo-logo.svg'
  * @param {Object} props - Propiedades del componente
  * @param {Object} props.orderData - Datos de la orden
  * @param {string} props.voucherUrl - URL del voucher para descargar o imprimir
- * @param {string} props.expiresAt - Fecha de expiración del voucher
+ * @param {number} props.oxxoAmount - Monto a pagar en centavos (desde confirmOxxoPayment)
+ * @param {number} props.oxxoExpiresAt - Timestamp Unix (segundos) de expiración
  * @returns {JSX.Element}
  */
-export const OxxoVoucher = ({ orderData, voucherUrl, expiresAt }) => {
-  // Formatear fecha de expiración
-  const formatExpiryDate = (dateString) => {
+export const OxxoVoucher = ({ orderData, voucherUrl, oxxoAmount, oxxoExpiresAt }) => {
+  const location = useLocation();
+  const [displayAmount, setDisplayAmount] = useState('No disponible');
+  const [displayExpiry, setDisplayExpiry] = useState('Fecha no disponible');
+
+  useEffect(() => {
+    let amountToShow = oxxoAmount;
+    if (amountToShow === undefined) {
+      const params = new URLSearchParams(location.search);
+      const amountFromQuery = params.get('amount');
+      if (amountFromQuery) {
+         amountToShow = parseInt(amountFromQuery, 10); 
+         console.log('[OxxoVoucher] Monto obtenido de query params:', amountToShow);
+      }
+    }
+    setDisplayAmount(formatAmount(amountToShow));
+
+    let expiryTimestamp = oxxoExpiresAt;
+    if (expiryTimestamp === undefined) {
+      const params = new URLSearchParams(location.search);
+      const expiryFromQuery = params.get('expires');
+      if (expiryFromQuery) {
+         expiryTimestamp = parseInt(expiryFromQuery, 10);
+         console.log('[OxxoVoucher] Expiración obtenida de query params:', expiryTimestamp);
+      }
+    }
+    setDisplayExpiry(formatExpiryDate(expiryTimestamp));
+
+  }, [oxxoAmount, oxxoExpiresAt, location.search]);
+
+  // Formatear fecha de expiración desde timestamp Unix en segundos
+  const formatExpiryDate = (unixTimestamp) => {
+    if (unixTimestamp === undefined || unixTimestamp === null) return 'Fecha no disponible';
     try {
-      const date = new Date(dateString)
+      const date = new Date(unixTimestamp * 1000);
+      if (isNaN(date.getTime())) {
+         console.error('Timestamp Unix inválido:', unixTimestamp);
+         return 'Fecha inválida';
+      }
       return date.toLocaleDateString('es-MX', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-      })
+      });
     } catch (error) {
-      console.error('Error formateando fecha:', error)
-      return 'Fecha no disponible'
+      console.error('Error formateando fecha desde timestamp:', error);
+      return 'Fecha no disponible';
     }
-  }
+  };
 
-  // Formatear el total a pagar
-  const formatAmount = () => {
-    if (!orderData?.totals?.total) return 'No disponible'
-
+  // Formatear el total a pagar desde centavos
+  const formatAmount = (amountInCents) => {
+    if (amountInCents === undefined || amountInCents === null || isNaN(amountInCents)) return 'No disponible';
+    const amountInPesos = amountInCents / 100;
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN',
-    }).format(orderData.totals.total)
-  }
+    }).format(amountInPesos);
+  };
 
   return (
     <div className="oxxo-voucher-container p-4 border rounded bg-white">
@@ -50,7 +86,6 @@ export const OxxoVoucher = ({ orderData, voucherUrl, expiresAt }) => {
             className="oxxo-logo"
             style={{ maxHeight: '60px', maxWidth: '100%' }}
             onError={(e) => {
-              // Fallback si la imagen no carga
               e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"><rect width="120" height="60" fill="%23e10718"/><text x="60" y="35" font-family="Arial" font-size="24" fill="white" text-anchor="middle">OXXO</text></svg>'
             }}
           />
@@ -70,13 +105,13 @@ export const OxxoVoucher = ({ orderData, voucherUrl, expiresAt }) => {
           <div className="col-md-6 mb-3">
             <div className="detail-group">
               <div className="detail-label">Monto a pagar:</div>
-              <div className="detail-value fw-bold text-danger">{formatAmount()}</div>
+              <div className="detail-value fw-bold text-danger">{displayAmount}</div>
             </div>
           </div>
           <div className="col-12">
             <div className="detail-group">
               <div className="detail-label">Fecha límite de pago:</div>
-              <div className="detail-value">{formatExpiryDate(expiresAt)}</div>
+              <div className="detail-value">{displayExpiry}</div>
             </div>
           </div>
         </div>

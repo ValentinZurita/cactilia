@@ -53,6 +53,11 @@ exports.createOxxoPaymentIntent = onCall({
       description,
       payment_method_types: ['oxxo'], // Especificamos que es tipo OXXO
       receipt_email: customer_email, // Para enviar recibo
+      payment_method_options: {
+        oxxo: {
+          expires_after_days: 3,
+        }
+      },
       metadata: {
         firebaseUserId: request.auth.uid,
         paymentType: 'oxxo'

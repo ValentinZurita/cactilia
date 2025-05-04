@@ -122,13 +122,24 @@ export const useOrderProcessor = ({
           dispatch(clearCartWithSync())
         }
 
-        // 8. Redirigir a la página de éxito usando window.location para una navegación forzada
-        const redirectPath = paymentManager.selectedPaymentType === 'oxxo'
-          ? `/shop/order-success/${result.orderId}?payment=oxxo`
-          : `/shop/order-success/${result.orderId}`
+        // 8. Redirigir a la página de éxito
+        let redirectPath = `/shop/order-success/${result.orderId}`;
+        if (result.paymentType === 'oxxo') {
+            // Construir URL con parámetros para OXXO
+            const queryParams = new URLSearchParams({
+                payment: 'oxxo',
+                // Asegurarse que amount y expires existen y son válidos antes de añadir
+                ...(result.oxxoAmount && { amount: result.oxxoAmount }),
+                ...(result.oxxoExpiresAt && { expires: result.oxxoExpiresAt })
+            });
+            redirectPath = `${redirectPath}?${queryParams.toString()}`;
+        } else {
+            // Redirección simple para otros métodos
+        }
 
-        // Usar window.location para una redirección dura que evita problemas con React Router
-        window.location.href = redirectPath
+        // Usar window.location para una redirección dura
+        console.log(`[processOrder] Redirigiendo a: ${redirectPath}`);
+        window.location.href = redirectPath;
       }
 
       // 9. Devolver el resultado del procesamiento
@@ -514,26 +525,41 @@ export const useOrderProcessor = ({
 
           // Verificar el estado y extraer la URL del voucher
           if (confirmedOxxoIntent.status === 'requires_action' && confirmedOxxoIntent.next_action?.type === 'oxxo_display_details') {
-            const voucherUrl = confirmedOxxoIntent.next_action.oxxo_display_details.hosted_voucher_url;
-            if (!voucherUrl) {
-                console.error('[createAndProcessOrder] confirmOxxoPayment exitoso pero no se encontró voucherUrl en next_action.', confirmedOxxoIntent.next_action);
-                throw new Error('No se pudo obtener el enlace del voucher de OXXO.');
+            const oxxoDetails = confirmedOxxoIntent.next_action.oxxo_display_details;
+            const voucherUrl = oxxoDetails.hosted_voucher_url;
+            const oxxoExpiresAt = oxxoDetails.expires_after; // Timestamp Unix (segundos)
+
+            // Validar solo voucherUrl y expiresAt
+            if (!voucherUrl || oxxoExpiresAt === undefined) { 
+                console.error('[createAndProcessOrder] Faltan voucherUrl o expiresAt en next_action:', oxxoDetails);
+                throw new Error('No se pudieron obtener los detalles completos del voucher OXXO.'); // Mensaje más genérico
             }
-            console.log(`[createAndProcessOrder] OXXO Voucher URL obtenido tras confirmación: ${voucherUrl}`);
             
-            // Opcional: Actualizar la orden con la voucherUrl obtenida (ya debería estar por processPayment, pero por si acaso)
+            // Obtener el monto original de la orden (convertido a centavos)
+            const orderAmountInCents = Math.round(orderData.totals.finalTotal * 100);
+
+            console.log(`[createAndProcessOrder] OXXO Detalles obtenidos: URL=${voucherUrl}, Expires=${oxxoExpiresAt}. Monto original=${orderAmountInCents}`);
+            
+            // Opcional pero recomendado: Actualizar orden con detalles OXXO
             try {
-              await apiService.updateDocument(ORDERS_COLLECTION, createdOrderId, { 'payment.voucherUrl': voucherUrl });
+              await apiService.updateDocument(ORDERS_COLLECTION, createdOrderId, { 
+                  'payment.voucherUrl': voucherUrl,
+                  'payment.oxxoAmount': orderAmountInCents, // <-- Guardar monto original
+                  'payment.oxxoExpiresAt': oxxoExpiresAt 
+              });
+               console.log(`[createAndProcessOrder] Orden ${createdOrderId} actualizada con detalles OXXO.`);
             } catch(updateErr) {
-               console.warn(`[createAndProcessOrder] No se pudo actualizar la orden ${createdOrderId} con la voucherUrl final:`, updateErr);
+               console.warn(`[createAndProcessOrder] No se pudo actualizar la orden ${createdOrderId} con detalles OXXO:`, updateErr);
             }
 
             // Devolver éxito con datos específicos de OXXO
             return {
                 ok: true,
                 orderId: createdOrderId,
-                voucherUrl: voucherUrl, // <-- Ahora sí tenemos la URL
-                paymentType: 'oxxo' // Indicar el tipo para el llamador
+                voucherUrl: voucherUrl,
+                paymentType: 'oxxo',
+                oxxoAmount: orderAmountInCents, // <-- Devolver monto original
+                oxxoExpiresAt: oxxoExpiresAt 
             };
           } else {
             // Estado inesperado después de confirmar OXXO
