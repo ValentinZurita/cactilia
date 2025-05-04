@@ -59,11 +59,11 @@ const formatDate = (timestamp) => {
  *
  * @param {Object} props.user - Datos del usuario
  * @param {Function} props.onBack - Función para volver a la lista
- * @param {Function} [props.onChangeRole] - Función opcional para cambiar el rol
+ * @param {Function} [props.onChangeRole] - Función para INICIAR el cambio de rol (abre modal)
  * @param {Function} [props.onDelete] - Función opcional para eliminar el usuario
  * @returns {JSX.Element}
  */
-export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
+export const UserDetailsCard = ({ user, onBack, onDelete, onChangeRole }) => {
   // --- NUEVO: Estado para órdenes del usuario ---
   const [userOrders, setUserOrders] = useState([])
   const [loadingOrders, setLoadingOrders] = useState(true)
@@ -141,7 +141,7 @@ export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
 
       {/* --- Contenido de las Pestañas ACTUALIZADO --- */}
       <div className="mt-4"> 
-        {/* Pestaña Detalles (limpia) */} 
+        {/* Pestaña Detalles (limpia) */}
         {activeTab === 'details' && (
           <div>
             <DetailField
@@ -177,7 +177,7 @@ export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
           </div>
         )}
         
-        {/* Pestaña Contacto (con estilo DetailField + iconos) */} 
+        {/* Pestaña Contacto (con estilo DetailField + iconos) */}
         {activeTab === 'contact' && (
           <div>
              {/* Email con DetailField */}
@@ -197,7 +197,7 @@ export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
           </div>
         )}
 
-        {/* Pestaña Historial (sin cambios internos) */} 
+        {/* Pestaña Historial (sin cambios internos) */}
         {activeTab === 'history' && (
            <div>
              {/* ... (lógica de historial sin cambios) ... */}
@@ -216,31 +216,45 @@ export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
            </div>
         )}
         
-        {/* NUEVA Pestaña Rol y Acciones */} 
+        {/* Pestaña Rol y Acciones (Simplificada - Solo Botones) */}
         {activeTab === 'actions' && (
-           <div> 
-             {/* Mover aquí los botones */} 
+           <div className="d-flex flex-column gap-3"> 
+             
+             {/* Botón para abrir modal de rol */} 
              {onChangeRole && (
-               <ActionButton
-                 onClick={() => onChangeRole(user)}
-                 icon="person-badge"
-                 text="Rol"
-                 variant="outline-secondary"
-                 className="btn-sm me-2" // Añadir margen si están en línea
-               />
+               <div className="mb-3">
+                 <p className="text-muted small mb-1 fst-italic">
+                   Abre un diálogo para modificar el nivel de acceso del usuario.
+                 </p>
+                 <ActionButton
+                   onClick={() => onChangeRole(user)} // Llama a la función del padre
+                   icon="person-badge" // O pencil-square?
+                   text="Gestionar Rol"
+                   variant="outline-secondary"
+                   className="btn-sm"
+                 />
+               </div>
              )}
+
+             {/* Sección Eliminar Usuario (Se mantiene igual) */}
              {onDelete && (
-               <ActionButton
-                 onClick={() => onDelete(user.id)}
-                 icon="trash"
-                 text="Eliminar"
-                 variant="outline-danger"
-                 className="btn-sm"
-               />
+               <div className="mt-4 pt-3 border-top"> 
+                 <p className="text-muted small mb-2 fst-italic">
+                   Atención: Esta acción eliminará permanentemente al usuario.
+                 </p>
+                 <ActionButton
+                   onClick={() => onDelete(user.id)}
+                   icon="trash"
+                   text="Eliminar Usuario"
+                   variant="outline-danger"
+                   className="btn-sm"
+                 />
+               </div>
              )}
-             {/* Mostrar mensaje si no hay acciones? */} 
+
+             {/* Mensaje si no hay acciones disponibles */}
              {!onChangeRole && !onDelete && (
-                 <p className="text-muted fst-italic">No hay acciones disponibles.</p>
+                 <p className="text-muted fst-italic mt-3">No hay acciones disponibles.</p>
              )}
            </div>
         )}

@@ -3,42 +3,35 @@ import ReactDOM from 'react-dom';
 
 /**
  * Modal personalizado para cambiar el rol de un usuario
- * Versión refinada con diseño elegante y minimalista
+ * Versión refinada con diseño elegante y minimalista, alineado con Bootstrap 5
  *
  * @param {Object} props.user - Usuario al que se cambiará el rol
+ * @param {string} props.currentUserRole - Rol del usuario actual (para lógica condicional si es necesaria)
  * @param {Function} props.onClose - Función para cerrar el modal
  * @param {Function} props.onSave - Función para guardar los cambios
  * @returns {JSX.Element}
  */
-export const UserRoleModal = ({ user, onClose, onSave }) => {
+export const UserRoleModal = ({ user, currentUserRole, onClose, onSave }) => {
   const [newRole, setNewRole] = useState(user?.role || 'user');
   const [isVisible, setIsVisible] = useState(false);
 
-  // Efecto para mostrar el modal con una pequeña animación
+  // Efecto para animación y overflow (sin cambios)
   useEffect(() => {
-    // Añadir la clase overflow-hidden al body para evitar scroll
     document.body.style.overflow = 'hidden';
-
-    // Animar la entrada del modal
-    setTimeout(() => {
-      setIsVisible(true);
-    }, 50);
-
-    // Limpieza al desmontar el componente
+    const timer = setTimeout(() => setIsVisible(true), 50);
     return () => {
       document.body.style.overflow = '';
+      clearTimeout(timer);
     };
   }, []);
 
-  // Función para cerrar el modal con animación
+  // Función para cerrar (sin cambios)
   const handleClose = () => {
     setIsVisible(false);
-    setTimeout(() => {
-      onClose();
-    }, 300); // Tiempo para que termine la animación
+    setTimeout(onClose, 300);
   };
 
-  // Manejar el guardado de cambios
+  // Manejar guardado (sin cambios)
   const handleSave = () => {
     if (user && newRole) {
       onSave(user.id, newRole);
@@ -46,10 +39,8 @@ export const UserRoleModal = ({ user, onClose, onSave }) => {
     }
   };
 
-  // Prevenir que los clics dentro del modal se propaguen al backdrop
-  const stopPropagation = (e) => {
-    e.stopPropagation();
-  };
+  // stopPropagation (sin cambios)
+  const stopPropagation = (e) => e.stopPropagation();
 
   // Obtener color según el rol
   const getRoleBadgeColor = (role) => {
@@ -59,7 +50,7 @@ export const UserRoleModal = ({ user, onClose, onSave }) => {
       case "admin":
         return "bg-black text-white";
       case "user":
-        return "bg-primary";
+        return "bg-secondary";
       default:
         return "bg-secondary";
     }
@@ -68,144 +59,102 @@ export const UserRoleModal = ({ user, onClose, onSave }) => {
   // Verificar que el usuario existe
   if (!user) return null;
 
-  // Usar createPortal para renderizar el modal directamente en el body
   return ReactDOM.createPortal(
-    <div
-      className={`custom-modal-overlay ${isVisible ? 'visible' : ''}`}
-      onClick={handleClose}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1050,
-        opacity: isVisible ? 1 : 0,
-        transition: 'opacity 0.3s ease',
-        padding: '1rem'
-      }}
-    >
+    // Usar un fragmento para renderizar backdrop y modal como hermanos
+    <>
+      {/* 1. Backdrop de Bootstrap */}
+      <div className={`modal-backdrop fade ${isVisible ? 'show' : ''}`}></div>
+
+      {/* 2. Contenedor del Modal */}
       <div
-        className="custom-modal-content"
-        onClick={stopPropagation}
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '1rem',
-          boxShadow: '0 0.5rem 2rem rgba(0, 0, 0, 0.15)',
-          width: '100%',
-          maxWidth: '550px',
-          maxHeight: '90vh',
-          overflow: 'hidden',
-          transform: isVisible ? 'translateY(0)' : 'translateY(-30px)',
-          transition: 'transform 0.3s ease',
-        }}
+        className={`modal fade ${isVisible ? 'show' : ''}`}
+        style={{ display: 'block' }} // Necesario para que sea visible sin JS de BS
+        tabIndex="-1"
+        role="dialog"
+        aria-modal="true" // Mejor accesibilidad
+        onClick={handleClose} // Cerrar al hacer clic fuera
       >
-        {/* Cabecera */}
-        <div className="p-4 d-flex justify-content-between align-items-center border-bottom">
-          <h5 className="m-0 fw-bold d-flex align-items-center">
-            <i className="bi bi-person-gear me-2 text-primary"></i>
-            Cambiar Rol de Usuario
-          </h5>
-          <button
-            className="btn-close"
-            onClick={handleClose}
-            aria-label="Close"
-          ></button>
-        </div>
+        {/* 3. Diálogo Centrado */}
+        <div className="modal-dialog modal-dialog-centered" role="document" onClick={stopPropagation}>
+          {/* 4. Contenido del Modal (sin estilos de fondo/opacidad inline) */}
+          <div className="modal-content shadow-sm">
+            
+            {/* Cabecera del Modal (Texto más discreto) */} 
+            <div className="modal-header border-bottom-0 pb-0">
+              {/* Usar fs-6 para título más pequeño */} 
+              <h6 className="modal-title d-flex align-items-center gap-2"> 
+                <i className="bi bi-person-gear text-secondary"></i>
+                <span>
+                  Gestionar Rol
+                  <small className="text-muted d-block fw-normal">{user.email}</small>
+                </span>
+              </h6>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={handleClose}
+                aria-label="Close"
+              ></button>
+            </div>
 
-        {/* Cuerpo */}
-        <div className="p-4">
-          <div className="mb-4 text-center">
-            {/* Avatar y nombre del usuario */}
-            <div className="mb-3 position-relative d-inline-block">
-              <img
-                src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'User')}&size=150`}
-                alt={user.displayName || 'Usuario'}
-                className="rounded-circle shadow-sm border border-light"
-                style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-              />
-              <span
-                className={`position-absolute bottom-0 end-0 badge rounded-pill ${getRoleBadgeColor(user.role)} p-2 shadow-sm`}
-                style={{ transform: 'translate(15%, 15%)' }}
+            {/* Cuerpo del Modal */} 
+            <div className="modal-body pt-2 pb-4">
+              {/* Info usuario */} 
+              <div className="text-center mb-4">
+                 <img
+                    src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&size=80&background=random`}
+                    alt={user.displayName || 'Avatar'}
+                    className="rounded-circle mb-2 border border-light"
+                    style={{ width: '80px', height: '80px' }} 
+                 />
+                 <h6 className="mb-0 fw-bold">{user.displayName || 'Usuario sin nombre'}</h6>
+                 <span className={`badge ${getRoleBadgeColor(user.role)} rounded-pill px-2 py-1 small`}>Rol actual: {user.role || 'user'}</span>
+              </div>
+              
+              {/* Selector de Rol */} 
+              <div className="mb-3">
+                <label htmlFor="role-select-modal" className="form-label small fw-bold mb-1">Nuevo Rol Asignado</label>
+                <select
+                  id="role-select-modal"
+                  className="form-select form-select-sm"
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                >
+                  <option value="user">Usuario</option>
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">Superadmin</option>
+                </select>
+              </div>
+
+              {/* Advertencia simplificada y neutral */}
+              <div className="alert alert-light border small p-2 d-flex align-items-center">
+                  <i className="bi bi-info-circle me-2"></i>
+                  <span>El cambio de rol afecta los permisos del usuario.</span>
+              </div>
+            </div>
+
+            {/* Pie del Modal */} 
+            <div className="modal-footer border-top-0 bg-light">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={handleClose}
               >
-                {user.role || 'user'}
-              </span>
-            </div>
-            <h5 className="mb-1 fw-bold">{user.displayName || 'Sin nombre'}</h5>
-            <p className="text-muted small">{user.email}</p>
-          </div>
-
-          {/* Selector de rol */}
-          <div className="mb-4">
-            <label className="form-label small fw-bold text-uppercase mb-2">Seleccionar Nuevo Rol</label>
-            <select
-              className="form-select form-select-lg rounded-4 shadow-sm mb-4"
-              value={newRole}
-              onChange={(e) => setNewRole(e.target.value)}
-              style={{ fontSize: '1rem' }}
-            >
-              <option value="user">Usuario Regular</option>
-              <option value="admin">Administrador</option>
-              <option value="superadmin">Super Administrador</option>
-            </select>
-
-            {/* Información sobre los roles */}
-            <div className="card border-0 shadow-sm rounded-4 mb-4">
-              <div className="card-header bg-light border-0 py-3">
-                <h6 className="mb-0 fw-bold">
-                  <i className="bi bi-shield-lock me-2 text-primary"></i>
-                  Niveles de acceso
-                </h6>
-              </div>
-              <div className="card-body">
-                <ul className="list-group list-group-flush">
-                  <li className="list-group-item border-0 px-3 py-2 d-flex align-items-center">
-                    <span className="badge bg-primary rounded-pill px-3 py-2 me-3">Usuario</span>
-                    <span>Acceso a la tienda como cliente</span>
-                  </li>
-                  <li className="list-group-item border-0 px-3 py-2 d-flex align-items-center">
-                    <span className="badge bg-black rounded-pill px-3 py-2 me-3">Admin</span>
-                    <span>Gestión de productos y categorías</span>
-                  </li>
-                  <li className="list-group-item border-0 px-3 py-2 d-flex align-items-center">
-                    <span className="badge bg-black rounded-pill px-3 py-2 me-3">Superadmin</span>
-                    <span>Control total del sistema</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Advertencia */}
-            <div className="alert alert-warning rounded-4 border-0 shadow-sm d-flex align-items-center">
-              <i className="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
-              <div>
-                Cambiar el rol modificará los permisos del usuario en todo el sistema.
-              </div>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-dark"
+                onClick={handleSave}
+                disabled={newRole === user.role}
+              >
+                Guardar Rol
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* Pie */}
-        <div className="p-4 bg-light border-top d-flex justify-content-end gap-2">
-          <button
-            className="btn btn-light rounded-3 px-4"
-            onClick={handleClose}
-          >
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary rounded-3 px-4"
-            onClick={handleSave}
-          >
-            Guardar Cambios
-          </button>
         </div>
       </div>
-    </div>,
+    </>,
     document.body
   );
 };
