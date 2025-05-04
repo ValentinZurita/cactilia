@@ -274,7 +274,7 @@ export const BillingInfoForm = ({
 
             {/* Calle */}
             <div className="col-md-8">
-                <label htmlFor="street" className="form-label">Calle*</label>
+                <label htmlFor="street" className="form-label">Calle</label>
                 <input
                     type="text"
                     className="form-control"
@@ -282,13 +282,12 @@ export const BillingInfoForm = ({
                     name="street"
                     value={localFiscalData.street}
                     onChange={handleInputChange}
-                    required
                 />
             </div>
 
             {/* Número Exterior */}
             <div className="col-md-4">
-                <label htmlFor="extNumber" className="form-label">Número Exterior*</label>
+                <label htmlFor="extNumber" className="form-label">Número Exterior</label>
                 <input
                     type="text"
                     className="form-control"
@@ -296,7 +295,6 @@ export const BillingInfoForm = ({
                     name="extNumber"
                     value={localFiscalData.extNumber}
                     onChange={handleInputChange}
-                    required
                 />
             </div>
 
@@ -315,7 +313,7 @@ export const BillingInfoForm = ({
 
             {/* Colonia */}
             <div className="col-md-4">
-                <label htmlFor="neighborhood" className="form-label">Colonia*</label>
+                <label htmlFor="neighborhood" className="form-label">Colonia</label>
                 <input
                     type="text"
                     className="form-control"
@@ -323,13 +321,12 @@ export const BillingInfoForm = ({
                     name="neighborhood"
                     value={localFiscalData.neighborhood}
                     onChange={handleInputChange}
-                    required
                 />
             </div>
 
             {/* Ciudad / Municipio */}
             <div className="col-md-6">
-                <label htmlFor="city" className="form-label">Ciudad / Municipio*</label>
+                <label htmlFor="city" className="form-label">Ciudad / Municipio</label>
                 <input
                     type="text"
                     className="form-control"
@@ -337,13 +334,12 @@ export const BillingInfoForm = ({
                     name="city"
                     value={localFiscalData.city}
                     onChange={handleInputChange}
-                    required
                 />
             </div>
 
             {/* Estado */}
             <div className="col-md-6">
-                <label htmlFor="state" className="form-label">Estado*</label>
+                <label htmlFor="state" className="form-label">Estado</label>
                 <input
                     type="text"
                     className="form-control"
@@ -351,7 +347,6 @@ export const BillingInfoForm = ({
                     name="state"
                     value={localFiscalData.state}
                     onChange={handleInputChange}
-                    required
                 />
             </div>
             {/* --- FIN CAMPOS DE DIRECCIÓN FISCAL --- */}
@@ -360,7 +355,7 @@ export const BillingInfoForm = ({
 
           <footer className="d-flex align-items-center my-4">
             <i className="bi bi-info-circle me-2 text-muted"></i>
-            <p className="text-muted mb-0 small">Los campos marcados con * son obligatorios</p>
+            <p className="text-muted mb-0 small">Los campos marcados con * son obligatorios para la facturación.</p>
           </footer>
         </div>
       )}
