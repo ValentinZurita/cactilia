@@ -17,21 +17,35 @@ export const useBillingManager = () => {
     businessName: '',
     email: '',
     regimenFiscal: '',
-    usoCFDI: 'G03' // Gastos en general (por defecto)
+    usoCFDI: '',
+    postalCode: '',
+    street: '',
+    extNumber: '',
+    intNumber: '',
+    neighborhood: '',
+    city: '',
+    state: '',
   });
 
   // Manejador para requerir factura
   const handleInvoiceChange = useCallback((requires) => {
     setRequiresInvoice(requires);
 
-    // Si ya no requiere factura, limpiar datos fiscales
+    // Si ya no requiere factura, limpiar datos fiscales (mantener valores vacíos)
     if (!requires) {
       setFiscalData({
         rfc: '',
         businessName: '',
         email: '',
         regimenFiscal: '',
-        usoCFDI: 'G03'
+        usoCFDI: '',
+        postalCode: '',
+        street: '',
+        extNumber: '',
+        intNumber: '',
+        neighborhood: '',
+        city: '',
+        state: '',
       });
     }
   }, []);

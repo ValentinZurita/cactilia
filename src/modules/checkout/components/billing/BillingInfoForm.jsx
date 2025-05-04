@@ -24,6 +24,15 @@ export const BillingInfoForm = ({
     email: '',
     regimenFiscal: '',
     usoCFDI: 'G03', // Por defecto: Gastos en general
+    // --- NUEVOS CAMPOS DE DIRECCIÓN FISCAL ---
+    postalCode: '', // Código Postal - OBLIGATORIO CFDI 4.0
+    street: '',
+    extNumber: '',
+    intNumber: '', // Opcional
+    neighborhood: '',
+    city: '',
+    state: '',
+    // ---------------------------------------
     ...fiscalData,
   })
 
@@ -87,6 +96,41 @@ export const BillingInfoForm = ({
     }
   }, [localFiscalData, requiresInvoice, onFiscalDataChange])
 
+  // --- NUEVO: Sincronizar estado local cuando la prop fiscalData cambia ---
+  useEffect(() => {
+    // Comprobar si la prop fiscalData tiene datos de dirección que el estado local no tiene
+    const propHasAddress = fiscalData?.postalCode || fiscalData?.street;
+    const localHasAddress = localFiscalData?.postalCode || localFiscalData?.street;
+
+    // Solo sincronizar si la prop tiene datos de dirección y el estado local no,
+    // O si los datos de la prop son diferentes (evita sobrescribir ediciones manuales si es posible)
+    const needsSync = propHasAddress && (
+      !localHasAddress ||
+      fiscalData?.postalCode !== localFiscalData.postalCode ||
+      fiscalData?.street !== localFiscalData.street ||
+      fiscalData?.extNumber !== localFiscalData.extNumber ||
+      fiscalData?.intNumber !== localFiscalData.intNumber ||
+      fiscalData?.neighborhood !== localFiscalData.neighborhood ||
+      fiscalData?.city !== localFiscalData.city ||
+      fiscalData?.state !== localFiscalData.state
+    );
+
+    if (needsSync) {
+        console.log("BillingInfoForm: Sincronizando localFiscalData con la prop fiscalData actualizada.");
+        setLocalFiscalData(prevData => ({
+            // Mantener los datos no relacionados con la dirección del estado previo
+            rfc: prevData.rfc,
+            businessName: prevData.businessName,
+            email: prevData.email,
+            regimenFiscal: prevData.regimenFiscal,
+            usoCFDI: prevData.usoCFDI,
+            // Aplicar TODOS los datos de la prop actualizada (incluyendo la dirección)
+            ...fiscalData
+        }));
+    }
+}, [fiscalData]); // Ejecutar cuando la prop fiscalData cambie
+  // -------------------------------------------------------------------
+
   // Manejar cambios en los inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -127,7 +171,6 @@ export const BillingInfoForm = ({
                 name="rfc"
                 value={localFiscalData.rfc}
                 onChange={handleInputChange}
-                placeholder="Ej. XAXX010101000"
                 required
               />
               {!isValidRFC(localFiscalData.rfc) && localFiscalData.rfc && (
@@ -170,7 +213,6 @@ export const BillingInfoForm = ({
                 name="businessName"
                 value={localFiscalData.businessName}
                 onChange={handleInputChange}
-                placeholder="Razón social o nombre completo"
                 required
               />
             </div>
@@ -185,7 +227,6 @@ export const BillingInfoForm = ({
                 name="email"
                 value={localFiscalData.email}
                 onChange={handleInputChange}
-                placeholder="correo@ejemplo.com"
                 required
               />
               {!isEmailValid && (
@@ -214,6 +255,107 @@ export const BillingInfoForm = ({
                 ))}
               </select>
             </div>
+
+            {/* --- CAMPOS DE DIRECCIÓN FISCAL --- */}
+            {/* Código Postal */}
+            <div className="col-md-4">
+                <label htmlFor="postalCode" className="form-label">Código Postal*</label>
+                <input
+                    type="text"
+                    className="form-control"
+                    id="postalCode"
+                    name="postalCode"
+                    value={localFiscalData.postalCode}
+                    onChange={handleInputChange}
+                    required
+                    maxLength={5}
+                />
+            </div>
+
+            {/* Calle */}
+            <div className="col-md-8">
+                <label htmlFor="street" className="form-label">Calle*</label>
+                <input
+                    type="text"
+                    className="form-control"
+                    id="street"
+                    name="street"
+                    value={localFiscalData.street}
+                    onChange={handleInputChange}
+                    required
+                />
+            </div>
+
+            {/* Número Exterior */}
+            <div className="col-md-4">
+                <label htmlFor="extNumber" className="form-label">Número Exterior*</label>
+                <input
+                    type="text"
+                    className="form-control"
+                    id="extNumber"
+                    name="extNumber"
+                    value={localFiscalData.extNumber}
+                    onChange={handleInputChange}
+                    required
+                />
+            </div>
+
+            {/* Número Interior */}
+            <div className="col-md-4">
+                <label htmlFor="intNumber" className="form-label">Número Interior</label>
+                <input
+                    type="text"
+                    className="form-control"
+                    id="intNumber"
+                    name="intNumber"
+                    value={localFiscalData.intNumber}
+                    onChange={handleInputChange}
+                />
+            </div>
+
+            {/* Colonia */}
+            <div className="col-md-4">
+                <label htmlFor="neighborhood" className="form-label">Colonia*</label>
+                <input
+                    type="text"
+                    className="form-control"
+                    id="neighborhood"
+                    name="neighborhood"
+                    value={localFiscalData.neighborhood}
+                    onChange={handleInputChange}
+                    required
+                />
+            </div>
+
+            {/* Ciudad / Municipio */}
+            <div className="col-md-6">
+                <label htmlFor="city" className="form-label">Ciudad / Municipio*</label>
+                <input
+                    type="text"
+                    className="form-control"
+                    id="city"
+                    name="city"
+                    value={localFiscalData.city}
+                    onChange={handleInputChange}
+                    required
+                />
+            </div>
+
+            {/* Estado */}
+            <div className="col-md-6">
+                <label htmlFor="state" className="form-label">Estado*</label>
+                <input
+                    type="text"
+                    className="form-control"
+                    id="state"
+                    name="state"
+                    value={localFiscalData.state}
+                    onChange={handleInputChange}
+                    required
+                />
+            </div>
+            {/* --- FIN CAMPOS DE DIRECCIÓN FISCAL --- */}
+
           </div>
 
           <footer className="d-flex align-items-center my-4">

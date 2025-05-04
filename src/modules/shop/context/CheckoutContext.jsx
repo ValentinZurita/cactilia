@@ -54,11 +54,49 @@ export const CheckoutProvider = ({ children }) => {
     setOrderNotes(e.target.value);
   };
 
+  // --- NUEVO MANEJADOR PARA EL TOGGLE DE FACTURA CON PRE-LLENADO ---
+  const handleRequiresInvoiceToggle = useCallback((requires) => {
+    // 1. Llamar al manejador original de billingManager
+    billingManager.handleInvoiceChange(requires);
+
+    // 2. Si se está marcando la casilla (requires === true)
+    if (requires) {
+      // 3. Obtener la dirección de envío actual
+      let shippingAddress = null;
+      if (addressManager.selectedAddressType === 'saved' && addressManager.selectedAddressId) {
+        shippingAddress = addressManager.addresses.find(addr => addr.id === addressManager.selectedAddressId);
+      } else if (addressManager.selectedAddressType === 'new' && addressManager.newAddressData) {
+        shippingAddress = addressManager.newAddressData; // Asume que newAddressData tiene la estructura necesaria
+      }
+
+      // 4. Obtener datos fiscales actuales y verificar si pre-llenar
+      const currentFiscalData = billingManager.fiscalData;
+      // Solo pre-llenar si hay una dirección de envío y el CP fiscal está vacío
+      if (shippingAddress && !currentFiscalData?.postalCode) {
+        console.log('Pre-llenando dirección fiscal desde dirección de envío:', shippingAddress);
+        // 5. Crear objeto con datos mapeados (¡AJUSTAR NOMBRES SI ES NECESARIO!)
+        const newFiscalAddress = {
+          postalCode: shippingAddress.zip || shippingAddress.postalCode || '', // Intentar 'zip' o 'postalCode'
+          street: shippingAddress.street || '',
+          extNumber: shippingAddress.numExt || shippingAddress.extNumber || '', // Intentar 'numExt' o 'extNumber'
+          intNumber: shippingAddress.numInt || shippingAddress.intNumber || '', // Intentar 'numInt' o 'intNumber'
+          neighborhood: shippingAddress.colonia || shippingAddress.neighborhood || '', // Intentar 'colonia' o 'neighborhood'
+          city: shippingAddress.city || '',
+          state: shippingAddress.state || ''
+        };
+
+        // 6. Llamar al manejador para actualizar datos fiscales en billingManager
+        billingManager.handleFiscalDataChange(newFiscalAddress);
+      }
+    }
+  }, [billingManager, addressManager]); // Dependencias: los managers
+  // ------------------------------------------------------------------
+
   // Crear la función handleProcessOrder que acepta ambos argumentos
   const handleProcessOrder = useCallback(async (selectedOption, shippingCost) => {
     // Llamar a la función del hook con los argumentos recibidos
     return orderProcessor.processOrder(selectedOption, shippingCost);
-  }, [orderProcessor]); // Dependencia del procesador
+  }, [orderProcessor]);
 
   // Construir el estado completo del contexto
   const checkoutState = {
@@ -81,11 +119,15 @@ export const CheckoutProvider = ({ children }) => {
     ...paymentManager,
     handleOxxoSelect: () => paymentManager.handleOxxoSelect(billingManager),
 
-    // Datos y métodos de facturación
-    ...billingManager,
+    // Datos y métodos de facturación (USAR EL NUEVO HANDLER)
+    // ...billingManager, // No hacer spread completo para sobreescribir handleInvoiceChange
+    requiresInvoice: billingManager.requiresInvoice,
+    fiscalData: billingManager.fiscalData,
+    handleFiscalDataChange: billingManager.handleFiscalDataChange,
+    handleInvoiceChange: handleRequiresInvoiceToggle, // <--- Usar el nuevo handler
 
     // Método de procesamiento de orden actualizado
-    handleProcessOrder // Exponer la nueva función que acepta argumentos
+    handleProcessOrder
   };
 
   return (
