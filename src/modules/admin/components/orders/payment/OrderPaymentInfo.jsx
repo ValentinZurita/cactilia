@@ -189,80 +189,44 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
         </InfoBlock>
       </div>
 
-      {/* Datos fiscales */}
+      {/* Datos fiscales y Subida de Factura - CORREGIDO */}
       <div className="col-md-6">
-        {billing?.requiresInvoice && billing.fiscalData ? (
-          <InfoBlock title="Datos de facturación">
-            <div className="d-flex align-items-start">
+        <InfoBlock title="Datos de facturación">
+          {/* Mostrar datos solo si se requiere y existen */}
+          {order?.requiresInvoice && order.fiscalData && Object.keys(order.fiscalData).length > 0 ? (
+            <div className="d-flex align-items-start mb-3">
               <IconCircle icon="receipt" className="mt-1" />
               <div>
-                <InfoRow label="RFC" value={billing.fiscalData.rfc} />
-                <div className="mb-2"></div>
-                <InfoRow label="Razón Social" value={billing.fiscalData.businessName} />
-                <div className="mb-2"></div>
-                <InfoRow label="Email" value={billing.fiscalData.email} />
-                <div className="mb-2"></div>
-                <InfoRow label="Uso CFDI" value={billing.fiscalData.usoCFDI} />
-                <div className="mb-2"></div>
-                {billing.fiscalData.regimenFiscal && (
-                  <>
-                    <InfoRow label="Régimen Fiscal" value={billing.fiscalData.regimenFiscal} />
-                    <div className="mb-2"></div>
-                  </>
-                )}
+                {/* Asegúrate que los nombres de campo coincidan con tu objeto fiscalData */}
+                {order.fiscalData.rfc && <InfoRow label="RFC" value={order.fiscalData.rfc} />} 
+                {order.fiscalData.rfc && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.businessName && <InfoRow label="Razón Social" value={order.fiscalData.businessName} />}
+                {order.fiscalData.businessName && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.regimenFiscal && <InfoRow label="Régimen Fiscal" value={order.fiscalData.regimenFiscal} />}
+                 {order.fiscalData.regimenFiscal && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.usoCFDI && <InfoRow label="Uso CFDI" value={order.fiscalData.usoCFDI} />}
+                 {order.fiscalData.usoCFDI && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.fiscalAddress && <InfoRow label="Dirección Fiscal" value={order.fiscalData.fiscalAddress} />}
+                {/* Añade aquí más campos si es necesario, ej: order.fiscalData.email */} 
               </div>
             </div>
+          ) : order?.requiresInvoice ? (
+             <p className="text-muted fst-italic">(Datos fiscales requeridos pero no encontrados en la orden)</p>
+          ) : (
+            <p className="text-muted">No se solicitó factura.</p>
+          )}
 
-            {/* Estado de envío de facturas por email */}
-            {billing.fiscalData?.email && (
-              <div className="mt-3 border-top pt-3">
-                <div className="d-flex align-items-center mb-2">
-                  <IconCircle icon="envelope" />
-                  <div>
-                    <InfoRow label="Estado de envío de facturas"
-                             value={
-                               invoiceEmailSent ? (
-                                 <span className="badge bg-success px-2 py-1">
-                            Enviadas
-                          </span>
-                               ) : hasInvoice ? (
-                                 <span className="badge bg-warning text-dark px-2 py-1">
-                            Pendiente de envío
-                          </span>
-                               ) : (
-                                 <span className="badge bg-secondary px-2 py-1">
-                            Sin facturas disponibles
-                          </span>
-                               )
-                             }
-                    />
-                    {invoiceEmailSent && billing.invoiceEmailSentAt && (
-                      <p className="mb-0 small text-muted">
-                        Enviadas el {formatDate(billing.invoiceEmailSentAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Componente para subir/gestionar facturas */}
-            <div className="mt-4 border-top pt-3">
+          {/* Mostrar uploader SIEMPRE que se requiera factura */}
+          {order?.requiresInvoice && (
+            <div className="mt-4 pt-3 border-top">
               <InvoiceUploader
                 orderId={order.id}
-                billing={billing}
+                billing={order.billing || {}}
                 onInvoiceUploaded={handleInvoiceUploaded}
               />
             </div>
-          </InfoBlock>
-        ) : (
-          <InfoBlock title="Datos de facturación">
-            <div className="d-flex align-items-center text-muted">
-              <IconCircle icon="receipt" />
-              <p className="mb-0 small">No se solicitó factura para este pedido</p>
-            </div>
-          </InfoBlock>
-        )}
+          )}
+        </InfoBlock>
       </div>
     </div>
   );

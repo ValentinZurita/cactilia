@@ -33,9 +33,6 @@ const initialState = {
   // Pedido seleccionado para detalles
   selectedOrder: null,
 
-  // Pestaña activa en detalles de pedido - NUEVO
-  activeTab: 'products',
-
   // Estadísticas
   statistics: null,
 
@@ -77,11 +74,6 @@ const ordersSlice = createSlice({
     // Limpiar pedido seleccionado (por ejemplo, al volver a la lista)
     clearSelectedOrder: (state) => {
       state.selectedOrder = null;
-    },
-
-    // Establecer pestaña activa - NUEVO
-    setActiveTab: (state, action) => {
-      state.activeTab = action.payload;
     },
 
     // Limpiar errores
@@ -284,7 +276,7 @@ const ordersSlice = createSlice({
 });
 
 // Exportar acciones
-export const { updateFilters, clearSelectedOrder, clearErrors, setActiveTab } = ordersSlice.actions;
+export const { updateFilters, clearSelectedOrder, clearErrors } = ordersSlice.actions;
 
 // Exportar el reducer
 export default ordersSlice.reducer;

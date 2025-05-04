@@ -8,6 +8,7 @@ import {
 } from '../services/invoiceService.js'
 import { selectSendingInvoice } from '../thunks/orderSelectors.js'
 import { sendInvoiceEmailThunk } from '../thunks/orderThunks.js'
+import { addMessage } from '../../../../../store/messages/messageSlice.js'
 
 /**
  * Componente para subir facturas a un pedido (PDF y XML)
@@ -19,7 +20,11 @@ import { sendInvoiceEmailThunk } from '../thunks/orderThunks.js'
  * @param {Function} props.onInvoiceUploaded - Función que se ejecuta cuando se sube una factura
  * @returns {JSX.Element}
  */
-export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
+export const InvoiceUploader = ({
+  orderId, 
+  billing,
+  onInvoiceUploaded
+}) => {
 
   // Estados locales
   const [pdfFile, setPdfFile] = useState(null);
@@ -119,6 +124,7 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
         throw new Error(result.error || 'Error al subir los archivos de factura');
       }
 
+      dispatch(addMessage({ /* ... mensaje éxito ... */ }));
       setPdfFile(null);
       setXmlFile(null);
       setShowUploadForm(false);
@@ -224,8 +230,8 @@ export const InvoiceUploader = ({ orderId, billing, onInvoiceUploaded }) => {
   const renderInvoiceFiles = () => (
     <>
       <p className="text-muted small mb-4">
-        Subido: {getFormattedDate(billing.invoiceUploadedAt)}
-        {invoiceEmailSent && billing.invoiceEmailSentAt && (
+        Subido: {getFormattedDate(billing?.invoiceUploadedAt)}
+        {invoiceEmailSent && billing?.invoiceEmailSentAt && (
           <> • Email enviado: {getFormattedDate(billing.invoiceEmailSentAt)}</>
         )}
       </p>

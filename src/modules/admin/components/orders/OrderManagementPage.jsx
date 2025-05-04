@@ -8,7 +8,7 @@ import { OrderDetailSkeleton } from './details/OrderDetailSkeleton.jsx';
 import { addMessage } from '../../../../store/messages/messageSlice.js';
 
 // Importar acciones y selectores de Redux
-import { updateFilters, clearSelectedOrder, setActiveTab } from './slices/ordersSlice.js';
+import { updateFilters, clearSelectedOrder } from './slices/ordersSlice.js';
 import {
   fetchOrders,
   fetchOrderById,
@@ -86,13 +86,14 @@ export const OrderManagementPage = () => {
       const tab = params.get('tab');
 
       if (tab && ['products', 'customer', 'payment', 'workflow', 'status', 'notes'].includes(tab)) {
-        dispatch(setActiveTab(tab));
+        // --- REVERTIR: Eliminar este dispatch --- 
+        // dispatch(setActiveTab(tab)); // <-- Ya no es necesario
       }
     } else if (mode !== 'view') {
       // Limpiar el pedido seleccionado si no estamos en vista detalle
       dispatch(clearSelectedOrder());
     }
-  }, [mode, id, dispatch, location.search]);
+  }, [mode, id, dispatch]);
 
 
   // Modificar la función handleViewDetail para incluir la pestaña actual

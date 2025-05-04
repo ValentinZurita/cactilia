@@ -19,10 +19,16 @@ import {
 } from '../thunks/orderThunks.js';
 import {
   selectActionProcessing,
-  selectActiveTab // NUEVO: Selector para tab activa
 } from '../thunks/orderSelectors.js';
-import { setActiveTab } from '../slices/ordersSlice.js'; // NUEVO: Action para pestaña activa
 import { addMessage } from '../../../../../store/messages/messageSlice.js';
+
+// Función auxiliar para leer el tab inicial de la URL
+const getInitialTab = (search) => {
+  const params = new URLSearchParams(search);
+  const tabFromURL = params.get('tab');
+  const validTabs = ['products', 'customer', 'payment', 'workflow', 'status', 'notes'];
+  return validTabs.includes(tabFromURL) ? tabFromURL : 'products';
+};
 
 export const OrderDetail = ({
                               order,
@@ -43,31 +49,22 @@ export const OrderDetail = ({
 
   // Obtener estados desde Redux
   const processingFromRedux = useSelector(selectActionProcessing);
-  const activeTab = useSelector(selectActiveTab); // NUEVO: Obtenemos pestaña desde Redux
   const dispatch = useDispatch();
   const location = useLocation(); // NUEVO: para manejar URL
   const { uid } = useSelector(state => state.auth);
 
-  // NUEVO: Efecto para sincronizar pestaña con URL
+  // --- Estado local para la pestaña activa, inicializado desde URL --- 
+  const [localActiveTab, setLocalActiveTab] = useState(() => getInitialTab(location.search));
+
+  // --- Sincronizar URL -> Estado Local (para botones atrás/adelante) ---
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tabFromURL = params.get('tab');
-
-    if (tabFromURL && ['products', 'customer', 'payment', 'workflow', 'status', 'notes'].includes(tabFromURL)) {
-      dispatch(setActiveTab(tabFromURL));
+    const tabFromURL = getInitialTab(location.search);
+    if (tabFromURL !== localActiveTab) {
+       console.log('[OrderDetail URL Sync Effect] Updating local state from URL:', tabFromURL);
+       setLocalActiveTab(tabFromURL);
     }
-  }, [location.search, dispatch]);
-
-  // NUEVO: Función para cambiar pestaña y actualizar URL
-  const handleSetActiveTab = (tab) => {
-    dispatch(setActiveTab(tab));
-
-    // Actualizar URL sin recargar la página
-    const params = new URLSearchParams(location.search);
-    params.set('tab', tab);
-    const newUrl = `${location.pathname}?${params.toString()}`;
-    window.history.pushState({}, '', newUrl);
-  };
+    // Depender solo de location.search para detectar cambios externos
+  }, [location.search]); // Quitar localActiveTab de aquí para evitar bucles si URL cambia
 
   // Cargar información del usuario cuando cambia el pedido
   useEffect(() => {
@@ -156,6 +153,18 @@ export const OrderDetail = ({
     }
   };
 
+  // --- Actualizar Estado Local Y URL al hacer clic --- 
+  const handleSetActiveTab = (tab) => {
+    console.log('[OrderDetail handleSetActiveTab] Setting local state and URL tab:', tab);
+    setLocalActiveTab(tab); // <-- Actualizar estado local PRIMERO
+
+    const newParams = new URLSearchParams(location.search);
+    newParams.set('tab', tab);
+    const newUrl = `${location.pathname}?${newParams.toString()}`;
+    window.history.pushState({}, '', newUrl); // Actualizar URL
+    // setForceRenderKey(prevKey => prevKey + 1); // <-- Ya no se necesita
+  };
+
   return (
     <div className="order-detail">
       {/* Cabecera principal con información clave del pedido */}
@@ -167,47 +176,36 @@ export const OrderDetail = ({
         userData={userData}
       />
 
-      {/* Navegación por pestañas - MODIFICADO para usar Redux */}
-      <OrderDetailTabs activeTab={activeTab} setActiveTab={handleSetActiveTab} />
+      {/* Pasar estado local y el manejador */}
+      <OrderDetailTabs activeTab={localActiveTab} setActiveTab={handleSetActiveTab} />
 
-      {/* Contenido según la pestaña seleccionada */}
+      {/* Contenido según el estado local */}
       <div className="tab-content mb-4">
-        {/* Pestaña de productos */}
-        {activeTab === 'products' && (
+        {localActiveTab === 'products' && (
           <OrderItemsTable order={order} formatPrice={formatPrice} />
         )}
-
-        {/* Pestaña de cliente */}
-        {activeTab === 'customer' && (
+        {localActiveTab === 'customer' && (
           <OrderCustomerInfo order={order} userData={userData} loadingUser={loadingUser} />
         )}
-
-        {/* Pestaña de pago */}
-        {activeTab === 'payment' && (
+        {localActiveTab === 'payment' && (
           <OrderPaymentInfo
             order={order}
             onOrderUpdate={onOrderUpdate || handleOrderUpdateRedux}
           />
         )}
-
-        {/* Pestaña de flujo de trabajo */}
-        {activeTab === 'workflow' && (
+        {localActiveTab === 'workflow' && (
           <OrderWorkflow
             order={order}
             onOrderUpdate={handleWorkflowUpdate}
           />
         )}
-
-        {/* Pestaña de historial y estado */}
-        {activeTab === 'status' && (
+        {localActiveTab === 'status' && (
           <OrderStatusChangeSection
             order={order}
             formatDate={formatDate}
           />
         )}
-
-        {/* Pestaña para notas administrativas */}
-        {activeTab === 'notes' && (
+        {localActiveTab === 'notes' && (
           <OrderNotes
             notes={order.adminNotes || []}
             onAddNote={onAddNote || handleAddNoteRedux}

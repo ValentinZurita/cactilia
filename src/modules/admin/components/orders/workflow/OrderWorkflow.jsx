@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { WorkflowStepper } from './WorkflowStepper';
 import { NotificationHistory } from './NotificationHistory';
 import { ProcessingForm } from './steps/ProcessingForm';
@@ -92,6 +92,10 @@ export const OrderWorkflow = ({ order, onOrderUpdate }) => {
       </div>
     </div>
   );
+
+  if (!order) {
+    return <div>Cargando información del flujo de trabajo...</div>;
+  }
 
   return (
     <section>

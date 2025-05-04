@@ -394,8 +394,8 @@ export const useOrderProcessor = ({
       notes: orderNotes,
       status: 'pending',
       requiresInvoice: billingManager.requiresInvoice,
-      fiscalData: billingManager.requiresInvoice ? { /* ... datos fiscales ... */ } : null,
-      selectedShippingOption: selectedOption ? { /* ... detalles opción ... */ } : null,
+      fiscalData: billingManager.requiresInvoice ? { ...billingManager.fiscalData } : null,
+      selectedShippingOption: selectedOption ? { ...selectedOption } : null,
     };
   }
 
