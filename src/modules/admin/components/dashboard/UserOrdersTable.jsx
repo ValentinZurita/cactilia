@@ -19,23 +19,25 @@ export const UserOrdersTable = ({ orders }) => {
 
   return (
     <div className="table-responsive">
-      <table className="table table-sm table-hover table-striped border-top">
+      {/* Tabla simplificada: sin hover, sin striping */}
+      <table className="table table-sm border-top">
         <thead className="table-light">
           <tr>
-            <th scope="col">ID Pedido</th>
-            <th scope="col">Fecha</th>
-            <th scope="col">Estado</th>
-            <th scope="col" className="text-end">Total</th>
+            {/* Encabezados con peso normal */}
+            <th scope="col" className="fw-normal">ID Pedido</th>
+            <th scope="col" className="fw-normal">Fecha</th>
+            <th scope="col" className="fw-normal">Estado</th>
+            <th scope="col" className="text-end fw-normal">Total</th>
           </tr>
         </thead>
         <tbody>
           {orders.map((order) => (
             <tr key={order.id}>
-              {/* ID como enlace al detalle del pedido */}
+              {/* ID como enlace al detalle del pedido, sin negrita extra */}
               <td>
                 <Link 
                   to={`/admin/orders/view/${order.id}`}
-                  className="text-decoration-none fw-medium"
+                  className="text-decoration-none"
                   title="Ver detalles del pedido"
                 >
                   #{order.id.substring(0, 8)}...

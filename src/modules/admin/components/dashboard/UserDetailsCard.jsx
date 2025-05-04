@@ -44,10 +44,11 @@ const UserContact = ({ icon, text }) => (
   </p>
 );
 
+// Componente local refinado para mostrar campos de detalle
 const DetailField = ({ label, value, isMonospace = false }) => (
-  <div className="detail-item">
-    <h6 className="text-muted mb-1 small fw-bold">{label}</h6>
-    <p className={`mb-3 ${isMonospace ? "user-select-all text-break bg-light p-2 rounded-3 small" : ""}`}>
+  <div className="detail-item mb-3">
+    <p className="text-secondary mb-0 small">{label}</p>
+    <p className={`mb-0 ${isMonospace ? "user-select-all text-break bg-light p-2 rounded-3 small" : "user-select-all"}`}>
       {value}
     </p>
   </div>
@@ -186,14 +187,15 @@ export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
                 />
               )}
 
-              {/* Acciones - centradas y limpias */}
+              {/* Acciones - centradas y limpias, estilo outline y sm */}
               <div className="d-flex justify-content-center gap-2 mt-2">
                 {onChangeRole && (
                   <ActionButton
                     onClick={() => onChangeRole(user)}
-                    icon="person-gear"
+                    icon="person-badge"
                     text="Rol"
-                    variant="warning"
+                    variant="outline-secondary"
+                    className="btn-sm"
                   />
                 )}
 
@@ -202,7 +204,8 @@ export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
                     onClick={() => onDelete(user.id)}
                     icon="trash"
                     text="Eliminar"
-                    variant="danger"
+                    variant="outline-danger"
+                    className="btn-sm"
                   />
                 )}
               </div>
@@ -214,75 +217,62 @@ export const UserDetailsCard = ({ user, onBack, onChangeRole, onDelete }) => {
         <div className="col-12 col-lg-8">
           <div className="card border-0 shadow-sm h-100 rounded-4">
             <div className="card-body p-4">
-              <h4 className="card-title border-bottom pb-3 mb-4 d-flex align-items-center">
-                <i className="bi bi-info-circle me-2 text-primary"></i>
+              <h4 className="border-bottom pb-3 mb-4 fw-normal">
                 Información detallada
               </h4>
 
-              <div className="row g-4">
+              {/* UID */}
+              <DetailField
+                label="ID de Usuario"
+                value={user.id || 'No disponible'}
+                isMonospace={true}
+              />
 
-                {/* UID */}
-                <div className="col-12">
-                  <DetailField
-                    label="ID DE USUARIO"
-                    value={user.id || 'No disponible'}
-                    isMonospace={true}
-                  />
-                </div>
+              {/* Última actualización */}
+              {user.updatedAt && (
+                <DetailField
+                  label="Última Actualización"
+                  value={formatDate(user.updatedAt)}
+                />
+              )}
 
-                {/* Última actualización */}
-                {user.updatedAt && (
-                  <div className="col-12 col-md-6">
-                    <DetailField
-                      label="ÚLTIMA ACTUALIZACIÓN"
-                      value={formatDate(user.updatedAt)}
-                    />
+              {/* Último acceso */}
+              {user.lastLogin && (
+                <DetailField
+                  label="Último Acceso"
+                  value={formatDate(user.lastLogin)}
+                />
+              )}
+
+              {/* Dirección */}
+              {user.address && (
+                <DetailField
+                  label="Dirección"
+                  value={user.address}
+                />
+              )}
+
+              {/* Pedidos - MODIFICADO */}
+              <div className="col-12 mt-4">
+                <h5 className="border-bottom pb-2 mb-3 fw-normal">
+                  Historial de pedidos
+                </h5>
+
+                {/* Lógica de renderizado condicional */}
+                {loadingOrders ? (
+                  <LoadingIndicator />
+                ) : ordersError ? (
+                  <div className="alert alert-danger py-2 small">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    Error al cargar historial: {ordersError}
                   </div>
+                ) : userOrders.length > 0 ? (
+                  // Mostrar la tabla si hay órdenes
+                  <UserOrdersTable orders={userOrders} /> 
+                ) : (
+                  // Mostrar sección vacía si no hay órdenes
+                  <EmptyOrdersSection /> 
                 )}
-
-                {/* Último acceso */}
-                {user.lastLogin && (
-                  <div className="col-12 col-md-6">
-                    <DetailField
-                      label="ÚLTIMO ACCESO"
-                      value={formatDate(user.lastLogin)}
-                    />
-                  </div>
-                )}
-
-                {/* Dirección */}
-                {user.address && (
-                  <div className="col-12">
-                    <DetailField
-                      label="DIRECCIÓN"
-                      value={user.address}
-                    />
-                  </div>
-                )}
-
-                {/* Pedidos - MODIFICADO */}
-                <div className="col-12 mt-4">
-                  <h5 className="border-bottom pb-2 mb-3 d-flex align-items-center">
-                    <i className="bi bi-bag me-2 text-primary"></i>
-                    Historial de pedidos
-                  </h5>
-
-                  {/* Lógica de renderizado condicional */}
-                  {loadingOrders ? (
-                    <LoadingIndicator />
-                  ) : ordersError ? (
-                    <div className="alert alert-danger py-2 small">
-                      <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                      Error al cargar historial: {ordersError}
-                    </div>
-                  ) : userOrders.length > 0 ? (
-                    // Mostrar la tabla si hay órdenes
-                    <UserOrdersTable orders={userOrders} /> 
-                  ) : (
-                    // Mostrar sección vacía si no hay órdenes
-                    <EmptyOrdersSection /> 
-                  )}
-                </div>
               </div>
             </div>
           </div>
