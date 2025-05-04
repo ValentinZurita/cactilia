@@ -368,36 +368,7 @@ export const processPayment = async (
     }
     // <<<--- FIN CAMBIO: Procesar Nueva Estructura de Respuesta --->>>
 
-    // Crear la orden en Firestore ANTES de intentar confirmar el pago
-    console.log('📦 [processPayment] Verificando stock para', orderData.items.length, 'productos...');
-    // Renombrar variable para evitar colisión
-    const stockCheckResult = await verifyAndUpdateStock(orderData.items);
-
-    // Si hay problemas de stock, cancelar y devolver error
-    // Usar la variable renombrada
-    if (!stockCheckResult.ok) {
-      console.error('[processPayment] Error de stock:', stockCheckResult.error);
-      // No necesitas revertir PI aquí porque aún no se ha confirmado
-      return { ...stockCheckResult, error: stockCheckResult.error || 'Stock insuficiente' };
-    }
-
-    // Añadir información inicial del pago a la orden
-    console.log('📦 [processPayment] Datos FINALES de la orden ANTES de createOrder:', orderData);
-    const createOrderResult = await createOrder(orderData);
-
-    if (!createOrderResult.ok || !createOrderResult.id) {
-      console.error('[processPayment] Error al crear la orden en Firestore:', createOrderResult.error);
-      // Aquí sí podrías considerar cancelar el Payment Intent si ya se creó,
-      // aunque si falla la creación de la orden, el PI quedará pendiente.
-      // await stripe.paymentIntents.cancel(piId); // <-- Considerar esto
-      throw new Error(createOrderResult.error || 'No se pudo registrar la orden.');
-    }
-
-    // --- CORRECCIÓN: Solo asignar, no redeclarar --- 
-    createdOrderId = createOrderResult.id;
-    console.log(`✅ [processPayment] Orden creada con ID: ${createdOrderId}`);
-
-    // Actualizar la orden con el ID del Payment Intent y estado inicial
+    // Actualizar la orden (la ÚNICA que se creó) con el ID del Payment Intent y estado inicial
     // Usar piId extraído de la respuesta
     console.log('[processPayment] Construyendo updateData. paymentIntent.data existe:', !!paymentIntent.data);
     // --- Logs limpiados para no usar la ruta .result incorrecta ---
