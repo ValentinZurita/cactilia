@@ -71,9 +71,6 @@ export const UserDetail = () => {
   if (error) return <div className="alert alert-danger">Error: {error}</div>;
   if (!user) return <div className="alert alert-warning">Usuario no encontrado.</div>;
 
-  // --- DEBUG: Verificar el rol del currentUser ANTES de pasar la prop ---
-  console.log('UserDetail rendering, currentUser role is:', currentUser?.role);
-
   return (
     <div className="container mt-4">
       <UserDetailsCard

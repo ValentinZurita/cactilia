@@ -135,14 +135,14 @@ export const useSettings = () => {
   const handlePhotoUpload = useCallback(async () => {
     if (!selectedPhoto) return;
 
-    console.log('[useSettings] Starting photo upload for file:', selectedPhoto?.name);
+    // console.log('[useSettings] Starting photo upload for file:', selectedPhoto?.name);
     setPhotoLoading(true);
 
     try {
        // Comprimir la imagen antes de subirla
-       console.log('[useSettings] Compressing image...'); // Aunque sea simulado
+       // console.log('[useSettings] Compressing image...'); // Aunque sea simulado
        const compressedImage = await compressImage(selectedPhoto);
-       console.log('[useSettings] Image compressed (simulated), proceeding to updateProfilePhoto...');
+       // console.log('[useSettings] Image compressed (simulated), proceeding to updateProfilePhoto...');
 
        // Opciones para la subida
        const uploadOptions = {
@@ -150,13 +150,13 @@ export const useSettings = () => {
          maxWidthOrHeight: 1200
        };
 
-       console.log('[useSettings] Calling updateProfilePhoto with userId:', uid);
+       // console.log('[useSettings] Calling updateProfilePhoto with userId:', uid);
        const result = await updateProfilePhoto(uid, compressedImage, uploadOptions);
-       console.log('[useSettings] Result from updateProfilePhoto:', result);
+       // console.log('[useSettings] Result from updateProfilePhoto:', result);
 
        if (result.ok) {
          // Actualizar el estado en Redux
-         console.log('[useSettings] Update successful, dispatching Redux login action with photoURL:', result.photoURL);
+         // console.log('[useSettings] Update successful, dispatching Redux login action with photoURL:', result.photoURL);
          dispatch(login({
            uid,
            displayName,
@@ -165,7 +165,7 @@ export const useSettings = () => {
          }));
 
          // Mostrar mensaje de éxito
-         console.log('[useSettings] Dispatching success message.');
+         // console.log('[useSettings] Dispatching success message.');
          dispatch(addMessage({
            type: 'success',
            text: 'Foto de perfil actualizada con éxito',
@@ -176,7 +176,7 @@ export const useSettings = () => {
          // Limpiar estado de selección
          setSelectedPhoto(null);
        } else {
-         console.error('[useSettings] updateProfilePhoto reported error:', result.error);
+         // console.error('[useSettings] updateProfilePhoto reported error:', result.error);
          dispatch(addMessage({
            type: 'error',
            text: result.error || 'Error al actualizar la foto de perfil',
@@ -185,8 +185,8 @@ export const useSettings = () => {
          }));
        }
     } catch (error) {
-       console.error('[useSettings] CATCH block error during photo upload:', error);
-       console.error('Error al subir la foto:', error);
+       // console.error('[useSettings] CATCH block error during photo upload:', error);
+       console.error('Error al subir la foto:', error); // Mantener este error genérico
        dispatch(addMessage({
          type: 'error',
          text: 'Error al subir la foto',
