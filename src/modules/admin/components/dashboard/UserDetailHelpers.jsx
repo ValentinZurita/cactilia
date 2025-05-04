@@ -2,17 +2,6 @@ import React from 'react';
 
 // --- Componentes Auxiliares para UserDetailsCard ---
 
-export const UserAvatar = ({ user }) => (
-  <div className="avatar-container mb-4">
-    <img
-      src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'User')}&size=200`}
-      alt={user.displayName || 'Usuario'}
-      className="rounded-circle shadow-sm"
-      style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-    />
-  </div>
-);
-
 export const UserRole = ({ role }) => {
   const getRoleBadgeStyle = (role) => {
     switch (role) {

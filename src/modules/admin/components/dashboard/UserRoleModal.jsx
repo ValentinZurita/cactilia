@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { UserAvatar } from '../../common/components/UserAvatar.jsx';
 
 /**
  * Modal personalizado para cambiar el rol de un usuario
@@ -101,12 +102,7 @@ export const UserRoleModal = ({ user, currentUserRole, onClose, onSave }) => {
             <div className="modal-body pt-2 pb-4">
               {/* Info usuario */} 
               <div className="text-center mb-4">
-                 <img
-                    src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&size=80&background=random`}
-                    alt={user.displayName || 'Avatar'}
-                    className="rounded-circle mb-2 border border-light"
-                    style={{ width: '80px', height: '80px' }} 
-                 />
+                 <UserAvatar user={user} size="md" className="mb-2"/>
                  <h6 className="mb-0 fw-bold">{user.displayName || 'Usuario sin nombre'}</h6>
                  <span className={`badge ${getRoleBadgeColor(user.role)} rounded-pill px-2 py-1 small`}>Rol actual: {user.role || 'user'}</span>
               </div>

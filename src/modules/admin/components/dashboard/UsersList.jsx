@@ -8,6 +8,7 @@ import NavigationTabs from "../../common/components/NavigationTabs.jsx";
 import { ActionButton } from "../../common/components/ActionButton.jsx";
 import { UserRole } from "./UserDetailHelpers.jsx";
 import { ActionButtonsContainer } from '../../common/components/ActionButtonsContainer.jsx';
+import { UserAvatar } from '../../common/components/UserAvatar.jsx';
 
 
 /**
@@ -101,14 +102,7 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
       key: 'avatar',
       header: '', // Sin cabecera para avatar
       renderCell: (user) => (
-        // Usar UserAvatar si existe y acepta size, si no, img pequeña
-        // Asumiendo UserAvatar no está importado o listo, usamos img:
-        <img 
-          src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&size=30&background=E0E0E0&color=616161&font-size=0.5&length=2`}
-          alt="Avatar"
-          className="rounded-circle" 
-          style={{ width: '30px', height: '30px', objectFit: 'cover' }}
-        />
+        <UserAvatar user={user} size="sm" />
       )
     },
     {

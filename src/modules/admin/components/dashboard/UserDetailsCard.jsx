@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { BackButton } from '../../common/components/BackButton'
 import { ActionButton } from '../../common/components/ActionButton'
-import { DetailField, UserAvatar, UserContact, UserRole } from './UserDetailHelpers.jsx'
+import { DetailField, UserContact, UserRole } from './UserDetailHelpers.jsx'
+import { UserAvatar } from '../../common/components/UserAvatar.jsx'
 import { LoadingIndicator } from '../../common/components/LoadingIndicator.jsx'
 import { getOrdersByUserId } from '../orders/services/userAdminService.js'
 import { UserOrdersTable } from './UserOrdersTable.jsx'
@@ -112,7 +113,7 @@ export const UserDetailsCard = ({ user, onBack, onDelete, onChangeRole }) => {
 
       <div className="d-flex align-items-center mb-4">
         <div className="me-4 flex-shrink-0">
-          <UserAvatar user={user} />
+          <UserAvatar user={user} size="lg" />
         </div>
         <div className="flex-grow-1">
           <h4 className="fw-bold mb-1">{user.displayName || 'Sin nombre'}</h4>
