@@ -346,12 +346,12 @@ export const processPayment = async (
         // Si se necesitara, createOxxoPaymentIntent debería devolverlo.
         console.log(`[processPayment] Datos OXXO extraídos: clientSecret=${clientSecret ? '***' : 'null'}, piId=${piId}`);
     } else {
-        // Tarjeta devuelve datos anidados en .data.result
-        if (!paymentIntent.data?.result || !paymentIntent.data.result.clientSecret) {
-             console.error('[processPayment] Respuesta inválida de createPaymentIntent (tarjeta):', paymentIntent.data);
+        // Tarjeta devuelve datos anidados AHORA en .data.data.result (ajuste por cambio en CF)
+        if (!paymentIntent.data?.data?.result || !paymentIntent.data.data.result.clientSecret) {
+             console.error('[processPayment] Respuesta inválida de createPaymentIntent (tarjeta) - verificando .data.data.result:', paymentIntent.data);
              throw new Error('Respuesta inválida del servicio de pago con tarjeta.');
         }
-        const resultData = paymentIntent.data.result;
+        const resultData = paymentIntent.data.data.result; // <-- Acceder al nivel correcto
         clientSecret = resultData.clientSecret;
         piId = resultData.paymentIntentId;
         cardBrand = resultData.cardBrand;
@@ -400,9 +400,8 @@ export const processPayment = async (
     // Actualizar la orden con el ID del Payment Intent y estado inicial
     // Usar piId extraído de la respuesta
     console.log('[processPayment] Construyendo updateData. paymentIntent.data existe:', !!paymentIntent.data);
-    console.log('[processPayment] paymentIntent.data.result.paymentIntentId:', piId);
-    console.log('[processPayment] paymentIntent.data.result.clientSecret:', clientSecret);
-    console.log('[processPayment] paymentIntent.data.result.voucherUrl (OXXO):', voucherUrl);
+    // --- Logs limpiados para no usar la ruta .result incorrecta ---
+    console.log(`[processPayment] Extracted payment details: piId=${piId}, clientSecret=${clientSecret ? '***' : 'null'}, voucherUrl=${voucherUrl}`);
 
     const paymentStatus = paymentType === 'oxxo' ? 'pending_payment' : 'pending';
     console.log(`[processPayment] Estado inicial del pago para tipo ${paymentType}: ${paymentStatus}`);

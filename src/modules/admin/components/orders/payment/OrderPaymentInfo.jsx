@@ -206,7 +206,25 @@ export const OrderPaymentInfo = ({ order, onOrderUpdate }) => {
                  {order.fiscalData.regimenFiscal && <div className="mb-2"></div>} {/* Espacio */} 
                 {order.fiscalData.usoCFDI && <InfoRow label="Uso CFDI" value={order.fiscalData.usoCFDI} />}
                  {order.fiscalData.usoCFDI && <div className="mb-2"></div>} {/* Espacio */} 
-                {order.fiscalData.fiscalAddress && <InfoRow label="Dirección Fiscal" value={order.fiscalData.fiscalAddress} />}
+                {order.fiscalData.email && <InfoRow label="Email Facturación" value={order.fiscalData.email} />}
+                {order.fiscalData.email && <div className="mb-2"></div>} {/* Espacio */} 
+                {/* --- Display Fiscal Address --- */}
+                {order.fiscalData.postalCode && <InfoRow label="Código Postal" value={order.fiscalData.postalCode} />}
+                {order.fiscalData.postalCode && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.street && <InfoRow label="Calle" value={order.fiscalData.street} />}
+                {order.fiscalData.street && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.extNumber && <InfoRow label="Num. Exterior" value={order.fiscalData.extNumber} />}
+                {order.fiscalData.extNumber && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.intNumber && <InfoRow label="Num. Interior" value={order.fiscalData.intNumber} />}
+                {order.fiscalData.intNumber && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.neighborhood && <InfoRow label="Colonia" value={order.fiscalData.neighborhood} />}
+                {order.fiscalData.neighborhood && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.city && <InfoRow label="Ciudad/Municipio" value={order.fiscalData.city} />}
+                {order.fiscalData.city && <div className="mb-2"></div>} {/* Espacio */} 
+                {order.fiscalData.state && <InfoRow label="Estado" value={order.fiscalData.state} />}
+                 {order.fiscalData.state && <div className="mb-2"></div>} {/* Espacio */} 
+                {/* --- End Fiscal Address --- */}
+                {/* REMOVED: order.fiscalData.fiscalAddress - Replaced by individual fields above */}
                 {/* Añade aquí más campos si es necesario, ej: order.fiscalData.email */} 
               </div>
             </div>
