@@ -24,20 +24,20 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
   const { uid } = useSelector(state => state.auth)
 
   // Get Firebase Functions instance
-  const functionsRef = useRef(getFunctions())
-  const hasConnectedRef = useRef(false)
+  const functionsRef = useRef(null)
 
-  // Connect to emulator in development
+  // Initialize functions only once
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' && !hasConnectedRef.current) {
-      try {
-        connectFunctionsEmulator(functionsRef.current, 'localhost', 5001)
-        console.log('Connected to Firebase Functions emulator in PaymentFormModal')
-        hasConnectedRef.current = true
-      } catch (e) {
-        console.log('Emulator connection error (can be ignored if already connected):', e)
-      }
-    }
+    functionsRef.current = getFunctions(app)
+    // Connect to emulator if in development
+    // if (import.meta.env.DEV) {
+    //   try {
+    //     connectFunctionsEmulator(functionsRef.current, 'localhost', 5001)
+    //     console.log('Connected to Functions emulator in PaymentFormModal')
+    //   } catch (e) {
+    //     console.error('Error connecting to Functions emulator:', e)
+    //   }
+    // }
   }, [])
 
   // Stripe hooks

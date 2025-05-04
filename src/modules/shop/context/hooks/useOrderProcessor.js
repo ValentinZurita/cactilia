@@ -476,7 +476,7 @@ export const useOrderProcessor = ({
       }
 
       // Desestructurar directamente desde paymentResult
-      const { clientSecret, orderId, paymentIntentId } = paymentResult;
+      const { clientSecret, orderId, paymentIntentId, cardBrand, cardLast4, paymentMethodIdUsed, confirmedPaymentIntent } = paymentResult;
 
       // Paso 2: Confirmar/Autorizar el pago en el frontend con Stripe.js
       if (orderData.payment.type === 'card' || orderData.payment.type === 'new_card') {
@@ -492,8 +492,8 @@ export const useOrderProcessor = ({
           const cardElement = elements.getElement(CardElement);
           if (!cardElement) { throw new Error('Elemento CardElement no encontrado'); }
           
-          console.log(`[createAndProcessOrder] Llamando a confirmCardPayment (nueva tarjeta)`);
-          confirmPromise = stripe.confirmCardPayment(clientSecret, {
+          // Definir las opciones para confirmCardPayment
+          const confirmOptions = {
             payment_method: {
               card: cardElement,
               billing_details: {
@@ -501,7 +501,13 @@ export const useOrderProcessor = ({
               },
             },
             setup_future_usage: orderData.payment.saveForFuture ? 'off_session' : undefined,
-          });
+          };
+
+          // ---> LOG DE OPCIONES ANTES DE CONFIRMAR <--- 
+          console.log(`[createAndProcessOrder] Opciones para stripe.confirmCardPayment (nueva tarjeta):`, confirmOptions);
+
+          console.log(`[createAndProcessOrder] Llamando a confirmCardPayment (nueva tarjeta)`);
+          confirmPromise = stripe.confirmCardPayment(clientSecret, confirmOptions); // Usar las opciones definidas
 
         } else { // orderData.payment.type === 'card'
           // --- Confirmación con TARJETA GUARDADA --- 
@@ -531,6 +537,79 @@ export const useOrderProcessor = ({
         }
 
         console.log(`[createAndProcessOrder] Pago autorizado (requiere captura). Estado: ${confirmedPaymentIntent.status}`);
+
+        // <<<--- INICIO: Actualizar Orden con Detalles de Tarjeta y Guardar PM si aplica --->>>
+        try {
+          console.log('[createAndProcessOrder] Intentando actualizar Firestore y guardar PM si aplica...');
+
+          // Determinar datos para actualizar Firestore
+          const updatePayload = {};
+          if (cardBrand && cardLast4) {
+            updatePayload['payment.brand'] = cardBrand;
+            updatePayload['payment.last4'] = cardLast4;
+          }
+          // Usar el ID del PM confirmado en frontend o el devuelto por backend
+          const finalPmId = confirmedPaymentIntent?.payment_method || paymentMethodIdUsed;
+          if (finalPmId) {
+             updatePayload['payment.stripePaymentMethodId'] = finalPmId;
+          }
+          updatePayload['payment.status'] = 'requires_capture'; // Siempre actualizar estado
+
+          console.log(`[createAndProcessOrder] Actualizando orden ${orderId} con datos:`, updatePayload);
+          await apiService.updateDocument(ORDERS_COLLECTION, orderId, updatePayload);
+          console.log(`[createAndProcessOrder] Orden ${orderId} actualizada.`);
+
+          // --- Llamar a saveUserPaymentMethod SI se marcó el checkbox --- 
+          // Usar orderData original para verificar la intención del usuario
+          if (orderData.payment.type === 'new_card' && orderData.payment.saveForFuture) {
+              console.log(`[createAndProcessOrder] Usuario marcó guardar tarjeta. Llamando a saveUserPaymentMethod...`);
+              // Asegurarnos de tener los datos necesarios
+              // Extraer stripeCustomerId del resultado de processPayment
+              const customerIdFromPayment = paymentResult.stripeCustomerId; 
+              const pmIdToSave = finalPmId; // Usar el ID final determinado antes
+              const brandToSave = cardBrand; // Usar el brand obtenido
+              const last4ToSave = cardLast4; // Usar el last4 obtenido
+              
+              if (uid && pmIdToSave && customerIdFromPayment && brandToSave && last4ToSave) {
+                  try {
+                      const saveData = {
+                          stripePaymentMethodId: pmIdToSave,
+                          stripeCustomerId: customerIdFromPayment,
+                          cardBrand: brandToSave,
+                          cardLast4: last4ToSave
+                      };
+                      console.log('[createAndProcessOrder] Datos para saveUserPaymentMethod:', saveData);
+                      const saveResult = await apiService.callCloudFunction('saveUserPaymentMethod', saveData);
+                      if (saveResult.ok) {
+                          console.log('[createAndProcessOrder] saveUserPaymentMethod ejecutado con éxito:', saveResult.message);
+                           // Opcional: llamar a refreshPaymentMethods si está disponible en este hook
+                           // if (typeof refreshPaymentMethods === 'function') { refreshPaymentMethods(); }
+                      } else {
+                          console.error('[createAndProcessOrder] Error en saveUserPaymentMethod:', saveResult.error);
+                          // No lanzar error aquí para no detener el flujo principal, solo loggear.
+                      }
+                  } catch (savePmError) {
+                      console.error('[createAndProcessOrder] Excepción al llamar a saveUserPaymentMethod:', savePmError);
+                  }
+              } else {
+                  console.warn('[createAndProcessOrder] Faltan datos necesarios para llamar a saveUserPaymentMethod:', { uid, pmIdToSave, customerIdFromPayment, brandToSave, last4ToSave });
+              }
+          } else {
+             console.log('[createAndProcessOrder] No se marcó guardar tarjeta o no es tarjeta nueva. Omitiendo saveUserPaymentMethod.');
+          }
+          // --- Fin llamada a saveUserPaymentMethod --- 
+
+        } catch (updateError) {
+          console.error(`[createAndProcessOrder] Error DENTRO del bloque de actualización Firestore / Guardar PM para orden ${orderId}:`, updateError);
+           // Intentar actualizar al menos el estado en caso de error
+           try {
+             await apiService.updateDocument(ORDERS_COLLECTION, orderId, { 'payment.status': 'requires_capture' });
+             console.log(`[createAndProcessOrder] Orden ${orderId} actualizada solo con estado 'requires_capture' (tras error catch).`);
+           } catch (finalFallbackError) {
+              console.error(`[createAndProcessOrder] Falló incluso la actualización de estado de fallback final para orden ${orderId}:`, finalFallbackError);
+           }
+        }
+        // <<<--- FIN: Actualizar Orden con Detalles de Tarjeta / Guardar PM --->>>
 
       } else if (orderData.payment.type === 'oxxo') {
         console.log('[createAndProcessOrder] Pago OXXO, no se requiere confirmación en frontend.');

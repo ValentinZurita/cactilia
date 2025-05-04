@@ -57,6 +57,8 @@ exports.deleteUser = authFunctions.deleteUser;
 exports.getUsersDetail = authFunctions.getUsersDetail;
 // exports.markDemoEmailVerified = verificationFunction.markDemoEmailVerified; // Remove or comment out
 exports.setupDemoUsers = setupDemoFunction.setupDemoUsers; // Export the new setup function
+// exports.sendVerificationEmail = require("./auth/sendVerificationEmail").sendVerificationEmail; // <-- COMENTAR ESTA LÍNEA
+// exports.deleteUserAccount = require("./auth/deleteUserAccount").deleteUserAccount; // <-- COMENTAR ESTA LÍNEA
 
 // Export test function
 exports.basicTest = basicTest;
@@ -79,6 +81,13 @@ exports.sendContactEmail = contactFunctions.sendContactEmail;
 
 // Export storage functions
 exports.updateFirestoreWithThumbnails = storageFunctions.updateFirestoreWithThumbnails;
+// exports.generateSignedUrl = require("./storage/generateSignedUrl").generateSignedUrl; // <-- COMENTAR ESTA LÍNEA
 
 // Configurar las variables de entorno con:
 // firebase functions:config:set email.user="tu-correo@gmail.com" email.password="tu-contraseña"
+
+// Payment
+exports.saveUserPaymentMethod = require('./payment/saveUserPaymentMethod').saveUserPaymentMethod;
+
+// Admin
+// exports.createAdminUser = require("./admin/createAdminUser").createAdminUser; // <-- COMENTAR ESTA LÍNEA

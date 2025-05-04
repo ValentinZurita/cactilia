@@ -13,7 +13,15 @@ const getConfiguredFunctions = () => {
   // This is safe to call multiple times as it will check if already connected
   if (process.env.NODE_ENV !== 'production') {
     try {
-      connectFunctionsEmulator(functions, "localhost", 5001);
+      // Conectar al emulador de funciones en desarrollo
+      // if (import.meta.env.DEV) {
+      //   try {
+      //     connectFunctionsEmulator(functions, "localhost", 5001);
+      //     console.log("Connected to Firebase Functions emulator in paymentService");
+      //   } catch (e) {
+      //     console.log("Functions emulator already connected or error:", e);
+      //   }
+      // }
     } catch (e) {
       // Already connected, ignore
     }

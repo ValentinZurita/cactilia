@@ -25,8 +25,11 @@ export const usePayments = () => {
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && !hasConnected.current) {
       try {
-        connectFunctionsEmulator(functions, "localhost", 5001);
-        console.log("Connected to Firebase Functions emulator in usePayments");
+        // Conectar al emulador solo en desarrollo
+        // if (import.meta.env.DEV) {
+        //   connectFunctionsEmulator(functions, "localhost", 5001);
+        //   console.log("Connected to Firebase Functions emulator in usePayments");
+        // }
         hasConnected.current = true;
       } catch (e) {
         // Already connected, ignore

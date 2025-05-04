@@ -16,7 +16,10 @@ export const getFirebaseFunctions = () => {
   // Only connect to emulator in development and only once
   if (process.env.NODE_ENV !== 'production' && !isConnectedToEmulator) {
     try {
-      connectFunctionsEmulator(functions, "localhost", 5001);
+      // Conectar al emulador si se está en desarrollo
+      // if (import.meta.env.DEV) { // <-- Example conditional logic
+      // connectFunctionsEmulator(functions, "localhost", 5001);
+      // }
       console.log("Connected to Firebase Functions emulator");
       isConnectedToEmulator = true;
     } catch (e) {

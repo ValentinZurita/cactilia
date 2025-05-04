@@ -160,9 +160,9 @@ export const PaymentMethodSelector = ({
             key={method.id}
             isSelected={selectedPaymentId === method.id && selectedPaymentType === 'card'}
             onSelect={() => onPaymentSelect(method.id, 'card')}
-            icon={getCardIcon(method.type)}
-            name={`${formatCardType(method.type)} ${method.cardNumber}`}
-            description={`Vence: ${method.expiryDate}`}
+            icon={getCardIcon(method.brand)}
+            name={`${formatCardBrand(method.brand)} **** ${method.last4}`}
+            description={`Vence: ${method.expiryDate || 'N/A'}`}
             isDefault={method.isDefault}
             id={`payment-${method.id}`}
           />
@@ -207,12 +207,12 @@ export const PaymentMethodSelector = ({
 }
 
 /**
- * Obtener icono según tipo de tarjeta
- * @param {string} type - Tipo de tarjeta
+ * Obtener icono según marca de tarjeta
+ * @param {string} brand - Marca de la tarjeta
  * @returns {string} - Clase de icono
  */
-function getCardIcon(type) {
-  switch (type?.toLowerCase()) {
+function getCardIcon(brand) {
+  switch (brand?.toLowerCase()) {
     case 'visa':
       return 'bi-credit-card-2-front'
     case 'mastercard':
@@ -225,11 +225,11 @@ function getCardIcon(type) {
 }
 
 /**
- * Formatear tipo de tarjeta
- * @param {string} type - Tipo de tarjeta
- * @returns {string} - Tipo formateado
+ * Formatear marca de tarjeta
+ * @param {string} brand - Marca de la tarjeta
+ * @returns {string} - Marca formateada
  */
-function formatCardType(type) {
-  if (!type) return ''
-  return type.charAt(0).toUpperCase() + type.slice(1)
+function formatCardBrand(brand) {
+  if (!brand) return 'Tarjeta'
+  return brand.charAt(0).toUpperCase() + brand.slice(1)
 }

@@ -125,9 +125,10 @@ export const verifyAndUpdateStock = async (items) => {
  * @param {string} paymentMethodId - ID del método de pago (opcional para OXXO)
  * @param {string} customerEmail - Email del cliente (para OXXO)
  * @param {string} paymentType - Tipo de pago ('card', 'oxxo')
+ * @param {boolean} savePaymentMethod - Si se debe guardar el método
  * @returns {Promise<Object>} - Resultado de la operación
  */
-export const createPaymentIntent = async (amount, paymentMethodId = null, customerEmail = null, paymentType = 'card') => {
+export const createPaymentIntent = async (amount, paymentMethodId = null, customerEmail = null, paymentType = 'card', savePaymentMethod = false) => {
   try {
     // Validar parámetros
     if (!amount || amount <= 0) {
@@ -182,9 +183,11 @@ export const createPaymentIntent = async (amount, paymentMethodId = null, custom
         amount,
         paymentMethodId,
         description: 'Compra en Cactilia',
+        savePaymentMethod: !!savePaymentMethod
       }
 
     // Llamar a la función correspondiente
+    console.log(`[checkoutService] Llamando a Cloud Function: ${functionName} con params:`, params);
     return await apiService.callCloudFunction(functionName, params)
   } catch (error) {
     console.error('Error al crear Payment Intent:', error)
@@ -284,7 +287,6 @@ export const processPayment = async (
     const orderId = orderResult.id
 
     // 3. Crear el Payment Intent
-    // Convertir el total FINAL a centavos para Stripe
     const amount = Math.round(orderData.totals.finalTotal * 100)
 
     console.log(`Creando Payment Intent por $${orderData.totals.finalTotal} (${amount} centavos)`)
@@ -314,76 +316,109 @@ export const processPayment = async (
       paymentMethodId,
       emailForOxxo,
       paymentType,
+      savePaymentMethod
     )
 
-    // ---> LOG DETALLADO DEL RESULTADO <----
-    console.log(`[processPayment] Resultado RECIBIDO de createPaymentIntent:`, JSON.stringify(paymentIntent, null, 2));
-
-    if (!paymentIntent.ok) {
-      // Si falla el pago, actualizar la orden a "cancelled"
-      // ---> LOG ANTES DE ACTUALIZAR A CANCELLED <----
-      console.log(`[processPayment] Intentando actualizar orden ${orderId} a CANCELLED por fallo en createPaymentIntent.`);
-      try {
-           await apiService.updateDocument(ORDERS_COLLECTION, orderId, {
-             status: 'cancelled',
-             'payment.status': 'failed',
-           });
-      } catch (cancelUpdateError) {
-           console.error(`[processPayment] Error al actualizar orden ${orderId} a CANCELLED:`, cancelUpdateError);
-           // No relanzar este error secundario, el primario es el importante
-      }
-
-      console.error('Error en Payment Intent:', paymentIntent.error)
-      throw new Error(paymentIntent.error || 'Error al procesar el pago')
+    // <<<--- INICIO CAMBIO: Procesar Nueva Estructura de Respuesta --->>>
+    // Verificar si la llamada a createPaymentIntent fue exitosa y si la estructura es la esperada
+    if (!paymentIntent || !paymentIntent.ok || !paymentIntent.data?.result) {
+      console.error('[processPayment] Falló la creación del Payment Intent o la respuesta no es válida:', paymentIntent);
+      throw new Error(paymentIntent?.error || 'No se pudo crear la intención de pago.');
     }
 
-    // ---> LOG ANTES DE CONSTRUIR UPDATE DATA <----
-    console.log(`[processPayment] Construyendo updateData. paymentIntent.data existe: ${!!paymentIntent.data}`);
-    console.log(`[processPayment] paymentIntent.data.result.paymentIntentId: ${paymentIntent.data?.result?.paymentIntentId}`);
-    console.log(`[processPayment] paymentIntent.data.result.clientSecret: ${paymentIntent.data?.result?.clientSecret}`);
-    console.log(`[processPayment] paymentIntent.data.result.voucherUrl (OXXO): ${paymentIntent.data?.result?.voucherUrl}`);
+    // Extraer datos del resultado anidado
+    const { 
+      clientSecret, 
+      paymentIntentId: piId, 
+      cardBrand, 
+      cardLast4, 
+      paymentMethodIdUsed, 
+      voucherUrl, // Para OXXO
+      stripeCustomerId // <-- AÑADIR ESTA VARIABLE
+    } = paymentIntent.data.result;
+    console.log('[processPayment] Datos extraídos de paymentIntent.data.result:', { clientSecret, piId, cardBrand, cardLast4, paymentMethodIdUsed, voucherUrl, stripeCustomerId });
 
-    // 4. Actualizar la orden con el ID del Payment Intent
-    
-    // Determinar el estado inicial basado en el tipo de pago
-    const initialPaymentStatus = paymentType === 'card' ? 'requires_capture' : 'pending';
-    console.log(`[processPayment] Estado inicial del pago para tipo ${paymentType}: ${initialPaymentStatus}`);
+    // Verificar que tenemos el clientSecret (esencial para pagos con tarjeta)
+    if (paymentType !== 'oxxo' && !clientSecret) {
+      console.error('[processPayment] No se recibió clientSecret para pago con tarjeta.');
+      throw new Error('Error interno: No se recibió identificador de pago.');
+    }
+    // <<<--- FIN CAMBIO: Procesar Nueva Estructura de Respuesta --->>>
+
+    // Crear la orden en Firestore ANTES de intentar confirmar el pago
+    console.log('📦 [processPayment] Verificando stock para', orderData.items.length, 'productos...');
+    // Renombrar variable para evitar colisión
+    const stockCheckResult = await verifyAndUpdateStock(orderData.items);
+
+    // Si hay problemas de stock, cancelar y devolver error
+    // Usar la variable renombrada
+    if (!stockCheckResult.ok) {
+      console.error('[processPayment] Error de stock:', stockCheckResult.error);
+      // No necesitas revertir PI aquí porque aún no se ha confirmado
+      return { ...stockCheckResult, error: stockCheckResult.error || 'Stock insuficiente' };
+    }
+
+    // Añadir información inicial del pago a la orden
+    console.log('📦 [processPayment] Datos FINALES de la orden ANTES de createOrder:', orderData);
+    const createOrderResult = await createOrder(orderData);
+
+    if (!createOrderResult.ok || !createOrderResult.id) {
+      console.error('[processPayment] Error al crear la orden en Firestore:', createOrderResult.error);
+      // Aquí sí podrías considerar cancelar el Payment Intent si ya se creó,
+      // aunque si falla la creación de la orden, el PI quedará pendiente.
+      // await stripe.paymentIntents.cancel(piId); // <-- Considerar esto
+      throw new Error(createOrderResult.error || 'No se pudo registrar la orden.');
+    }
+
+    // Renombrar variable para evitar colisión
+    const createdOrderId = createOrderResult.id;
+    console.log(`✅ [processPayment] Orden creada con ID: ${createdOrderId}`);
+
+    // Actualizar la orden con el ID del Payment Intent y estado inicial
+    // Usar piId extraído de la respuesta
+    console.log('[processPayment] Construyendo updateData. paymentIntent.data existe:', !!paymentIntent.data);
+    console.log('[processPayment] paymentIntent.data.result.paymentIntentId:', piId);
+    console.log('[processPayment] paymentIntent.data.result.clientSecret:', clientSecret);
+    console.log('[processPayment] paymentIntent.data.result.voucherUrl (OXXO):', voucherUrl);
+
+    const paymentStatus = paymentType === 'oxxo' ? 'pending_payment' : 'pending';
+    console.log(`[processPayment] Estado inicial del pago para tipo ${paymentType}: ${paymentStatus}`);
 
     const updateData = {
-      'payment.paymentIntentId': paymentIntent.data.result.paymentIntentId,
-      'payment.status': initialPaymentStatus, // <--- Usar el estado determinado
-      ...(paymentType === 'oxxo' && paymentIntent.data.result?.voucherUrl ? { 'payment.voucherUrl': paymentIntent.data.result.voucherUrl } : {}),
-    }
+      'payment.paymentIntentId': piId || null, // Usar piId extraído
+      'payment.status': paymentStatus,
+      ...(paymentType === 'oxxo' && voucherUrl && { 'payment.voucherUrl': voucherUrl }),
+      // Podemos añadir brand/last4 aquí si ya los tenemos
+      ...(cardBrand && { 'payment.brand': cardBrand }),
+      ...(cardLast4 && { 'payment.last4': cardLast4 }),
+      ...(paymentMethodIdUsed && { 'payment.stripePaymentMethodId': paymentMethodIdUsed })
+    };
+    
+    // Filtrar claves con valor undefined antes de actualizar
+    const finalUpdateData = Object.entries(updateData).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
 
-    // ---> LOG ANTES DE ACTUALIZAR ORDEN <----
-    console.log(`[processPayment] Intentando actualizar orden ${orderId} con updateData:`, JSON.stringify(updateData, null, 2));
+    // Usar la variable renombrada
+    console.log(`[processPayment] Intentando actualizar orden ${createdOrderId} con updateData:`, finalUpdateData);
+    await apiService.updateDocument(ORDERS_COLLECTION, createdOrderId, finalUpdateData);
 
-    await apiService.updateDocument(ORDERS_COLLECTION, orderId, updateData)
-
-    // 5. Si se debe guardar el método de pago
-    if (paymentType === 'card' && savePaymentMethod && paymentMethodId) {
-      await apiService.callCloudFunction('saveCheckoutPaymentMethod', {
-        paymentMethodId,
-        cardHolder: orderData.payment.cardholderName || '',
-        isDefault: false,
-      })
-    }
-
-    // 6. Si se debe guardar la dirección
-    if (orderData.shipping.addressType === 'new' && orderData.shipping.saveForFuture) {
-      await apiService.callCloudFunction('saveAddress', {
-        address: orderData.shipping.address,
-        isDefault: false,
-      })
-    }
-
+    // Devolver todos los datos necesarios al hook useOrderProcessor
     return {
       ok: true,
-      orderId,
-      clientSecret: paymentIntent.data.result.clientSecret,
-      paymentIntentId: paymentIntent.data.result.paymentIntentId,
-      ...(paymentType === 'oxxo' ? { voucherUrl: paymentIntent.data.result?.voucherUrl } : {}),
-    }
+      orderId: createdOrderId, 
+      clientSecret: clientSecret, 
+      paymentIntentId: piId,      
+      voucherUrl: voucherUrl,     
+      cardBrand: cardBrand,
+      cardLast4: cardLast4,
+      paymentMethodIdUsed: paymentMethodIdUsed,
+      stripeCustomerId: stripeCustomerId
+    };
+
   } catch (error) {
     console.error('Error al procesar el pago:', error)
     return { ok: false, error: error.message }

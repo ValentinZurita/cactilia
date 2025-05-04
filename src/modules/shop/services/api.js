@@ -3,13 +3,16 @@ import {
   where, orderBy, addDoc, updateDoc, deleteDoc,
   serverTimestamp, writeBatch, setDoc, limit, startAfter
 } from 'firebase/firestore'
-// Eliminamos imports de firebase/functions ya que usaremos fetch directamente
-// import { httpsCallable, getFunctions } from 'firebase/functions'
+// Volver a importar el SDK de Functions
+import { getFunctions, httpsCallable } from 'firebase/functions' 
 import { FirebaseApp } from '../../../config/firebase/firebaseConfig.js' // Mantener si se usa en otras partes o para obtener Auth token si es necesario
 import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js'
 
-// Importar FirebaseAuth para obtener el token si es necesario
-import { getAuth, getIdToken } from 'firebase/auth';
+// Importar FirebaseAuth para obtener el token si es necesario (httpsCallable lo maneja)
+// import { getAuth, getIdToken } from 'firebase/auth';
+
+// Obtener instancia de Functions (puede hacerse una vez)
+const functions = getFunctions(FirebaseApp, 'us-central1'); // Especificar región
 
 /**
  * Servicio base para operaciones con Firebase
@@ -231,69 +234,42 @@ export const apiService = {
   },
 
   /**
-   * Llama a una Cloud Function de Firebase usando fetch directamente.
+   * Llama a una Cloud Function de Firebase usando el SDK httpsCallable.
    *
    * @param {string} functionName - Nombre de la función
    * @param {Object} data - Datos a enviar
-   * @returns {Promise<Object>} - Resultado de la operación
+   * @returns {Promise<Object>} - Resultado de la operación (la estructura devuelta por la función)
    */
   async callCloudFunction(functionName, data = {}) {
-    // --- Prueba con fetch directo --- //
-    const projectId = 'cactilia-3678a'; // CONFIRMA ESTE ID
-    const region = 'us-central1'; // CONFIRMA ESTA REGIÓN
-    const functionUrl = `https://${region}-${projectId}.cloudfunctions.net/${functionName}`;
-
-    console.log(`Intentando llamar a Cloud Function via fetch: ${functionUrl}`);
-
+    console.log(`Intentando llamar a Cloud Function via httpsCallable: ${functionName}`);
     try {
-      // Obtener el token de autenticación del usuario actual (si es necesario por la función)
-      const auth = getAuth(FirebaseApp);
-      let idToken = null;
-      if (auth.currentUser) {
-        try {
-          idToken = await getIdToken(auth.currentUser);
-          console.log("Token de autenticación obtenido para la llamada fetch.");
-        } catch (tokenError) {
-          console.warn("No se pudo obtener el token de autenticación:", tokenError);
-          // Decide si continuar sin token o devolver error dependiendo de la función
-        }
-      }
+      // Crear una referencia callable a la función
+      const callableFunction = httpsCallable(functions, functionName);
 
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      // Añadir el token de autorización si se obtuvo
-      if (idToken) {
-        headers['Authorization'] = `Bearer ${idToken}`;
-      }
+      // Llamar a la función con los datos. El SDK maneja la autenticación (token) y CORS.
+      const result = await callableFunction(data); // No es necesario envolver en { data: ... }
 
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ data: data }), // Las funciones HTTPS esperan un objeto { data: ... }
-        mode: 'cors' // Asegura que se maneje CORS
-      });
+      console.log(`Respuesta recibida de ${functionName} (callable):`, JSON.stringify(result));
 
-      if (!response.ok) {
-        let errorBody = 'Error desconocido';
-        try {
-          errorBody = await response.text(); // Intenta obtener más detalles del error
-        } catch (e) {}
-        console.error(`Error en la respuesta fetch de ${functionName}:`, response.status, response.statusText, errorBody);
-        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}. Body: ${errorBody}`);
-      }
-
-      const result = await response.json();
-
-      // Las funciones HTTPS callable devuelven los datos dentro de una propiedad `result` o directamente.
-      // El objeto 'result' ya contiene los datos { clientSecret, paymentIntentId }.
-      return { ok: true, data: result, error: null }; // <-- Corregir: devolver 'result' directamente
+      // httpsCallable desempaqueta la respuesta, devolviendo directamente el objeto 
+      // que retornó la función (en nuestro caso, { ok, data: { result: {...} }, error })
+      // Devolvemos directamente result.data porque ese es el payload útil.
+      // ¡IMPORTANTE! Asegurarse que el llamador (checkoutService) ahora espera esto.
+      // O, mejor, devolver el objeto completo 'result' y que el llamador lo procese.
+      
+      // Vamos a devolver el objeto completo como lo recibimos del SDK
+      // El SDK devuelve un objeto HttpsCallableResult cuya propiedad 'data' 
+      // contiene lo que la función retornó. 
+      return result.data; // <-- Devolver el contenido que la función retornó
 
     } catch (error) {
-      // Corregir el log de error y la estructura de retorno del catch
-      console.error(`Error al llamar a Cloud Function ${functionName} via fetch:`, error);
-      const errorMessage = error.message || 'Error desconocido al llamar la función via fetch.';
-      return { ok: false, data: null, error: errorMessage, errorCode: 'fetch-error' }; // Asegurar que data sea null en error
+      console.error(`Error al llamar a Cloud Function ${functionName} via callable:`, error);
+      // Mapear el error HttpsError a nuestra estructura { ok, error }
+      return { 
+        ok: false, 
+        error: error.message || 'Error desconocido al llamar la función.', 
+        code: error.code // opcional: incluir el código de error HttpsError
+      };
     }
   },
 };

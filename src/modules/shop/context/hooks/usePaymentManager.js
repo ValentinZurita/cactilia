@@ -20,10 +20,10 @@ export const usePaymentManager = (userId) => {
   const [loadingPayments, setLoadingPayments] = useState(true);
   const [newCardData, setNewCardData] = useState({
     cardholderName: '',
-    saveCard: false,
     isComplete: false,
     error: null
   });
+  const [saveNewCard, setSaveNewCard] = useState(false);
 
   // Referencia para evitar múltiples llamadas durante el montaje
   const initialLoadComplete = useRef(false);
@@ -101,7 +101,22 @@ export const usePaymentManager = (userId) => {
 
   // Manejador para actualizar datos de tarjeta nueva
   const handleNewCardDataChange = useCallback((data) => {
-    setNewCardData(prev => ({ ...prev, ...data }));
+    // 1. Actualizar el flag saveNewCard si viene en los datos
+    if (typeof data.saveCard === 'boolean') {
+      setSaveNewCard(data.saveCard);
+      console.log(`[usePaymentManager] saveNewCard flag set to: ${data.saveCard}`);
+    }
+
+    // 2. Actualizar el resto de los datos de la tarjeta (cardholderName, isComplete, error)
+    //    Crear una copia sin el campo saveCard para evitar conflictos
+    const { saveCard, ...otherCardData } = data;
+    // Solo actualizar si hay otros datos además de saveCard
+    if (Object.keys(otherCardData).length > 0) {
+        setNewCardData(prev => ({ 
+            ...prev, 
+            ...otherCardData // Aplicar cardholderName, isComplete, error, etc.
+        }));
+    }
   }, []);
 
   // Función para manejar cuando se ha agregado un nuevo método de pago
@@ -123,6 +138,7 @@ export const usePaymentManager = (userId) => {
     selectedPayment,
     loadingPayments,
     newCardData,
+    saveNewCard,
 
     // Métodos
     handlePaymentSelect,

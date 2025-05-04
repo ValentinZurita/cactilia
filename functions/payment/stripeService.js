@@ -1,4 +1,5 @@
 // functions/payment/stripeService.js
+const Stripe = require('stripe'); // Import Stripe library
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 
@@ -6,6 +7,31 @@ const admin = require("firebase-admin");
 const stripeSecretParam = defineSecret("STRIPE_SECRET_KEY");
 // Define Stripe webhook secret as a secret parameter
 const stripeWebhookSecretParam = defineSecret("STRIPE_WEBHOOK_SECRET");
+
+// Keep track of initialized Stripe instance
+let stripeInstance = null;
+
+/**
+ * Initializes the Stripe instance using the secret key.
+ * Should be called once per function instance.
+ * @returns {Stripe} Initialized Stripe instance
+ */
+function initializeStripe() {
+  if (!stripeInstance) {
+    const stripeSecretKey = stripeSecretParam.value(); // Access the secret value
+    if (!stripeSecretKey) {
+      console.error("Stripe secret key is not configured!");
+      throw new Error("Stripe secret key is missing. Configure STRIPE_SECRET_KEY secret.");
+    }
+    stripeInstance = new Stripe(stripeSecretKey, {
+      apiVersion: '2024-04-10' // Use a recent API version
+    });
+    console.log("Stripe instance initialized.");
+  } else {
+    console.log("Stripe instance already initialized.");
+  }
+  return stripeInstance;
+}
 
 /**
  * Get or create a Stripe customer for a user
@@ -91,5 +117,6 @@ module.exports = {
   stripeWebhookSecretParam,
   getOrCreateCustomer,
   logPaymentIntent,
-  updatePaymentIntentStatus
+  updatePaymentIntentStatus,
+  initializeStripe
 };

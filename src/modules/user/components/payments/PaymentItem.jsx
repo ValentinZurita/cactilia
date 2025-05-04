@@ -11,14 +11,17 @@ export const PaymentItem = ({ payment, onSetDefault, onDelete }) => {
 
   /**
    * Obtener icono para tipo de tarjeta
-   * @param {string} type - Tipo de tarjeta
+   * @param {string} brand - Marca de la tarjeta
    * @returns {string} - Clase de icono
    */
-  const getCardIcon = (type) => {
-    switch(type.toLowerCase()) {
+  const getCardIcon = (brand) => {
+    // Handle case where brand might be undefined initially
+    if (!brand) return 'bi-credit-card';
+    switch(brand.toLowerCase()) {
       case 'visa': return 'bi-credit-card-2-front';
-      case 'mastercard': return 'bi-credit-card';
-      case 'amex': return 'bi-credit-card-fill';
+      case 'mastercard': return 'bi-credit-card'; // Assuming same icon for now
+      case 'amex': return 'bi-credit-card-fill'; // Assuming specific icon
+      // Add other card types if needed (discover, diners, jcb, etc.)
       default: return 'bi-credit-card';
     }
   };
@@ -26,15 +29,19 @@ export const PaymentItem = ({ payment, onSetDefault, onDelete }) => {
 
   /**
    * Formatear tipo de tarjeta
-   * @param {string} type - Tipo de tarjeta
+   * @param {string} brand - Marca de la tarjeta
    * @returns {string} - Nombre formateado
    */
-  const formatCardType = (type) => {
-    return type.charAt(0).toUpperCase() + type.slice(1);
+  const formatCardBrand = (brand) => {
+    // Handle case where brand might be undefined
+    if (!brand) return 'Tarjeta';
+    return brand.charAt(0).toUpperCase() + brand.slice(1);
   };
 
-  // Obtener el nombre del titular, comprobando ambas posibles propiedades
-  const holderName = payment.cardholderName || payment.cardHolder || null;
+  // Obtener el nombre del titular, comprobando ambas posibles propiedades y si existen
+  const holderName = payment?.cardholderName || payment?.cardHolder || null;
+  const cardLast4 = payment?.last4 || payment?.cardNumber || '****'; // Use last4 if available, fallback to cardNumber, then ****
+  const expiryDate = payment?.expiryDate; // Directly use expiryDate if available
 
   return (
 
@@ -45,16 +52,23 @@ export const PaymentItem = ({ payment, onSetDefault, onDelete }) => {
 
         {/* Icono y detalles del metodo de pago */}
         <div className="payment-left">
-          <i className={`bi ${getCardIcon(payment.type)} card-icon`}></i>
+          {/* Use payment.brand for the icon */}
+          <i className={`bi ${getCardIcon(payment.brand)} card-icon`}></i>
 
           {/* Información del metodo de pago */}
           <div className="payment-info">
-            <h5 className="card-type">{formatCardType(payment.type)}</h5>
-            <div className="card-number">{payment.cardNumber}</div>
+            {/* Use payment.brand for the type display */}
+            <h5 className="card-type">{formatCardBrand(payment.brand)}</h5>
+            {/* Display last 4 digits */}
+            <div className="card-number">**** **** **** {cardLast4}</div>
+            {/* Conditionally render holder name */}
             {holderName && (
               <div className="card-holder">{holderName}</div>
             )}
-            <div className="expiry-date">Vence: {payment.expiryDate}</div>
+             {/* Conditionally render expiry date */}
+            {expiryDate && (
+               <div className="expiry-date">Vence: {expiryDate}</div>
+            )}
           </div>
         </div>
 
