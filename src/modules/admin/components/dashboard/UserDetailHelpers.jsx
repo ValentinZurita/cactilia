@@ -14,18 +14,26 @@ export const UserAvatar = ({ user }) => (
 );
 
 export const UserRole = ({ role }) => {
-  const getRoleBadgeColor = (role) => {
+  const getRoleBadgeStyle = (role) => {
     switch (role) {
-      case "superadmin": return "bg-black text-white";
-      case "admin": return "bg-black text-white";
-      case "user": return "bg-primary";
-      default: return "bg-secondary";
+      case "superadmin":
+      case "admin": 
+        // Fondo gris claro, texto oscuro, borde
+        return "bg-light text-dark border"; 
+      case "user": 
+        // Fondo blanco, texto gris, borde
+        return "bg-white text-secondary border"; 
+      default: 
+        // Estilo por defecto similar a user
+        return "bg-white text-secondary border";
     }
   };
 
   return (
-    <span className={`badge rounded-pill px-3 py-2 ${getRoleBadgeColor(role)}`}>
-      {role || 'usuario'}
+    // Ajustar padding y tamaño de fuente para algo más discreto
+    <span className={`badge rounded-pill px-2 py-1 ${getRoleBadgeStyle(role)} small`}> 
+      {/* Capitalizar rol para mejor lectura */}
+      {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Usuario'}
     </span>
   );
 };

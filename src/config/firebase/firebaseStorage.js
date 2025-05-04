@@ -31,8 +31,6 @@ export const uploadFile = async (file, folder = 'images') => {
     const snapshot = await uploadBytes(fileRef, file);
     const downloadURL = await getDownloadURL(snapshot.ref);
 
-    console.log('File uploaded:', downloadURL);
-
     return downloadURL;
 
     // Return download URL

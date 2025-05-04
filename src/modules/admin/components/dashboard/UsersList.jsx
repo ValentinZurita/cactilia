@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getUsersByRole, updateUserRole, deleteUserDoc } from "../../services/userService";
-import { UserRoleModal } from "./UserRoleModal";
+import { getUsersByRole, deleteUserDoc } from "../../services/userService";
 import { Spinner } from "../../../../shared/components/spinner/Spinner";
 import { TableView } from './TableView.jsx'
-import { SearchBar } from '../shared/SearchBar.jsx'
+import { SearchBar } from '../../common/components/SearchBar.jsx'
+import NavigationTabs from "../../common/components/NavigationTabs.jsx";
+import { ActionButton } from "../../common/components/ActionButton.jsx";
+import { UserRole } from "./UserDetailHelpers.jsx";
+import { ActionButtonsContainer } from '../../common/components/ActionButtonsContainer.jsx';
 
 
 /**
@@ -20,8 +23,6 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showRoleModal, setShowRoleModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
 
   const navigate = useNavigate();
 
@@ -33,45 +34,20 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
   // Función para cargar usuarios
   const loadUsers = async () => {
     setLoading(true);
-    console.log('Cargando usuarios con roles:', roleFilter);
 
     try {
       const { ok, data, error } = await getUsersByRole(roleFilter);
-      console.log('Respuesta de getUsersByRole:', { ok, data: data?.length, error });
 
       if (!ok) {
         throw new Error(error || "Error desconocido");
       }
 
-      console.log('Usuarios cargados:', data);
       setUsers(data || []);
     } catch (error) {
       console.error("Error obteniendo usuarios por rol:", error);
       alert(`Error cargando usuarios: ${error.message}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Función para manejar el cambio de rol
-  const handleRoleChange = async (uid, newRole) => {
-    if (window.confirm(`¿Estás seguro de cambiar el rol del usuario a ${newRole}?`)) {
-      try {
-        setLoading(true);
-        const { ok, error } = await updateUserRole(uid, newRole);
-
-        if (!ok) {
-          throw new Error(error || "Error desconocido");
-        }
-
-        alert("Rol actualizado correctamente");
-        await loadUsers();
-      } catch (error) {
-        console.error("Error actualizando rol:", error);
-        alert(`Error actualizando rol: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
     }
   };
 
@@ -97,15 +73,10 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
     }
   };
 
-  // Función para abrir el modal de cambio de rol
-  const openRoleModal = (user) => {
-    setSelectedUser(user);
-    setShowRoleModal(true);
-  };
-
   // Manejar cambio en la búsqueda
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
   };
 
   // Limpiar búsqueda
@@ -119,17 +90,24 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Definir columnas para la tabla
+  // Función para manejar cambio de pestaña
+  const handleTabChange = (tabId) => {
+    navigate(`/admin/users/${tabId}`);
+  };
+
+  // Definir columnas para la tabla (Refactorizado)
   const columns = [
     {
       key: 'avatar',
-      header: 'Avatar',
+      header: '', // Sin cabecera para avatar
       renderCell: (user) => (
-        <img
-          src={user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || user.email || 'User')}
-          alt={user.displayName}
-          className="rounded-circle"
-          style={{ width: "40px", height: "40px", objectFit: "cover" }}
+        // Usar UserAvatar si existe y acepta size, si no, img pequeña
+        // Asumiendo UserAvatar no está importado o listo, usamos img:
+        <img 
+          src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&size=30&background=E0E0E0&color=616161&font-size=0.5&length=2`}
+          alt="Avatar"
+          className="rounded-circle" 
+          style={{ width: '30px', height: '30px', objectFit: 'cover' }}
         />
       )
     },
@@ -141,45 +119,47 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
     {
       key: 'email',
       header: 'Email',
-      renderCell: (user) => (
-        <span
-          style={{
-            maxWidth: '200px',
-            display: 'inline-block',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}
-        >
-          {user.email}
-        </span>
-      )
+      renderCell: (user) => user.email 
     },
+
+    // *** Columna Rol ***
+    {
+        key: 'role',
+        header: 'Rol',
+        renderCell: (user) => <UserRole role={user.role} /> 
+    },
+
     {
       key: 'actions',
-      header: 'Acciones',
+      header: <span className="text-end d-block">Acciones</span>,
+      headerClassName: 'text-end',
+      cellClassName: 'text-end',
       renderCell: (user) => (
-        <div className="d-flex gap-2  ">
-          {/* Ver detalles */}
-          <button
-            className="btn btn-outline-primary btn-sm me-2"
+        <ActionButtonsContainer size="sm" ariaLabel={`Acciones para ${user.displayName || user.email}`}>
+          <ActionButton
+            iconClass="bi bi-eye"
+            variant="light"
+            textColor="secondary"
+            size="sm"
             onClick={() => onViewDetail(user.id)}
             title="Ver detalles"
-          >
-            <i className="bi bi-eye"></i>
-          </button>
-
-          {/* Eliminar (solo para superadmin) */}
+            isFirst={true}
+          />
+          
           {currentUserRole === "superadmin" && (
-            <button
-              className="btn btn-sm btn-outline-danger"
+            <ActionButton
+              iconClass="bi bi-trash"
+              variant="light"
+              textColor="secondary"
+              hoverTextColor="danger"
+              size="sm"
               onClick={() => handleDeleteUser(user.id)}
               title="Eliminar usuario"
-            >
-              <i className="bi bi-trash"></i>
-            </button>
+              confirmMessage={`¿Estás seguro de eliminar a ${user.displayName || user.email}?`}
+              isLast={true}
+            />
           )}
-        </div>
+        </ActionButtonsContainer>
       )
     }
   ];
@@ -193,36 +173,23 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
       {/* Barra de búsqueda refactorizada */}
       <div className="mb-4">
         <SearchBar
-          value={searchTerm}
-          onChange={handleSearchChange}
-          onClear={handleClearSearch}
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+          onClearSearch={handleClearSearch}
           placeholder={`Buscar ${userType === "admins" ? "administradores" : "clientes"}...`}
-          size="lg"
         />
       </div>
 
       {/* Selector de tipo de usuario */}
       <div className="mb-4">
-        <ul className="nav nav-pills">
-          <li className="nav-item">
-            <button
-              className={`nav-link ${userType === "customers" ? "active" : ""}`}
-              onClick={() => navigate("/admin/users/customers")}
-            >
-              <i className="bi bi-people me-2"></i>
-              Clientes
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link ${userType === "admins" ? "active" : ""}`}
-              onClick={() => navigate("/admin/users/admins")}
-            >
-              <i className="bi bi-shield-lock me-2"></i>
-              Administradores
-            </button>
-          </li>
-        </ul>
+        <NavigationTabs
+          activeSection={userType}
+          onSectionChange={handleTabChange}
+          tabs={[
+            { id: 'customers', label: 'Clientes', icon: 'bi-people' },
+            { id: 'admins', label: 'Administradores', icon: 'bi-shield-lock' },
+          ]}
+        />
       </div>
 
       {/* Tabla de usuarios */}
@@ -234,17 +201,6 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
         theadClass="table-dark"
         style={{ borderRadius: "12px", overflow: "hidden" }}
       />
-
-      {/* Modal para cambiar rol */}
-      {showRoleModal && selectedUser && (
-        <UserRoleModal
-          user={selectedUser}
-          onClose={() => setShowRoleModal(false)}
-          onSave={(uid, newRole) => {
-            handleRoleChange(uid, newRole);
-          }}
-        />
-      )}
     </>
   );
 };
