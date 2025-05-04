@@ -2,7 +2,13 @@ import React, { useState } from 'react';
 import { InvoiceUploader } from './InvoiceUploader.jsx';
 import { capturePayment } from '../services/orderAdminService.js';
 import { getFriendlyPaymentStatus } from '../../../../../shared/utils/statusMapping.js';
+// Importar componentes auxiliares reutilizables
+import { IconCircle } from '../common/IconCircle.jsx';
+import { InfoBlock } from '../common/InfoBlock.jsx';
+import { InfoRow } from '../common/InfoRow.jsx';
 
+// --- Componentes auxiliares locales ELIMINADOS ---
+/*
 const IconCircle = ({ icon, className = '', ...props }) => (
   <div
     className={`rounded-circle bg-light p-2 d-flex align-items-center justify-content-center me-3 ${className}`}
@@ -26,6 +32,8 @@ const InfoRow = ({ label, value }) => (
     <p className="mb-0 user-select-all">{value}</p>
   </div>
 );
+*/
+// --- Fin Componentes Eliminados ---
 
 // Función auxiliar para formatear fechas
 const formatDate = (timestamp) => {

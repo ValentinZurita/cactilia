@@ -1,20 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+// Importar componentes auxiliares para el estilo
 import { IconCircle } from '../common/IconCircle.jsx';
 import { InfoBlock } from '../common/InfoBlock.jsx';
 import { InfoRow } from '../common/InfoRow.jsx';
 
 /**
  * Muestra la información del cliente y la dirección de envío en los detalles del pedido del admin.
- * *** ESTE ES EL ARCHIVO CORRECTO QUE SE ESTÁ USANDO ***
  */
 export const OrderCustomerInfo = ({ order, userData, loadingUser }) => {
-  
-  const address = order.shippingAddress || {}; 
+  // Limpiar logs si existían
+  // console.log('[OrderCustomerInfo] Datos de usuario:', userData);
+  // console.log('[OrderCustomerInfo] Dirección de envío:', order.shippingAddress);
+
+  const address = order.shippingAddress || {}; // Asegurar que address sea un objeto
 
   return (
-    <div className="row g-4">
-
+    <div className="row">
+      {/* Columna de Información del Cliente */}
       <div className="col-md-6 mb-4 mb-md-0">
         <InfoBlock title="Cliente">
           {loadingUser ? (
@@ -38,69 +41,66 @@ export const OrderCustomerInfo = ({ order, userData, loadingUser }) => {
                     {userData.phoneNumber}
                   </p>
                 )}
-                {order.userId && 
-                  <Link to={`/admin/users/${order.userId}`} className="small mt-1 d-inline-block">Ver cliente</Link>
-                }
+                {/* Enlace para ver más detalles del cliente si es necesario */}
+                <Link to={`/admin/users/${order.userId}`} className="small mt-1 d-inline-block">Ver cliente</Link>
               </div>
             </div>
           ) : (
             <p className="text-muted">No se pudieron cargar los datos del cliente.</p>
           )}
-          {order.notes && (
-            <div className="mt-4 pt-3 border-top">
-                <h6 className="small text-secondary fw-normal mb-2">Notas del cliente</h6>
-                <p className="mb-0 small fst-italic">{order.notes}</p>
-            </div>
-           )}
         </InfoBlock>
       </div>
 
+      {/* Columna de Dirección de Envío (Refactorizada) */}
       <div className="col-md-6">
         <InfoBlock title="Dirección de Envío">
           {Object.keys(address).length > 0 ? (
             <div className="d-flex align-items-start">
               <IconCircle icon="geo-alt-fill" className="mt-1" />
               <div>
+                {/* Nombre completo */} 
                 {(address.firstName || address.lastName) && 
                   <InfoRow label="Recibe" value={`${address.firstName || ''} ${address.lastName || ''}`} className="mb-2" />
                 }
-                {address.phone && 
-                  <InfoRow label="Teléfono de Contacto" value={address.phone} className="mb-2" />
+                {/* Calle y Número */} 
+                {(address.street || address.number) && 
+                  <InfoRow label="Calle y Número" value={`${address.street || ''}${address.number ? `, ${address.number}` : ''}`} className="mb-2" />
                 }
-                {(address.street || address.number || address.numExt) &&
-                  <InfoRow label="Calle y Número" value={`${address.street || ''}${address.number || address.numExt ? ` #${address.number || address.numExt}` : ''}`} className="mb-2" />
+                {/* Número Interior */} 
+                {address.details && 
+                  <InfoRow label="Interior/Depto/Detalles" value={address.details} className="mb-2" />
                 }
-                {(address.details || address.numInt) && 
-                  <InfoRow label="Interior/Depto/Detalles" value={address.details || address.numInt} className="mb-2" />
+                {/* Colonia */} 
+                {address.neighborhood && 
+                  <InfoRow label="Colonia" value={address.neighborhood} className="mb-2" />
                 }
-                {(address.neighborhood || address.colonia) &&
-                  <InfoRow label="Colonia" value={address.neighborhood || address.colonia} className="mb-2" />
+                {/* Código Postal */} 
+                {address.postalCode && 
+                  <InfoRow label="Código Postal" value={address.postalCode} className="mb-2" />
                 }
-                {(address.postalCode || address.zip) &&
-                  <InfoRow label="Código Postal" value={address.postalCode || address.zip} className="mb-2" />
-                }
+                {/* Ciudad */} 
                 {address.city && 
                   <InfoRow label="Ciudad" value={address.city} className="mb-2" />
                 }
+                {/* Estado */} 
                 {address.state && 
                   <InfoRow label="Estado" value={address.state} className="mb-2" />
                 }
+                {/* País (si existe) */} 
                 {address.country && 
                   <InfoRow label="País" value={address.country} className="mb-2" />
                 }
-                {address.references && 
-                  <InfoRow label="Referencias" value={address.references} />
+                {/* Teléfono */} 
+                {address.phone && 
+                  <InfoRow label="Teléfono de Contacto" value={address.phone} />
                 }
               </div>
             </div>
           ) : (
-             <div className="d-flex align-items-center text-muted">
-              <IconCircle icon="geo-alt" />
-              <p className="mb-0 small">No hay información de dirección disponible</p>
-            </div>
+            <p className="text-muted">No hay dirección de envío registrada.</p>
           )}
         </InfoBlock>
       </div>
     </div>
   );
-};
+}; 
