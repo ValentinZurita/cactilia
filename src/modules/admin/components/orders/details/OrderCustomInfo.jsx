@@ -23,23 +23,28 @@ export const OrderCustomerInfo = ({ order, userData, loadingUser }) => {
             <div className="d-flex align-items-center">
               <IconCircle icon="person-circle" /> 
               <div>
-                <p className="mb-0 fw-medium">
+                <p className="mb-1 fw-medium">
                   {userData.firstName || ''} {userData.lastName || ''}
                 </p>
                 {userData.email && (
-                  <p className="mb-0 text-secondary small">
+                  <p className="mb-1 text-secondary small">
                     <i className="bi bi-envelope me-1"></i>
                     {userData.email}
                   </p>
                 )}
                 {userData.phoneNumber && (
-                  <p className="mb-0 text-secondary small">
+                  <p className="mb-1 text-secondary small">
                     <i className="bi bi-telephone me-1"></i>
                     {userData.phoneNumber}
                   </p>
                 )}
                 {order.userId && 
-                  <Link to={`/admin/users/${order.userId}`} className="small mt-1 d-inline-block">Ver cliente</Link>
+                  <Link 
+                    to={`/admin/users/customers/view/${order.userId}`}
+                    className="small mt-2 d-inline-block"
+                  >
+                    Ver cliente
+                  </Link>
                 }
               </div>
             </div>
