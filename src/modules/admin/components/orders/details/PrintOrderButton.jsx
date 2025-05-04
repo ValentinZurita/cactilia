@@ -151,7 +151,7 @@ export const PrintOrderButton = ({ order, formatPrice, formatDate, userData }) =
             
             <div class="order-info-item">
               <div class="order-info-label">Total:</div>
-              <div class="order-info-value">${formatPrice(order.totals.total)}</div>
+              <div class="order-info-value">${formatPrice(order.totals.finalTotal)}</div>
             </div>
             
             <div class="order-info-item">
@@ -205,7 +205,7 @@ export const PrintOrderButton = ({ order, formatPrice, formatDate, userData }) =
               ` : ''}
               <tr class="total-row">
                 <td colspan="3" class="text-right">Total:</td>
-                <td class="text-right">${formatPrice(order.totals.total)}</td>
+                <td class="text-right">${formatPrice(order.totals.finalTotal)}</td>
               </tr>
             </tfoot>
           </table>

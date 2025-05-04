@@ -136,7 +136,7 @@ export const UserDetailsCard = ({ user, onBack, onDelete, onChangeRole }) => {
         ]}
       />
 
-      {/* --- Contenido de las Pestañas ACTUALIZADO --- */}
+      {/* --- Contenido de las Pestañas --- */}
       <div className="mt-4"> 
         {/* Pestaña Detalles (limpia) */}
         {activeTab === 'details' && (
