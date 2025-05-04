@@ -8,20 +8,17 @@ import { UserOrdersTable } from './UserOrdersTable.jsx'
 import NavigationTabs from '../../common/components/NavigationTabs.jsx'
 import { TabItem } from '../../common/components/TabItem.jsx'
 
-// Componentes auxiliares locales ELIMINADOS (ya que se importan o son específicos) -> RESTAURADOS
-
-// ESTOS SÍ SE QUEDAN LOCALES (EmptyOrdersSection, formatDate)
-/**
- * Sección para cuando no hay pedidos
- ockconst EmptyOrdersSection = () => (
+// *** RESTAURAR DEFINICIÓN LOCAL DE EmptyOrdersSection ***
+const EmptyOrdersSection = () => (
   <div className="text-center py-4 text-muted">
     <div className="p-4 bg-light rounded-4">
       <i className="bi bi-inbox fs-1 d-block mb-3 text-secondary"></i>
       <p>Este usuario no tiene pedidos registrados</p>
     </div>
   </div>
-)
+);
 
+// ESTOS SÍ SE QUEDAN LOCALES (formatDate)
 /**
  * Formatea fechas de diferentes tipos a un formato legible
  */
