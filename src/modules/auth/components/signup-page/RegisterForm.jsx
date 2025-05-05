@@ -85,25 +85,27 @@ export const RegisterForm = () => {
       />
 
       {/*
-        3) Fecha de Nacimiento
+        3) Fecha de Nacimiento (Hidden for now)
         - Requerido
         - Solo la parte de la fecha,
       */}
+      {/*
       <BirthdateField
         {...register('birthdate', {
           required: 'La fecha de nacimiento es obligatoria',
         })}
         errors={errors.birthdate}
       />
+      */}
 
       {/*
-        4) Número Telefónico
-        - Requerido
+        4) Número Telefónico (Optional)
         - 10 dígitos
       */}
       <PhoneNumberField
+        label="Número Telefónico (Opcional)"
         {...register('phoneNumber', {
-          required: 'El número de teléfono es obligatorio',
+          // required: 'El número de teléfono es obligatorio', // Made optional
           pattern: {
             value: /^\d{10}$/,
             message: 'El número debe tener exactamente 10 dígitos',

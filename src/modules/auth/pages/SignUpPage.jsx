@@ -8,7 +8,7 @@ export const SignUpPage = () => {
       <ContentWrapper>
 
         {/* Left Section: Image (Hidden on mobile, shown on larger screens) */}
-        <PageSection className="d-none d-md-block p-0 m-0">
+        <PageSection className="d-none d-md-block p-0 m-0 overflow-hidden vh-100">
           <LoginImage />
         </PageSection>
 
