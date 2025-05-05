@@ -1,7 +1,7 @@
 /* Estilos para el componente OxxoVoucher */
 
 .oxxo-voucher-container {
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    /* box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08); */
     max-width: 800px;
     margin: 0 auto;
 }
@@ -21,11 +21,23 @@
     font-size: 1.5rem;
 }
 
+.oxxo-voucher-header {
+    /* Añadir separador inferior sutil */
+    border-bottom: 1px solid #eeeeee; /* Color gris muy claro */
+    padding-bottom: 1rem; /* Espacio debajo del separador */
+    /* mb-4 ya existe en el JSX, así que el padding es suficiente */
+}
+
 .oxxo-voucher-details {
-    border: 1px dashed #ddd;
-    border-radius: 8px;
-    padding: 15px;
-    background-color: #f9f9f9;
+    /* Eliminar estilos de card */
+    /* border: 1px dashed #ddd; */
+    /* border-radius: 8px; */
+    /* padding: 15px; */
+    /* background-color: #f9f9f9; */
+    margin-bottom: 1rem; /* Mantener algo de margen inferior si se desea */
+    /* Añadir separador inferior sutil */
+    border-bottom: 1px solid #eeeeee; /* Mismo color */
+    padding-bottom: 1rem; /* Espacio debajo del separador */
 }
 
 .detail-group {
@@ -48,7 +60,9 @@
 }
 
 .oxxo-voucher-instructions {
-    border-left: 4px solid #e10718;
+    /* Eliminar borde izquierdo */
+    /* border-left: 4px solid #e10718; */
+    /* Asegurar margen superior si es necesario (mb-4 ya está en JSX) */
 }
 
 .instructions-title {
@@ -67,7 +81,8 @@
 }
 
 .voucher-actions {
-    margin-top: 20px;
+    /* Asegurar margen superior (mt-2 ya está en JSX para el texto <small>) */
+    margin-top: 1.5rem; /* Aumentar un poco el espacio antes de las acciones */
 }
 
 .voucher-actions .btn {

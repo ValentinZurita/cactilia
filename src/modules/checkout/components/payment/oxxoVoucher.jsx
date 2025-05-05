@@ -77,7 +77,7 @@ export const OxxoVoucher = ({ orderData, voucherUrl, oxxoAmount, oxxoExpiresAt }
   };
 
   return (
-    <div className="oxxo-voucher-container p-4 border rounded bg-white">
+    <div className="oxxo-voucher-container">
       <div className="oxxo-voucher-header text-center mb-4">
         <div className="oxxo-logo-wrapper mb-3">
           <img
@@ -117,7 +117,7 @@ export const OxxoVoucher = ({ orderData, voucherUrl, oxxoAmount, oxxoExpiresAt }
         </div>
       </div>
 
-      <div className="oxxo-voucher-instructions bg-light p-3 rounded mb-4">
+      <div className="oxxo-voucher-instructions mb-4">
         <h5 className="instructions-title mb-3">Instrucciones para el pago</h5>
         <ol className="instructions-list">
           <li>Acude a la tienda OXXO más cercana. <a href="https://www.oxxo.com/ubicacion-de-tiendas" target="_blank"
