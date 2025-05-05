@@ -126,3 +126,36 @@ export const slugify = (text) => {
     .replace(/[^\w-]+/g, '') // Remover caracteres que no sean alfanuméricos o guion
     .replace(/--+/g, '-'); // Reemplazar múltiples guiones seguidos por uno solo
 };
+
+// --- NUEVA FUNCIÓN AUXILIAR COPIADA --- (o ajustar comentario si ya existe sección)
+/**
+ * Formatea un timestamp Unix (segundos) a un formato de fecha y hora local.
+ *
+ * @param {number} unixTimestamp - Timestamp en segundos.
+ * @returns {string} - Fecha y hora formateada (ej. '7 de mayo de 2025, 11:59 p.m.') o 'Fecha no disponible'.
+ */
+export const formatUnixTimestamp = (unixTimestamp) => {
+  if (unixTimestamp === undefined || unixTimestamp === null || isNaN(unixTimestamp)) {
+    return 'Fecha no disponible';
+  }
+  try {
+    const date = new Date(unixTimestamp * 1000); // Convertir segundos a milisegundos
+    if (isNaN(date.getTime())) {
+      console.error('Timestamp Unix inválido para formatear:', unixTimestamp);
+      return 'Fecha inválida';
+    }
+    // Devolver formato completo con hora
+    return date.toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true // Usar formato AM/PM
+    });
+  } catch (error) {
+    console.error('Error formateando timestamp Unix:', error);
+    return 'Fecha no disponible';
+  }
+};
+// --- FIN NUEVA FUNCIÓN COPIADA ---
