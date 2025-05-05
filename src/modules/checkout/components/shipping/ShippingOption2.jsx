@@ -3,9 +3,7 @@ import PropTypes from 'prop-types'
 import ProductDetails from './ProductDetails.jsx'
 import CostBreakdown from './CostBreakdown.jsx'
 import { Shimmer } from '../common/index.js'
-import { calculateDeliveryTime, formatPrice, getDisplayName, isFreeShipping } from '../../utils/shippingUtils.js'
-import { Tooltip } from 'react-bootstrap'
-import { OverlayTrigger } from 'react-bootstrap'
+import { calculateDeliveryTime, formatShippingCost, getDisplayName, isFreeShipping } from '../../utils/shippingUtils.js'
 import { SHIPPING_ICONS } from '../../constants/ShippingConstants2.js'
 import '../../styles/shipping.css'
 
@@ -81,7 +79,7 @@ const ShippingOption2 = ({
         </div>
         <div className="shipping-option-price">
           {!free ?
-            <span>{formatPrice(calculateTotalPrice())}</span> :
+            <span>{formatShippingCost(calculateTotalPrice())}</span> :
             <span className="text-success">Gratis</span>
           }
         </div>

@@ -45,6 +45,39 @@ export const formatShippingCost = (cost, isFree = false) => {
 };
 
 /**
+ * Verifica si una opción de envío es gratuita (precio es 0)
+ * @param {Object} option - La opción de envío
+ * @returns {boolean} - True si el envío es gratis
+ */
+export const isFreeShipping = (option) => {
+  // Considera gratis si el precio es 0 o explícitamente marcado (si hubiera un campo así)
+  return option?.price === 0;
+};
+
+/**
+ * Obtiene un nombre legible para una opción de envío.
+ * @param {Object} option - La opción de envío.
+ * @returns {string} - El nombre a mostrar.
+ */
+export const getDisplayName = (option) => {
+  if (!option) return 'Opción inválida';
+  // Prioritize specific fields, fallback to generic names
+  return option.name || option.label || option.service_name || option.carrier || 'Opción de Envío';
+};
+
+/**
+ * Calcula o extrae el tiempo de entrega estimado de una opción de envío.
+ * @param {Object} option - La opción de envío.
+ * @returns {string} - El tiempo de entrega estimado o un texto por defecto.
+ */
+export const calculateDeliveryTime = (option) => {
+  if (!option) return 'Tiempo no disponible';
+  // Busca en varios campos posibles donde podría estar el tiempo de entrega
+  const time = option.tiempo_entrega || option.delivery_time || option.estimatedDelivery || option.deliveryTime;
+  return time || 'Tiempo estimado no disponible';
+};
+
+/**
  * Crea una regla de envío por defecto
  * @param {string} id - ID opcional para la regla
  * @returns {Object} Regla de envío por defecto

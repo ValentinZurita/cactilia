@@ -1,51 +1,52 @@
-// src/modules/user/package/payments/PaymentFormModal.jsx
+// src/modules/user/components/payments/PaymentFormModal.jsx
 import React, { useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useDispatch, useSelector } from 'react-redux'
 import { addMessage } from '../../../../store/messages/messageSlice'
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
+import { FirebaseApp } from '../../../../config/firebase/firebaseConfig.js'
+// Importa el logo de Stripe desde los assets
+import stripeLogo from '../../../../shared/assets/stripe.svg'; // <-- Corregido: quitando /icons
 import '../../styles/paymentFormModal.css'
 
 /**
- * Modal simplificado para añadir métodos de pago con Stripe
+ * Modal para añadir métodos de pago utilizando Stripe.
+ * Renderiza usando React Portal.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen
+ * @param {Function} props.onClose
+ * @param {Function} props.onSuccess
  */
 export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
-  // Local states
+  // --- Hooks ---
+  const dispatch = useDispatch()
+  const { uid } = useSelector(state => state.auth)
+  const stripe = useStripe()
+  const elements = useElements()
+
+  // --- Referencias ---
+  const functionsRef = useRef(null)
+  const isSubmittingRef = useRef(false) // Evita envíos múltiples
+  const formRef = useRef(null)
+
+  // --- Estados Locales ---
   const [cardHolder, setCardHolder] = useState('')
   const [isDefault, setIsDefault] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [cardComplete, setCardComplete] = useState(false)
+  const [cardComplete, setCardComplete] = useState(false) // True si Stripe CardElement está completo
 
-  // References for safe cleanup
-  const isSubmittingRef = useRef(false)
-  const formRef = useRef(null)
-  const { uid } = useSelector(state => state.auth)
+  // --- Efectos ---
 
-  // Get Firebase Functions instance
-  const functionsRef = useRef(null)
-
-  // Initialize functions only once
+  // Inicializar Firebase Functions (solo al montar)
   useEffect(() => {
-    functionsRef.current = getFunctions(app)
-    // Connect to emulator if in development
-    // if (import.meta.env.DEV) {
-    //   try {
-    //     connectFunctionsEmulator(functionsRef.current, 'localhost', 5001)
-    //     console.log('Connected to Functions emulator in PaymentFormModal')
-    //   } catch (e) {
-    //     console.error('Error connecting to Functions emulator:', e)
-    //   }
-    // }
+    functionsRef.current = getFunctions(FirebaseApp)
+    // TODO: Conectar al emulador si es necesario en desarrollo
   }, [])
 
-  // Stripe hooks
-  const stripe = useStripe()
-  const elements = useElements()
-  const dispatch = useDispatch()
-
-  // Clean form when opened
+  // Limpiar estado del formulario al abrir/cerrar
   useEffect(() => {
     if (isOpen) {
       setCardHolder('')
@@ -53,27 +54,26 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
       setError(null)
       setCardComplete(false)
       isSubmittingRef.current = false
+      elements?.getElement(CardElement)?.clear(); // Limpia el campo de tarjeta Stripe
     }
-  }, [isOpen])
+  }, [isOpen, elements])
 
-  // Handle Escape key to close
+  // Listener para cerrar con tecla Escape
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen && !loading) {
         onClose()
       }
     }
-
     if (isOpen) {
       window.addEventListener('keydown', handleEscape)
     }
-
     return () => {
       window.removeEventListener('keydown', handleEscape)
     }
   }, [isOpen, loading, onClose])
 
-  // Prevent scroll when modal is open
+  // Controlar scroll del body
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -83,45 +83,30 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     }
   }, [isOpen])
 
-  // If modal is not open, render nothing
-  if (!isOpen) return null
+  // --- Manejadores de Eventos ---
 
-  // Handle card element changes
+  // Actualiza estado basado en la validez del CardElement
   const handleCardChange = (event) => {
     setCardComplete(event.complete)
     setError(event.error ? event.error.message : null)
   }
 
-  // Handle form submission safely
+  // Envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Avoid duplicate submissions
-    if (isSubmittingRef.current || loading) {
+    if (isSubmittingRef.current || loading || !stripe || !elements || !cardComplete || !cardHolder.trim()) {
+        // Realiza validaciones básicas antes de continuar
+        if (!stripe || !elements) setError('Stripe no está listo.');
+        else if (!cardComplete) setError('Completa los datos de tu tarjeta.');
+        else if (!cardHolder.trim()) setError('Ingresa el nombre del titular.');
+        else console.warn('Envío bloqueado (en progreso o inválido).')
       return
     }
 
-    // Initial validations
-    if (!stripe || !elements) {
-      setError('Stripe no está inicializado. Por favor, espera un momento e intenta de nuevo.')
-      return
-    }
-
-    if (!cardComplete) {
-      setError('Por favor, completa los datos de tu tarjeta')
-      return
-    }
-
-    if (!cardHolder.trim()) {
-      setError('Por favor, ingresa el nombre del titular de la tarjeta')
-      return
-    }
-
-    // Get the CardElement - must be done BEFORE changing state
     const cardElement = elements.getElement(CardElement)
-
     if (!cardElement) {
-      setError('Could not access card form. Please try again.')
+      setError('No se pudo acceder al formulario de la tarjeta.')
       return
     }
 
@@ -130,237 +115,197 @@ export const PaymentFormModal = ({ isOpen, onClose, onSuccess }) => {
     isSubmittingRef.current = true
 
     try {
-      // Create SetupIntent via Cloud Function
+      // 1. Crear SetupIntent vía Cloud Function
+      // Un SetupIntent prepara la intención de guardar un método de pago para uso futuro.
       const createSetupIntent = httpsCallable(functionsRef.current, 'createSetupIntent')
-      const setupResponse = await createSetupIntent({})
+      const setupResponse = await createSetupIntent({ customerId: uid }) // Idealmente, asociar al customerId de Stripe
+      const clientSecret = setupResponse.data?.clientSecret
 
-      if (!setupResponse.data?.clientSecret) {
-        throw new Error('Error al crear la intención de configuración')
+      if (!clientSecret) {
+        throw new Error('No se pudo obtener el clientSecret para configurar la tarjeta.')
       }
 
-      // Confirm the setup with Stripe
+      // 2. Confirmar la configuración de la tarjeta con Stripe (Frontend)
+      // Se envía la info del CardElement (seguro, no la ves tú) junto al clientSecret.
       const { setupIntent, error: setupError } = await stripe.confirmCardSetup(
-        setupResponse.data.clientSecret,
+        clientSecret,
         {
           payment_method: {
             card: cardElement,
             billing_details: {
-              name: cardHolder,
+              name: cardHolder.trim(),
             },
           },
         },
       )
 
       if (setupError) {
-        throw new Error(setupError.message)
+        // Error durante la confirmación (tarjeta inválida, rechazada, etc.)
+        throw new Error(setupError.message || 'Error al confirmar la tarjeta con Stripe.')
       }
 
-      if (!setupIntent || !setupIntent.payment_method) {
-        throw new Error('La configuración falló. Por favor, intenta de nuevo.')
+      const paymentMethodId = setupIntent?.payment_method
+      if (!paymentMethodId) {
+        throw new Error('La configuración de la tarjeta falló (no se obtuvo ID de método de pago).')
       }
 
-      // Save the payment method via Cloud Function
+      // 3. Guardar el ID del método de pago (pm_xxx) en tu backend (Cloud Function)
+      // Este ID es seguro y representa la tarjeta guardada en Stripe.
       const savePaymentMethod = httpsCallable(functionsRef.current, 'savePaymentMethod')
       await savePaymentMethod({
-        setupIntentId: setupIntent.id,
-        paymentMethodId: setupIntent.payment_method,
+        paymentMethodId: paymentMethodId,
         isDefault: isDefault,
-        cardHolder: cardHolder,
+        cardHolder: cardHolder.trim(),
+        // customerId: uid, // Asegúrate que la función sepa a qué usuario pertenece
       })
 
-      // Show success message
-      dispatch(addMessage({
-        type: 'success',
-        text: 'Método de pago añadido correctamente',
-      }))
+      // --- Éxito ---
+      dispatch(addMessage({ type: 'success', text: 'Método de pago añadido.' }))
+      if (onSuccess) onSuccess(); // Callback de éxito
+      onClose(); // Cierra el modal
 
-      // Clear the form
-      setCardHolder('')
-      setIsDefault(false)
-
-      // Call onSuccess and close modal
-      if (onSuccess) {
-        onSuccess()
-      }
-
-      // Safe to close now
-      onClose()
     } catch (err) {
+      // --- Manejo de Errores ---
       console.error('Error al añadir método de pago:', err)
-      setError(err.message || 'Ocurrió un error al procesar la tarjeta')
+      setError(err.message || 'Ocurrió un error inesperado.')
+      dispatch(addMessage({ type: 'error', text: 'No se pudo añadir el método de pago.' }))
+      isSubmittingRef.current = false // Permitir reintento tras error
 
-      dispatch(addMessage({
-        type: 'error',
-        text: 'Hubo un problema al añadir tu método de pago',
-      }))
-
-      // Allow a new attempt
-      isSubmittingRef.current = false
     } finally {
-      // Reset these states even if there's an error
-      setLoading(false)
+      setLoading(false) // Siempre desactivar carga
     }
   }
 
-  // Prevent modal from closing when clicking inside
+  // Evita cierre al hacer clic dentro del modal
   const handleModalContentClick = (e) => {
     e.stopPropagation()
   }
 
-  // Only close if not in submission process
+  // Cierre seguro (no cierra si está cargando)
   const handleSafeClose = () => {
     if (!loading && !isSubmittingRef.current) {
       onClose()
     }
   }
 
-  // Enhanced options for card element
+  // --- Configuración y Renderizado ---
   const cardElementOptions = {
     style: {
-      base: {
-        fontSize: '16px',
-        color: '#32325d',
-        fontFamily: 'Arial, sans-serif',
-        '::placeholder': {
-          color: '#aab7c4',
-        },
-        iconColor: '#666EE8',
-      },
-      invalid: {
-        color: '#fa755a',
-        iconColor: '#fa755a',
-      },
-      complete: {
-        iconColor: '#66bb6a',
-      },
+      base: { /* Estilos base */ },
+      invalid: { /* Estilos si hay error */ },
+      complete: { /* Estilos si está completo */ },
     },
     hidePostalCode: true,
   }
+
+  if (!isOpen) return null
 
   return ReactDOM.createPortal(
     <div
       className="payment-modal-backdrop"
       onClick={handleSafeClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="payment-modal-title"
+      role="dialog" aria-modal="true" aria-labelledby="payment-modal-title"
     >
       <div
         className="payment-modal-content"
         onClick={handleModalContentClick}
         role="document"
       >
+        {/* Encabezado */}
         <div className="payment-modal-header">
           <h5 className="payment-modal-title" id="payment-modal-title">Añadir Método de Pago</h5>
-          <button
-            type="button"
-            className="payment-modal-close"
-            onClick={handleSafeClose}
-            aria-label="Cerrar"
-            disabled={loading}
-          >
-            ×
-          </button>
+          <button type="button" className="payment-modal-close" onClick={handleSafeClose} aria-label="Cerrar modal" disabled={loading}>&times;</button>
         </div>
 
+        {/* Cuerpo (Formulario) */}
         <div className="payment-modal-body">
-          <form onSubmit={handleSubmit} ref={formRef}>
-            {/* Error message */}
+          <form onSubmit={handleSubmit} ref={formRef} noValidate>
+            {/* Mensaje de Error */}
             {error && (
-              <div className="payment-alert-error" role="alert">
-                <i className="bi bi-exclamation-triangle me-2"></i>
-                {error}
+              <div className="payment-alert-error alert alert-danger small p-2" role="alert">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>{error}
               </div>
             )}
 
-            {/* Cardholder name */}
-            <div className="payment-form-group">
-              <label htmlFor="cardHolder">Nombre del titular</label>
+            {/* Nombre del titular */}
+            <div className="payment-form-group mb-3">
+              <label htmlFor="cardHolder" className="form-label">Nombre del titular</label>
               <input
-                type="text"
-                id="cardHolder"
-                value={cardHolder}
+                type="text" id="cardHolder" value={cardHolder}
                 onChange={(e) => setCardHolder(e.target.value)}
-                placeholder="Nombre completo como aparece en la tarjeta"
-                required
-                className="payment-form-input"
-                disabled={loading}
-                autoComplete="cc-name"
+                placeholder="Nombre como aparece en la tarjeta" required
+                className={`payment-form-input form-control ${!cardHolder.trim() && error ? 'is-invalid' : ''}`}
+                disabled={loading} autoComplete="cc-name"
               />
             </div>
 
-            {/* Stripe card element */}
-            <div className="payment-form-group">
-              <label>Datos de la tarjeta</label>
-              <div className="payment-card-element">
-                <CardElement
-                  options={cardElementOptions}
-                  onChange={handleCardChange}
-                  disabled={loading}
-                />
+            {/* Datos de la tarjeta (Stripe Element) */}
+            <div className="payment-form-group mb-3">
+              <label className="form-label">Datos de la tarjeta</label>
+              <div className={`payment-card-element form-control ${error && !cardComplete ? 'is-invalid' : ''}`}>
+                <CardElement options={cardElementOptions} onChange={handleCardChange} disabled={loading} />
               </div>
-              <small className="payment-text-muted">
-                Ingresa el número de tarjeta, fecha de expiración y CVC.
-              </small>
-              {cardComplete && (
-                <div className="payment-card-complete">
-                  <i className="bi bi-check-circle-fill"></i> Información de la tarjeta completa
-                </div>
+              <small className="payment-text-muted form-text">Número, expiración y CVC.</small>
+              {/* Indicador visual de tarjeta completa */}
+              {cardComplete && !error && (
+                 <div className="payment-card-complete text-success mt-1 small">
+                   <i className="bi bi-check-circle-fill me-1"></i> Completo
+                 </div>
               )}
             </div>
 
-            {/* Default payment checkbox */}
-            <div className="payment-form-check">
+            {/* Checkbox Predeterminado */}
+            <div className="payment-form-check form-check mb-3">
               <input
-                type="checkbox"
-                id="defaultPayment"
-                checked={isDefault}
+                type="checkbox" id="defaultPayment" checked={isDefault}
                 onChange={(e) => setIsDefault(e.target.checked)}
-                className="payment-form-checkbox"
-                disabled={loading}
+                className="payment-form-checkbox form-check-input" disabled={loading}
               />
-              <label htmlFor="defaultPayment">
-                Establecer como método de pago predeterminado
-              </label>
+              <label htmlFor="defaultPayment" className="form-check-label">Establecer como predeterminado</label>
             </div>
 
-            {/* Test card info for development */}
-            <div className="payment-test-cards">
-              <p className="payment-text-muted">
-                <strong>Tarjeta de prueba:</strong> Usa 4242 4242 4242 4242, cualquier fecha futura y 3 dígitos para el
-                CVC
-              </p>
-            </div>
+            {/* Tarjeta de prueba (solo en desarrollo) */}
+            {import.meta.env.DEV && (
+              <div className="payment-test-cards alert alert-info small p-2">
+                <i className="bi bi-info-circle me-1"></i>
+                <strong>Prueba:</strong> 4242..., fecha futura, CVC.
+              </div>
+            )}
 
-            {/* Form actions */}
-            <div className="payment-form-actions">
-              <button
-                type="button"
-                className="payment-btn-cancel"
-                onClick={handleSafeClose}
-                disabled={loading}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="payment-btn-save"
-                disabled={!stripe || loading || !cardComplete}
-              >
+            {/* Acciones (Botones) */}
+            <div className="payment-form-actions d-flex justify-content-end gap-2">
+              <button type="button" className="payment-btn-cancel btn btn-secondary" onClick={handleSafeClose} disabled={loading}>Cancelar</button>
+              <button type="submit" className="payment-btn-save btn btn-primary" disabled={!stripe || loading || !cardComplete}>
                 {loading ? (
-                  <>
-                    <span className="payment-spinner"></span>
-                    Procesando...
-                  </>
+                  <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...</>
                 ) : (
                   'Añadir Método de Pago'
                 )}
               </button>
             </div>
+
           </form>
         </div>
+
+        {/* Nuevo Footer del Modal */}
+        <div className="payment-modal-footer bg-light border-top">
+          <div className="payment-security-ribbon text-center text-muted small py-3"> {/* Padding vertical */}
+              {/* Texto de seguridad */}
+              <p className="mb-2"> 
+                  Pagos seguros procesado por Stripe. Nunca almacenamos los datos de tu tarjeta.
+              </p>
+              {/* Logo de Stripe */}
+              <img 
+                  src={stripeLogo} 
+                  alt="Procesado por Stripe" 
+                  style={{ height: '30px' }} 
+                  className="mt-2" 
+              />
+          </div>
+        </div>
+
       </div>
     </div>,
-    document.body,
+    document.body
   )
 }

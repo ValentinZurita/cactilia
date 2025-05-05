@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import Collapse from '../common/Collapse.jsx'
 import '../../styles/shipping.css'
 import { GROUP_PRIORITIES, SHIPPING_ICONS } from '../../constants/ShippingConstants2.js'
-import { formatShippingCost, hasValidOptions } from '../../utils/shippingUtils.js'
+import { formatShippingCost } from '../../utils/shippingUtils.js'
 
 /**
  * DiagnosticInfo component for debugging shipping group information
@@ -62,20 +62,28 @@ const ShippingGroupSelector = ({
   const [openGroups, setOpenGroups] = useState({})
   const [hasValidData, setHasValidData] = useState(false)
 
-  // Set initial open state for groups
+  // Set initial open state for groups and validate data
   useEffect(() => {
     if (shippingGroups && shippingGroups.length > 0) {
-      const initialState = {}
+      const initialState = {};
+      // Check if at least one group has valid options
+      const containsValidOptions = shippingGroups.some(group => group.options && group.options.length > 0);
 
-      // Open the first group by default
+      // Open the first group by default only if there are valid options
       shippingGroups.forEach((group, index) => {
-        initialState[group.type] = index === 0
-      })
+        // We only care about opening the first *valid* group if needed, 
+        // but for simplicity, we just open the first overall group if data is valid.
+        initialState[group.type] = index === 0 && containsValidOptions;
+      });
 
-      setOpenGroups(initialState)
-      setHasValidData(hasValidOptions(shippingGroups))
+      setOpenGroups(initialState);
+      setHasValidData(containsValidOptions); // Set state based on validation
+    } else {
+      // Ensure state is reset if shippingGroups becomes empty/null
+      setHasValidData(false);
+      setOpenGroups({});
     }
-  }, [shippingGroups])
+  }, [shippingGroups]);
 
   // Toggle a group's open state
   const toggleGroup = (groupType) => {
