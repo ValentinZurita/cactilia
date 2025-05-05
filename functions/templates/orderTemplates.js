@@ -144,18 +144,18 @@ const getOrderShippedTemplate = (orderData, orderId, shippingInfo) => {
       
       <div style="margin-bottom: 20px;">
         <h3 style="color: #333;">Resumen del pedido</h3>
-        <p><strong>Total del pedido:</strong> $${orderData.totals.total.toFixed(2)}</p>
+        <p><strong>Total del pedido:</strong> $${(Number(orderData?.totals?.finalTotal) || 0).toFixed(2)}</p>
         <p><strong>Cantidad de productos:</strong> ${orderData.items.length} ${orderData.items.length === 1 ? 'producto' : 'productos'}</p>
       </div>
       
       <div style="margin-bottom: 20px;">
         <h3 style="color: #333;">Dirección de entrega</h3>
         <p>
-          ${orderData.shipping.address.name}<br>
-          ${orderData.shipping.address.street} ${orderData.shipping.address.numExt ? `#${orderData.shipping.address.numExt}` : ''}
-          ${orderData.shipping.address.numInt ? `, Int. ${orderData.shipping.address.numInt}` : ''}<br>
-          ${orderData.shipping.address.colonia ? `${orderData.shipping.address.colonia}<br>` : ''}
-          ${orderData.shipping.address.city}, ${orderData.shipping.address.state} ${orderData.shipping.address.zip}
+          ${orderData?.shipping?.address?.name ?? 'Nombre no disponible'}<br>
+          ${orderData?.shipping?.address?.street ?? 'Calle no disponible'} ${orderData?.shipping?.address?.numExt ? `#${orderData.shipping.address.numExt}` : ''}
+          ${orderData?.shipping?.address?.numInt ? `, Int. ${orderData.shipping.address.numInt}` : ''}<br>
+          ${orderData?.shipping?.address?.colonia ? `${orderData.shipping.address.colonia}<br>` : ''}
+          ${orderData?.shipping?.address?.city ?? 'Ciudad no disponible'}, ${orderData?.shipping?.address?.state ?? 'Estado no disponible'} ${orderData?.shipping?.address?.zip ?? ''}
         </p>
       </div>
       

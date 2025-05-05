@@ -107,6 +107,9 @@ exports.sendOrderShippedEmail = onCall({
       );
     }
 
+    // <<< Añadir Log para verificar el email del destinatario >>>
+    console.log(`[sendOrderShippedEmail] Destinatario verificado: ${userEmail}`);
+
     // Si es reenvío, no modificamos el estado del pedido
     if (!resendOnly && !preserveOrderStatus && orderData.status !== 'shipped') {
       await orderRef.update({
