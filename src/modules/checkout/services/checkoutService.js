@@ -229,6 +229,47 @@ export const confirmOrderPayment = async (orderId, paymentIntentId, paymentType 
 }
 
 /**
+ * Actualiza campos específicos de pago en una orden existente
+ *
+ * @param {string} orderId - ID de la orden
+ * @param {Object} paymentDetailsUpdate - Objeto con los campos de pago a actualizar (ej: {'payment.voucherDetails': ..., 'payment.status': ...})
+ * @returns {Promise<{ok: boolean, error: string}>} - Resultado de la operación
+ */
+export const updateOrderPaymentDetails = async (orderId, paymentDetailsUpdate) => {
+  // Log al inicio de la función
+  console.log(`[updateOrderPaymentDetails] Iniciando actualización para orden ${orderId}`);
+  try {
+    if (!orderId || !paymentDetailsUpdate || Object.keys(paymentDetailsUpdate).length === 0) {
+      console.error('[updateOrderPaymentDetails] Error: Datos inválidos recibidos.', { orderId, paymentDetailsUpdate });
+      return { ok: false, error: 'ID de orden o detalles de pago no proporcionados para actualizar' };
+    }
+    // Log para ver qué se va a actualizar
+    console.log(`[updateOrderPaymentDetails] Payload a enviar a apiService.updateDocument:`, JSON.stringify(paymentDetailsUpdate));
+    
+    // Llamada al servicio de API
+    const updateResult = await apiService.updateDocument(ORDERS_COLLECTION, orderId, paymentDetailsUpdate);
+    
+    // Log del resultado DIRECTO de apiService.updateDocument
+    console.log(`[updateOrderPaymentDetails] Resultado de apiService.updateDocument para orden ${orderId}:`, updateResult);
+
+    // Verificar si la actualización fue realmente exitosa según la respuesta del apiService
+    if (updateResult && updateResult.ok) {
+       console.log(`[updateOrderPaymentDetails] Actualización marcada como OK por apiService para orden ${orderId}.`);
+       return { ok: true }; // Devolver éxito explícito
+    } else {
+       console.error(`[updateOrderPaymentDetails] apiService.updateDocument marcó la actualización como FALLIDA para orden ${orderId}. Respuesta:`, updateResult);
+       // Devolver el error específico del apiService si existe
+       return { ok: false, error: updateResult?.error || 'Error desconocido durante la actualización del documento' };
+    }
+
+  } catch (error) {
+    // Log del error capturado en el catch
+    console.error(`[updateOrderPaymentDetails] Error CATCH ejecutando actualización para la orden ${orderId}:`, error);
+    return { ok: false, error: error.message };
+  }
+};
+
+/**
  * Procesa el pago y crea la orden completa
  * Incluye verificación de stock
  *

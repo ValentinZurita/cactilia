@@ -3,6 +3,8 @@ const { onRequest } = require("firebase-functions/v2/https"); // <-- Importar v2
 const admin = require('firebase-admin');
 const stripe = require('stripe'); // <-- Solo requerir, no inicializar globalmente con clave v1
 const { stripeWebhookSecretParam } = require("./stripeService"); // <-- Importar el secreto v2
+const { sendEmail, sendgridApiKey, defaultSender } = require("../services/emailService");
+const { getOrderConfirmationTemplate } = require('../templates/orderTemplates');
 
 // Asegúrate de inicializar Firebase Admin si aún no lo está
 if (!admin.apps.length) {
@@ -17,7 +19,7 @@ const db = admin.firestore();
  */
 exports.handleStripeWebhook = onRequest({
   region: "us-central1", // Opcional, pero bueno tenerlo
-  secrets: [stripeWebhookSecretParam] // <-- Declarar dependencia del secreto v2
+  secrets: [stripeWebhookSecretParam, sendgridApiKey, defaultSender] // <-- Declarar dependencia del secreto v2 y de email
 }, async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = stripeWebhookSecretParam.value(); // <-- Acceder al valor del secreto v2
@@ -33,147 +35,167 @@ exports.handleStripeWebhook = onRequest({
 
   // 2. Manejar el evento específico
   console.log(`Received Stripe event: ${event.type}`);
+  const paymentIntent = event.data.object;
+  const orderId = paymentIntent.metadata?.orderId;
+
   switch (event.type) {
+    case 'payment_intent.requires_action': {
+      console.log(`PaymentIntent ${paymentIntent.id} requires action.`);
+      if (paymentIntent.next_action?.type === 'oxxo_display_details') {
+        console.log(`OXXO details ready for PaymentIntent ${paymentIntent.id}.`);
+
+        if (!orderId) {
+          console.error(`Webhook Error: Missing orderId in metadata for PaymentIntent ${paymentIntent.id} requiring OXXO action.`);
+          return res.status(200).send('Webhook received, but missing orderId metadata.');
+        }
+
+        try {
+          console.log(`[Webhook] Adding 5-second delay for potential Firestore consistency before reading order ${orderId}...`);
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Esperar 5 segundos
+          console.log(`[Webhook] Delay finished for order ${orderId}. Reading document...`);
+          
+          const orderDoc = await db.collection('orders').doc(orderId).get();
+          if (!orderDoc.exists) {
+            console.error(`Webhook Error: Order ${orderId} not found for OXXO PI ${paymentIntent.id}.`);
+            return res.status(200).send('Webhook received, order not found.');
+          }
+          const orderData = orderDoc.data();
+
+          // >>> LOG DE DIAGNÓSTICO <<<
+          console.log(`[Webhook] Read order data for ${orderId}. Payment object:`, JSON.stringify(orderData.payment || null));
+          // >>> FIN LOG <<<
+
+          if (orderData.emailStatus?.oxxoVoucherSent) {
+            console.log(`OXXO voucher email already sent for order ${orderId}. Skipping.`);
+            return res.status(200).send('Webhook received, email already sent.');
+          }
+
+          // Obtener datos del usuario (email)
+          const userDoc = await db.collection('users').doc(orderData.userId).get();
+          // Corregir: usar la propiedad .exists en lugar de la función exists()
+          const userEmail = userDoc.exists ? userDoc.data().email : null;
+
+          if (!userEmail) {
+            console.error(`Webhook Error: User email not found for user ${orderData.userId} in order ${orderId}.`);
+            return res.status(200).send('Webhook received, user email not found.');
+          }
+
+          // --- VALIDACIÓN CORREGIDA ---
+          // Verificar si existe el objeto voucherDetails y tiene al menos la URL
+          if (!orderData.payment?.voucherDetails?.hosted_voucher_url) {
+            console.error(`Webhook Error: Missing OXXO voucherDetails or hosted_voucher_url in order ${orderId}. Frontend might not have saved them correctly or completely. Payment object read:`, JSON.stringify(orderData.payment || null));
+            // Devolver 200 para que Stripe no reintente indefinidamente si es un error persistente del frontend
+            return res.status(200).send('Webhook received, but missing necessary OXXO voucher details in order document.');
+          }
+          // --- FIN VALIDACIÓN CORREGIDA ---
+
+          // >>> INICIO: Obtener remitente desde Firestore <<<
+          let senderEmail = null;
+          try {
+            const settingsDoc = await db.collection('settings').doc('company_info').get();
+            if (settingsDoc.exists) {
+              senderEmail = settingsDoc.data()?.contact?.email;
+              console.log(`[Webhook] Sender email fetched from Firestore: ${senderEmail}`);
+            }
+            if (!senderEmail) { // Fallback si no existe doc o campo
+              console.warn(`[Webhook] Sender email not found in settings/company_info. Falling back to default sender secret.`);
+              senderEmail = defaultSender.value(); // Usa el secreto como fallback
+            }
+            if (!senderEmail) { // Doble fallback si el secreto tampoco existe
+               console.error('[Webhook] CRITICAL: Sender email could not be determined from Firestore or Secret!');
+               senderEmail = 'error@cactilia.com'; // Fallback extremo
+            }
+          } catch (dbError) {
+            console.error(`[Webhook] Error fetching sender email from Firestore:`, dbError);
+            senderEmail = defaultSender.value() || 'error@cactilia.com'; // Fallback en caso de error DB
+          }
+          // >>> FIN: Obtener remitente desde Firestore <<<
+
+          const emailContent = getOrderConfirmationTemplate(orderData, orderId);
+
+          const emailData = {
+            to: userEmail,
+            subject: `Tu Recibo de Pago OXXO para el Pedido #${orderId}`,
+            html: emailContent
+            // No necesitamos 'from' aquí, se pasará a sendEmail
+          };
+
+          console.log(`Attempting to send OXXO voucher email for order ${orderId} to ${userEmail} FROM ${senderEmail}`);
+          const emailSent = await sendEmail(
+            emailData,
+            sendgridApiKey.value(),
+            senderEmail // <--- Usar el email obtenido de Firestore (o fallback)
+          );
+
+          if (emailSent) {
+            console.log(`OXXO voucher email successfully sent for order ${orderId}.`);
+            await orderDoc.ref.update({
+              'emailStatus.oxxoVoucherSent': true,
+              'emailStatus.oxxoVoucherSentAt': admin.firestore.FieldValue.serverTimestamp()
+            });
+          } else {
+            console.error(`Failed to send OXXO voucher email for order ${orderId}.`);
+            return res.status(500).send('Webhook processing failed: Email sending failed.');
+          }
+
+        } catch (error) {
+          console.error(`Webhook Error processing OXXO requires_action for order ${orderId}:`, error);
+          return res.status(500).send('Webhook processing failed due to internal error.');
+        }
+      } else {
+        console.log(`PaymentIntent ${paymentIntent.id} requires action, but not OXXO type (${paymentIntent.next_action?.type}). Skipping email.`);
+      }
+      break;
+    }
     case 'payment_intent.succeeded': {
-      const paymentIntent = event.data.object;
       console.log(`PaymentIntent ${paymentIntent.id} succeeded.`);
-      // TODO: Buscar la orden en Firestore usando paymentIntent.id
-      // (Necesitamos asegurarnos de guardar el paymentIntentId en la orden)
-      // TODO: Actualizar el estado de la orden a 'processing' o 'completed'
       try {
-        // Placeholder: Lógica para encontrar y actualizar la orden
         const orderRef = db.collection('orders').where('payment.paymentIntentId', '==', paymentIntent.id).limit(1);
         const orderSnapshot = await orderRef.get();
 
         if (orderSnapshot.empty) {
           console.error(`No order found for PaymentIntent ID: ${paymentIntent.id}`);
-          // Aún así respondemos 200 OK a Stripe para que no reintente este evento
           return res.status(200).send('Order not found, but webhook received.');
         }
 
         const orderDoc = orderSnapshot.docs[0];
         console.log(`Updating order ${orderDoc.id} status to processing.`);
         await orderDoc.ref.update({
-          status: 'processing', // O 'completed' si aplica
-          'payment.status': 'succeeded', // Actualizar también el estado del pago
-           updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          status: 'processing',
+          'payment.status': 'succeeded',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         console.log(`Order ${orderDoc.id} updated successfully.`);
 
       } catch (dbError) {
         console.error(`Error updating order for PaymentIntent ${paymentIntent.id}:`, dbError);
-        // Respondemos 500 para que Stripe pueda reintentar si falla la DB
         return res.status(500).send('Database error processing webhook.');
       }
       break;
     }
     case 'payment_intent.payment_failed': {
-      const paymentIntentFailed = event.data.object;
-      const paymentIntentId = paymentIntentFailed.id;
-      let orderId = paymentIntentFailed.metadata?.orderId; // Extraer de metadata
-
-      console.warn(`PaymentIntent ${paymentIntentId} failed.`);
+      console.warn(`PaymentIntent ${paymentIntent.id} failed.`);
 
       if (!orderId) {
-        // Intentar buscar por paymentIntentId si no está en metadata (menos ideal)
-        console.warn(`No orderId in metadata for failed PI ${paymentIntentId}. Attempting lookup.`);
+        console.warn(`No orderId in metadata for failed PI ${paymentIntent.id}. Attempting lookup.`);
         try {
-          const orderQuery = db.collection("orders").where("payment.paymentIntentId", "==", paymentIntentId).limit(1);
+          const orderQuery = db.collection("orders").where("payment.paymentIntentId", "==", paymentIntent.id).limit(1);
           const orderSnapshot = await orderQuery.get();
           if (!orderSnapshot.empty) {
             orderId = orderSnapshot.docs[0].id;
             console.log(`Found order ${orderId} via PI lookup.`);
           } else {
-            console.error(`No order found matching failed PI ${paymentIntentId} via lookup.`);
-            // Si no encontramos la orden de ninguna forma, no podemos hacer nada más.
+            console.error(`No order found matching failed PI ${paymentIntent.id} via lookup.`);
             return res.status(200).send("Webhook received, but no matching order found for failed PI.");
           }
-        } catch(lookupError) {
-          console.error(`Error looking up order for failed PI ${paymentIntentId}:`, lookupError);
-          return res.status(500).send("DB error during order lookup for failed PI.");
+        } catch (lookupError) {
+          console.error(`Error looking up order for failed PI ${paymentIntent.id}:`, lookupError);
+          return res.status(500).send('Database error processing webhook.');
         }
-      }
-
-      // Ahora tenemos orderId (de metadata o lookup)
-      console.info(`Processing failure for order ${orderId}. Attempting stock restore.`);
-      const orderRef = db.collection("orders").doc(orderId);
-
-      try {
-        const orderSnap = await orderRef.get();
-        if (!orderSnap.exists) {
-          console.error(`Order ${orderId} not found during failure processing.`);
-          return res.status(200).send("Webhook received, order not found.");
-        }
-
-        const orderData = orderSnap.data();
-        const itemsToRestore = orderData.items;
-
-        // Validar items y proceder con la restauración
-        if (Array.isArray(itemsToRestore) && itemsToRestore.length > 0) {
-          console.info(`Restoring stock for ${itemsToRestore.length} item types in order ${orderId}.`);
-          await db.runTransaction(async (transaction) => {
-            const productUpdates = [];
-            for (const item of itemsToRestore) {
-              if (!item.id || !item.quantity || item.quantity <= 0) {
-                console.warn(`Skipping invalid item during stock restore: ${JSON.stringify(item)}`);
-                continue;
-              }
-              const productRef = db.collection("products").doc(item.id);
-              // Leer DENTRO de la transacción
-              const productDoc = await transaction.get(productRef);
-              if (!productDoc.exists) {
-                console.warn(`Product ${item.id} not found during stock restore for order ${orderId}.`);
-                continue;
-              }
-              const currentStock = productDoc.data().stock || 0;
-              const newStock = currentStock + item.quantity;
-              transaction.update(productRef, { 
-                stock: newStock,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(), 
-              });
-              productUpdates.push({ id: item.id, old: currentStock, new: newStock, restored: item.quantity });
-            }
-            console.info(`Stock restoration transaction prepared for order ${orderId}:`, productUpdates);
-            // La transacción se confirma automáticamente si no hay errores aquí
-          });
-          console.info(`Stock successfully restored for order ${orderId}.`);
-        } else {
-          console.warn(`No valid items found in order ${orderId} to restore stock.`);
-        }
-
-        // Siempre actualizar el estado de la orden a fallido
-        console.info(`Updating order ${orderId} status to failed.`);
-        await orderRef.update({
-          status: "failed",
-          "payment.status": "failed",
-          "payment.error": paymentIntentFailed.last_payment_error?.message || "Payment failed",
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        console.info(`Order ${orderId} updated to failed.`);
-
-      } catch (error) {
-        console.error(`Error during stock restore/update for order ${orderId}:`, error);
-        // Intentar marcar como fallido si la transacción falló
-        try {
-          await orderRef.update({ 
-            status: "failed", 
-            "payment.status": "failed",
-            "payment.error": "Error during failure processing loop",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-        } catch (fallbackError) {
-          console.error(`Fallback status update failed for order ${orderId}:`, fallbackError);
-        }
-        return res.status(500).send("Error processing payment failure webhook.");
       }
       break;
     }
-    // ... maneja otros tipos de eventos si es necesario
-    // ej. 'charge.succeeded', 'checkout.session.completed'
-    default:
-      console.log(`Unhandled event type ${event.type}`);
   }
 
-  // 3. Responder a Stripe para confirmar la recepción del evento
-  res.status(200).send('Webhook received successfully.');
-}); 
+  return res.status(200).send('Webhook processed successfully.');
+});

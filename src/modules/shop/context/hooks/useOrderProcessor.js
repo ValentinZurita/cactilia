@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { processPayment } from '@modules/checkout/checkout/services/index.js'
+import { processPayment, updateOrderPaymentDetails } from '@modules/checkout/checkout/services/index.js'
 import { clearCartWithSync } from '../../features/cart/store/index.js'
 import { validateItemsStock } from '../../services/productServices.js'
 import { getAuth } from 'firebase/auth'
@@ -527,14 +527,31 @@ export const useOrderProcessor = ({
             
             // Opcional pero recomendado: Actualizar orden con detalles OXXO
             try {
-              await apiService.updateDocument(ORDERS_COLLECTION, createdOrderId, { 
-                  'payment.voucherUrl': voucherUrl,
-                  'payment.oxxoAmount': orderAmountInCents, // <-- Guardar monto original
-                  'payment.oxxoExpiresAt': oxxoExpiresAt 
-              });
-               console.log(`[createAndProcessOrder] Orden ${createdOrderId} actualizada con detalles OXXO.`);
-            } catch(updateErr) {
-               console.warn(`[createAndProcessOrder] No se pudo actualizar la orden ${createdOrderId} con detalles OXXO:`, updateErr);
+              // --- CORRECCIÓN #2: LLAMAR A updateOrderPaymentDetails ---
+              const updatePayload = {
+                  'payment.voucherDetails': oxxoDetails, // Guardar el objeto completo
+                  'payment.status': 'pending_payment'    // Reconfirmar estado por si acaso
+              };
+              // Log ANTES de llamar a nuestra función
+              console.log('[createAndProcessOrder] Llamando a updateOrderPaymentDetails con payload:', JSON.stringify(updatePayload));
+
+              // LLAMAR A NUESTRA FUNCIÓN CON LOGS
+              const updateResult = await updateOrderPaymentDetails(createdOrderId, updatePayload);
+
+              // Log DESPUÉS de llamar a nuestra función, usando su resultado
+              if (updateResult && updateResult.ok) {
+                  console.log(`[createAndProcessOrder] updateOrderPaymentDetails reportó ÉXITO para orden ${createdOrderId}.`);
+              } else {
+                  // Loguear el error específico devuelto por nuestra función
+                  console.error(`[createAndProcessOrder] updateOrderPaymentDetails reportó FALLA para orden ${createdOrderId}. Error: ${updateResult?.error}`);
+                  // Podríamos lanzar un error aquí si queremos que falle todo el proceso,
+                  // pero por ahora solo lo logueamos.
+                  // throw new Error(`Fallo al guardar detalles OXXO en Firestore: ${updateResult?.error}`);
+              }
+              // --- FIN CORRECCIÓN #2 ---
+
+            } catch(updateErr) { // Este catch ahora captura errores de updateOrderPaymentDetails
+               console.error(`[createAndProcessOrder] Error CATCH al intentar actualizar la orden ${createdOrderId} con detalles OXXO:`, updateErr);
             }
 
             // Devolver éxito con datos específicos de OXXO

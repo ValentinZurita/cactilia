@@ -139,7 +139,7 @@ export const UsersList = ({ userType, roleFilter, currentUserRole, onViewDetail 
             title="Ver detalles"
             isFirst={true}
           />
-          
+
           {currentUserRole === "superadmin" && (
             <ActionButton
               iconClass="bi bi-trash"

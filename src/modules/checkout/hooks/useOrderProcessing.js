@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { useAsync } from '../../shop/hooks/useAsync.js'
-import { processPayment } from '../checkout/services/index.js'
+import { processPayment, updateOrderPaymentDetails } from '../checkout/services/index.js'
 import { clearCartWithSync } from '../../shop/features/cart/store/index.js'
 
 /**
@@ -52,13 +52,83 @@ export const useOrderProcessing = ({
     // Crear orden y procesar pago
     const result = await createAndProcessOrder(orderData)
 
-    // Guardar ID de orden y resultado
+    // --- INICIO: LÓGICA OXXO AÑADIDA ---
+    // Si el pago fue OXXO y la llamada inicial fue exitosa (obtuvo clientSecret)
+    if (form.selectedPaymentType === 'oxxo' && result && result.ok && result.clientSecret) {
+      console.log('OXXO: Intentando confirmar pago en frontend...');
+      try {
+        const { paymentIntent, error: confirmError } = await stripe.confirmOxxoPayment(
+          result.clientSecret,
+          {
+            payment_method: {
+              billing_details: {
+                name: orderData.shipping?.address?.name || 'Cliente Cactilia', // Usar nombre de envío
+                email: orderData.customer?.email || auth.email, // Usar email
+              },
+            },
+          },
+          // { handleActions: false } // Podríamos desactivar manejo automático si quisiéramos
+        );
+
+        if (confirmError) {
+          console.error('Error al confirmar OXXO en frontend:', confirmError);
+          throw new Error(`Error al confirmar pago OXXO: ${confirmError.message}`);
+        }
+
+        console.log('Respuesta de confirmOxxoPayment:', paymentIntent);
+
+        // Si la confirmación requiere acción (¡debería para OXXO!) y tiene detalles del voucher
+        if (paymentIntent && paymentIntent.status === 'requires_action' && paymentIntent.next_action?.type === 'oxxo_display_details') {
+          const voucherDetails = paymentIntent.next_action.oxxo_display_details;
+          // Log detallado de los voucherDetails obtenidos
+          console.log('OXXO Voucher Details received from Stripe:', JSON.stringify(voucherDetails));
+
+          // Actualizar la orden en Firestore con los detalles del voucher
+          try {
+            console.log(`[Frontend] Attempting to update order ${result.orderId} with OXXO voucher details...`);
+            const updatePayload = {
+              'payment.voucherDetails': voucherDetails,
+              'payment.status': 'pending_payment' // Reconfirmar estado
+            };
+            // Log del payload antes de enviar
+            console.log('[Frontend] Update payload for Firestore:', JSON.stringify(updatePayload));
+            
+            const updateResult = await updateOrderPaymentDetails(result.orderId, updatePayload);
+            
+            // Log del resultado de la actualización
+            if (updateResult && updateResult.ok) {
+              console.log(`[Frontend] Successfully updated order ${result.orderId} with OXXO details in Firestore.`);
+            } else {
+              console.error(`[Frontend] Failed to update order ${result.orderId} with OXXO details. Service response:`, updateResult?.error);
+            }
+            
+            // Añadimos los detalles al resultado que se guarda en el estado local del hook
+            result.voucherDetails = voucherDetails;
+
+          } catch (updateError) {
+            // Log específico del error en el catch de la actualización
+            console.error(`[Frontend] CRITICAL ERROR updating order ${result.orderId} with OXXO details:`, updateError);
+            // No relanzar el error necesariamente, pero loggearlo es importante.
+          }
+        } else {
+          console.warn('[Frontend] OXXO confirmation did not return expected status or details:', paymentIntent?.status, paymentIntent?.next_action?.type);
+        }
+      } catch (frontendConfirmError) {
+        // Capturar cualquier error durante la confirmación frontend o la actualización de Firestore
+        console.error('Error durante el proceso de confirmación OXXO frontend:', frontendConfirmError);
+        // Lanzar el error para que lo capture el catch general de useAsync
+        throw frontendConfirmError; 
+      }
+    }
+    // --- FIN: LÓGICA OXXO AÑADIDA ---
+
+    // Guardar ID de orden y resultado (modificado para incluir voucherDetails si existen)
     if (result && result.orderId) {
       setOrderId(result.orderId)
-      setOrderResult(result)
+      setOrderResult(result) // result ahora puede contener voucherDetails
     }
 
-    return result
+    return result // Devolver el resultado (con o sin voucherDetails)
   })
 
   // Efecto para manejar navegación después de procesar orden
@@ -66,19 +136,25 @@ export const useOrderProcessing = ({
     if (orderResult && orderId) {
       const paymentType = form.selectedPaymentType
 
-      // Si el pago es exitoso, limpiar el carrito
-      if (paymentType !== 'oxxo') {
-        dispatch(clearCartWithSync())
+      // Si el pago es exitoso Y NO ES OXXO (OXXO limpia después de pagado)
+      // O SI ES OXXO Y YA TENEMOS VOUCHER DETAILS (significa que confirmación frontend fue OK)
+      if (paymentType !== 'oxxo' || (paymentType === 'oxxo' && orderResult.voucherDetails)) {
+        // Limpiamos el carrito solo si el pago con tarjeta fue exitoso o si la confirmación OXXO en frontend funcionó.
+        // Para OXXO, el carrito se vacía aquí, pero el pedido sigue pendiente de pago.
+        console.log(`Limpiando carrito para tipo ${paymentType}. VoucherDetails presente: ${!!orderResult.voucherDetails}`);
+        dispatch(clearCartWithSync());
       }
 
       // Redirigir a la página de éxito
       const redirectPath = paymentType === 'oxxo'
         ? `/shop/order-success/${orderId}?payment=oxxo`
-        : `/shop/order-success/${orderId}`
+        : `/shop/order-success/${orderId}`;
 
-      navigate(redirectPath, { replace: true })
+      console.log(`Redirigiendo a: ${redirectPath}`);
+      navigate(redirectPath, { replace: true });
     }
-  }, [orderResult, orderId, form.selectedPaymentType, dispatch, navigate])
+    // Añadir orderResult.voucherDetails a las dependencias si la lógica depende de él
+  }, [orderResult, orderId, form.selectedPaymentType, dispatch, navigate]);
 
   // Validar datos del checkout
   const validateCheckoutData = useCallback(() => {
