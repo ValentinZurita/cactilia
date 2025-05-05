@@ -22,6 +22,8 @@ import { clearCartWithSync } from '../features/cart/store/index.js'
 import { formatCurrency } from '@utils/formatting/index.js'
 
 const ORDERS_COLLECTION = 'orders'
+const SETTINGS_COLLECTION = 'settings'
+const COMPANY_INFO_DOC = 'company_info'
 
 /**
  * Obtiene los detalles de un pedido desde Firestore.
@@ -122,7 +124,7 @@ const NoOrderDetailsState = () => (
 /**
  * Muestra la confirmación final con los detalles del pedido.
  */
-const OrderSuccessContent = ({ orderId, orderDetails }) => {
+const OrderSuccessContent = ({ orderId, orderDetails, companyContact, loadingContact }) => {
   const isFromCheckout = !window.location.pathname.includes('/profile/')
   // Definir correctamente isOxxoPayment basado en el tipo de pago de la orden
   const isOxxoPayment = orderDetails.payment?.type === 'oxxo'
@@ -200,6 +202,8 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
         isFromCheckout={isFromCheckout}
         orderId={orderId}
         showSupport={true}
+        companyContact={companyContact}
+        loadingContact={loadingContact}
       />
     </div>
   )
@@ -227,6 +231,11 @@ const OrderSuccessPage = () => {
   const paymentType = searchParams.get('payment')
   const oxxoAmount = searchParams.get('amount')
   const oxxoExpires = searchParams.get('expires')
+
+  // Estado para info de contacto de la empresa
+  const [companyContact, setCompanyContact] = useState(null)
+  const [loadingContact, setLoadingContact] = useState(true)
+  const [contactError, setContactError] = useState(null)
 
   // Limpiar el carrito cuando la página se carga
   useEffect(() => {
@@ -264,6 +273,31 @@ const OrderSuccessPage = () => {
     getOrderData()
   }, [orderId, dispatch])
 
+  // Cargar info de contacto de la empresa
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      setLoadingContact(true)
+      setContactError(null)
+      try {
+        const docRef = doc(FirebaseDB, SETTINGS_COLLECTION, COMPANY_INFO_DOC)
+        const docSnap = await getDoc(docRef)
+        if (docSnap.exists() && docSnap.data().contact) {
+          console.log("[OrderSuccesPage] Info de contacto cargada:", docSnap.data().contact)
+          setCompanyContact(docSnap.data().contact)
+        } else {
+          console.error("[OrderSuccesPage] No se encontró el documento 'company_info' o el campo 'contact'.")
+          setContactError("No se pudo cargar la información de contacto.")
+        }
+      } catch (err) {
+        console.error("[OrderSuccesPage] Error al cargar info de contacto:", err)
+        setContactError("Error al cargar la información de contacto.")
+      } finally {
+        setLoadingContact(false)
+      }
+    }
+    fetchCompanyInfo()
+  }, [])
+
   // Renderizado condicional con el wrapper principal
   return (
     <div className="order-success-page-wrapper">
@@ -274,7 +308,12 @@ const OrderSuccessPage = () => {
       ) : !orderDetails ? (
         <NoOrderDetailsState />
       ) : (
-        <OrderSuccessContent orderId={orderId} orderDetails={orderDetails} />
+        <OrderSuccessContent 
+          orderId={orderId} 
+          orderDetails={orderDetails} 
+          companyContact={companyContact}
+          loadingContact={loadingContact}
+        />
       )}
     </div>
   )

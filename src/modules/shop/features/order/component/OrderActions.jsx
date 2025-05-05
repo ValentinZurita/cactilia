@@ -3,8 +3,15 @@ import { Link } from 'react-router-dom';
 export const OrderActions = ({
                                isFromCheckout = true,
                                orderId,
-                               showSupport = true
+                               showSupport = true,
+                               companyContact,
+                               loadingContact
                              }) => {
+  
+  const email = companyContact?.email || 'soporte@ejemplo.com';
+  const phone = companyContact?.phone || '5512345678';
+  const formattedPhone = `+52${phone}`;
+
   return (
     <>
       <div className="order-actions-footer">
@@ -18,15 +25,27 @@ export const OrderActions = ({
         </Link>
       </div>
 
+      {/* Mostrar siempre si showSupport es true */}
       {showSupport && (
         <div className="customer-support">
           <h5>¿Necesitas ayuda?</h5>
-          <p>
-            Si tienes alguna pregunta sobre tu pedido, contacta a nuestro equipo
-            de soporte en{' '}
-            <a href="mailto:soporte@cactilia.com">soporte@cactilia.com</a> o
-            llamando al <a href="tel:+525512345678">+52 55 1234 5678</a>.
-          </p>
+          {/* Usar ternario para mostrar loading, datos o mensaje genérico */}
+          {loadingContact ? (
+            <p>Cargando información de contacto...</p>
+          ) : companyContact ? (
+            <p>
+              Si tienes alguna pregunta sobre tu pedido, contacta a nuestro equipo
+              de soporte en{' '}
+              <a href={`mailto:${email}`}>{email}</a> o
+              llamando al <a href={`tel:${formattedPhone}`}>{phone}</a>.
+            </p>
+          ) : (
+            /* Mensaje genérico si no hay datos de contacto */
+            <p>
+              Si tienes alguna pregunta sobre tu pedido, por favor, ponte en contacto 
+              con nuestro equipo de soporte.
+            </p>
+          )}
         </div>
       )}
     </>
