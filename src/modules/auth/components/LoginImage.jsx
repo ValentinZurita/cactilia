@@ -1,4 +1,5 @@
 import loginImage from '../../../../src/modules/auth/assets/images/login.jpg';
+import './LoginImage.styles.css';
 
 export const LoginImage = () => {
   return (
@@ -6,8 +7,7 @@ export const LoginImage = () => {
       <img
         src={loginImage}
         alt="Calaverita de Cactilia"
-        className="position-absolute top-0 start-0 w-100 h-100"
-        style={{ objectFit: 'cover'}}
+        className="position-absolute top-0 start-0 w-100 h-100 login-image-cover"
       />
     </div>
   );
