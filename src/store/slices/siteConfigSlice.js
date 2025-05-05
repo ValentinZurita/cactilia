@@ -84,12 +84,11 @@ const siteConfigSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchSocialLinks.fulfilled, (state, action) => {
-        console.log("🔵 fetchSocialLinks fulfilled with payload:", action.payload); // Log payload received
         state.status = 'succeeded';
         state.socialLinks = action.payload;
       })
       .addCase(fetchSocialLinks.rejected, (state, action) => {
-        console.error("🔴 fetchSocialLinks rejected with error:", action.payload); // Log error
+        console.error("Error fetching social links:", action.payload);
         state.status = 'failed';
         state.error = action.payload; 
       });

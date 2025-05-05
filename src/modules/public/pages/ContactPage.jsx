@@ -31,8 +31,6 @@ export const ContactPage = () => {
   const socialLinks = useSelector(selectSocialLinks);
   const siteConfigStatus = useSelector(selectSiteConfigStatus);
 
-  console.log("ℹ️ ContactPage - socialLinks from selector:", socialLinks); // Log value from selector
-
   // Fetch company info if needed when component mounts
   useEffect(() => {
     // Fetch only if status is idle (to avoid multiple fetches)

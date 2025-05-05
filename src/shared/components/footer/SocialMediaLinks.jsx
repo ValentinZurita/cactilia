@@ -12,7 +12,6 @@ export const SocialMediaLinks = () => {
 
   // Obtener enlaces sociales del store de Redux
   const socialLinks = useSelector(selectSocialLinks);
-  console.log("ℹ️ SocialMediaLinks (Footer) - socialLinks from selector:", socialLinks); // Log value from selector
 
   // Filtrar para mostrar solo los enlaces marcados como visibles
   const visibleLinks = socialLinks?.filter(link => link.visible !== false) || [];
