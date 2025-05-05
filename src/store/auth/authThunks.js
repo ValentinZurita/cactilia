@@ -233,3 +233,19 @@ export const startEmailSignIn = (email, password) => {
     }
   };
 };
+
+// ========================================================
+// Logout Thunk - Added
+// ========================================================
+export const startLogout = () => {
+  return async (dispatch) => {
+    try {
+      await FirebaseAuth.signOut(); // Sign out from Firebase
+      dispatch(logout()); // Dispatch logout action from slice
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Optionally dispatch an error message to the user
+      dispatch(logout({ errorMessage: "Error al cerrar sesión." }));
+    }
+  };
+};
