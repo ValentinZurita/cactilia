@@ -17,13 +17,15 @@ const ModalImageColumnContent = ({ currentImage, productName, isOutOfStock, avai
       alt={productName} 
       className="prod-modal__image"
     />
-    {/* Badges de Stock - ACTUALIZADO */}
+    {/* Badges de Stock - ACTUALIZADO y ahora comentado */}
+    {/* 
     {isOutOfStock && (
       <span className="position-absolute top-0 start-0 m-2 badge status-badge">Sin stock</span>
     )}
     {!isOutOfStock && availableStock > 0 && availableStock <= 5 && (
       <span className="position-absolute top-0 start-0 m-2 badge low-stock-badge">Últimas piezas</span>
     )}
+    */}
   </>
 );
 
