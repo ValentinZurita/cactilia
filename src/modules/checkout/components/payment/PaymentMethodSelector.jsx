@@ -4,7 +4,6 @@ import { useStripe } from '@stripe/react-stripe-js'
 import { PaymentOption } from './PaymentOption.jsx'
 import { OxxoPaymentOption } from './OxxoPaymentOption.jsx'
 import { NewCardForm } from './NewCardForm.jsx'
-import { PaymentFormModal } from '../../../user/components/payments/PaymentFormModal.jsx'
 import '../../styles/paymentSelector.css'
 
 /**
@@ -186,8 +185,9 @@ export const PaymentMethodSelector = ({
 
         <Link
           to="/profile/payments"
-          className="btn btn-link btn-sm text-decoration-none"
           target="_blank"
+          className="btn btn-link btn-sm text-decoration-none"
+
         >
           <i className="bi bi-pencil me-1"></i>
           Administrar Métodos de Pago

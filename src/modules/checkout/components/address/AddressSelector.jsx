@@ -182,6 +182,15 @@ export const AddressSelector = ({
           />
         ))}
       </div>
+
+      {/* Acciones para administrar direcciones */}
+      <Link
+        to="/profile/addresses"
+        className="btn btn-link btn-sm text-decoration-none"
+      >
+        <i className="bi bi-pencil me-1"></i>
+        Administrar Direcciones
+      </Link>
     </div>
   )
 }
