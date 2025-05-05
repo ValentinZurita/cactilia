@@ -30,7 +30,7 @@ export const PaymentSection = ({
                                  fiscalData,
                                }) => {
   return (
-    <CheckoutSection title="Método de Pago" stepNumber={2}>
+    <CheckoutSection title="Método de Pago" stepNumber={3}>
       {loading ? (
         <LoadingSpinner text="Cargando métodos de pago..." />
       ) : (

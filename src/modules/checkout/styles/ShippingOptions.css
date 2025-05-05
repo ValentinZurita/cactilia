@@ -33,7 +33,7 @@
     cursor: pointer;
     transition: all 0.3s ease;
     background-color: #fff;
-    overflow: visible !important; /* MANTENER: Solución al corte del input */
+    overflow: visible !important;
 }
 
 .shipping-option:hover {

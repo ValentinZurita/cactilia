@@ -10,7 +10,7 @@ import { CheckoutSection } from './CheckoutSection.jsx'
  */
 export const NotesSection = ({ notes, onNotesChange }) => {
   return (
-    <CheckoutSection title="Notas Adicionales" stepNumber={4}>
+    <CheckoutSection title="Notas Adicionales" stepNumber={5}>
       <div className="form-group">
         <textarea
           className="form-control"

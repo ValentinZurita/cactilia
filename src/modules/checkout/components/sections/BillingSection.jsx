@@ -20,7 +20,7 @@ export const BillingSection = ({
                                  onFillFromShipping,
                                }) => {
   return (
-    <CheckoutSection title="Información Fiscal" stepNumber={3}>
+    <CheckoutSection title="Información Fiscal" stepNumber={4}>
       <BillingInfoForm
         requiresInvoice={requiresInvoice}
         onRequiresInvoiceChange={onRequiresInvoiceChange}
