@@ -1,6 +1,6 @@
 export const QUICK_LINKS = [
   { label: "Inicio", url: "/" },
-  { label: "Tienda", url: "/tienda" },
+  { label: "Tienda", url: "/shop" },
   { label: "Contacto", url: "/contacto" },
   { label: "Preguntas Frecuentes", url: "/faq" },
   { label: "Política de Cookies", url: "/cookies-policy" },

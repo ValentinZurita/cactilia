@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { QUICK_LINKS } from '../../constants/footerLinks';
 
 export const QuickLinks = () => {
@@ -7,9 +8,9 @@ export const QuickLinks = () => {
       <ul className="list-unstyled text-start">
         {QUICK_LINKS.map((link, index) => (
           <li key={index}>
-            <a href={link.url} className="text-white text-sm">
+            <Link to={link.url} className="text-white text-sm">
               {link.label}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>
