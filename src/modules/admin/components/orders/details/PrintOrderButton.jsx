@@ -5,27 +5,39 @@ import React from 'react';
  * @param {Object} order - Objeto con los datos del pedido
  * @param {Function} formatPrice - Función para formatear precios
  * @param {Function} formatDate - Función para formatear fechas
- * @param {Object} userData - Datos del usuario (opcional)
+ * @param {Object} userData - Datos del usuario (opcional, parece ser el admin)
+ * @param {string} customerDisplayName - Nombre del cliente (obtenido del padre idealmente)
+ * @param {string} customerFullName - Nombre COMPLETO del cliente (preferido, desde el padre)
  */
-export const PrintOrderButton = ({ order, formatPrice, formatDate, userData }) => {
+export const PrintOrderButton = ({ order, formatPrice, formatDate, userData, customerDisplayName, customerFullName }) => {
   // Función para generar el contenido a imprimir
   const handlePrint = () => {
     if (!order) return;
 
-    // Determinar el nombre del cliente
-    // 1. Prioridad al userData si está disponible (nombre completo del usuario)
-    // 2. Si no, usar el nombre del cliente de la información de usuario en la orden
-    // 3. Como respaldo, usar el nombre de la dirección de envío
-    // 4. Valor por defecto si nada está disponible
-    let customerName = 'Cliente';
+    // --- Inicio: Lógica Cliente y Direcciones ---
+    // Determinar el nombre del cliente (Prioridad: FullName Prop > DisplayName Prop > ShippingAddr.FullName > Default)
+    let finalCustomerName = customerFullName || customerDisplayName || order.shippingAddress?.fullName || 'Cliente';
 
-    if (userData && userData.displayName) {
-      customerName = userData.displayName;
-    } else if (order.customer && order.customer.name) {
-      customerName = order.customer.name;
-    } else if (order.shipping?.address?.name) {
-      customerName = order.shipping.address.name;
-    }
+    // Formatear dirección de envío en una línea
+    const formatShippingAddressLine = (addr) => {
+      if (!addr) return '';
+      const parts = [
+        addr.street,
+        addr.numExt ? `#${addr.numExt}` : '',
+        addr.numInt ? `Int. ${addr.numInt}` : '',
+        addr.colonia,
+        addr.city,
+        addr.state,
+        addr.zip
+      ];
+      return parts.filter(Boolean).join(', '); // Une partes existentes con comas
+    };
+    const shippingAddressLine = formatShippingAddressLine(order.shippingAddress);
+
+    // Determinar email y teléfono
+    const customerEmail = order.customer?.email || order.shipping?.contact?.email || '';
+    const customerPhone = order.shippingAddress?.phone || order.customer?.phone || '';
+    // --- Fin: Lógica Cliente y Direcciones ---
 
     // Crear el contenido a imprimir
     const printContent = `
@@ -142,6 +154,19 @@ export const PrintOrderButton = ({ order, formatPrice, formatDate, userData }) =
           <p>Fecha: ${formatDate(order.createdAt)}</p>
         </div>
         
+        ${/* -- Inicio: Nueva Sección Info Cliente -- */''}
+        <div class="section">
+          <div class="section-title">Información del Cliente</div>
+          <p><strong>Nombre:</strong> ${finalCustomerName}</p>
+          ${shippingAddressLine ? `<p><strong>Dirección Envío:</strong> ${shippingAddressLine}</p>` : ''}
+          ${/* -- Inicio: Contacto en líneas separadas -- */''}
+          ${customerEmail ? `<p><strong>Email:</strong> ${customerEmail}</p>` : ''}
+          ${customerPhone ? `<p><strong>Teléfono:</strong> ${customerPhone}</p>` : ''}
+          ${customerPhone ? '<hr style="border-top: 1px solid #eee; margin: 10px 0;">' : ''}
+          ${/* -- Fin: Contacto en líneas separadas -- */''}
+        </div>
+        ${/* -- Fin: Nueva Sección Info Cliente -- */''}
+
         <div class="section">
           <div class="order-info">
             <div class="order-info-item">
@@ -152,11 +177,6 @@ export const PrintOrderButton = ({ order, formatPrice, formatDate, userData }) =
             <div class="order-info-item">
               <div class="order-info-label">Total:</div>
               <div class="order-info-value">${formatPrice(order.totals.finalTotal)}</div>
-            </div>
-            
-            <div class="order-info-item">
-              <div class="order-info-label">Cliente:</div>
-              <div class="order-info-value">${customerName}</div>
             </div>
           </div>
         </div>
@@ -224,9 +244,14 @@ export const PrintOrderButton = ({ order, formatPrice, formatDate, userData }) =
             ${order.shipping.address.references ? `
               <p><strong>Referencias:</strong> ${order.shipping.address.references}</p>
             ` : ''}
-            
-            ${order.shipping.estimatedDelivery ? `
-              <p><strong>Entrega estimada:</strong> ${order.shipping.estimatedDelivery}</p>
+
+            ${/* -- Inicio: Usar selectedShippingOption.name como fuente principal -- */''}
+            ${(order.selectedShippingOption?.name || order.shipping?.name) ? `<p><strong>Método de Envío:</strong> ${order.selectedShippingOption.name || order.shipping.name}</p>` : ''}
+            ${/* -- Fin: Usar selectedShippingOption.name como fuente principal -- */''}
+            ${order.shipping?.trackingNumber ? `<p><strong>Seguimiento:</strong> ${order.shipping.trackingNumber}</p>` : ''}
+
+            ${order.shipping?.estimatedDelivery ? `
+              <p><strong>Entrega estimada:</strong> ${formatDate(order.shipping.estimatedDelivery)}</p>
             ` : ''}
           </div>
         ` : ''}
@@ -243,6 +268,15 @@ export const PrintOrderButton = ({ order, formatPrice, formatDate, userData }) =
           <div class="section">
             <div class="section-title">Notas del Cliente</div>
             <div class="notes">${order.notes}</div>
+          </div>
+        ` : ''}
+        
+        ${/* -- Sección Pago Condicional -- */''}
+        ${order.payment?.type || order.payment?.status ? `
+          <div class="section">
+            <div class="section-title">Detalles del Pago</div>
+            ${order.payment.type ? `<p><strong>Método:</strong> ${order.payment.type}</p>` : ''}
+            ${order.payment.status ? `<p><strong>Estado:</strong> ${order.payment.status}</p>` : ''}
           </div>
         ` : ''}
         
