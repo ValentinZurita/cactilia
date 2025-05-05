@@ -11,6 +11,7 @@ import { getShippingOptions } from '../../checkout/services/shipping/index.js'
 
 // import { useShippingRules } from './useShippingRules.js' // Eliminado ya que no se usa activamente
 import '@modules/checkout/styles/ShippingOptions.css'
+import '@modules/checkout/styles/ShippingPackage.css'
 
 /**
  * Componente principal para mostrar opciones de envío en el checkout

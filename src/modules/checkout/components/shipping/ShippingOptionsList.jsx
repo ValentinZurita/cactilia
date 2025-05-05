@@ -1,7 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { useShippingOptions_ } from '../../hooks/useShippingOptions_.js'
-import '@modules/checkout/styles/shipping/shipping.css'
+//import '@modules/checkout/styles/shipping/shipping.css'
+//import '../../../checkout/styles/ShippingCalculator.css'
 
 const ShippingOption = ({ option, isSelected, onSelect }) => {
   const formattedPrice = option.isFree

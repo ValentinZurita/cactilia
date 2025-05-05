@@ -48,52 +48,53 @@
     box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
 }
 
-/* Input Checkbox (estilizado como radio) */
+/* Input Checkbox (estilizado como radio) - Replicando estilo Address/Payment */
 .shipping-option .form-check-input[type="checkbox"] {
     /* Posicionamiento en flujo normal */
     margin-right: 15px;
     margin-top: 0.3rem;
 
-    /* Estilos visuales circulares */
+    /* Estilos visuales circulares (igual que address/payment radio) */
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     width: 20px;
     height: 20px;
-    border: 2px solid #c8c8c8;
+    border: 2px solid #c8c8c8; /* Borde gris base */
     border-radius: 50%;
+    outline: none; /* Añadido para consistencia */
     display: inline-block;
     vertical-align: middle;
     position: relative;
     cursor: pointer;
     flex-shrink: 0;
-    background-color: #fff;
+    background-color: #fff; /* Fondo blanco base */
     transition: all 0.2s ease;
 }
 
-/* Estado Checkeado */
+/* Estado Checkeado - Fondo Verde Sólido con Punto Blanco */
 .shipping-option .form-check-input[type="checkbox"]:checked {
-    background-color: white !important;
-    border-color: var(--green-3) !important;
-    background-image: none;
-    box-shadow: none !important;
+    background-color: var(--green-3) !important; /* Fondo verde sólido */
+    border-color: var(--green-3) !important; /* Borde verde */
+    box-shadow: 0 0 0 2px rgba(52, 199, 73, 0.2) !important; /* Sombra (igual que foco) */
+    background-image: none !important; /* Asegurar NO imagen de fondo */
 }
 
-/* Punto interior */
+/* Punto interior - Restaurado y con fondo blanco */
 .shipping-option .form-check-input[type="checkbox"]:checked::before {
     content: "";
     display: block;
-    width: 10px;
-    height: 10px;
+    width: 8px; /* Ajustado ligeramente para mejor proporción */
+    height: 8px; /* Ajustado ligeramente para mejor proporción */
     border-radius: 50%;
-    background-color: var(--green-3);
+    background-color: white; /* Punto blanco */
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
 }
 
-/* Foco */
+/* Foco (mantener el estilo de foco verde) */
 .shipping-option .form-check-input[type="checkbox"]:focus {
     border-color: var(--green-3);
     outline: 0;
@@ -307,7 +308,7 @@
     position: relative;
     cursor: pointer;
     flex-shrink: 0;
-    background-color: #fff;
+    /*background-color: #fff;*/
     transition: background-color .15s ease-in-out, border-color .15s ease-in-out;
 
     /* === INICIO POSICIONAMIENTO con Transform === */
@@ -433,31 +434,20 @@
     position: relative;
     cursor: pointer;
     flex-shrink: 0;
-    background-color: #fff;
+    /*background-color: #fff;*/
     transition: all 0.2s ease;
 }
 
 /* Estado Checkeado - Usar variable */
 .shipping-option .form-check-input[type="checkbox"]:checked {
-    background-color: white !important;
+    /*background-color: white !important;*/
     border-color: var(--green-3) !important;
     background-image: none;
     box-shadow: none !important;
 }
 
 /* Punto interior - Usar variable */
-.shipping-option .form-check-input[type="checkbox"]:checked::before {
-    content: "";
-    display: block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: var(--green-3);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
+/* <-- Este bloque ya está comentado correctamente antes */
 
 /* Foco - Replicar o ajustar */
 .shipping-option .form-check-input[type="checkbox"]:focus {
@@ -475,4 +465,22 @@
 
 /* Eliminar estilos antiguos/redundantes si aún existen */
 /* .shipping-option-container { ... } */
-/* .shipping-option-container.selected { ... } */ 
+/* .shipping-option-container.selected { ... } */
+
+/* --- Inicio: Eliminar bloque ::before duplicado --- */
+/* Punto interior - Esta es la regla duplicada que se eliminará/comentará */
+/*
+.shipping-option .form-check-input[type="checkbox"]:checked::before {
+    content: "";
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--green-3);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+*/
+/* --- Fin: Eliminar bloque ::before duplicado --- */
