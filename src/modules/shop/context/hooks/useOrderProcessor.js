@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { processPayment } from '@modules/checkout/checkout/services/index.js'
 import { clearCartWithSync } from '../../features/cart/store/index.js'
 import { validateItemsStock } from '../../services/productServices.js'
@@ -38,6 +39,7 @@ export const useOrderProcessor = ({
                                     setOrderId,
                                   }) => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
 
   /**
    * Procesa la orden completa.
@@ -117,29 +119,20 @@ export const useOrderProcessor = ({
         }
         // <<<--- FIN: Lógica para guardar dirección nueva --->>>
 
-        // --- CORRECCIÓN: Limpiar el carrito SIEMPRE después de un procesamiento exitoso --- 
-        // Ya no se condiciona por tipo de pago
-        dispatch(clearCartWithSync());
-        console.log('[useOrderProcessor] Carrito limpiado después del procesamiento exitoso.');
-
         // 8. Redirigir a la página de éxito
         let redirectPath = `/shop/order-success/${result.orderId}`;
         if (result.paymentType === 'oxxo') {
-            // Construir URL con parámetros para OXXO
             const queryParams = new URLSearchParams({
                 payment: 'oxxo',
-                // Asegurarse que amount y expires existen y son válidos antes de añadir
                 ...(result.oxxoAmount && { amount: result.oxxoAmount }),
                 ...(result.oxxoExpiresAt && { expires: result.oxxoExpiresAt })
             });
             redirectPath = `${redirectPath}?${queryParams.toString()}`;
-        } else {
-            // Redirección simple para otros métodos
         }
 
-        // Usar window.location para una redirección dura
-        console.log(`[processOrder] Redirigiendo a: ${redirectPath}`);
-        window.location.href = redirectPath;
+        // Usar navigate de react-router-dom en lugar de window.location
+        console.log(`[processOrder] Navegando a: ${redirectPath}`);
+        navigate(redirectPath, { replace: true });
       }
 
       // 9. Devolver el resultado del procesamiento
@@ -159,7 +152,7 @@ export const useOrderProcessor = ({
     stripe, elements, cart,
     addressManager, paymentManager, billingManager,
     orderNotes, uid, dispatch,
-    setOrderId, setStep, setError, setIsProcessing
+    setOrderId, setStep, setError, setIsProcessing, navigate
   ])
 
   /**

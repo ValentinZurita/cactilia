@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { doc, getDoc } from 'firebase/firestore'
 import { FirebaseDB } from '../../../config/firebase/firebaseConfig.js'
@@ -19,6 +19,7 @@ import '@modules/checkout/styles/oxxoVoucher.css'
 import '@modules/checkout/styles/orderSuccess.css'
 import { OxxoVoucher } from '@modules/checkout/components/payment/index.js'
 import { clearCartWithSync } from '../features/cart/store/index.js'
+import { formatCurrency } from '@utils/formatting/index.js'
 
 const ORDERS_COLLECTION = 'orders'
 
@@ -245,6 +246,7 @@ const OrderSuccessPage = () => {
   const { orderId } = useParams()       // orderId desde la URL "/order-success/:orderId"
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const [searchParams] = useSearchParams()
 
   // Estado interno
   const [orderDetails, setOrderDetails] = useState(null)
@@ -252,10 +254,17 @@ const OrderSuccessPage = () => {
   const [error, setError] = useState(null)
   const [cartCleared, setCartCleared] = useState(false)
 
-  // Extraer parámetros de URL
-  const searchParams = new URLSearchParams(window.location.search)
+  // Extraer detalles de pago OXXO si existen
   const paymentType = searchParams.get('payment')
-  const isOxxoPayment = paymentType === 'oxxo'
+  const oxxoAmount = searchParams.get('amount')
+  const oxxoExpires = searchParams.get('expires')
+
+  // Limpiar el carrito cuando la página se carga
+  useEffect(() => {
+    console.log('[OrderSuccesPage] Montado. Limpiando carrito...')
+    dispatch(clearCartWithSync())
+    setCartCleared(true)
+  }, [dispatch])
 
   // Cargar detalles del pedido
   useEffect(() => {
@@ -274,15 +283,6 @@ const OrderSuccessPage = () => {
           setError('No se encontró la información del pedido')
         } else {
           setOrderDetails(data)
-
-          // Si no es pago OXXO y no hemos limpiado el carrito, hacerlo ahora
-          if (data.payment?.type !== 'oxxo' && !cartCleared) {
-            // Limpiar el carrito solo si venimos directamente del checkout
-            if (!window.location.pathname.includes('/profile/')) {
-              dispatch(clearCartWithSync())
-              setCartCleared(true)
-            }
-          }
         }
       } catch (err) {
         console.error('OrderSuccessPage: Error al obtener detalles del pedido:', err)
@@ -293,7 +293,7 @@ const OrderSuccessPage = () => {
     }
 
     getOrderData()
-  }, [orderId, dispatch, cartCleared])
+  }, [orderId, dispatch])
 
   // Renderizado condicional con el wrapper principal
   return (
