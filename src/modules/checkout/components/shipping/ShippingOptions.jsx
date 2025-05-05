@@ -6,7 +6,6 @@ import React, { useEffect, useState } from 'react'
 import { ShippingPackage } from './ShippingPackage.jsx'
 // Eliminar importación del servicio intermedio
 // import { checkoutShippingService } from '../../services/checkoutShippingService.js'
-
 // Importar directamente desde el índice centralizado
 import { getShippingOptions } from '../../checkout/services/shipping/index.js'
 
@@ -345,54 +344,54 @@ export const ShippingOptions = ({
       }
 
       try {
-        console.log('🔄 Recalculando opciones de envío con dirección:', address);
-        console.log('🛒 Productos en el carrito:', cartItems);
+        console.log('🔄 Recalculando opciones de envío con dirección:', address)
+        console.log('🛒 Productos en el carrito:', cartItems)
 
         // Llamar directamente a la función importada
         // const options = await checkoutShippingService.getShippingOptions(address, cartItems);
-        const optionsResult = await getShippingOptions(cartItems, address); // Cambiado el orden de los args según la definición
-        
-        console.log('✅ Resultado de getShippingOptions:', optionsResult);
+        const optionsResult = await getShippingOptions(cartItems, address) // Cambiado el orden de los args según la definición
+
+        console.log('✅ Resultado de getShippingOptions:', optionsResult)
 
         if (optionsResult && optionsResult.success) {
-          const validOptions = optionsResult.options || [];
-          const unavailable = optionsResult.unavailableProductsInfo || null;
+          const validOptions = optionsResult.options || []
+          const unavailable = optionsResult.unavailableProductsInfo || null
 
           // Log de las opciones válidas obtenidas
           if (validOptions.length > 0) {
-            console.log('🚚 Opciones de envío válidas encontradas:', validOptions);
+            console.log('🚚 Opciones de envío válidas encontradas:', validOptions)
             validOptions.forEach((opt, index) => {
-              console.log(`   Opción ${index + 1}: ${opt.name}, Costo: ${opt.totalCost || opt.price || 'N/A'}, Productos: ${opt.products ? opt.products.length : 0}`);
-            });
+              console.log(`   Opción ${index + 1}: ${opt.name}, Costo: ${opt.totalCost || opt.price || 'N/A'}, Productos: ${opt.products ? opt.products.length : 0}`)
+            })
           } else {
-            console.log('🚫 No se encontraron opciones de envío válidas.');
+            console.log('🚫 No se encontraron opciones de envío válidas.')
           }
 
           // Log de productos no disponibles
           if (unavailable && unavailable.products && unavailable.products.length > 0) {
-            console.log('⚠️ Productos sin opciones de envío disponibles:', unavailable.products.map(p => p.name));
+            console.log('⚠️ Productos sin opciones de envío disponibles:', unavailable.products.map(p => p.name))
           } else {
-            console.log('✅ Todos los productos tienen opciones de envío.');
+            console.log('✅ Todos los productos tienen opciones de envío.')
           }
 
-          setShippingOptions(validOptions);
-          setUnavailableInfo(unavailable);
-          setError(null); // Limpiar error si fue exitoso
+          setShippingOptions(validOptions)
+          setUnavailableInfo(unavailable)
+          setError(null) // Limpiar error si fue exitoso
 
         } else {
-          console.error('❌ Error al obtener opciones de envío:', optionsResult?.error || 'Error desconocido');
-          setError(optionsResult?.error || 'No se pudieron cargar las opciones de envío.');
-          setShippingOptions([]);
-          setUnavailableInfo(null);
+          console.error('❌ Error al obtener opciones de envío:', optionsResult?.error || 'Error desconocido')
+          setError(optionsResult?.error || 'No se pudieron cargar las opciones de envío.')
+          setShippingOptions([])
+          setUnavailableInfo(null)
         }
       } catch (err) {
-        console.error('💥 Excepción al obtener opciones de envío:', err);
-        setError('Ocurrió un error inesperado al calcular el envío.');
-        setShippingOptions([]);
-        setUnavailableInfo(null);
+        console.error('💥 Excepción al obtener opciones de envío:', err)
+        setError('Ocurrió un error inesperado al calcular el envío.')
+        setShippingOptions([])
+        setUnavailableInfo(null)
       } finally {
-        setLoading(false);
-        console.log('🏁 Carga de opciones de envío finalizada.');
+        setLoading(false)
+        console.log('🏁 Carga de opciones de envío finalizada.')
       }
     }
 
@@ -418,10 +417,9 @@ export const ShippingOptions = ({
   // Mostrar error si hay (envuelto en section-content)
   if (error) {
     return (
-      <div className="section-content">
-        <div className="shipping-options-error">
-          <p>{error}</p>
-        </div>
+      <div className="section-content shipping-options-error">
+        <i className="bi bi-emoji-frown"></i>
+        <p>{error}</p>
       </div>
     )
   }
@@ -431,7 +429,7 @@ export const ShippingOptions = ({
     return (
       <div className="section-content">
         <div className="shipping-options-empty">
-          <p>No hay opciones de envío disponibles para esta dirección.</p>
+          <p>Lo sentidmos, no hay opciones de envío disponibles para esta dirección.</p>
           <p>Por favor, verifica tu dirección o los productos en tu carrito.</p>
         </div>
       </div>

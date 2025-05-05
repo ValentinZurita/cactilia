@@ -119,11 +119,9 @@ export const ShippingManagerForCheckout = ({
   // Si no hay una dirección seleccionada, mostrar mensaje
   if (!selectedAddress) {
     return (
-      <div className="shipping-manager shipping-manager-checkout">
-        <div className="shipping-no-address">
-          <h3>Selecciona una dirección de envío</h3>
-          <p>No se puede calcular envío sin una dirección seleccionada</p>
-        </div>
+      <div className="shipping-manager shipping-manager-checkout shipping-no-address">
+        <h3>Selecciona una dirección de envío</h3>
+        <p>No se puede calcular envío sin una dirección seleccionada</p>
       </div>
     )
   }
@@ -132,17 +130,16 @@ export const ShippingManagerForCheckout = ({
   const hasPostalCode = selectedAddress.zip || selectedAddress.zipcode || selectedAddress.postalCode || selectedAddress.cp
   if (!hasPostalCode) {
     return (
-      <div className="shipping-manager shipping-manager-checkout">
-        <div className="shipping-no-address">
-          <h3>Dirección incompleta</h3>
-          <p>Es necesario un código postal para calcular opciones de envío.</p>
-          <button
-            className="btn btn-outline-primary mt-2"
-            onClick={() => window.scrollTo(0, 0)}
-          >
-            Completar dirección
-          </button>
-        </div>
+      <div className="shipping-manager shipping-manager-checkout shipping-no-address">
+        <h3>Dirección incompleta</h3>
+        <p>Es necesario una dirección para calcular mostrar tus opciones de envío.</p>
+        <button
+          className="btn btn-scroll-top-icon"
+          onClick={() => window.scrollTo(0, 0)}
+          title="Ir arriba para completar dirección"
+        >
+          <i className="bi bi-arrow-up"></i>
+        </button>
       </div>
     )
   }

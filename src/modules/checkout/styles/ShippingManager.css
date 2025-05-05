@@ -1,6 +1,7 @@
-/* Estilos para el componente ShippingManager */
+/* Estilos para el componente ShippingManager y sus variantes */
 
-.shipping-manager-container {
+.shipping-manager,
+.shipping-manager-checkout { 
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
@@ -18,7 +19,8 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .shipping-manager-container {
+  .shipping-manager,
+  .shipping-manager-checkout {
     padding: 15px;
   }
   
@@ -27,3 +29,59 @@
     margin-bottom: 20px;
   }
 } 
+
+.shipping-no-address {
+  background-color: #f9f9f9; 
+  padding: 20px;
+  border: 1px dashed #ddd; 
+  border-radius: 8px;     
+  text-align: center;     
+  margin-top: 15px;         
+  color: #555;            
+}
+
+.shipping-no-address h3 {
+  font-size: 1.1rem;
+  color: #333;          
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.shipping-no-address p {
+  font-size: 0.90rem;
+  margin-bottom: 0;      
+}
+
+.shipping-no-address .btn-scroll-top-icon {
+  margin-top: 15px; /* Espacio sobre el botón */
+  background-color: var(--green-3);
+  color: var(--white);
+  border: none;
+  width: 44px; /* Ancho fijo */
+  height: 44px; /* Alto fijo (igual al ancho) */
+  border-radius: 50%; /* Hacerlo circular */
+  padding: 0; /* Eliminar padding interno */
+  display: inline-flex; /* Usar flex para centrar icono */
+  align-items: center; /* Centrar icono verticalmente */
+  justify-content: center; /* Centrar icono horizontalmente */
+  font-size: 1.5rem; /* Tamaño del icono */
+  line-height: 1; /* Asegurar que el icono no afecte la altura */
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.shipping-no-address .btn-scroll-top-icon:hover {
+  background-color: var(--green-1);
+  color: var(--white);
+  transform: translateY(-2px); /* Efecto hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.shipping-no-address .btn-scroll-top-icon:active {
+  background-color: var(--green-1);
+  transform: translateY(0); /* Efecto active */
+   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+/* --- Fin: Estilo para el botón circular de scroll-top --- */
+
+/* --- Fin: Estilos para mensaje de "Falta Dirección" --- */

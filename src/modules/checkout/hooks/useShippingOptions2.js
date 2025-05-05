@@ -44,7 +44,7 @@ const useShippingOptions2 = (userAddress, cartItems) => {
 
       if (!options || options.length === 0) {
         console.warn('⚠️ No se encontraron opciones de envío disponibles')
-        setError('No hay opciones de envío disponibles para esta dirección.')
+        setError('Lo sentimos, no hay opciones de envío disponibles para esta dirección.')
         setOptionGroups([])
         return
       }

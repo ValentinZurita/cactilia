@@ -11,9 +11,8 @@
 import { v4 as uuidv4 } from 'uuid'
 
 // Importar el mapeo de abreviaciones
-import { NATIONAL_KEYWORD, STATE_ABBREVIATIONS } from '../constants/shippingConstants.js'
+import { NATIONAL_KEYWORD } from '../constants/shippingConstants.js'
 // import { RuleFormatNormalizer } from '../../../../../../modules/checkout/shipping/RuleFormatNormalizer.js'
-import { fetchAllShippingRules } from './shippingRulesService.js'
 import { calculatePackaging } from '../utils/packagingUtils.js'
 import { calculateGroupCost } from '../utils/costUtils.js'
 import { getDeliveryTimeInfo } from '../utils/deliveryTimeUtils.js'
@@ -157,26 +156,26 @@ export const calculateGreedyShippingOptions = (cartItems, address, shippingRules
     error: 'No hay reglas de envío disponibles',
   }
 
-  console.log(`[Greedy] 🔍 Iniciando cálculo para ${cartItems.length} productos con ${shippingRules.length} reglas.`);
+  console.log(`[Greedy] 🔍 Iniciando cálculo para ${cartItems.length} productos con ${shippingRules.length} reglas.`)
 
   // 2. Paso 1: Encontrar reglas válidas por producto
-  const validRulesByProduct = {};
-  const productsWithoutRules = [];
+  const validRulesByProduct = {}
+  const productsWithoutRules = []
   cartItems.forEach(item => {
-    const product = item.product || item;
-    const productId = product.id;
-    const assignedRuleIds = product.shippingRuleIds || [];
+    const product = item.product || item
+    const productId = product.id
+    const assignedRuleIds = product.shippingRuleIds || []
     if (!assignedRuleIds.length) {
-      productsWithoutRules.push(product);
-      return;
+      productsWithoutRules.push(product)
+      return
     }
-    const validRules = shippingRules.filter(rule => assignedRuleIds.includes(rule.id) && isRuleValidForAddress(rule, address));
+    const validRules = shippingRules.filter(rule => assignedRuleIds.includes(rule.id) && isRuleValidForAddress(rule, address))
     if (validRules.length > 0) {
-      validRulesByProduct[productId] = validRules;
+      validRulesByProduct[productId] = validRules
     } else {
-      productsWithoutRules.push(product);
+      productsWithoutRules.push(product)
     }
-  });
+  })
 
   // 3. Manejar caso donde NINGÚN producto tiene reglas válidas
   const productsWithValidRulesIds = Object.keys(validRulesByProduct)
@@ -185,7 +184,7 @@ export const calculateGreedyShippingOptions = (cartItems, address, shippingRules
     console.log(`[Greedy] ❌ No hay reglas válidas para NINGÚN producto en esta dirección.`)
     return {
       success: false,
-      error: `No hay opciones de envío disponibles para: ${productNames}`,
+      error: `Lo sentimos, no hay opciones de envío disponibles para esta dirección`,
       products_without_shipping: (productsWithoutRules.length > 0 ? productsWithoutRules : cartItems).map(p => p.id),
     }
   }
@@ -208,15 +207,15 @@ export const calculateGreedyShippingOptions = (cartItems, address, shippingRules
 
   // 6. Bucle ÚNICO de Agrupación
   itemsToProcess.forEach(item => {
-    const product = item.product || item;
-    const productId = product.id;
-    const validRules = validRulesByProduct[productId]; 
-    assignProductToShippingGroup(product, validRules, shippingGroups, productAssignments);
-  });
+    const product = item.product || item
+    const productId = product.id
+    const validRules = validRulesByProduct[productId]
+    assignProductToShippingGroup(product, validRules, shippingGroups, productAssignments)
+  })
 
   // 7. Mapeo ÚNICO de Grupos a Opciones
   const shippingOptions = shippingGroups.map((group, groupIndex) => {
-    const rule = group.rule;
+    const rule = group.rule
 
     // Obtener info de tiempo
     const { minDays, maxDays, deliveryTimeText } = getDeliveryTimeInfo(rule)
@@ -229,8 +228,8 @@ export const calculateGreedyShippingOptions = (cartItems, address, shippingRules
     } = calculatePackaging(group.products, ruleConfig, group.id)
 
     // Calcular costo
-    const { totalOptionCost, updatedPackagesInfo } = calculateGroupCost(initialPackagesInfo, rule);
-    const finalIsFree = totalOptionCost === 0;
+    const { totalOptionCost, updatedPackagesInfo } = calculateGroupCost(initialPackagesInfo, rule)
+    const finalIsFree = totalOptionCost === 0
 
     // Construir el objeto option
     const option = {
