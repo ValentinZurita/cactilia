@@ -14,7 +14,7 @@ export const PrintOrderButton = ({ order, formatPrice, formatDate, userData, cus
   const handlePrint = () => {
     if (!order) return;
 
-    // --- Inicio: Lógica Cliente y Direcciones ---
+    // --- Lógica Cliente y Direcciones ---
     // Determinar el nombre del cliente (Prioridad: FullName Prop > DisplayName Prop > ShippingAddr.FullName > Default)
     let finalCustomerName = customerFullName || customerDisplayName || order.shippingAddress?.fullName || 'Cliente';
 

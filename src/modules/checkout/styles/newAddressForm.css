@@ -7,8 +7,14 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .new-address-form .form-label {
@@ -75,10 +81,10 @@
 /* Estilo para el formulario cuando está activo */
 .address-option.active-address-option .new-address-form {
     padding: 20px;
-    background-color: rgba(52, 199, 73, 0.05);
-    border: 1px solid var(--green-3);
+    /*background-color: rgba(52, 199, 73, 0.05);*/
+    /*border: 1px solid var(--green-3);*/
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);
+    /*box-shadow: 0 2px 8px rgba(52, 199, 73, 0.1);*/
     margin-top: 15px;
 }
 
