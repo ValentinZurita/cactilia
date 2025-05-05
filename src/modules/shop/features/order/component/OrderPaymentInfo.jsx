@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatCurrency, formatUnixTimestamp } from '../../../../../utils/formatting/formatters';
 import { getFriendlyPaymentStatus } from '../../../../../shared/utils/statusMapping.js';
-
+import '../../../../../shared/styles/buttons.css';
 /**
  * Muestra la información de pago de una orden, incluyendo detalles de tarjeta/método,
  * estado del pago y enlaces de descarga de facturas si aplica.
@@ -67,7 +67,7 @@ export const OrderPaymentInfo = ({ payment, billing, invoiceIsRequired }) => {
             href={payment.voucherDetails.hosted_voucher_url} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="btn btn-danger btn-sm px-3" /* Ajuste de padding si se desea */
+            className="btn btn-sm btn-primary-custom px-3" /* Aplicando la nueva clase personalizada */
             aria-label="Ver o imprimir el voucher de pago OXXO"
           >
             <i className="bi bi-receipt me-2"></i>

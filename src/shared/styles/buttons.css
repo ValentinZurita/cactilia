@@ -1,0 +1,44 @@
+/* src/shared/styles/buttons.css */
+
+/*
+  Custom Primary Button (Green)
+  - Uses --green-3 as the primary background.
+  - Mimics btn-sm size and padding.
+  - Includes a hover effect using --green-1.
+*/
+.btn-primary-custom {
+  background-color: var(--green-3);
+  color: var(--white) !important; /* Ensure white text */
+  border-color: var(--green-3);
+  padding: 0.25rem 0.75rem; /* Match btn-sm */
+  font-size: 0.875rem; /* Match btn-sm */
+  border-radius: 0.25rem; /* Bootstrap default */
+  transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.5;
+  display: inline-block;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.btn-primary-custom:hover {
+  background-color: var(--green-1); /* Darker green on hover */
+  border-color: var(--green-1);
+  color: var(--white) !important;
+}
+
+.btn-primary-custom:focus {
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem var(--green-1-shadow);
+  background-color: var(--green-1); /* Keep hover color on focus */
+  border-color: var(--green-1);
+}
+
+.btn-primary-custom:active {
+  background-color: var(--green-1);
+  border-color: var(--green-1);
+  color: var(--white) !important;
+}
