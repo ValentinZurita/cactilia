@@ -31,13 +31,19 @@ const getOrderConfirmationTemplate = (orderData, orderId) => {
             </tr>
           </thead>
           <tbody>
-            ${orderData.items.map(item => `
-              <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
-                <td style="text-align: right; padding: 8px; border-bottom: 1px solid #eee;">${item.quantity}</td>
-                <td style="text-align: right; padding: 8px; border-bottom: 1px solid #eee;">$${(item.price * item.quantity).toFixed(2)}</td>
-              </tr>
-            `).join('')}
+            ${(orderData.items || []).map(item => {
+              const price = Number(item?.price) || 0;
+              const quantity = Number(item?.quantity) || 0;
+              const totalItemPrice = (price * quantity).toFixed(2);
+              
+              return `
+                <tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${item?.name || 'Producto sin nombre'}</td>
+                  <td style="text-align: right; padding: 8px; border-bottom: 1px solid #eee;">${quantity}</td>
+                  <td style="text-align: right; padding: 8px; border-bottom: 1px solid #eee;">$${totalItemPrice}</td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
           <tfoot>
             <tr>

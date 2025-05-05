@@ -75,6 +75,28 @@ exports.resendOrderConfirmationEmail = onCall({
       );
     }
 
+    // >>> INICIO: Obtener remitente desde Firestore <<<
+    let senderEmail = null;
+    try {
+      const settingsDoc = await admin.firestore().collection('settings').doc('company_info').get();
+      if (settingsDoc.exists) {
+        senderEmail = settingsDoc.data()?.contact?.email;
+        console.log(`[ResendConfirm] Sender email fetched from Firestore: ${senderEmail}`);
+      }
+      if (!senderEmail) { // Fallback si no existe doc o campo
+        console.warn(`[ResendConfirm] Sender email not found in settings/company_info. Falling back to default sender secret.`);
+        senderEmail = defaultSender.value(); // Usa el secreto como fallback
+      }
+      if (!senderEmail) { // Doble fallback si el secreto tampoco existe
+         console.error('[ResendConfirm] CRITICAL: Sender email could not be determined from Firestore or Secret!');
+         senderEmail = 'error@cactilia.com'; // Fallback extremo
+      }
+    } catch (dbError) {
+      console.error(`[ResendConfirm] Error fetching sender email from Firestore:`, dbError);
+      senderEmail = defaultSender.value() || 'error@cactilia.com'; // Fallback en caso de error DB
+    }
+    // >>> FIN: Obtener remitente desde Firestore <<<
+
     // Generar contenido del email
     const emailContent = getOrderConfirmationTemplate(orderData, orderId);
 
@@ -85,10 +107,11 @@ exports.resendOrderConfirmationEmail = onCall({
       html: emailContent
     };
 
+    console.log(`[ResendConfirm] Attempting to resend confirmation email to ${userEmail} FROM ${senderEmail}`);
     const success = await sendEmail(
       emailData,
       sendgridApiKey.value(),
-      defaultSender.value()
+      senderEmail // <--- Usar el email obtenido de Firestore (o fallback)
     );
 
     if (success) {
