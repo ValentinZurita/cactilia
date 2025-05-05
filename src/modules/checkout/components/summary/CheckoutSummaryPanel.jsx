@@ -231,7 +231,7 @@ export const CheckoutSummaryPanel = ({
         )}
 
         {/* Botón para procesar la compra */}
-        <div className="px-3">
+        <div className="px-3 pb-3">
           <CheckoutButton
             onCheckout={handleCheckoutClick}
             isProcessing={isProcessing}
@@ -258,7 +258,7 @@ export const CheckoutSummaryPanel = ({
                 Al hacer clic en "Generar voucher OXXO", crearemos un voucher de pago que podrás presentar en cualquier
                 tienda OXXO en México.
               </p>
-              <p className="small mb-0">
+              <p className="small">
                 El voucher tiene validez de 24 horas y tu pedido será procesado una vez que recibamos la confirmación
                 del pago.
               </p>
