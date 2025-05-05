@@ -50,7 +50,7 @@ const ModalDetailsContent = ({
     
     {/* Categoría y Etiqueta de Stock */}
     <div className="prod-modal__category-wrap">
-      <span className="prod-modal__category">{product.category || 'Sin categoría'}</span>
+      <span className="prod-modal__category">{product.categoryName || 'Sin categoría'}</span>
       {isOutOfStock && (
         <span className="prod-modal__stock-label">Sin Stock</span>
       )}
