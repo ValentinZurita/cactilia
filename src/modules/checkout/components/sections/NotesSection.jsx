@@ -20,9 +20,6 @@ export const NotesSection = ({ notes, onNotesChange }) => {
           onChange={onNotesChange}
           aria-label="Notas adicionales para el pedido"
         ></textarea>
-        <small className="form-text text-muted">
-          Por ejemplo: "Dejar con el portero" o "Llamar antes de entregar".
-        </small>
       </div>
     </CheckoutSection>
   )

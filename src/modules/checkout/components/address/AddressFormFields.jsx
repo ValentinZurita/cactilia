@@ -27,7 +27,6 @@ export const AddressFormFields = ({
           value={formData.fullName || ''}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Nombre completo"
           error={errors.fullName}
           required
         />
@@ -42,7 +41,6 @@ export const AddressFormFields = ({
           value={formData.phone || ''}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="10 dígitos"
           error={errors.phone}
           maxLength="10"
           pattern="[0-9]{10}"
@@ -58,7 +56,6 @@ export const AddressFormFields = ({
           value={formData.name}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Ej. Casa, Oficina"
           error={errors.name}
           infoText='Asigna un nombre único para identificar esta dirección guardada más fácilmente. Ej. "Mi Casa", "Oficina Mamá", "Entrada Portón Negro"'
         />
@@ -72,7 +69,6 @@ export const AddressFormFields = ({
           value={formData.street}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Nombre de la calle"
           error={errors.street}
           required
         />
@@ -86,7 +82,6 @@ export const AddressFormFields = ({
           value={formData.numExt}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Ext."
           error={errors.numExt}
           required
         />
@@ -99,7 +94,6 @@ export const AddressFormFields = ({
           label="No. Int"
           value={formData.numInt}
           onChange={handleChange}
-          placeholder="Int."
         />
       </div>
 
@@ -111,7 +105,6 @@ export const AddressFormFields = ({
           value={formData.colonia}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Colonia o fraccionamiento"
           error={errors.colonia}
           required
         />
@@ -125,7 +118,6 @@ export const AddressFormFields = ({
           value={formData.city}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Ciudad"
           error={errors.city}
           required
         />
@@ -160,7 +152,6 @@ export const AddressFormFields = ({
           value={formData.zip}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="C.P."
           error={errors.zip}
           maxLength="5"
           pattern="[0-9]{5}"
@@ -176,7 +167,6 @@ export const AddressFormFields = ({
           type="textarea"
           value={formData.references}
           onChange={handleChange}
-          placeholder="Referencias para facilitar la entrega"
           infoText='Ej. "Entre calles", "Frente al parque"'
           rows="2"
         />
