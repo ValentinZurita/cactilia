@@ -186,42 +186,11 @@ const OrderSuccessContent = ({ orderId, orderDetails }) => {
             voucherUrl={orderDetails.payment?.voucherUrl}
             expiresAt={orderDetails.payment?.expiresAt}
           />
-
-          {/* Simuladores solo para desarrollo */}
-          {process.env.NODE_ENV !== 'production' && (
-            <>
-              {/* Nota: los componentes de simulación se muestran solo en desarrollo */}
-              {orderDetails?.payment?.paymentIntentId && (
-                <div className="alert alert-warning mt-3">
-                  <p className="mb-0"><strong>Modo Desarrollo:</strong> Herramientas de simulación disponibles.</p>
-                </div>
-              )}
-            </>
-          )}
         </div>
       )}
 
       {/* Notas del pedido */}
       <OrderNotes notes={orderDetails.notes} />
-
-      {/* Mensaje de OXXO */}
-      {orderDetails.payment?.type === 'oxxo' && (
-        <div className="order-details-section">
-          <div className="oxxo-disclaimer alert alert-warning">
-            <h5 className="alert-heading">
-              <i className="bi bi-info-circle-fill me-2"></i>
-              Información importante
-            </h5>
-            <p>Tu pedido ha sido registrado, pero será procesado únicamente después de confirmar tu pago en OXXO.</p>
-            <p className="mb-0">Ten en cuenta que:</p>
-            <ul>
-              <li>El voucher tiene una validez de 24 horas.</li>
-              <li>Una vez realizado el pago, puede tomar hasta 24 horas para que se refleje en nuestro sistema.</li>
-              <li>Recibirás un correo electrónico cuando confirmemos tu pago.</li>
-            </ul>
-          </div>
-        </div>
-      )}
 
       {/* Siguientes pasos y soporte */}
       {isFromCheckout && <OrderNextSteps />}

@@ -46,14 +46,6 @@ export const useOrderProcessor = ({
    * Acepta la opción seleccionada y el costo TOTAL calculado.
    */
   const processOrder = useCallback(async (selectedOption, shippingCost) => {
-    // === INICIO LOG ===
-    console.log(`🅿️ [useOrderProcessor] processOrder RECIBIÓ:`, {
-      optionId: selectedOption?.id,
-      optionName: selectedOption?.name,
-      optionInternalCost: selectedOption?.price ?? selectedOption?.totalCost ?? selectedOption?.calculatedCost,
-      shippingCostArg: shippingCost, // Loggear el costo recibido
-    })
-    // === FIN LOG ===
 
     // Verificar que Stripe y Elements estén disponibles
     if (!stripe || !elements) {

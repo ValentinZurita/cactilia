@@ -138,7 +138,7 @@ export const OxxoVoucher = ({ orderData, voucherUrl, oxxoAmount, oxxoExpiresAt }
             href={voucherUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-success"
+            className="btn btn-danger"
           >
             <i className="bi bi-printer me-2"></i>
             Imprimir Voucher
