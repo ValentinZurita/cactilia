@@ -27,31 +27,36 @@ export const PackageDetailsList = ({ packages = [], actualPackagesCount }) => {
 
         return (
           <div key={`pkg_info_${pkg.id || index}`} className="package-info-item">
-            <div className="package-info-header">
-              <div className="package-info-title">
-                Paquete {index + 1}
-                {pkg.weight !== undefined &&
-                  <span className="package-weight-badge">
-                    {pkg.weight.toFixed(2)} kg
-                  </span>
+            <div className="package-item-icon">
+              <i className="bi bi-box"></i>
+            </div>
+
+            <div className="package-item-content">
+              <div className="package-info-header">
+                <div className="package-info-title">
+                  Paquete {index + 1}
+                  {pkg.weight !== undefined &&
+                    <span className="package-weight-badge">
+                      {pkg.weight.toFixed(2)} kg
+                    </span>
+                  }
+                </div>
+                {showIndividualPrice &&
+                  <div className="package-info-price">{formattedPackagePrice}</div>
                 }
               </div>
-              {showIndividualPrice &&
-                <div className="package-info-price">{formattedPackagePrice}</div>
-              }
-            </div>
-            <div className="package-info-products">
-              {/* Asegurarse de que pkg.products sea un array antes de mapear */}
-              {Array.isArray(pkg.products) && pkg.products.length > 0 ? (
-                pkg.products.map((product, pidx) => (
-                  <span key={`info_prod_${pkg.id || index}_${product.id}_${pidx}`} className="package-info-product">
-                    {product.name}{product.quantity > 1 ? ` (x${product.quantity})` : ''}
-                    {pidx < pkg.products.length - 1 ? ', ' : ''}
-                  </span>
-                ))
-              ) : (
-                <span className="package-info-empty">No hay productos en este paquete</span>
-              )}
+              <div className="package-info-products">
+                {Array.isArray(pkg.products) && pkg.products.length > 0 ? (
+                  pkg.products.map((product, pidx) => (
+                    <span key={`info_prod_${pkg.id || index}_${product.id}_${pidx}`} className="package-info-product">
+                      {product.name}{product.quantity > 1 ? ` (x${product.quantity})` : ''}
+                      {pidx < pkg.products.length - 1 ? ', ' : ''}
+                    </span>
+                  ))
+                ) : (
+                  <span className="package-info-empty">No hay productos en este paquete</span>
+                )}
+              </div>
             </div>
           </div>
         )
