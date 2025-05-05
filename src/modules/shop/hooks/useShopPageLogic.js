@@ -78,16 +78,30 @@ export const useShopPageLogic = () => {
     dispatch(fetchInitialShopData());
   }, [dispatch]);
 
-  // Preseleccionar categoría desde el estado de navegación
+  // Preseleccionar categoría desde el estado de navegación (SOLO AL MONTAR)
   useEffect(() => {
     const categoryNameToSelect = location.state?.preselectCategoryName;
-    if (categoryNameToSelect && filters.selectedCategory !== categoryNameToSelect) {
-      dispatch(setSelectedCategory(categoryNameToSelect));
+    if (categoryNameToSelect) {
+      // Solo despachar si es realmente necesario (el estado podría ya estar bien por caché)
+      // Es importante comprobar contra el estado ACTUAL al momento de montar.
+      // NOTA: Acceder a getState() dentro de useEffect no es lo ideal,
+      // pero para una acción de montaje única es una solución pragmática.
+      // Si filters ya estuviera en el estado inicial correcto por otra razón, esto lo evita.
+      // Aunque en este flujo, probablemente siempre será diferente al montar.
+      const currentSelectedCategory = filters.selectedCategory; // Leer el valor actual
+      if (currentSelectedCategory !== categoryNameToSelect) {
+           console.log(`[useShopPageLogic Mount Effect] Preselecting category: ${categoryNameToSelect}`);
+           dispatch(setSelectedCategory(categoryNameToSelect));
+      }
+      // Limpiar estado de navegación DESPUÉS de intentar despachar
+      console.log("[useShopPageLogic Mount Effect] Cleaning location.state");
+      window.history.replaceState({}, document.title); 
     }
-    if (location.state?.preselectCategoryName) {
-      window.history.replaceState({}, document.title); // Limpiar estado de navegación
-    }
-  }, [location.state, dispatch, filters.selectedCategory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps 
+  }, [dispatch]); // <-- Dependencias: Solo dispatch (estable), se ejecuta solo al montar
+   // Se deshabilita la regla eslint para exhaustive-deps aquí intencionalmente.
+   // Queremos que esto se ejecute UNA SOLA VEZ para leer el estado inicial de navegación.
+   // location.state y filters.selectedCategory NO deben estar aquí.
 
   // ===========================================================================
   // Cálculos Derivados (Memoizados)

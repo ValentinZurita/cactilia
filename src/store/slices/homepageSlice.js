@@ -130,14 +130,14 @@ const homepageSlice = createSlice({
   name: 'homepage',
   initialState,
   reducers: {
-    // Limpiar cache inmeidatamente - util para mostrar cambios depues de actulizaciones en el admin panel
-    // clearHomepageCache: (state) => {
-    //   state.pageData = null;
-    //   state.featuredProducts = [];
-    //   state.featuredCategories = [];
-    //   state.collectionImages = {};
-    //   state.lastFetchTimestamp = null;
-    // }
+    // Limpiar cache inmediatamente - util para mostrar cambios después de actualizaciones en el admin panel
+    clearHomepageCache: (state) => {
+      state.pageData = null;
+      state.featuredProducts = [];
+      state.featuredCategories = [];
+      state.collectionImages = {};
+      state.lastFetchTimestamp = null;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -174,6 +174,7 @@ const homepageSlice = createSlice({
 // --- Exportaciones --- 
 
 // Exportar el reducer generado por createSlice
+export const { clearHomepageCache } = homepageSlice.actions;
 export default homepageSlice.reducer;
 
 // Exportar selectores para acceder fácilmente al estado desde los componentes

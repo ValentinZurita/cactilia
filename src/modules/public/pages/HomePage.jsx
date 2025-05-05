@@ -62,6 +62,7 @@ export const HomePage = () => {
 
   // --- Función para manejar clic en tarjeta de producto/categoría ---
   const handleProductCardClick = useCallback((productData) => {
+    console.log('[HomePage] Datos del producto al hacer clic:', productData);
     if (productData && productData.id) {
         dispatch(openProductModal(productData)); 
     } else {

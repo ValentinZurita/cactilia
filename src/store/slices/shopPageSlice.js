@@ -256,24 +256,35 @@ export const selectShopBannerCollectionImages = (state) => state.shopPage.banner
 export const selectFilteredProducts = createSelector(
   [selectAllShopProducts, selectShopFilters], // Inputs: lista completa y filtros
   (allProducts, filters) => {
+    console.log('[Selector] Running selectFilteredProducts. Filters:', filters);
     let filtered = [...allProducts]; // Copiar para no mutar el estado original
+    console.log(`[Selector] Initial product count: ${filtered.length}`);
 
     // Filtrar por término de búsqueda (nombre o categoría)
     if (filters.searchTerm?.trim()) {
       const normalizedSearch = filters.searchTerm.toLowerCase().trim();
+      console.log(`[Selector] Applying search filter: ${normalizedSearch}`);
       filtered = filtered.filter(prod =>
         prod.name?.toLowerCase().includes(normalizedSearch) ||
         prod.category?.toLowerCase().includes(normalizedSearch)
       );
+      console.log(`[Selector] Count after search filter: ${filtered.length}`);
     }
 
-    // Filtrar por nombre de categoría
-    if (filters.selectedCategory) { // Comprueba si selectedCategory es truthy
-      const selectedCategoryName = filters.selectedCategory.toLowerCase();
+    // Filtrar por nombre de categoría (solo si hay un valor no vacío)
+    const selectedCategoryFilter = filters.selectedCategory;
+    console.log(`[Selector] Checking category filter. Selected Category: '${selectedCategoryFilter}' (Type: ${typeof selectedCategoryFilter})`);
+    
+    if (selectedCategoryFilter && selectedCategoryFilter !== "") {
+      console.log(`[Selector] ===> APPLYING Category Filter: ${selectedCategoryFilter}`);
+      const selectedCategoryName = selectedCategoryFilter.toLowerCase();
       filtered = filtered.filter(prod => 
         prod.category?.toLowerCase() === selectedCategoryName
       );
+    } else {
+      console.log('[Selector] ===> SKIPPING Category Filter (selectedCategory is empty or null).');
     }
+    console.log(`[Selector] Count after category filter step: ${filtered.length}`);
 
     // --- Filtrado/Ordenación por Precio/Destacados ---
 
@@ -291,6 +302,7 @@ export const selectFilteredProducts = createSelector(
       filtered.sort((a, b) => b.price - a.price);
     }
 
+    console.log(`[Selector] Final filtered (before sort/featured) count: ${filtered.length}`);
     return filtered; // Devuelve la lista filtrada y ordenada
   }
 );

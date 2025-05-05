@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { ProductCard } from './ProductCard.jsx';
 
 export const ProductList = ({ products = [], onProductClick }) => {
+  console.log('[ProductList] Rendering with products:', products);
   if (products.length === 0) {
     return <p className="text-center mt-4">No se encontraron productos.</p>;
   }
