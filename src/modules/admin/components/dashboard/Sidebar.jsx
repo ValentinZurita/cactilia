@@ -209,16 +209,22 @@ export const Sidebar = ({ onLinkClick }) => {
             icon="bi-patch-question"
           />
           <SidebarItem
+            to="/admin/content/contact"
+            label="Contacto"
+            onClick={handleNavClick}
+            icon="bi-envelope-fill"
+          />
+          <SidebarItem
             to="/admin/content/cookies-policy"
             label="Política de Cookies"
             onClick={handleNavClick}
-            icon="bi-file-earmark-lock"
+            icon="bi-shield-check"
           />
           <SidebarItem
-            to="/admin/contactpage"
-            label="Editor de Página de Contacto"
+            to="/admin/content/about-us"
+            label="Acerca de Nosotros"
             onClick={handleNavClick}
-            icon="bi-envelope-fill"
+            icon="bi-info-circle-fill"
           />
         </SidebarDropdown>
 

@@ -38,6 +38,9 @@ const AddressesPage = lazy(() => import('../modules/user/pages/AdressesPage.jsx'
 const PaymentsPage = lazyLoadNamed(() => import('../modules/user/pages/PaymentsPage.jsx'), 'PaymentsPage')
 const SettingsPage = lazyLoadNamed(() => import('../modules/user/pages/SettingsPage.jsx'), 'SettingsPage')
 
+// Importar AboutUsPage usando lazyLoadNamed si tiene export nombrado, o lazy normal si es default
+const AboutUsPage = lazy(() => import('../modules/public/pages/AboutUsPage.jsx')); // Asumiendo export default
+
 // Fallback para cuando se está cargando un componente
 const SuspenseFallback = () => <Spinner />
 
@@ -85,6 +88,13 @@ export const AppRouter = () => {
         <Route path="cookies-policy" element={
           <Suspense fallback={<SuspenseFallback />}>
             <CookiesPolicyPage />
+          </Suspense>
+        } />
+
+        {/** Nueva ruta: /about-us */}
+        <Route path="about-us" element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <AboutUsPage />
           </Suspense>
         } />
 

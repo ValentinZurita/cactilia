@@ -48,6 +48,12 @@ service cloud.firestore {
       allow write: if request.auth != null;  // Solo usuarios autenticados pueden escribir
     }
     
+    // Acceso público a contenido (home, about-us, faq, etc.)
+    match /content/{documentId} {
+      allow read: if true; // Permitir lectura pública
+      allow write: if request.auth != null; // Solo autenticados pueden escribir (admins gestionan esto)
+    }
+    
     // Los carritos son privados
     match /carts/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;

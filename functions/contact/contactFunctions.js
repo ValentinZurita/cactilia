@@ -34,7 +34,7 @@ exports.sendContactEmail = functions.https.onCall(async (data, context) => {
     console.log('✅ SendGrid configurado exitosamente');
     
     // Email del remitente
-    const sender = config.sendgrid?.sender || 'valentin.alejandro.p.z@gmail.com';
+    const sender = config.sendgrid?.sender || 'hola@cactilia.com';
     console.log(`📤 Usando remitente: ${sender}`);
     
     // Construir el contenido del email para el administrador

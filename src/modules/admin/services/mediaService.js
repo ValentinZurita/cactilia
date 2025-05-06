@@ -2,6 +2,7 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, o
 import { ref, getDownloadURL, deleteObject } from "firebase/storage";
 import { FirebaseDB, FirebaseStorage } from "../../../config/firebase/firebaseConfig";
 import { uploadFile } from "../../../config/firebase/firebaseStorage";
+import { db } from '../../../config/firebase/index.js'; // Asegúrate que la ruta es correcta
 
 /**
  * Upload a new media item to Firebase Storage and save metadata to Firestore
@@ -238,5 +239,32 @@ export const getMediaItemById = async (mediaId) => {
   } catch (error) {
     console.error("Error fetching media item:", error);
     return { ok: false, error: error.message };
+  }
+};
+
+/**
+ * Obtiene todos los items multimedia que pertenecen a una colección específica.
+ * @param {string} collectionId - El ID de la colección de media.
+ * @returns {Promise<{ok: boolean, data: Array, error: string|null}>}
+ */
+export const getMediaItemsByCollection = async (collectionId) => {
+    if (!collectionId) {
+        return { ok: false, data: [], error: 'ID de colección no proporcionado.' };
+    }
+    try {
+        // Usar el nombre literal de la colección "media"
+        const mediaCollectionRef = collection(db, "media"); 
+        const q = query(
+            mediaCollectionRef, 
+            where('collectionId', '==', collectionId),
+            orderBy('uploadedAt', 'desc') 
+        );
+        const querySnapshot = await getDocs(q);
+        const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        return { ok: true, data: items, error: null };
+    } catch (error) {
+        console.error(`Error obteniendo items para colección ${collectionId}:`, error);
+        return { ok: false, data: [], error: 'Error al cargar imágenes de la colección.' };
   }
 };

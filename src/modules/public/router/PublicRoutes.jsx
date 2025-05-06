@@ -17,6 +17,7 @@ const ShopPageLazy = lazy(() => import("../../shop/pages/ShopPage.jsx"));
 const CartPageLazy = lazy(() => import("../../shop/pages/CartPage.jsx"));
 const ContactPageLazy = lazy(() => import("../pages/ContactPage.jsx"));
 const AuthRoutesLazy = lazy(() => import("../../auth/router/AuthRoutes.jsx")); // Rutas de autenticación
+const AboutUsPageLazy = lazy(() => import("../pages/AboutUsPage.jsx")); // <-- Nueva importación
 
 // Páginas del perfil de usuario
 const OverviewPageLazy = lazy(() => import('../../user/pages/OverviewPage'));
@@ -44,6 +45,7 @@ export const PublicRoutes = () => {
           <Route path="/shop" element={<ShopPageLazy />} />
           <Route path="/cart" element={<CartPageLazy />} />
           <Route path="/contacto" element={<ContactPageLazy />} />
+          <Route path="/acerca-de" element={<AboutUsPageLazy />} /> {/* <-- Nueva ruta */}
           
           {/* Ruta que delega al enrutador de Autenticación */}
           <Route path="/auth/*" element={<AuthRoutesLazy />} />

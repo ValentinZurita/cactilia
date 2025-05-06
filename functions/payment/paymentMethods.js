@@ -138,7 +138,8 @@ exports.savePaymentMethod = onCall({
  */
 exports.detachPaymentMethod = onCall({
   region: "us-central1",
-  secrets: [stripeSecretParam]
+  secrets: [stripeSecretParam],
+  cors: ["http://localhost:5173", "http://localhost:5174", "https://tu-dominio-desplegado.com"]
 }, async (request) => {
   // Verificar autenticación
   if (!request.auth) {

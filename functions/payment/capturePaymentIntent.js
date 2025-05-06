@@ -9,7 +9,7 @@ const admin = require("firebase-admin"); // Necesario para verificar permisos de
 exports.capturePaymentIntent = onCall({
   region: "us-central1",
   secrets: [stripeSecretParam],
-  cors: ['http://localhost:5174', 'http://localhost:5173']
+  cors: ['http://localhost:5174', 'http://localhost:5173', 'https://cactilia-3678a.web.app']
 }, async (request) => {
   console.log("*** capturePaymentIntent function started ***");
   console.log("Auth context:", request.auth ? request.auth.uid : 'No auth');

@@ -9,7 +9,7 @@ const { stripeSecretParam, getOrCreateCustomer, logPaymentIntent, updatePaymentI
 exports.createPaymentIntent = onCall({
   region: "us-central1",
   secrets: [stripeSecretParam],
-  cors: ['http://localhost:5174', 'http://localhost:5173']
+  cors: ['http://localhost:5174', 'http://localhost:5173', 'https://cactilia-3678a.web.app']
 }, async (request) => {
   // --- Añadir Log de Inicio ---
   console.log("*** createPaymentIntent function started ***");
